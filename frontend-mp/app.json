@@ -1,0 +1,50 @@
+{
+  "pages": [
+    "pages/index/index",
+    "pages/classify/classify",
+    "pages/exchange/exchange",
+    "pages/profile/profile",
+    "pages/records/records",
+    "pages/points/points",
+    "pages/orders/orders"
+  ],
+  "window": {
+    "backgroundTextStyle": "dark",
+    "navigationBarBackgroundColor": "#5BBD72",
+    "navigationBarTitleText": "垃圾分类助手",
+    "navigationBarTextStyle": "white",
+    "backgroundColor": "#F7FAF8",
+    "enablePullDownRefresh": false
+  },
+  "tabBar": {
+    "color": "#B2BEC3",
+    "selectedColor": "#5BBD72",
+    "backgroundColor": "#FFFFFF",
+    "borderStyle": "white",
+    "list": [
+      {
+        "pagePath": "pages/index/index",
+        "text": "首页",
+        "iconPath": "images/tabbar/home.png",
+        "selectedIconPath": "images/tabbar/home-active.png"
+      },
+      {
+        "pagePath": "pages/exchange/exchange",
+        "text": "积分兑换",
+        "iconPath": "images/tabbar/gift.png",
+        "selectedIconPath": "images/tabbar/gift-active.png"
+      },
+      {
+        "pagePath": "pages/profile/profile",
+        "text": "我的",
+        "iconPath": "images/tabbar/user.png",
+        "selectedIconPath": "images/tabbar/user-active.png"
+      }
+    ]
+  },
+  "useExtendedLib": {
+    "weui": true
+  },
+  "style": "v2",
+  "sitemapLocation": "sitemap.json"
+}

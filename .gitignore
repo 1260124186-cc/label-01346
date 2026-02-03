@@ -1,0 +1,49 @@
+# 微信小程序
+frontend-mp/project.private.config.json
+frontend-mp/miniprogram_npm/
+
+# 依赖目录
+node_modules/
+
+# 日志文件
+*.log
+npm-debug.log*
+
+# 系统文件
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE 配置
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# 编译输出
+dist/
+build/
+output/
+
+# 临时文件
+*.tmp
+*.temp
+.cache/
+
+# 测试覆盖率
+coverage/
+
+# 环境变量
+.env
+.env.local
+.env.*.local
+
+# 打包文件
+*.zip
+*.tar.gz
+*.rar

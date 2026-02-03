@@ -1,0 +1,56 @@
+<!--
+  兑换订单页面
+  功能：展示用户的商品兑换订单记录
+-->
+<view class="page-container">
+  <!-- 页面标题 -->
+  <view class="page-header">
+    <view class="header-icon">
+      <text class="success-emoji">🎉</text>
+    </view>
+    <text class="header-title">兑换成功</text>
+    <text class="header-desc">共 {{orderList.length}} 笔兑换记录</text>
+  </view>
+
+  <!-- 订单列表 -->
+  <view class="orders-section">
+    <view 
+      wx:for="{{orderList}}" 
+      wx:key="id"
+      class="order-card"
+    >
+      <!-- 成功标识 -->
+      <view class="success-badge">
+        <text class="success-icon">✓</text>
+      </view>
+
+      <!-- 商品信息 -->
+      <view class="order-goods">
+        <image class="goods-image" src="{{item.goodsImage}}" mode="aspectFill" />
+        <view class="goods-info">
+          <text class="goods-name">{{item.goodsName}}</text>
+          <text class="goods-desc">{{item.goodsDesc}}</text>
+          <view class="goods-bottom">
+            <text class="goods-points">{{item.points}}积分</text>
+            <text class="goods-quantity">x{{item.quantity}}</text>
+          </view>
+        </view>
+      </view>
+
+      <!-- 订单底部 -->
+      <view class="order-footer">
+        <text class="order-time">兑换时间：{{item.createTime}}</text>
+        <view class="action-btn" bindtap="onReorder" data-item="{{item}}">
+          再次兑换
+        </view>
+      </view>
+    </view>
+
+    <!-- 空状态 -->
+    <view class="empty-state" wx:if="{{orderList.length === 0}}">
+      <text class="empty-emoji">📦</text>
+      <text class="empty-text">暂无兑换记录</text>
+      <view class="empty-btn" bindtap="goExchange">去兑换商品</view>
+    </view>
+  </view>
+</view>

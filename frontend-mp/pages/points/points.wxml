@@ -1,0 +1,71 @@
+<!--
+  积分明细页面
+  功能：展示用户积分的获取与消费记录
+-->
+<view class="page-container">
+  <!-- 积分概览 -->
+  <view class="points-section">
+    <view class="points-card">
+      <view class="points-bg"></view>
+      <view class="points-content">
+        <text class="points-label">当前积分</text>
+        <text class="points-value">{{currentPoints}}</text>
+        <view class="points-detail">
+          <view class="detail-item">
+            <text class="detail-value">+{{totalEarned}}</text>
+            <text class="detail-label">累计获得</text>
+          </view>
+          <view class="detail-divider"></view>
+          <view class="detail-item">
+            <text class="detail-value">-{{totalSpent}}</text>
+            <text class="detail-label">累计消费</text>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 筛选标签 -->
+  <view class="filter-section">
+    <view 
+      wx:for="{{filterTabs}}" 
+      wx:key="id"
+      class="filter-tab {{currentFilter === item.id ? 'active' : ''}}"
+      bindtap="onFilterChange"
+      data-id="{{item.id}}"
+    >
+      <text class="filter-text">{{item.name}}</text>
+    </view>
+  </view>
+
+  <!-- 积分记录列表 -->
+  <view class="records-section">
+    <view class="records-list">
+      <view 
+        wx:for="{{pointsList}}" 
+        wx:key="id"
+        class="record-item"
+      >
+        <view class="record-icon" style="background: {{item.type === 'earn' ? 'rgba(91, 189, 114, 0.1)' : 'rgba(232, 93, 93, 0.1)'}};">
+          <text class="record-emoji">{{item.emoji}}</text>
+        </view>
+        <view class="record-info">
+          <text class="record-title">{{item.title}}</text>
+          <text class="record-desc">{{item.desc}}</text>
+        </view>
+        <view class="record-right">
+          <text class="record-points {{item.type === 'earn' ? 'earn' : 'spend'}}">
+            {{item.type === 'earn' ? '+' : '-'}}{{item.points}}
+          </text>
+          <text class="record-time">{{item.time}}</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 空状态 -->
+    <view class="empty-state" wx:if="{{pointsList.length === 0}}">
+      <text class="empty-emoji">💰</text>
+      <text class="empty-text">暂无积分记录</text>
+    </view>
+  </view>
+</view>
