@@ -42,7 +42,7 @@
 
   <!-- 记录列表 -->
   <view class="records-section">
-    <view class="section-title">分类记录</view>
+    <view class="section-title">活动记录</view>
     <view class="records-list">
       <view 
         wx:for="{{recordList}}" 
@@ -53,11 +53,11 @@
           <text class="record-emoji">{{item.emoji}}</text>
         </view>
         <view class="record-info">
-          <text class="record-name">{{item.trashName}}</text>
-          <text class="record-type">{{item.typeName}}</text>
+          <text class="record-name">{{item.displayTitle}}</text>
+          <text class="record-type">{{item.displaySubtitle}}</text>
         </view>
         <view class="record-right">
-          <text class="record-points">+{{item.points}}积分</text>
+          <text class="record-points">{{item.pointsPrefix}}{{item.points}}积分</text>
           <text class="record-time">{{item.time}}</text>
         </view>
       </view>
@@ -66,8 +66,8 @@
     <!-- 空状态 -->
     <view class="empty-state" wx:if="{{recordList.length === 0}}">
       <text class="empty-emoji">📋</text>
-      <text class="empty-text">暂无分类记录</text>
-      <text class="empty-hint">快去首页进行垃圾分类吧</text>
+      <text class="empty-text">暂无活动记录</text>
+      <text class="empty-hint">快去进行垃圾分类或答题赢积分吧</text>
     </view>
   </view>
 </view>

@@ -15,7 +15,9 @@ const {
   showToast,
   showSuccess,
   getStorage,
-  setStorage
+  setStorage,
+  formatDate,
+  generateId
 } = require('../../utils/util')
 
 Page({
@@ -151,7 +153,12 @@ Page({
         totalPoints: newTotalPoints
       })
 
-      app.updateUserPoints(pointsEarned)
+      app.updateUserPoints(pointsEarned, {
+        category: 'quiz',
+        title: '知识问答',
+        desc: `答题正确：${question.question.length > 15 ? question.question.slice(0, 15) + '...' : question.question}`,
+        emoji: '❓'
+      })
       showSuccess(`答对了！+${pointsEarned}积分`)
 
       this.removeFromWrongQuestions(question.id)
@@ -246,7 +253,12 @@ Page({
       resultEmoji = '👍'
     }
 
-    app.updateUserPoints(bonusPoints)
+    app.updateUserPoints(bonusPoints, {
+      category: 'quiz',
+      title: '答题奖励',
+      desc: `完成答题正确率${accuracy}%`,
+      emoji: '🎁'
+    })
 
     this.setData({
       showResult: true,
@@ -262,6 +274,19 @@ Page({
         accuracy
       }
     })
+
+    const quizRecord = {
+      id: generateId(),
+      quizType: this.data.quizType,
+      chapterName: this.data.chapterName || (this.data.quizType === 'daily' ? '每日一练' : (this.data.quizType === 'difficulty' ? this.data.difficultyName + '难度' : (this.data.isWrongReview ? '错题复习' : ''))),
+      totalQuestions: total,
+      correctCount: correct,
+      wrongCount: wrong,
+      accuracy,
+      points: totalPoints,
+      time: formatDate(new Date(), 'YYYY-MM-DD HH:mm')
+    }
+    app.addQuizRecord(quizRecord)
 
     this.updateChapterProgress()
     this.markDailyCompleted()

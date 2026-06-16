@@ -89,7 +89,7 @@ describe('quiz-play page', () => {
   describe('onSelectOption', () => {
     beforeEach(() => {
       page.data.questions = [
-        { id: 1, difficulty: 'easy', options: ['A', 'B', 'C', 'D'], correctIndex: 0 }
+        { id: 1, difficulty: 'easy', question: 'Q1', options: ['A', 'B', 'C', 'D'], correctIndex: 0 }
       ]
       page.data.currentQuestion = page.data.questions[0]
       page.data.currentIndex = 0
@@ -101,9 +101,16 @@ describe('quiz-play page', () => {
       expect(page.data.correctCount).toBe(1)
     })
 
-    test('答对时调用 app.updateUserPoints', () => {
+    test('答对时调用 app.updateUserPoints 带 recordInfo 参数', () => {
       page.onSelectOption({ currentTarget: { dataset: { index: 0 } } })
-      expect(capturedApp.updateUserPoints).toHaveBeenCalled()
+      expect(capturedApp.updateUserPoints).toHaveBeenCalledWith(
+        5,
+        expect.objectContaining({
+          category: 'quiz',
+          title: '知识问答',
+          emoji: '❓'
+        })
+      )
     })
 
     test('答对时从错题中移除', () => {
@@ -259,7 +266,19 @@ describe('quiz-play page', () => {
 
     test('发放奖励积分', () => {
       page.showQuizResult()
-      expect(capturedApp.updateUserPoints).toHaveBeenCalledWith(20)
+      expect(capturedApp.updateUserPoints).toHaveBeenCalledWith(
+        20,
+        expect.objectContaining({
+          category: 'quiz',
+          title: '答题奖励',
+          emoji: '🎁'
+        })
+      )
+    })
+
+    test('调用 addQuizRecord 添加答题记录', () => {
+      page.showQuizResult()
+      expect(capturedApp.addQuizRecord).toHaveBeenCalled()
     })
 
     test('调用 updateChapterProgress', () => {
