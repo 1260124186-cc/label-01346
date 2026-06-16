@@ -1,0 +1,142 @@
+/**
+ * 垃圾分类常识页面
+ * @description 展示各类垃圾的详细分类知识，根据首页传递的参数显示对应内容
+ */
+const { TRASH_TYPES } = require('../../utils/constants')
+const { showToast, navigateBack } = require('../../utils/util')
+
+Page({
+  /**
+   * 页面的初始数据
+   */
+  data: {
+    // 当前分类ID
+    classifyId: 0,
+    // 当前分类数据
+    classifyData: null,
+    // 所有分类数据（用于切换）
+    allTypes: TRASH_TYPES,
+    // 页面加载状态
+    isLoading: true
+  },
+
+  /**
+   * 生命周期函数--监听页面加载
+   * @param {Object} options 页面参数
+   */
+  onLoad(options) {
+    console.log('[Classify] 页面加载，接收参数：', options)
+    
+    // 接收页面传递的参数
+    const { id, name } = options
+    
+    if (id) {
+      this.initClassifyData(parseInt(id))
+    } else {
+      // 如果没有传递ID，默认显示第一个分类
+      this.initClassifyData(1)
+    }
+    
+    // 设置导航栏标题（需要解码 URL 编码的中文）
+    if (name) {
+      wx.setNavigationBarTitle({
+        title: decodeURIComponent(name)
+      })
+    }
+  },
+
+  /**
+   * 初始化分类数据
+   * @param {number} id 分类ID
+   */
+  initClassifyData(id) {
+    console.log('[Classify] 初始化分类数据，ID：', id)
+    
+    // 根据ID查找对应的分类数据
+    const classifyData = TRASH_TYPES.find(item => item.id === id)
+    
+    if (classifyData) {
+      this.setData({
+        classifyId: id,
+        classifyData: classifyData,
+        isLoading: false
+      })
+      
+      // 设置导航栏标题
+      wx.setNavigationBarTitle({
+        title: classifyData.name
+      })
+      
+      // 设置导航栏颜色
+      wx.setNavigationBarColor({
+        frontColor: '#ffffff',
+        backgroundColor: classifyData.color,
+        animation: {
+          duration: 300,
+          timingFunc: 'easeIn'
+        }
+      })
+      
+      console.log('[Classify] 分类数据加载成功', classifyData.name)
+    } else {
+      console.error('[Classify] 未找到对应的分类数据')
+      showToast('分类数据加载失败')
+      setTimeout(() => {
+        navigateBack()
+      }, 1500)
+    }
+  },
+
+  /**
+   * 切换分类
+   * @param {Object} e 事件对象
+   */
+  onSwitchType(e) {
+    const { id } = e.currentTarget.dataset
+    console.log('[Classify] 切换分类', id)
+    
+    if (id !== this.data.classifyId) {
+      this.setData({ isLoading: true })
+      
+      setTimeout(() => {
+        this.initClassifyData(id)
+      }, 200)
+    }
+  },
+
+  /**
+   * 点击示例项
+   * @param {Object} e 事件对象
+   */
+  onExampleTap(e) {
+    const { item } = e.currentTarget.dataset
+    console.log('[Classify] 点击示例', item)
+    
+    wx.showModal({
+      title: item.name,
+      content: item.desc,
+      showCancel: false,
+      confirmText: '知道了',
+      confirmColor: this.data.classifyData.color
+    })
+  },
+
+  /**
+   * 返回首页
+   */
+  goBack() {
+    navigateBack()
+  },
+
+  /**
+   * 用户点击右上角分享
+   */
+  onShareAppMessage() {
+    const { classifyData } = this.data
+    return {
+      title: `${classifyData.name} - 垃圾分类知识`,
+      path: `/pages/classify/classify?id=${classifyData.id}&name=${encodeURIComponent(classifyData.name)}`,
+      imageUrl: ''
+    }
+  }
+})

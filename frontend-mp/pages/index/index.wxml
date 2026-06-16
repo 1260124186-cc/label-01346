@@ -1,0 +1,99 @@
+<!--
+  首页
+  功能：展示轮播图、快捷功能、四种垃圾分类卡片
+  考核点：swiper组件、wx:for、bindtap事件、view/image标签
+-->
+<view class="page-container">
+  <!-- 顶部轮播图区域 -->
+  <view class="banner-section">
+    <swiper 
+      class="banner-swiper"
+      indicator-dots="{{false}}"
+      autoplay="{{true}}"
+      interval="{{4000}}"
+      duration="{{500}}"
+      circular="{{true}}"
+      bindchange="onBannerChange"
+    >
+      <swiper-item 
+        wx:for="{{bannerList}}" 
+        wx:key="id"
+        class="banner-item"
+      >
+        <view 
+          class="banner-image-wrapper"
+          bindtap="onBannerTap"
+          data-item="{{item}}"
+        >
+          <image 
+            class="banner-image" 
+            src="{{item.image}}" 
+            mode="aspectFill"
+          />
+          <view class="banner-overlay">
+            <text class="banner-title">{{item.title}}</text>
+          </view>
+        </view>
+      </swiper-item>
+    </swiper>
+    
+    <!-- 自定义指示器 -->
+    <view class="banner-indicators">
+      <view 
+        wx:for="{{bannerList}}" 
+        wx:key="id"
+        class="indicator-dot {{currentBannerIndex === index ? 'active' : ''}}"
+      />
+    </view>
+  </view>
+
+  <!-- 垃圾分类标题 -->
+  <view class="section-header">
+    <view class="section-title-wrapper">
+      <view class="section-title-icon"></view>
+      <text class="section-title">垃圾分类</text>
+    </view>
+    <view class="section-subtitle-wrapper" bindtap="goToFirstClassify">
+      <text class="section-subtitle">点击了解分类详情</text>
+      <text class="section-arrow">›</text>
+    </view>
+  </view>
+
+  <!-- 四种垃圾分类卡片 - 使用 wx:for 循环渲染 -->
+  <view class="trash-types-section">
+    <view class="trash-types-grid">
+      <view 
+        wx:for="{{trashTypes}}" 
+        wx:key="id"
+        class="trash-type-card"
+        bindtap="goToClassify"
+        data-item="{{item}}"
+        style="--card-color: {{item.color}}; --card-bg: {{item.bgColor}};"
+      >
+        <!-- 卡片背景装饰 -->
+        <view class="card-decoration"></view>
+        
+        <!-- 垃圾桶图标 -->
+        <view class="trash-icon-wrapper">
+          <text class="trash-icon-emoji">{{item.emoji}}</text>
+        </view>
+        
+        <!-- 分类信息 -->
+        <view class="trash-info">
+          <text class="trash-name">{{item.name}}</text>
+          <text class="trash-english">{{item.englishName}}</text>
+        </view>
+        
+        <!-- 箭头指示 -->
+        <view class="card-arrow">
+          <text class="arrow-icon">›</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 底部提示 -->
+  <view class="footer-tips">
+    <text class="tips-text">垃圾分类，从我做起，保护环境，人人有责</text>
+  </view>
+</view>

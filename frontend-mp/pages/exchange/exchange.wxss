@@ -1,0 +1,590 @@
+/**
+ * 积分兑换页面样式
+ * 设计风格：轻透清新风
+ */
+
+/* 页面容器 */
+.page-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background: linear-gradient(180deg, #E8F5E9 0%, #F7FAF8 20%);
+}
+
+/* ==================== 积分展示区 ==================== */
+.points-section {
+  padding: 24rpx 32rpx;
+}
+
+.points-card {
+  position: relative;
+  background: linear-gradient(135deg, #5BBD72 0%, #4AA862 100%);
+  border-radius: 24rpx;
+  padding: 36rpx 32rpx;
+  overflow: hidden;
+  box-shadow: 0 8rpx 32rpx rgba(91, 189, 114, 0.3);
+}
+
+.points-bg-decoration {
+  position: absolute;
+  top: -40rpx;
+  right: -40rpx;
+  width: 180rpx;
+  height: 180rpx;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.points-bg-decoration::after {
+  content: '';
+  position: absolute;
+  top: 60rpx;
+  left: 60rpx;
+  width: 120rpx;
+  height: 120rpx;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.points-content {
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.points-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.points-label {
+  font-size: 26rpx;
+  color: rgba(255, 255, 255, 0.85);
+  margin-bottom: 8rpx;
+}
+
+.points-value-wrapper {
+  display: flex;
+  align-items: baseline;
+}
+
+.points-value {
+  font-size: 64rpx;
+  font-weight: 700;
+  color: #FFFFFF;
+  line-height: 1;
+}
+
+.points-unit {
+  font-size: 28rpx;
+  color: rgba(255, 255, 255, 0.85);
+  margin-left: 8rpx;
+}
+
+.points-actions {
+  display: flex;
+}
+
+.action-btn {
+  padding: 16rpx 28rpx;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 32rpx;
+  backdrop-filter: blur(10rpx);
+}
+
+.action-text {
+  font-size: 26rpx;
+  color: #FFFFFF;
+}
+
+/* ==================== 活动轮播区 ==================== */
+.banner-section {
+  padding: 0 32rpx;
+  margin-bottom: 24rpx;
+}
+
+.activity-swiper {
+  width: 100%;
+  height: 200rpx;
+  border-radius: 20rpx;
+  overflow: hidden;
+}
+
+.banner-item {
+  width: 100%;
+  height: 100%;
+}
+
+.banner-image-wrapper {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border-radius: 20rpx;
+  overflow: hidden;
+}
+
+.banner-image {
+  width: 100%;
+  height: 100%;
+}
+
+.banner-title-overlay {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 32rpx 24rpx 20rpx;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.5) 0%, transparent 100%);
+}
+
+.banner-title {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #FFFFFF;
+}
+
+.banner-indicators {
+  display: flex;
+  justify-content: center;
+  margin-top: 16rpx;
+  gap: 10rpx;
+}
+
+.indicator-dot {
+  width: 10rpx;
+  height: 10rpx;
+  border-radius: 5rpx;
+  background: rgba(91, 189, 114, 0.3);
+  transition: all 0.3s ease;
+}
+
+.indicator-dot.active {
+  width: 28rpx;
+  background: var(--color-primary);
+}
+
+/* ==================== 商品分类 ==================== */
+.category-section {
+  padding: 0 32rpx;
+  margin-bottom: 16rpx;
+}
+
+.category-list {
+  display: flex;
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(20rpx);
+  -webkit-backdrop-filter: blur(20rpx);
+  border-radius: 16rpx;
+  padding: 8rpx;
+}
+
+.category-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20rpx 0;
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.category-name {
+  font-size: 28rpx;
+  color: var(--text-secondary);
+  transition: all 0.3s ease;
+}
+
+.category-item.active .category-name {
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+.category-indicator {
+  position: absolute;
+  bottom: 8rpx;
+  width: 32rpx;
+  height: 6rpx;
+  background: var(--color-primary);
+  border-radius: 3rpx;
+}
+
+/* ==================== 商品列表滚动区 ==================== */
+.goods-scroll-view {
+  flex: 1;
+  height: calc(100vh - 520rpx);
+}
+
+.goods-section {
+  padding: 0 32rpx 120rpx;
+}
+
+.goods-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20rpx;
+}
+
+.goods-card {
+  width: calc(50% - 10rpx);
+  flex: 0 0 calc(50% - 10rpx);
+  box-sizing: border-box;
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(20rpx);
+  -webkit-backdrop-filter: blur(20rpx);
+  border-radius: 20rpx;
+  overflow: hidden;
+  box-shadow: 0 4rpx 20rpx rgba(91, 189, 114, 0.08);
+  border: 1rpx solid rgba(255, 255, 255, 0.9);
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.goods-card:active {
+  transform: scale(0.98);
+  box-shadow: 0 8rpx 30rpx rgba(91, 189, 114, 0.15);
+}
+
+/* 商品标签 */
+.goods-tag {
+  position: absolute;
+  top: 16rpx;
+  left: 16rpx;
+  padding: 6rpx 16rpx;
+  background: linear-gradient(135deg, #FF6B6B 0%, #FF8E53 100%);
+  border-radius: 8rpx;
+  z-index: 1;
+}
+
+.tag-text {
+  font-size: 20rpx;
+  color: #FFFFFF;
+  font-weight: 500;
+}
+
+/* 商品图片 */
+.goods-image-wrapper {
+  width: 100%;
+  height: 280rpx;
+  background: #F5F5F5;
+  overflow: hidden;
+}
+
+.goods-image {
+  width: 100%;
+  height: 100%;
+  transition: transform 0.3s ease;
+}
+
+.goods-card:active .goods-image {
+  transform: scale(1.05);
+}
+
+/* 商品信息 */
+.goods-info {
+  padding: 20rpx;
+}
+
+.goods-name {
+  display: block;
+  font-size: 28rpx;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 8rpx;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.goods-desc {
+  display: block;
+  font-size: 22rpx;
+  color: var(--text-tertiary);
+  margin-bottom: 16rpx;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.goods-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16rpx;
+}
+
+.goods-price {
+  display: flex;
+  align-items: baseline;
+}
+
+.price-value {
+  font-size: 36rpx;
+  font-weight: 700;
+  color: var(--color-primary);
+  line-height: 1;
+}
+
+.price-unit {
+  font-size: 22rpx;
+  color: var(--color-primary);
+  margin-left: 4rpx;
+}
+
+.original-price {
+  font-size: 22rpx;
+  color: var(--text-tertiary);
+  text-decoration: line-through;
+  margin-left: 8rpx;
+}
+
+.goods-sales {
+  display: flex;
+  align-items: center;
+}
+
+.sales-text {
+  font-size: 22rpx;
+  color: var(--text-tertiary);
+}
+
+/* 兑换按钮 */
+.exchange-btn {
+  width: 100%;
+  height: 64rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #5BBD72 0%, #4AA862 100%);
+  border-radius: 12rpx;
+  transition: all 0.3s ease;
+}
+
+.exchange-btn.disabled {
+  background: #E8E8E8;
+}
+
+.exchange-btn.loading {
+  opacity: 0.7;
+}
+
+.btn-text {
+  font-size: 26rpx;
+  font-weight: 500;
+  color: #FFFFFF;
+  width: 100%;
+  text-align: center;
+  line-height: 64rpx;
+}
+
+.exchange-btn.disabled .btn-text {
+  color: var(--text-tertiary);
+}
+
+.btn-loading {
+  width: 32rpx;
+  height: 32rpx;
+  border: 4rpx solid rgba(255, 255, 255, 0.3);
+  border-top-color: #FFFFFF;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* 列表底部 */
+.list-footer {
+  padding: 48rpx 0 32rpx;
+  text-align: center;
+}
+
+.footer-text {
+  font-size: 24rpx;
+  color: var(--text-tertiary);
+}
+
+/* ==================== 回到顶部按钮 ==================== */
+.back-top-btn {
+  position: fixed;
+  right: 32rpx;
+  bottom: 180rpx;
+  width: 88rpx;
+  height: 88rpx;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(20rpx);
+  -webkit-backdrop-filter: blur(20rpx);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.1);
+  opacity: 0;
+  transform: scale(0.8);
+  transition: all 0.3s ease;
+  pointer-events: none;
+}
+
+.back-top-btn.show {
+  opacity: 1;
+  transform: scale(1);
+  pointer-events: auto;
+}
+
+.back-top-icon {
+  font-size: 36rpx;
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+/* ==================== 积分规则弹窗 ==================== */
+.rules-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease;
+  z-index: 1000;
+}
+
+.rules-modal.show {
+  opacity: 1;
+  visibility: visible;
+}
+
+.rules-content {
+  width: 85%;
+  max-height: 85vh;
+  background: #FFFFFF;
+  border-radius: 24rpx;
+  overflow: hidden;
+  transform: scale(0.9);
+  transition: all 0.3s ease;
+}
+
+.rules-modal.show .rules-content {
+  transform: scale(1);
+}
+
+.rules-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 32rpx;
+  border-bottom: 1rpx solid #F0F0F0;
+}
+
+.rules-title {
+  font-size: 36rpx;
+  font-weight: 600;
+  color: #1A1A1A;
+}
+
+.rules-close {
+  width: 56rpx;
+  height: 56rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.close-icon {
+  font-size: 48rpx;
+  color: #999999;
+  line-height: 1;
+}
+
+.rules-body {
+  max-height: 65vh;
+  padding: 24rpx 32rpx 60rpx;
+  box-sizing: border-box;
+  overflow-y: auto;
+}
+
+.rules-section {
+  margin-bottom: 32rpx;
+}
+
+.rules-section:last-child {
+  margin-bottom: 0;
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  margin-bottom: 20rpx;
+}
+
+.title-emoji {
+  font-size: 36rpx;
+  margin-right: 12rpx;
+}
+
+.title-text {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #1A1A1A;
+}
+
+.rules-list {
+  background: #F8F9FA;
+  border-radius: 16rpx;
+  padding: 8rpx 0;
+}
+
+.rule-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20rpx 24rpx;
+}
+
+.rule-name {
+  font-size: 28rpx;
+  color: #333333;
+}
+
+.rule-points {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #5BBD72;
+}
+
+.rules-desc {
+  background: #F8F9FA;
+  border-radius: 16rpx;
+  padding: 24rpx;
+  margin-bottom: 20rpx;
+}
+
+.desc-item {
+  display: flex;
+  margin-bottom: 16rpx;
+  line-height: 1.6;
+}
+
+.desc-item:last-child {
+  margin-bottom: 0;
+}
+
+.desc-num {
+  font-size: 26rpx;
+  color: #666666;
+  margin-right: 8rpx;
+  flex-shrink: 0;
+}
+
+.desc-text {
+  font-size: 26rpx;
+  color: #666666;
+  line-height: 1.5;
+}

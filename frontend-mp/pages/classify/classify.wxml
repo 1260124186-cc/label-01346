@@ -1,0 +1,116 @@
+<!--
+  垃圾分类常识页面
+  功能：展示各类垃圾的详细分类知识
+  考核点：正确接收页面传递参数、view/image标签使用、基本样式
+-->
+<view class="page-container" wx:if="{{!isLoading && classifyData}}">
+  <!-- 顶部分类切换 -->
+  <view class="type-switcher">
+    <view 
+      wx:for="{{allTypes}}" 
+      wx:key="id"
+      class="type-tab {{classifyId === item.id ? 'active' : ''}}"
+      style="--tab-color: {{item.color}}; --tab-bg: {{item.bgColor}};"
+      bindtap="onSwitchType"
+      data-id="{{item.id}}"
+    >
+      <text class="tab-name">{{item.name}}</text>
+    </view>
+  </view>
+
+  <!-- 分类头部信息 -->
+  <view class="classify-header" style="--header-color: {{classifyData.color}}; --header-bg: {{classifyData.bgColor}};">
+    <view class="header-bg-decoration"></view>
+    
+    <view class="header-content">
+      <!-- 分类图标 -->
+      <view class="classify-icon-wrapper">
+        <text class="classify-icon-emoji">{{classifyData.emoji}}</text>
+      </view>
+      
+      <!-- 分类名称 -->
+      <view class="classify-title-section">
+        <text class="classify-name">{{classifyData.name}}</text>
+        <text class="classify-english">{{classifyData.englishName}}</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 分类说明卡片 -->
+  <view class="section-card description-card">
+    <view class="card-header">
+      <view class="card-icon" style="background: {{classifyData.bgColor}};">
+        <text class="icon-text" style="color: {{classifyData.color}};">📋</text>
+      </view>
+      <text class="card-title">分类说明</text>
+    </view>
+    <view class="card-content">
+      <text class="description-text">{{classifyData.description}}</text>
+    </view>
+  </view>
+
+  <!-- 常见垃圾列表 -->
+  <view class="section-card examples-card">
+    <view class="card-header">
+      <view class="card-icon" style="background: {{classifyData.bgColor}};">
+        <text class="icon-text" style="color: {{classifyData.color}};">📦</text>
+      </view>
+      <text class="card-title">常见垃圾</text>
+    </view>
+    <view class="card-content">
+      <view class="examples-grid">
+        <view 
+          wx:for="{{classifyData.examples}}" 
+          wx:key="name"
+          class="example-item"
+          style="--item-color: {{classifyData.color}}; --item-bg: {{classifyData.bgColor}};"
+          bindtap="onExampleTap"
+          data-item="{{item}}"
+        >
+          <view class="example-icon-wrapper">
+            <text class="example-icon">{{item.icon}}</text>
+          </view>
+          <view class="example-info">
+            <text class="example-name">{{item.name}}</text>
+            <text class="example-desc">{{item.desc}}</text>
+          </view>
+          <view class="example-arrow">
+            <text class="arrow">›</text>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 投放提示 -->
+  <view class="section-card tips-card">
+    <view class="card-header">
+      <view class="card-icon" style="background: {{classifyData.bgColor}};">
+        <text class="icon-text" style="color: {{classifyData.color}};">💡</text>
+      </view>
+      <text class="card-title">投放提示</text>
+    </view>
+    <view class="card-content">
+      <view class="tips-list">
+        <view 
+          wx:for="{{classifyData.tips}}" 
+          wx:key="index"
+          class="tip-item"
+          style="--tip-color: {{classifyData.color}};"
+        >
+          <view class="tip-number">{{index + 1}}</view>
+          <text class="tip-text">{{item}}</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 底部安全区域 -->
+  <view class="safe-area-bottom"></view>
+</view>
+
+<!-- 加载状态 -->
+<view class="loading-container" wx:if="{{isLoading}}">
+  <view class="loading-spinner"></view>
+  <text class="loading-text">加载中...</text>
+</view>

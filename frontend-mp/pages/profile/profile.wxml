@@ -1,0 +1,115 @@
+<!--
+  个人中心页面
+  功能：展示用户信息、头像上传、功能菜单
+  考核点：view/image标签、weUI框架使用、本地图片上传
+-->
+<view class="page-container">
+  <!-- 用户信息卡片 -->
+  <view class="user-section">
+    <view class="user-card">
+      <!-- 背景装饰 -->
+      <view class="card-bg-decoration"></view>
+      <view class="card-bg-circle"></view>
+      
+      <!-- 用户头像 -->
+      <view class="avatar-wrapper" bindtap="onAvatarTap">
+        <image 
+          wx:if="{{userInfo.avatarUrl}}"
+          class="avatar-image" 
+          src="{{userInfo.avatarUrl}}" 
+          mode="aspectFill"
+        />
+        <view wx:else class="avatar-placeholder">
+          <text class="avatar-emoji">🌱</text>
+        </view>
+        <view class="avatar-edit-icon">
+          <text class="edit-icon">📷</text>
+        </view>
+        <!-- 上传中遮罩 -->
+        <view class="avatar-loading" wx:if="{{isUploading}}">
+          <view class="loading-spinner"></view>
+        </view>
+      </view>
+      
+      <!-- 用户信息 -->
+      <view class="user-info">
+        <view class="nickname-wrapper" bindtap="onNickNameTap">
+          <text class="nickname">{{userInfo.nickName}}</text>
+          <text class="edit-hint">✎</text>
+        </view>
+        
+        <!-- 等级标签 -->
+        <view class="level-tag">
+          <text class="level-icon">{{levelInfo.icon}}</text>
+          <text class="level-name">{{levelInfo.name}}</text>
+        </view>
+        
+        <!-- 等级进度条 -->
+        <view class="level-progress">
+          <view class="progress-bar">
+            <view class="progress-fill" style="width: {{levelInfo.progress}}%;"></view>
+          </view>
+          <text class="progress-text">Lv.{{levelInfo.level}}</text>
+        </view>
+      </view>
+      
+      <!-- 积分展示 -->
+      <view class="points-badge">
+        <text class="points-value">{{userInfo.points}}</text>
+        <text class="points-label">积分</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 统计数据 -->
+  <view class="statistics-section">
+    <view class="statistics-card">
+      <view 
+        wx:for="{{statistics}}" 
+        wx:key="id"
+        class="stat-item"
+        bindtap="onStatTap"
+        data-item="{{item}}"
+      >
+        <text class="stat-value">{{item.value}}</text>
+        <text class="stat-label">{{item.label}}</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 功能菜单 - 使用 weUI 组件 -->
+  <view class="menu-section">
+    <view class="menu-title">
+      <text class="title-text">功能服务</text>
+    </view>
+    
+    <!-- weUI cells 组件 -->
+    <mp-cells ext-class="menu-cells">
+      <mp-cell 
+        wx:for="{{menuList}}" 
+        wx:key="id"
+        ext-class="menu-cell"
+        link="{{true}}"
+        bindtap="onMenuTap"
+        data-item="{{item}}"
+      >
+        <view slot="icon" class="menu-icon-wrapper">
+          <text class="menu-icon-emoji">{{item.emoji}}</text>
+        </view>
+        <view class="menu-content">
+          <text class="menu-title-text">{{item.title}}</text>
+          <text class="menu-desc">{{item.desc}}</text>
+        </view>
+      </mp-cell>
+    </mp-cells>
+  </view>
+
+  <!-- 版本信息 -->
+  <view class="version-section">
+    <text class="version-text">垃圾分类助手 v1.0.0</text>
+    <text class="copyright-text">让垃圾分类更简单</text>
+  </view>
+
+  <!-- 底部安全区域 -->
+  <view class="safe-area-bottom"></view>
+</view>

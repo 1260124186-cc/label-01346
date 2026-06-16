@@ -1,0 +1,206 @@
+<!--
+  积分兑换页面
+  功能：展示积分商城，用户可以使用积分兑换礼品
+  考核点：swiper组件、scroll-view组件、页面数据绑定、view/image标签
+-->
+<view class="page-container">
+  <!-- 用户积分展示区 -->
+  <view class="points-section">
+    <view class="points-card">
+      <view class="points-bg-decoration"></view>
+      <view class="points-content">
+        <view class="points-info">
+          <text class="points-label">我的积分</text>
+          <view class="points-value-wrapper">
+            <text class="points-value">{{userPoints}}</text>
+            <text class="points-unit">分</text>
+          </view>
+        </view>
+        <view class="points-actions">
+          <view class="action-btn" bindtap="showPointsRules">
+            <text class="action-text">积分规则</text>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 热门活动轮播 - 使用 swiper 组件 -->
+  <view class="banner-section">
+    <swiper 
+      class="activity-swiper"
+      indicator-dots="{{false}}"
+      autoplay="{{true}}"
+      interval="{{3500}}"
+      duration="{{500}}"
+      circular="{{true}}"
+      bindchange="onBannerChange"
+    >
+      <swiper-item 
+        wx:for="{{bannerList}}" 
+        wx:key="id"
+        class="banner-item"
+      >
+        <view 
+          class="banner-image-wrapper"
+          bindtap="onBannerTap"
+          data-item="{{item}}"
+        >
+          <image 
+            class="banner-image" 
+            src="{{item.image}}" 
+            mode="aspectFill"
+          />
+          <view class="banner-title-overlay">
+            <text class="banner-title">{{item.title}}</text>
+          </view>
+        </view>
+      </swiper-item>
+    </swiper>
+    
+    <!-- 自定义指示器 -->
+    <view class="banner-indicators">
+      <view 
+        wx:for="{{bannerList}}" 
+        wx:key="id"
+        class="indicator-dot {{currentBannerIndex === index ? 'active' : ''}}"
+      />
+    </view>
+  </view>
+
+  <!-- 商品分类 -->
+  <view class="category-section">
+    <view class="category-list">
+      <view 
+        wx:for="{{categories}}" 
+        wx:key="id"
+        class="category-item {{currentCategory === item.id ? 'active' : ''}}"
+        bindtap="onCategoryChange"
+        data-id="{{item.id}}"
+      >
+        <text class="category-name">{{item.name}}</text>
+        <view class="category-indicator" wx:if="{{currentCategory === item.id}}"></view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 商品列表 - 使用 scroll-view 组件 -->
+  <scroll-view 
+    class="goods-scroll-view"
+    scroll-y="{{true}}"
+    scroll-top="{{scrollTop}}"
+    bindscroll="onScroll"
+    enhanced="{{true}}"
+    show-scrollbar="{{false}}"
+  >
+    <view class="goods-section">
+      <view class="goods-grid">
+        <view 
+          wx:for="{{goodsList}}" 
+          wx:key="id"
+          class="goods-card"
+          bindtap="onGoodsTap"
+          data-item="{{item}}"
+        >
+          <!-- 商品标签 -->
+          <view class="goods-tag" wx:if="{{item.tag}}">
+            <text class="tag-text">{{item.tag}}</text>
+          </view>
+          
+          <!-- 商品图片 -->
+          <view class="goods-image-wrapper">
+            <image 
+              class="goods-image" 
+              src="{{item.image}}" 
+              mode="aspectFill"
+              lazy-load="{{true}}"
+            />
+          </view>
+          
+          <!-- 商品信息 -->
+          <view class="goods-info">
+            <text class="goods-name">{{item.name}}</text>
+            <text class="goods-desc">{{item.description}}</text>
+            
+            <view class="goods-footer">
+              <view class="goods-price">
+                <text class="price-value">{{item.points}}</text>
+                <text class="price-unit">积分</text>
+                <text class="original-price" wx:if="{{item.originalPoints > item.points}}">{{item.originalPoints}}</text>
+              </view>
+              
+              <view class="goods-sales">
+                <text class="sales-text">已兑{{item.sales}}</text>
+              </view>
+            </view>
+            
+            <!-- 兑换按钮 -->
+            <view 
+              class="exchange-btn {{userPoints < item.points || item.stock <= 0 ? 'disabled' : ''}} {{exchangingId === item.id ? 'loading' : ''}}"
+            >
+              <view class="btn-text" wx:if="{{exchangingId !== item.id}}">
+                {{item.stock <= 0 ? '已售罄' : (userPoints < item.points ? '积分不足' : '立即兑换')}}
+              </view>
+              <view class="btn-loading" wx:else></view>
+            </view>
+          </view>
+        </view>
+      </view>
+      
+      <!-- 底部提示 -->
+      <view class="list-footer">
+        <text class="footer-text">— 已经到底啦 —</text>
+      </view>
+    </view>
+  </scroll-view>
+
+  <!-- 回到顶部按钮 -->
+  <view 
+    class="back-top-btn {{showBackTop ? 'show' : ''}}"
+    bindtap="scrollToTop"
+  >
+    <text class="back-top-icon">↑</text>
+  </view>
+
+  <!-- 积分规则弹窗 -->
+  <view class="rules-modal {{showRulesModal ? 'show' : ''}}" bindtap="hidePointsRules">
+    <view class="rules-content" catchtap="preventClose">
+      <view class="rules-header">
+        <text class="rules-title">积分规则</text>
+        <view class="rules-close" bindtap="hidePointsRules">
+          <text class="close-icon">×</text>
+        </view>
+      </view>
+      
+      <scroll-view class="rules-body" scroll-y="{{true}}">
+        <!-- 获取积分 -->
+        <view class="rules-section">
+          <view class="section-title">
+            <text class="title-emoji">💰</text>
+            <text class="title-text">如何获取积分</text>
+          </view>
+          <view class="rules-list">
+            <view class="rule-item" wx:for="{{pointsRules.earn}}" wx:key="id">
+              <text class="rule-name">{{item.name}}</text>
+              <text class="rule-points">+{{item.points}}积分</text>
+            </view>
+          </view>
+        </view>
+
+        <!-- 积分说明 -->
+        <view class="rules-section">
+          <view class="section-title">
+            <text class="title-emoji">📋</text>
+            <text class="title-text">积分说明</text>
+          </view>
+          <view class="rules-desc">
+            <view class="desc-item" wx:for="{{pointsRules.notes}}" wx:key="index">
+              <text class="desc-num">{{index + 1}}.</text>
+              <text class="desc-text">{{item}}</text>
+            </view>
+          </view>
+        </view>
+      </scroll-view>
+    </view>
+  </view>
+</view>

@@ -1,0 +1,73 @@
+<!--
+  分类记录页面
+  功能：展示用户的垃圾分类历史记录
+-->
+<view class="page-container">
+  <!-- 统计概览 -->
+  <view class="summary-section">
+    <view class="summary-card">
+      <view class="summary-item">
+        <text class="summary-value">{{totalCount}}</text>
+        <text class="summary-label">总分类次数</text>
+      </view>
+      <view class="summary-divider"></view>
+      <view class="summary-item">
+        <text class="summary-value">{{totalPoints}}</text>
+        <text class="summary-label">获得积分</text>
+      </view>
+      <view class="summary-divider"></view>
+      <view class="summary-item">
+        <text class="summary-value">{{continuousDays}}</text>
+        <text class="summary-label">连续天数</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 分类统计 -->
+  <view class="category-section">
+    <view class="section-title">分类统计</view>
+    <view class="category-grid">
+      <view 
+        wx:for="{{categoryStats}}" 
+        wx:key="id"
+        class="category-item"
+        style="--item-color: {{item.color}};"
+      >
+        <text class="category-emoji">{{item.emoji}}</text>
+        <text class="category-name">{{item.name}}</text>
+        <text class="category-count">{{item.count}}次</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 记录列表 -->
+  <view class="records-section">
+    <view class="section-title">分类记录</view>
+    <view class="records-list">
+      <view 
+        wx:for="{{recordList}}" 
+        wx:key="id"
+        class="record-item"
+      >
+        <view class="record-icon" style="background: {{item.bgColor}};">
+          <text class="record-emoji">{{item.emoji}}</text>
+        </view>
+        <view class="record-info">
+          <text class="record-name">{{item.trashName}}</text>
+          <text class="record-type">{{item.typeName}}</text>
+        </view>
+        <view class="record-right">
+          <text class="record-points">+{{item.points}}积分</text>
+          <text class="record-time">{{item.time}}</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 空状态 -->
+    <view class="empty-state" wx:if="{{recordList.length === 0}}">
+      <text class="empty-emoji">📋</text>
+      <text class="empty-text">暂无分类记录</text>
+      <text class="empty-hint">快去首页进行垃圾分类吧</text>
+    </view>
+  </view>
+</view>
