@@ -1,0 +1,78 @@
+<view class="chapter-container">
+  <view class="header-card">
+    <view class="header-content">
+      <view class="header-icon">🎯</view>
+      <view class="header-title">章节闯关</view>
+      <view class="header-subtitle">按章节系统学习垃圾分类知识</view>
+    </view>
+
+    <view class="progress-summary">
+      <view class="summary-item">
+        <view class="summary-value">{{completedCount}}</view>
+        <view class="summary-label">已完成</view>
+      </view>
+      <view class="summary-divider"></view>
+      <view class="summary-item">
+        <view class="summary-value">{{totalCount}}</view>
+        <view class="summary-label">总章节</view>
+      </view>
+    </view>
+  </view>
+
+  <view class="chapters-section">
+    <view class="section-title">选择章节</view>
+    <view class="chapters-list">
+      <view
+        class="chapter-item {{!item.unlocked ? 'locked' : ''}} {{item.completed ? 'completed' : ''}}"
+        wx:for="{{chapters}}"
+        wx:key="id"
+        data-chapter="{{item}}"
+        bindtap="onChapterTap"
+      >
+        <view class="chapter-number" style="background: {{item.color}}20; color: {{item.color}}">
+          {{item.id}}
+        </view>
+
+        <view class="chapter-info">
+          <view class="chapter-header">
+            <view class="chapter-name-row">
+              <text class="chapter-icon">{{item.icon}}</text>
+              <text class="chapter-name">{{item.name}}</text>
+            </view>
+            <view class="chapter-status">
+              <text wx:if="{{item.completed}}" class="status-completed">✓ 已完成</text>
+              <text wx:elif="{{!item.unlocked}}" class="status-locked">🔒 未解锁</text>
+              <text wx:else class="status-progress">{{item.progress}}%</text>
+            </view>
+          </view>
+
+          <view class="chapter-desc">{{item.description}}</view>
+
+          <view class="chapter-meta">
+            <text class="meta-item">📝 {{item.questionCount}} 题</text>
+            <text wx:if="{{item.unlocked && !item.completed}}" class="meta-item">⭐ 完成解锁下一章节</text>
+          </view>
+
+          <view class="chapter-progress-bar" wx:if="{{item.unlocked && !item.completed}}">
+            <view class="progress-track">
+              <view class="progress-fill" style="width: {{item.progress}}%; background: {{item.color}}"></view>
+            </view>
+          </view>
+        </view>
+
+        <view class="chapter-arrow" wx:if="{{item.unlocked}}">›</view>
+      </view>
+    </view>
+  </view>
+
+  <view class="tips-section">
+    <view class="tips-card">
+      <view class="tips-title">💡 学习提示</view>
+      <view class="tips-list">
+        <view class="tips-item">• 完成当前章节80%以上正确率解锁下一章节</view>
+        <view class="tips-item">• 每答对一题可获得对应难度的积分奖励</view>
+        <view class="tips-item">• 做错的题目会自动加入错题本</view>
+      </view>
+    </view>
+  </view>
+</view>

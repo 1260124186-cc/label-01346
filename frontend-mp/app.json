@@ -6,7 +6,13 @@
     "pages/profile/profile",
     "pages/records/records",
     "pages/points/points",
-    "pages/orders/orders"
+    "pages/orders/orders",
+    "pages/quiz/quiz",
+    "pages/quiz-play/quiz-play",
+    "pages/quiz-daily/quiz-daily",
+    "pages/quiz-chapter/quiz-chapter",
+    "pages/quiz-wrong/quiz-wrong",
+    "pages/quiz-difficulty/quiz-difficulty"
   ],
   "window": {
     "backgroundTextStyle": "dark",

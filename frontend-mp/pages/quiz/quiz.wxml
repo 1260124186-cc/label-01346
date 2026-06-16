@@ -1,0 +1,89 @@
+<view class="quiz-container">
+  <view class="header-card">
+    <view class="header-content">
+      <view class="header-title">知识问答</view>
+      <view class="header-subtitle">学习垃圾分类知识，赢取积分奖励</view>
+      <view class="points-info">
+        <text class="points-label">当前积分</text>
+        <text class="points-value">{{userPoints}}</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="quick-entries">
+    <view class="section-title">快捷入口</view>
+    <view class="entries-grid">
+      <view
+        class="entry-item"
+        wx:for="{{quickEntries}}"
+        wx:key="id"
+        data-id="{{item.id}}"
+        bindtap="onQuickEntryTap"
+        style="--item-color: {{item.color}}"
+      >
+        <view class="entry-icon">{{item.icon}}</view>
+        <view class="entry-name">{{item.name}}</view>
+        <view class="entry-desc">{{item.description}}</view>
+        <view class="entry-badge" wx:if="{{item.badge}}">{{item.badge}}</view>
+      </view>
+    </view>
+  </view>
+
+  <view class="chapters-section">
+    <view class="section-title">章节闯关</view>
+    <view class="chapters-list">
+      <view
+        class="chapter-item {{!item.unlocked ? 'locked' : ''}} {{item.completed ? 'completed' : ''}}"
+        wx:for="{{chapters}}"
+        wx:key="id"
+        data-chapter="{{item}}"
+        bindtap="onChapterTap"
+      >
+        <view class="chapter-icon" style="background: {{item.color}}20; color: {{item.color}}">
+          {{item.icon}}
+        </view>
+        <view class="chapter-info">
+          <view class="chapter-name">{{item.name}}</view>
+          <view class="chapter-desc">{{item.description}}</view>
+          <view class="chapter-progress" wx:if="{{item.unlocked && !item.completed}}">
+            <view class="progress-bar">
+              <view class="progress-fill" style="width: {{item.progress}}%; background: {{item.color}}"></view>
+            </view>
+            <text class="progress-text">{{item.progress}}%</text>
+          </view>
+          <view class="chapter-status" wx:if="{{item.completed}}">
+            <text class="status-completed">✓ 已完成</text>
+          </view>
+          <view class="chapter-status" wx:if="{{!item.unlocked}}">
+            <text class="status-locked">🔒 未解锁</text>
+          </view>
+        </view>
+        <view class="chapter-arrow" wx:if="{{item.unlocked}}">›</view>
+      </view>
+    </view>
+  </view>
+
+  <view class="difficulty-section">
+    <view class="section-title">难度分层</view>
+    <view class="difficulty-list">
+      <view
+        class="difficulty-item"
+        wx:for="{{difficulties}}"
+        wx:key="id"
+        data-difficulty="{{item}}"
+        bindtap="onDifficultyTap"
+        style="--diff-color: {{item.color}}"
+      >
+        <view class="difficulty-icon">{{item.icon}}</view>
+        <view class="difficulty-info">
+          <view class="difficulty-name">{{item.name}}</view>
+          <view class="difficulty-desc">{{item.description}}</view>
+        </view>
+        <view class="difficulty-points">
+          <text class="points-label">每题</text>
+          <text class="points-value">+{{item.pointsPerQuestion}}积分</text>
+        </view>
+      </view>
+    </view>
+  </view>
+</view>
