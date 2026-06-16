@@ -341,11 +341,7 @@
 
 /* ==================== 功能菜单（分组） ==================== */
 .menu-section {
-  padding: 0 32rpx;
-}
-
-.menu-group {
-  margin-bottom: 32rpx;
+  padding: 0 32rpx 24rpx;
 }
 
 .menu-group-title {
@@ -358,29 +354,18 @@
   color: #2D3436;
 }
 
-.menu-group-cells {
-  background: rgba(255, 255, 255, 0.8);
+/* weUI 样式覆盖 */
+.menu-cells {
+  background: rgba(255, 255, 255, 0.8) !important;
   backdrop-filter: blur(20rpx);
   -webkit-backdrop-filter: blur(20rpx);
-  border-radius: 24rpx;
+  border-radius: 24rpx !important;
   overflow: hidden;
   box-shadow: 0 4rpx 20rpx rgba(91, 189, 114, 0.08);
 }
 
-.menu-cell-item {
-  display: flex;
-  align-items: center;
-  padding: 28rpx 28rpx;
-  border-bottom: 1rpx solid rgba(0, 0, 0, 0.05);
-  transition: background 0.2s;
-}
-
-.menu-cell-item:last-child {
-  border-bottom: none;
-}
-
-.menu-cell-item:active {
-  background: rgba(91, 189, 114, 0.04);
+.menu-cell {
+  padding: 28rpx 32rpx !important;
 }
 
 .menu-icon-wrapper {
@@ -405,10 +390,8 @@
 }
 
 .menu-content {
-  flex: 1;
   display: flex;
   flex-direction: column;
-  min-width: 0;
 }
 
 .menu-title-text {
@@ -421,17 +404,6 @@
 .menu-desc {
   font-size: 24rpx;
   color: #B2BEC3;
-}
-
-.menu-arrow {
-  margin-left: 12rpx;
-  flex-shrink: 0;
-}
-
-.arrow-icon {
-  font-size: 32rpx;
-  color: #DFE6E9;
-  font-weight: 300;
 }
 
 /* ==================== 版本信息 ==================== */

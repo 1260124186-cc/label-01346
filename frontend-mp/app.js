@@ -17,6 +17,7 @@ App({
     this.initClassifyRecords()
     this.initQuizRecords()
     this.initSignInRecords()
+    this.initDailyQuizRecords()
     this.getSystemInfo()
   },
 
@@ -320,6 +321,59 @@ App({
   },
 
   /**
+   * 初始化每日一练完成记录（独立于签到记录）
+   */
+  initDailyQuizRecords() {
+    const records = wx.getStorageSync('dailyQuizRecords')
+    if (records) {
+      this.globalData.dailyQuizRecords = records
+    } else {
+      const now = new Date()
+      const records = []
+      for (let i = 0; i < 10; i++) {
+        const date = new Date(now.getTime() - 86400000 * i)
+        records.push(formatDate(date, 'YYYY-MM-DD'))
+      }
+      records.reverse()
+      this.globalData.dailyQuizRecords = records
+      wx.setStorageSync('dailyQuizRecords', records)
+    }
+    console.log('[App] 每日一练记录已加载', this.globalData.dailyQuizRecords.length, '条')
+  },
+
+  /**
+   * 添加每日一练完成记录
+   * @param {string} dateStr 日期字符串 YYYY-MM-DD
+   */
+  addDailyQuizRecord(dateStr) {
+    const records = this.globalData.dailyQuizRecords || []
+    if (!records.includes(dateStr)) {
+      records.push(dateStr)
+      this.globalData.dailyQuizRecords = records
+      wx.setStorageSync('dailyQuizRecords', records)
+      console.log('[App] 新增每日一练记录', dateStr)
+    }
+  },
+
+  /**
+   * 获取每日一练完成记录
+   * @returns {Array} 日期数组
+   */
+  getDailyQuizRecords() {
+    return this.globalData.dailyQuizRecords || []
+  },
+
+  /**
+   * 检查今日是否已完成每日一练
+   * @returns {boolean} 是否已完成
+   */
+  isTodayDailyQuizDone() {
+    const today = formatDate(new Date(), 'YYYY-MM-DD')
+    const records = this.getDailyQuizRecords()
+    return records.includes(today)
+  },
+
+  /**
    * 检查今日是否已签到
    * @returns {boolean} 是否已签到
    */
@@ -331,11 +385,14 @@ App({
 
   /**
    * 获取连续打卡天数（统一逻辑：签到 + 每日一练合并计算）
+   * 一天内任意完成签到或答题都算当天打卡
    * @returns {number} 连续天数
    */
   getStreakDays() {
     const signInRecords = this.getSignInRecords()
-    return this.calculateContinuousDays(signInRecords)
+    const dailyQuizRecords = this.getDailyQuizRecords()
+    const mergedRecords = Array.from(new Set([...signInRecords, ...dailyQuizRecords]))
+    return this.calculateContinuousDays(mergedRecords)
   },
 
   /**
@@ -395,6 +452,7 @@ App({
     const classifyRecords = this.getClassifyRecords()
     const pointsRecords = this.getPointsRecords()
     const signInRecords = this.getSignInRecords()
+    const dailyQuizRecords = this.getDailyQuizRecords()
 
     const classifyCount = classifyRecords.length
 
@@ -402,7 +460,8 @@ App({
       .filter(item => item.type === 'earn')
       .reduce((sum, item) => sum + item.points, 0)
 
-    const continuousDays = this.calculateContinuousDays(signInRecords)
+    const mergedRecords = Array.from(new Set([...signInRecords, ...dailyQuizRecords]))
+    const continuousDays = this.calculateContinuousDays(mergedRecords)
 
     return {
       classifyCount,

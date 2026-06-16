@@ -45,32 +45,34 @@ describe('quiz-daily page', () => {
   })
 
   describe('checkDailyCompleted', () => {
-    test('签到记录中无今日时 dailyCompleted 为 false', () => {
+    test('每日一练记录中无今日时 dailyCompleted 为 false', () => {
       const app = global.getApp()
-      app.globalData.signInRecords = ['2026-06-15']
+      app.globalData.dailyQuizRecords = ['2026-06-15']
       page.checkDailyCompleted()
       expect(page.data.dailyCompleted).toBe(false)
     })
 
-    test('签到记录中有今日时 dailyCompleted 为 true', () => {
+    test('每日一练记录中有今日时 dailyCompleted 为 true', () => {
       const app = global.getApp()
-      app.globalData.signInRecords = ['2026-06-16', '2026-06-15']
+      app.globalData.dailyQuizRecords = ['2026-06-16', '2026-06-15']
       page.checkDailyCompleted()
       expect(page.data.dailyCompleted).toBe(true)
     })
   })
 
   describe('loadStreakDays', () => {
-    test('无签到记录时 streakDays 为 0', () => {
+    test('无记录时 streakDays 为 0', () => {
       const app = global.getApp()
       app.globalData.signInRecords = []
+      app.globalData.dailyQuizRecords = []
       page.loadStreakDays()
       expect(app.getStreakDays).toHaveBeenCalled()
     })
 
-    test('从 app.getStreakDays 获取连续天数', () => {
+    test('从 app.getStreakDays 获取连续天数（合并签到与每日一练）', () => {
       const app = global.getApp()
-      app.globalData.signInRecords = ['2026-06-16', '2026-06-15', '2026-06-14']
+      app.globalData.signInRecords = ['2026-06-16']
+      app.globalData.dailyQuizRecords = ['2026-06-15', '2026-06-14']
       page.loadStreakDays()
       expect(app.getStreakDays).toHaveBeenCalled()
     })

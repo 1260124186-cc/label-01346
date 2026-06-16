@@ -43,8 +43,8 @@ Page({
 
   checkDailyCompleted() {
     const today = formatDate(new Date(), 'YYYY-MM-DD')
-    const signInRecords = app.getSignInRecords()
-    const dailyCompleted = signInRecords.includes(today)
+    const dailyQuizRecords = app.getDailyQuizRecords()
+    const dailyCompleted = dailyQuizRecords.includes(today)
 
     this.setData({
       dailyCompleted

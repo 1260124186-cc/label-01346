@@ -320,7 +320,7 @@ Page({
     if (this.data.quizType !== 'daily') return
 
     const today = formatDate(new Date(), 'YYYY-MM-DD')
-    app.addSignInRecord(today)
+    app.addDailyQuizRecord(today)
   },
 
   onRestart() {

@@ -147,6 +147,11 @@ const defaultPointsRecords = [
 
 const { TRASH_TYPES } = require('../frontend-mp/utils/constants')
 
+const defaultDailyQuizRecords = [
+  '2026-06-02', '2026-06-03', '2026-06-04', '2026-06-05', '2026-06-06',
+  '2026-06-07', '2026-06-08', '2026-06-09', '2026-06-10', '2026-06-11'
+]
+
 const createAppMock = () => ({
   globalData: {
     userInfo: {
@@ -161,6 +166,7 @@ const createAppMock = () => ({
     classifyRecords: [...defaultClassifyRecords],
     quizRecords: [...defaultQuizRecords],
     signInRecords: [...defaultSignInRecords],
+    dailyQuizRecords: [...defaultDailyQuizRecords],
     systemInfo: null,
     statusBarHeight: 44,
     screenHeight: 812,
@@ -229,6 +235,21 @@ const createAppMock = () => ({
     const app = global.getApp()
     return app.globalData.signInRecords || []
   }),
+  addDailyQuizRecord: jest.fn((dateStr) => {
+    const app = global.getApp()
+    if (!app.globalData.dailyQuizRecords.includes(dateStr)) {
+      app.globalData.dailyQuizRecords.push(dateStr)
+    }
+  }),
+  getDailyQuizRecords: jest.fn(() => {
+    const app = global.getApp()
+    return app.globalData.dailyQuizRecords || []
+  }),
+  isTodayDailyQuizDone: jest.fn(() => {
+    const app = global.getApp()
+    const today = '2026-06-16'
+    return (app.globalData.dailyQuizRecords || []).includes(today)
+  }),
   isTodaySignedIn: jest.fn(() => {
     const app = global.getApp()
     const today = '2026-06-16'
@@ -236,9 +257,11 @@ const createAppMock = () => ({
   }),
   getStreakDays: jest.fn(() => {
     const app = global.getApp()
-    const records = app.globalData.signInRecords || []
-    if (!records || records.length === 0) return 0
-    const sorted = [...records].sort((a, b) => new Date(b) - new Date(a))
+    const signInRecords = app.globalData.signInRecords || []
+    const dailyQuizRecords = app.globalData.dailyQuizRecords || []
+    const mergedRecords = Array.from(new Set([...signInRecords, ...dailyQuizRecords]))
+    if (!mergedRecords || mergedRecords.length === 0) return 0
+    const sorted = [...mergedRecords].sort((a, b) => new Date(b) - new Date(a))
     const today = '2026-06-16'
     const yesterday = '2026-06-15'
     if (sorted[0] !== today && sorted[0] !== yesterday) return 0
@@ -276,7 +299,10 @@ const createAppMock = () => ({
       .filter(r => r.type === 'earn')
       .reduce((sum, r) => sum + r.points, 0)
 
-    const sortedDates = [...(app.globalData.signInRecords || [])].sort((a, b) => new Date(b) - new Date(a))
+    const signInRecords = app.globalData.signInRecords || []
+    const dailyQuizRecords = app.globalData.dailyQuizRecords || []
+    const mergedRecords = Array.from(new Set([...signInRecords, ...dailyQuizRecords]))
+    const sortedDates = [...mergedRecords].sort((a, b) => new Date(b) - new Date(a))
     let continuousDays = 0
     if (sortedDates.length > 0) {
       const today = '2026-06-16'
