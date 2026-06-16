@@ -4,7 +4,7 @@
  */
 const app = getApp()
 const { getDailyQuestions } = require('../../utils/constants')
-const { navigateTo, showToast, getStorage, setStorage } = require('../../utils/util')
+const { navigateTo, showToast, getStorage, setStorage, formatDate } = require('../../utils/util')
 
 Page({
   data: {
@@ -42,9 +42,9 @@ Page({
   },
 
   checkDailyCompleted() {
-    const today = new Date().toDateString()
-    const lastDailyDate = getStorage('lastDailyQuizDate', '')
-    const dailyCompleted = lastDailyDate === today
+    const today = formatDate(new Date(), 'YYYY-MM-DD')
+    const signInRecords = app.getSignInRecords()
+    const dailyCompleted = signInRecords.includes(today)
 
     this.setData({
       dailyCompleted
@@ -52,7 +52,7 @@ Page({
   },
 
   loadStreakDays() {
-    const streakDays = getStorage('quizStreakDays', 0)
+    const streakDays = app.getStreakDays()
     this.setData({
       streakDays
     })

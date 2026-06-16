@@ -10,7 +10,7 @@ App({
    */
   onLaunch() {
     console.log('[App] 小程序启动')
-    
+
     this.initUserInfo()
     this.initOrders()
     this.initPointsRecords()
@@ -317,6 +317,74 @@ App({
 
   getSignInRecords() {
     return this.globalData.signInRecords || []
+  },
+
+  /**
+   * 检查今日是否已签到
+   * @returns {boolean} 是否已签到
+   */
+  isTodaySignedIn() {
+    const today = formatDate(new Date(), 'YYYY-MM-DD')
+    const records = this.getSignInRecords()
+    return records.includes(today)
+  },
+
+  /**
+   * 获取连续打卡天数（统一逻辑：签到 + 每日一练合并计算）
+   * @returns {number} 连续天数
+   */
+  getStreakDays() {
+    const signInRecords = this.getSignInRecords()
+    return this.calculateContinuousDays(signInRecords)
+  },
+
+  /**
+   * 执行签到
+   * @returns {Object} { success, points, bonus, streakDays, alreadySigned }
+   */
+  doSignIn() {
+    const today = formatDate(new Date(), 'YYYY-MM-DD')
+
+    if (this.isTodaySignedIn()) {
+      return {
+        success: false,
+        alreadySigned: true,
+        points: 0,
+        bonus: 0,
+        streakDays: this.getStreakDays()
+      }
+    }
+
+    this.addSignInRecord(today)
+
+    const basePoints = 5
+    this.updateUserPoints(basePoints, {
+      category: 'signin',
+      title: '每日签到',
+      desc: '每日签到奖励',
+      emoji: '📅'
+    })
+
+    const streakDays = this.getStreakDays()
+    let bonus = 0
+
+    if (streakDays > 0 && streakDays % 7 === 0) {
+      bonus = 50
+      this.updateUserPoints(bonus, {
+        category: 'signin',
+        title: '连续签到奖励',
+        desc: `连续签到${streakDays}天`,
+        emoji: '🎁'
+      })
+    }
+
+    return {
+      success: true,
+      alreadySigned: false,
+      points: basePoints,
+      bonus,
+      streakDays
+    }
   },
 
   /**

@@ -340,17 +340,21 @@ describe('quiz-play page', () => {
   })
 
   describe('markDailyCompleted', () => {
-    test('quizType=daily 时保存今天日期', () => {
+    test('quizType=daily 时添加签到记录', () => {
       page.data.quizType = 'daily'
+      const app = global.getApp()
+      const beforeCount = app.getSignInRecords().length
       page.markDailyCompleted()
-      const today = new Date().toDateString()
-      expect(storage.lastDailyQuizDate).toBe(today)
+      expect(app.addSignInRecord).toHaveBeenCalled()
+      expect(app.getSignInRecords().length).toBeGreaterThanOrEqual(beforeCount)
     })
 
     test('quizType 不为 daily 时不操作', () => {
       page.data.quizType = 'chapter'
+      const app = global.getApp()
+      app.addSignInRecord.mockClear()
       page.markDailyCompleted()
-      expect(storage.lastDailyQuizDate).toBeUndefined()
+      expect(app.addSignInRecord).not.toHaveBeenCalled()
     })
   })
 

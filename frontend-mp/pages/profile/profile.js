@@ -35,7 +35,9 @@ Page({
       { id: 'days', label: '连续打卡', value: 0 }
     ],
     // 是否正在上传头像
-    isUploading: false
+    isUploading: false,
+    // 签到状态
+    isSignedToday: false
   },
 
   /**
@@ -80,11 +82,17 @@ Page({
           { id: 'classify', label: '分类次数', value: stats.classifyCount },
           { id: 'points', label: '累计积分', value: stats.totalEarnedPoints },
           { id: 'days', label: '连续打卡', value: stats.continuousDays }
-        ]
+        ],
+        isSignedToday: app.isTodaySignedIn()
       })
 
       console.log('[Profile] 用户信息已刷新', userInfo, stats)
     }
+  },
+
+  goToSignIn() {
+    console.log('[Profile] 点击签到')
+    navigateTo('/pages/signin/signin')
   },
 
   /**

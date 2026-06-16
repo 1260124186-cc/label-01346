@@ -12,7 +12,8 @@
     "pages/quiz-daily/quiz-daily",
     "pages/quiz-chapter/quiz-chapter",
     "pages/quiz-wrong/quiz-wrong",
-    "pages/quiz-difficulty/quiz-difficulty"
+    "pages/quiz-difficulty/quiz-difficulty",
+    "pages/signin/signin"
   ],
   "window": {
     "backgroundTextStyle": "dark",

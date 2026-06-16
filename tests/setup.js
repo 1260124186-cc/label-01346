@@ -229,6 +229,46 @@ const createAppMock = () => ({
     const app = global.getApp()
     return app.globalData.signInRecords || []
   }),
+  isTodaySignedIn: jest.fn(() => {
+    const app = global.getApp()
+    const today = '2026-06-16'
+    return (app.globalData.signInRecords || []).includes(today)
+  }),
+  getStreakDays: jest.fn(() => {
+    const app = global.getApp()
+    const records = app.globalData.signInRecords || []
+    if (!records || records.length === 0) return 0
+    const sorted = [...records].sort((a, b) => new Date(b) - new Date(a))
+    const today = '2026-06-16'
+    const yesterday = '2026-06-15'
+    if (sorted[0] !== today && sorted[0] !== yesterday) return 0
+    let days = 1
+    for (let i = 1; i < sorted.length; i++) {
+      const prev = new Date(sorted[i - 1])
+      const curr = new Date(sorted[i])
+      const diff = Math.round((prev - curr) / 86400000)
+      if (diff === 1) days++
+      else break
+    }
+    return days
+  }),
+  doSignIn: jest.fn(() => {
+    const app = global.getApp()
+    const today = '2026-06-16'
+    if (app.isTodaySignedIn()) {
+      return { success: false, alreadySigned: true, points: 0, bonus: 0, streakDays: app.getStreakDays() }
+    }
+    app.addSignInRecord(today)
+    const basePoints = 5
+    app.updateUserPoints(basePoints, { category: 'signin', title: '每日签到', desc: '每日签到奖励', emoji: '📅' })
+    const streakDays = app.getStreakDays()
+    let bonus = 0
+    if (streakDays > 0 && streakDays % 7 === 0) {
+      bonus = 50
+      app.updateUserPoints(bonus, { category: 'signin', title: '连续签到奖励', desc: `连续签到${streakDays}天`, emoji: '🎁' })
+    }
+    return { success: true, alreadySigned: false, points: basePoints, bonus, streakDays }
+  }),
   getStatistics: jest.fn(() => {
     const app = global.getApp()
     const classifyCount = (app.globalData.classifyRecords || []).length

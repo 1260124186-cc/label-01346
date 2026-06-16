@@ -1,0 +1,108 @@
+<view class="signin-container">
+  <view class="header-card">
+    <view class="streak-info">
+      <view class="streak-emoji">🔥</view>
+      <view class="streak-content">
+        <view class="streak-days">{{streakDays}}</view>
+        <view class="streak-label">连续打卡</view>
+      </view>
+    </view>
+    <view class="points-info">
+      <view class="points-emoji">💰</view>
+      <view class="points-content">
+        <view class="points-value">{{userPoints}}</view>
+        <view class="points-label">当前积分</view>
+      </view>
+    </view>
+  </view>
+
+  <view class="calendar-card">
+    <view class="calendar-header">
+      <view class="nav-btn" bindtap="onPrevMonth">
+        <text class="nav-icon">‹</text>
+      </view>
+      <view class="month-title">{{currentYear}}年{{currentMonth + 1}}月</view>
+      <view class="nav-btn" bindtap="onNextMonth">
+        <text class="nav-icon">›</text>
+      </view>
+    </view>
+
+    <view class="week-header">
+      <view wx:for="{{weekDays}}" wx:key="*this" class="week-item">{{item}}</view>
+    </view>
+
+    <view class="calendar-grid">
+      <view
+        wx:for="{{calendarDays}}"
+        wx:key="index"
+        class="day-cell {{item.isEmpty ? 'empty' : ''}} {{item.isSigned ? 'signed' : ''}} {{item.isToday ? 'today' : ''}} {{item.isFuture ? 'future' : ''}}"
+        bindtap="onDayTap"
+        data-item="{{item}}"
+      >
+        <view wx:if="{{!item.isEmpty}}" class="day-content">
+          <text class="day-number">{{item.day}}</text>
+          <text wx:if="{{item.isSigned}}" class="day-check">✓</text>
+          <text wx:elif="{{item.isToday && !item.isSigned}}" class="day-tip">签</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="calendar-legend">
+      <view class="legend-item">
+        <view class="legend-dot signed"></view>
+        <text class="legend-text">已签到</text>
+      </view>
+      <view class="legend-item">
+        <view class="legend-dot today"></view>
+        <text class="legend-text">今日</text>
+      </view>
+      <view class="legend-item">
+        <view class="legend-dot future"></view>
+        <text class="legend-text">未签到</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="action-section">
+    <view class="signin-btn {{isSignedToday ? 'disabled' : ''}}" bindtap="onSignIn">
+      {{isSignedToday ? '今日已签到' : '立即签到'}}
+    </view>
+    <view class="signin-tip">
+      <text wx:if="{{isSignedToday}}">明天继续打卡，连续7天额外奖励50积分</text>
+      <text wx:else>每日签到可获得5积分，连续7天额外奖励50积分</text>
+    </view>
+  </view>
+
+  <view class="reward-section">
+    <view class="section-title">签到奖励</view>
+    <view class="reward-list">
+      <view class="reward-item">
+        <view class="reward-day">每日</view>
+        <view class="reward-points">+5积分</view>
+      </view>
+      <view class="reward-item highlight">
+        <view class="reward-day">连续7天</view>
+        <view class="reward-points">+50积分</view>
+      </view>
+    </view>
+  </view>
+
+  <view class="signin-modal" wx:if="{{showSignResult}}" catchtap="onCloseResult">
+    <view class="modal-content" catchtap="">
+      <view class="modal-emoji">🎉</view>
+      <view class="modal-title">签到成功</view>
+      <view class="modal-streak">连续打卡 {{signResult.streakDays}} 天</view>
+      <view class="modal-points">
+        <view class="points-row">
+          <text class="points-label">签到积分</text>
+          <text class="points-value">+{{signResult.points}}</text>
+        </view>
+        <view class="points-row" wx:if="{{signResult.bonus > 0}}">
+          <text class="points-label">连续奖励</text>
+          <text class="points-value bonus">+{{signResult.bonus}}</text>
+        </view>
+      </view>
+      <view class="modal-btn" bindtap="onCloseResult">太棒了</view>
+    </view>
+  </view>
+</view>

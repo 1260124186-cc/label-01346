@@ -319,8 +319,8 @@ Page({
   markDailyCompleted() {
     if (this.data.quizType !== 'daily') return
 
-    const today = new Date().toDateString()
-    setStorage('lastDailyQuizDate', today)
+    const today = formatDate(new Date(), 'YYYY-MM-DD')
+    app.addSignInRecord(today)
   },
 
   onRestart() {

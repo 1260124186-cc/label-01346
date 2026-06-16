@@ -18,7 +18,10 @@ Page({
     // 四种垃圾分类数据
     trashTypes: TRASH_TYPES,
     // 页面加载状态
-    isLoading: false
+    isLoading: false,
+    // 签到相关
+    isSignedToday: false,
+    streakDays: 0
   },
 
   /**
@@ -34,14 +37,27 @@ Page({
    */
   onShow() {
     console.log('[Index] 页面显示')
+    this.refreshSignInStatus()
   },
 
   /**
    * 初始化页面数据
    */
   initPageData() {
-    // 可以在这里进行数据初始化或从服务器获取数据
     console.log('[Index] 初始化页面数据')
+    this.refreshSignInStatus()
+  },
+
+  refreshSignInStatus() {
+    this.setData({
+      isSignedToday: app.isTodaySignedIn(),
+      streakDays: app.getStreakDays()
+    })
+  },
+
+  goToSignIn() {
+    console.log('[Index] 点击每日签到')
+    navigateTo('/pages/signin/signin')
   },
 
   /**

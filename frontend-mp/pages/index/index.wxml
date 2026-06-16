@@ -47,6 +47,24 @@
     </view>
   </view>
 
+  <!-- 每日签到入口 -->
+  <view class="signin-entry-section" bindtap="goToSignIn">
+    <view class="signin-entry-card">
+      <view class="signin-entry-left">
+        <view class="signin-entry-emoji">{{isSignedToday ? '✅' : '📅'}}</view>
+        <view class="signin-entry-text">
+          <view class="signin-entry-title">{{isSignedToday ? '今日已签到' : '每日签到'}}</view>
+          <view class="signin-entry-subtitle">
+            连续打卡 {{streakDays}} 天 · 每日+5积分，连续7天+50积分
+          </view>
+        </view>
+      </view>
+      <view class="signin-entry-btn {{isSignedToday ? 'done' : ''}}">
+        {{isSignedToday ? '已完成' : '去签到'}}
+      </view>
+    </view>
+  </view>
+
   <!-- 快捷功能区域 -->
   <view class="quick-actions-section">
     <view class="quick-actions-grid">

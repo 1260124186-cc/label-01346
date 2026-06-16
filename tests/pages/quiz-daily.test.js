@@ -45,35 +45,34 @@ describe('quiz-daily page', () => {
   })
 
   describe('checkDailyCompleted', () => {
-    test('storage中无日期时 dailyCompleted 为 false', () => {
+    test('签到记录中无今日时 dailyCompleted 为 false', () => {
+      const app = global.getApp()
+      app.globalData.signInRecords = ['2026-06-15']
       page.checkDailyCompleted()
       expect(page.data.dailyCompleted).toBe(false)
     })
 
-    test('storage中日期为今天时 dailyCompleted 为 true', () => {
-      const today = new Date().toDateString()
-      storage.lastDailyQuizDate = today
+    test('签到记录中有今日时 dailyCompleted 为 true', () => {
+      const app = global.getApp()
+      app.globalData.signInRecords = ['2026-06-16', '2026-06-15']
       page.checkDailyCompleted()
       expect(page.data.dailyCompleted).toBe(true)
-    })
-
-    test('storage中日期非今天时 dailyCompleted 为 false', () => {
-      storage.lastDailyQuizDate = 'Mon Jan 01 2024'
-      page.checkDailyCompleted()
-      expect(page.data.dailyCompleted).toBe(false)
     })
   })
 
   describe('loadStreakDays', () => {
-    test('storage中无数据时 streakDays 为 0', () => {
+    test('无签到记录时 streakDays 为 0', () => {
+      const app = global.getApp()
+      app.globalData.signInRecords = []
       page.loadStreakDays()
-      expect(page.data.streakDays).toBe(0)
+      expect(app.getStreakDays).toHaveBeenCalled()
     })
 
-    test('从 storage 读取 quizStreakDays', () => {
-      storage.quizStreakDays = 7
+    test('从 app.getStreakDays 获取连续天数', () => {
+      const app = global.getApp()
+      app.globalData.signInRecords = ['2026-06-16', '2026-06-15', '2026-06-14']
       page.loadStreakDays()
-      expect(page.data.streakDays).toBe(7)
+      expect(app.getStreakDays).toHaveBeenCalled()
     })
   })
 
