@@ -67,7 +67,7 @@
 
   <!-- 快捷功能区域 -->
   <view class="quick-actions-section">
-    <view class="quick-actions-grid">
+    <view class="quick-actions-grid six-grid">
       <view class="quick-action-item" bindtap="goToQuiz">
         <view class="quick-action-icon-wrapper" style="background: rgba(91, 189, 114, 0.1);">
           <text class="quick-action-emoji">❓</text>
@@ -79,6 +79,18 @@
           <text class="quick-action-emoji">📅</text>
         </view>
         <text class="quick-action-name">每日一练</text>
+      </view>
+      <view class="quick-action-item" bindtap="goToSortPracticeRandom">
+        <view class="quick-action-icon-wrapper" style="background: rgba(46, 204, 113, 0.1);">
+          <text class="quick-action-emoji">♻️</text>
+        </view>
+        <text class="quick-action-name">分类练习</text>
+      </view>
+      <view class="quick-action-item" bindtap="goToSortPracticeWrong">
+        <view class="quick-action-icon-wrapper" style="background: rgba(231, 76, 60, 0.1);">
+          <text class="quick-action-emoji">📝</text>
+        </view>
+        <text class="quick-action-name">易错题</text>
       </view>
       <view class="quick-action-item" bindtap="goToExchange">
         <view class="quick-action-icon-wrapper" style="background: rgba(243, 156, 18, 0.1);">

@@ -165,6 +165,26 @@ Page({
   },
 
   /**
+   * 跳转到垃圾分类练习（随机混合模式）
+   */
+  goToSortPracticeRandom() {
+    console.log('[Index] 点击垃圾分类练习（随机混合）')
+    navigateTo('/pages/sort-practice/sort-practice', {
+      mode: 'random'
+    })
+  },
+
+  /**
+   * 跳转到垃圾分类练习（易错题模式）
+   */
+  goToSortPracticeWrong() {
+    console.log('[Index] 点击垃圾分类练习（易错题）')
+    navigateTo('/pages/sort-practice/sort-practice', {
+      mode: 'wrong'
+    })
+  },
+
+  /**
    * 跳转到积分兑换页面
    */
   goToExchange() {

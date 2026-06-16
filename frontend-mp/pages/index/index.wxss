@@ -161,6 +161,17 @@
   border: 1rpx solid rgba(255, 255, 255, 0.8);
 }
 
+.quick-actions-grid.six-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 32rpx 16rpx;
+  padding: 32rpx 24rpx;
+}
+
+.quick-actions-grid.six-grid .quick-action-item {
+  flex: none;
+}
+
 .quick-action-item {
   display: flex;
   flex-direction: column;

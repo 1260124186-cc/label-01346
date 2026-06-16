@@ -26,17 +26,17 @@ Page({
    */
   onLoad(options) {
     console.log('[Classify] 页面加载，接收参数：', options)
-    
+
     // 接收页面传递的参数
     const { id, name } = options
-    
+
     if (id) {
       this.initClassifyData(parseInt(id))
     } else {
       // 如果没有传递ID，默认显示第一个分类
       this.initClassifyData(1)
     }
-    
+
     // 设置导航栏标题（需要解码 URL 编码的中文）
     if (name) {
       wx.setNavigationBarTitle({
@@ -51,22 +51,22 @@ Page({
    */
   initClassifyData(id) {
     console.log('[Classify] 初始化分类数据，ID：', id)
-    
+
     // 根据ID查找对应的分类数据
     const classifyData = TRASH_TYPES.find(item => item.id === id)
-    
+
     if (classifyData) {
       this.setData({
         classifyId: id,
         classifyData: classifyData,
         isLoading: false
       })
-      
+
       // 设置导航栏标题
       wx.setNavigationBarTitle({
         title: classifyData.name
       })
-      
+
       // 设置导航栏颜色
       wx.setNavigationBarColor({
         frontColor: '#ffffff',
@@ -76,7 +76,7 @@ Page({
           timingFunc: 'easeIn'
         }
       })
-      
+
       console.log('[Classify] 分类数据加载成功', classifyData.name)
     } else {
       console.error('[Classify] 未找到对应的分类数据')
@@ -94,10 +94,10 @@ Page({
   onSwitchType(e) {
     const { id } = e.currentTarget.dataset
     console.log('[Classify] 切换分类', id)
-    
+
     if (id !== this.data.classifyId) {
       this.setData({ isLoading: true })
-      
+
       setTimeout(() => {
         this.initClassifyData(id)
       }, 200)
@@ -111,13 +111,23 @@ Page({
   onExampleTap(e) {
     const { item } = e.currentTarget.dataset
     console.log('[Classify] 点击示例', item)
-    
-    wx.showModal({
-      title: item.name,
-      content: item.desc,
-      showCancel: false,
-      confirmText: '知道了',
-      confirmColor: this.data.classifyData.color
+
+    wx.showActionSheet({
+      itemList: ['查看详情说明', '开始练习此类垃圾'],
+      itemColor: '#2D3436',
+      success: (res) => {
+        if (res.tapIndex === 0) {
+          wx.showModal({
+            title: item.name,
+            content: item.desc,
+            showCancel: false,
+            confirmText: '知道了',
+            confirmColor: this.data.classifyData.color
+          })
+        } else if (res.tapIndex === 1) {
+          this.startPractice()
+        }
+      }
     })
   },
 
@@ -128,7 +138,7 @@ Page({
   onExampleLongPress(e) {
     const { item } = e.currentTarget.dataset
     console.log('[Classify] 长按示例', item)
-    
+
     wx.showActionSheet({
       itemList: ['查看详情', '开始练习此类垃圾'],
       itemColor: '#2D3436',
@@ -148,7 +158,7 @@ Page({
   startPractice() {
     const { classifyId, classifyData } = this.data
     console.log('[Classify] 开始练习', classifyData.name)
-    
+
     navigateTo('/pages/sort-practice/sort-practice', {
       mode: 'category',
       typeId: classifyId,
