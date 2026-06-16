@@ -68,6 +68,15 @@ Page({
     }
   },
 
+  onEnterSelectMode() {
+    if (!this.data.isSelectMode) {
+      this.setData({
+        isSelectMode: true,
+        selectedQuestions: []
+      })
+    }
+  },
+
   onQuestionLongPress(e) {
     const { index } = e.currentTarget.dataset
     console.log('[QuizWrong] 长按题目', index)
@@ -75,7 +84,7 @@ Page({
     if (!this.data.isSelectMode) {
       this.setData({
         isSelectMode: true,
-        selectedQuestions: [index]
+        selectedQuestions: index !== undefined ? [index] : []
       })
     }
   },

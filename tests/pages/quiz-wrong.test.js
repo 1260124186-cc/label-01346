@@ -73,12 +73,36 @@ describe('quiz-wrong', () => {
     expect(instance.startReview).toHaveBeenCalledWith([question])
   })
 
+  test('onEnterSelectMode 启用 selectMode 并清空选中', () => {
+    instance.data.isSelectMode = false
+    instance.onEnterSelectMode()
+    expect(instance.setData).toHaveBeenCalledWith({
+      isSelectMode: true,
+      selectedQuestions: []
+    })
+  })
+
+  test('onEnterSelectMode 已在 selectMode 时不重复设置', () => {
+    instance.data.isSelectMode = true
+    instance.onEnterSelectMode()
+    expect(instance.setData).not.toHaveBeenCalled()
+  })
+
   test('onQuestionLongPress 启用 selectMode 并选中该 index', () => {
     instance.data.isSelectMode = false
     instance.onQuestionLongPress({ currentTarget: { dataset: { index: 2 } } })
     expect(instance.setData).toHaveBeenCalledWith({
       isSelectMode: true,
       selectedQuestions: [2]
+    })
+  })
+
+  test('onQuestionLongPress index 为 undefined 时选中空数组', () => {
+    instance.data.isSelectMode = false
+    instance.onQuestionLongPress({ currentTarget: { dataset: {} } })
+    expect(instance.setData).toHaveBeenCalledWith({
+      isSelectMode: true,
+      selectedQuestions: []
     })
   })
 

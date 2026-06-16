@@ -33,7 +33,7 @@
         <text class="title-count">({{wrongQuestions.length}}题)</text>
       </view>
       <view class="section-actions">
-        <view class="action-btn" wx:if="{{!isSelectMode}}" bindtap="onQuestionLongPress">
+        <view class="action-btn" wx:if="{{!isSelectMode}}" bindtap="onEnterSelectMode">
           选择
         </view>
         <view class="action-btn" wx:else bindtap="onCancelSelect">
