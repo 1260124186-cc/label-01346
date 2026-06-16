@@ -4,7 +4,7 @@
  */
 const app = getApp()
 const { EXCHANGE_GOODS, EXCHANGE_BANNERS } = require('../../utils/constants')
-const { showToast, showModal, showLoading, hideLoading, formatNumber } = require('../../utils/util')
+const { showToast, showModal, showLoading, hideLoading, formatNumber, formatDate, generateId } = require('../../utils/util')
 
 Page({
   /**
@@ -264,11 +264,32 @@ Page({
     setTimeout(() => {
       hideLoading()
       
-      // 扣除积分
       app.updateUserPoints(-item.points)
       this.refreshUserPoints()
-      
-      // 更新商品库存
+
+      const now = new Date()
+      const order = {
+        id: generateId(),
+        goodsName: item.name,
+        goodsDesc: item.description,
+        goodsImage: item.image,
+        points: item.points,
+        quantity: 1,
+        createTime: formatDate(now, 'YYYY-MM-DD HH:mm')
+      }
+      app.addOrder(order)
+
+      const spendRecord = {
+        id: generateId(),
+        type: 'spend',
+        title: '积分兑换',
+        desc: '兑换' + item.name,
+        emoji: '🛍️',
+        points: item.points,
+        time: formatDate(now, 'YYYY-MM-DD HH:mm')
+      }
+      app.addPointsRecord(spendRecord)
+
       const goodsList = this.data.goodsList.map(goods => {
         if (goods.id === item.id) {
           return {
