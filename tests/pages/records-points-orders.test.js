@@ -51,6 +51,18 @@ describe('points', () => {
 
   beforeEach(() => {
     jest.clearAllMocks()
+    const app = global.getApp()
+    app.globalData.pointsRecords = [
+      { id: 1, type: 'earn', title: '垃圾分类', desc: '正确分类塑料瓶', emoji: '♻️', points: 10, time: '今天 14:30' },
+      { id: 2, type: 'spend', title: '积分兑换', desc: '兑换环保购物袋', emoji: '🛍️', points: 100, time: '今天 10:15' },
+      { id: 3, type: 'earn', title: '每日签到', desc: '连续签到第15天', emoji: '📅', points: 20, time: '今天 08:00' },
+      { id: 4, type: 'earn', title: '垃圾分类', desc: '正确分类厨余垃圾', emoji: '🍂', points: 5, time: '昨天 18:45' },
+      { id: 5, type: 'spend', title: '积分兑换', desc: '兑换便携餐具套装', emoji: '🍴', points: 200, time: '昨天 14:20' },
+      { id: 6, type: 'earn', title: '知识问答', desc: '答题正确5道', emoji: '❓', points: 50, time: '前天 20:30' },
+      { id: 7, type: 'earn', title: '邀请好友', desc: '好友注册成功', emoji: '👥', points: 100, time: '3天前' }
+    ]
+    app.globalData.userInfo = { avatarUrl: '', nickName: '环保达人', points: 1280, level: 3, joinDate: '2026-01-01' }
+
     instance = { data: JSON.parse(JSON.stringify(pointsPage.data)), setData: jest.fn(function(updates) { Object.assign(this.data, updates) }) }
     Object.keys(pointsPage).forEach(key => {
       if (typeof pointsPage[key] === 'function') {
@@ -59,10 +71,12 @@ describe('points', () => {
     })
   })
 
-  test('data 包含 currentPoints=2580, totalEarned=3280, totalSpent=700', () => {
-    expect(pointsPage.data.currentPoints).toBe(2580)
-    expect(pointsPage.data.totalEarned).toBe(3280)
-    expect(pointsPage.data.totalSpent).toBe(700)
+  test('loadPointsRecords 从 app 加载积分记录并计算汇总', () => {
+    instance.loadPointsRecords()
+    expect(instance.data.allPoints).toHaveLength(7)
+    expect(instance.data.totalEarned).toBe(185)
+    expect(instance.data.totalSpent).toBe(300)
+    expect(instance.data.currentPoints).toBe(1280)
   })
 
   test('data 包含 filterTabs 含 all/earn/spend', () => {
@@ -74,19 +88,20 @@ describe('points', () => {
     ])
   })
 
-  test('data currentFilter 为 all, allPoints 有 7 项, pointsList 为空数组', () => {
+  test('data 初始 allPoints 为空数组, currentFilter 为 all', () => {
+    expect(pointsPage.data.allPoints).toEqual([])
     expect(pointsPage.data.currentFilter).toBe('all')
-    expect(pointsPage.data.allPoints).toHaveLength(7)
-    expect(pointsPage.data.pointsList).toEqual([])
   })
 
   test('filterPoints 传入 all 返回全部', () => {
+    instance.loadPointsRecords()
     instance.filterPoints('all')
     expect(instance.data.pointsList).toHaveLength(7)
     expect(instance.data.currentFilter).toBe('all')
   })
 
   test('filterPoints 传入 earn 筛选 type===earn', () => {
+    instance.loadPointsRecords()
     instance.filterPoints('earn')
     expect(instance.data.pointsList).toHaveLength(5)
     instance.data.pointsList.forEach(item => {
@@ -96,6 +111,7 @@ describe('points', () => {
   })
 
   test('filterPoints 传入 spend 筛选 type===spend', () => {
+    instance.loadPointsRecords()
     instance.filterPoints('spend')
     expect(instance.data.pointsList).toHaveLength(2)
     instance.data.pointsList.forEach(item => {
@@ -104,7 +120,19 @@ describe('points', () => {
     expect(instance.data.currentFilter).toBe('spend')
   })
 
+  test('新增兑换记录后 loadPointsRecords 能反映变化', () => {
+    const app = global.getApp()
+    app.globalData.pointsRecords.unshift({
+      id: 100, type: 'spend', title: '积分兑换', desc: '兑换保温杯', emoji: '🛍️', points: 500, time: '刚刚'
+    })
+    instance.loadPointsRecords()
+    expect(instance.data.allPoints).toHaveLength(8)
+    expect(instance.data.totalSpent).toBe(800)
+    expect(instance.data.pointsList).toHaveLength(8)
+  })
+
   test('onFilterChange 调用 filterPoints 传入选中的 id', () => {
+    instance.loadPointsRecords()
     instance.filterPoints = jest.fn()
     instance.onFilterChange({ currentTarget: { dataset: { id: 'earn' } } })
     expect(instance.filterPoints).toHaveBeenCalledWith('earn')
@@ -116,6 +144,9 @@ describe('orders', () => {
 
   beforeEach(() => {
     jest.clearAllMocks()
+    const app = global.getApp()
+    app.globalData.orders = []
+
     instance = { data: JSON.parse(JSON.stringify(ordersPage.data)), setData: jest.fn(function(updates) { Object.assign(this.data, updates) }) }
     Object.keys(ordersPage).forEach(key => {
       if (typeof ordersPage[key] === 'function') {
@@ -124,20 +155,42 @@ describe('orders', () => {
     })
   })
 
-  test('data orderList 包含 4 项', () => {
-    expect(ordersPage.data.orderList).toHaveLength(4)
+  test('data 初始 orderList 为空数组', () => {
+    expect(ordersPage.data.orderList).toEqual([])
+  })
+
+  test('loadOrders 从 app 加载订单数据', () => {
+    const app = global.getApp()
+    const mockOrder = { id: 'order-1', goodsName: '环保购物袋', goodsDesc: '可重复使用', goodsImage: '/images/goods/goods1.jpg', points: 100, quantity: 1, createTime: '2026-06-16 14:30' }
+    app.globalData.orders = [mockOrder]
+    instance.loadOrders()
+    expect(instance.data.orderList).toHaveLength(1)
+    expect(instance.data.orderList[0].goodsName).toBe('环保购物袋')
+  })
+
+  test('兑换后新增的订单可通过 loadOrders 加载', () => {
+    const app = global.getApp()
+    const newOrder = { id: 'order-2', goodsName: '保温杯', goodsDesc: '316不锈钢', goodsImage: '/images/goods/goods3.jpg', points: 500, quantity: 1, createTime: '2026-06-16 15:00' }
+    app.addOrder(newOrder)
+    instance.loadOrders()
+    expect(instance.data.orderList).toHaveLength(1)
+    expect(instance.data.orderList[0].goodsName).toBe('保温杯')
   })
 
   test('每个 order 包含 id/goodsName/goodsDesc/goodsImage/points/quantity/createTime', () => {
-    ordersPage.data.orderList.forEach(order => {
-      expect(order).toHaveProperty('id')
-      expect(order).toHaveProperty('goodsName')
-      expect(order).toHaveProperty('goodsDesc')
-      expect(order).toHaveProperty('goodsImage')
-      expect(order).toHaveProperty('points')
-      expect(order).toHaveProperty('quantity')
-      expect(order).toHaveProperty('createTime')
-    })
+    const app = global.getApp()
+    app.globalData.orders = [
+      { id: 'order-1', goodsName: '环保购物袋', goodsDesc: '可重复使用', goodsImage: '/images/goods/goods1.jpg', points: 100, quantity: 1, createTime: '2026-06-16 14:30' }
+    ]
+    instance.loadOrders()
+    const order = instance.data.orderList[0]
+    expect(order).toHaveProperty('id')
+    expect(order).toHaveProperty('goodsName')
+    expect(order).toHaveProperty('goodsDesc')
+    expect(order).toHaveProperty('goodsImage')
+    expect(order).toHaveProperty('points')
+    expect(order).toHaveProperty('quantity')
+    expect(order).toHaveProperty('createTime')
   })
 
   test('onReorder 调用 wx.switchTab 跳转到 /pages/exchange/exchange', () => {
@@ -148,5 +201,11 @@ describe('orders', () => {
   test('goExchange 调用 wx.switchTab 跳转到 /pages/exchange/exchange', () => {
     instance.goExchange()
     expect(global.wx.switchTab).toHaveBeenCalledWith({ url: '/pages/exchange/exchange' })
+  })
+
+  test('onPullDownRefresh 调用 loadOrders 刷新订单', () => {
+    instance.loadOrders = jest.fn()
+    instance.onPullDownRefresh()
+    expect(instance.loadOrders).toHaveBeenCalled()
   })
 })

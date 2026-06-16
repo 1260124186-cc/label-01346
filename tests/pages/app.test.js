@@ -111,17 +111,124 @@ describe('App', () => {
   })
 
   describe('onLaunch', () => {
-    test('调用 initUserInfo 和 getSystemInfo', () => {
-      const initSpy = jest.spyOn(appObj, 'initUserInfo')
+    test('调用 initUserInfo, initOrders, initPointsRecords 和 getSystemInfo', () => {
+      const initUserSpy = jest.spyOn(appObj, 'initUserInfo')
+      const initOrdersSpy = jest.spyOn(appObj, 'initOrders')
+      const initPointsSpy = jest.spyOn(appObj, 'initPointsRecords')
       const sysSpy = jest.spyOn(appObj, 'getSystemInfo')
 
       appObj.onLaunch()
 
-      expect(initSpy).toHaveBeenCalled()
+      expect(initUserSpy).toHaveBeenCalled()
+      expect(initOrdersSpy).toHaveBeenCalled()
+      expect(initPointsSpy).toHaveBeenCalled()
       expect(sysSpy).toHaveBeenCalled()
 
-      initSpy.mockRestore()
+      initUserSpy.mockRestore()
+      initOrdersSpy.mockRestore()
+      initPointsSpy.mockRestore()
       sysSpy.mockRestore()
+    })
+  })
+
+  describe('initOrders', () => {
+    test('从 storage 加载已有 orders', () => {
+      const storedOrders = [{ id: 'o1', goodsName: '测试商品', points: 100 }]
+      wx.getStorageSync.mockReturnValue(storedOrders)
+
+      appObj.initOrders()
+
+      expect(appObj.globalData.orders).toEqual(storedOrders)
+    })
+
+    test('storage 为空时初始化为空数组', () => {
+      wx.getStorageSync.mockReturnValue('')
+
+      appObj.initOrders()
+
+      expect(appObj.globalData.orders).toEqual([])
+    })
+  })
+
+  describe('addOrder', () => {
+    beforeEach(() => {
+      appObj.globalData.orders = []
+    })
+
+    test('新增订单到数组头部并保存到 storage', () => {
+      const order = { id: 'o1', goodsName: '环保购物袋', points: 100 }
+      appObj.addOrder(order)
+
+      expect(appObj.globalData.orders).toHaveLength(1)
+      expect(appObj.globalData.orders[0].goodsName).toBe('环保购物袋')
+      expect(wx.setStorageSync).toHaveBeenCalledWith('orders', appObj.globalData.orders)
+    })
+
+    test('多次 addOrder 后新订单在最前面', () => {
+      appObj.addOrder({ id: 'o1', goodsName: '商品A', points: 100 })
+      appObj.addOrder({ id: 'o2', goodsName: '商品B', points: 200 })
+
+      expect(appObj.globalData.orders).toHaveLength(2)
+      expect(appObj.globalData.orders[0].goodsName).toBe('商品B')
+    })
+  })
+
+  describe('getOrders', () => {
+    test('返回 globalData.orders', () => {
+      appObj.globalData.orders = [{ id: 'o1' }]
+      expect(appObj.getOrders()).toEqual([{ id: 'o1' }])
+    })
+
+    test('globalData.orders 为空时返回空数组', () => {
+      appObj.globalData.orders = null
+      expect(appObj.getOrders()).toEqual([])
+    })
+  })
+
+  describe('initPointsRecords', () => {
+    test('从 storage 加载已有 pointsRecords', () => {
+      const storedRecords = [{ id: 1, type: 'earn', points: 10 }]
+      wx.getStorageSync.mockReturnValue(storedRecords)
+
+      appObj.initPointsRecords()
+
+      expect(appObj.globalData.pointsRecords).toEqual(storedRecords)
+    })
+
+    test('storage 为空时创建默认积分记录并保存', () => {
+      wx.getStorageSync.mockReturnValue('')
+
+      appObj.initPointsRecords()
+
+      expect(appObj.globalData.pointsRecords.length).toBeGreaterThan(0)
+      expect(wx.setStorageSync).toHaveBeenCalledWith('pointsRecords', appObj.globalData.pointsRecords)
+    })
+  })
+
+  describe('addPointsRecord', () => {
+    beforeEach(() => {
+      appObj.globalData.pointsRecords = []
+    })
+
+    test('新增记录到数组头部并保存到 storage', () => {
+      const record = { id: 'r1', type: 'spend', title: '积分兑换', points: 100 }
+      appObj.addPointsRecord(record)
+
+      expect(appObj.globalData.pointsRecords).toHaveLength(1)
+      expect(appObj.globalData.pointsRecords[0].title).toBe('积分兑换')
+      expect(wx.setStorageSync).toHaveBeenCalledWith('pointsRecords', appObj.globalData.pointsRecords)
+    })
+  })
+
+  describe('getPointsRecords', () => {
+    test('返回 globalData.pointsRecords', () => {
+      appObj.globalData.pointsRecords = [{ id: 1 }]
+      expect(appObj.getPointsRecords()).toEqual([{ id: 1 }])
+    })
+
+    test('globalData.pointsRecords 为空时返回空数组', () => {
+      appObj.globalData.pointsRecords = null
+      expect(appObj.getPointsRecords()).toEqual([])
     })
   })
 })

@@ -29,6 +29,8 @@ beforeEach(() => {
   util.showToast.mockClear()
   util.showModal.mockClear()
   moduleApp.updateUserPoints.mockClear()
+  moduleApp.addOrder.mockClear()
+  moduleApp.addPointsRecord.mockClear()
   moduleApp.globalData.userInfo.points = 1280
 })
 
@@ -179,7 +181,7 @@ describe('handleExchange', () => {
   test('confirms with showModal then deducts points and updates stock', async () => {
     pageInstance.data.userPoints = 2000
     pageInstance.data.goodsList = JSON.parse(JSON.stringify(EXCHANGE_GOODS))
-    const item = { id: 1, name: '环保购物袋', points: 100, stock: 50, sales: 128 }
+    const item = { id: 1, name: '环保购物袋', description: '可重复使用', image: '/images/goods/goods1.jpg', points: 100, stock: 50, sales: 128 }
 
     util.showModal.mockResolvedValueOnce(true)
 
@@ -198,6 +200,23 @@ describe('handleExchange', () => {
     jest.advanceTimersByTime(1500)
 
     expect(moduleApp.updateUserPoints).toHaveBeenCalledWith(-100)
+    expect(moduleApp.addOrder).toHaveBeenCalledWith(
+      expect.objectContaining({
+        goodsName: '环保购物袋',
+        goodsDesc: '可重复使用',
+        goodsImage: '/images/goods/goods1.jpg',
+        points: 100,
+        quantity: 1
+      })
+    )
+    expect(moduleApp.addPointsRecord).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: 'spend',
+        title: '积分兑换',
+        desc: '兑换环保购物袋',
+        points: 100
+      })
+    )
     expect(wx.hideLoading).toHaveBeenCalled()
   })
 })
