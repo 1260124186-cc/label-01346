@@ -1,0 +1,27 @@
+{
+  "name": "label-01346",
+  "version": "1.0.0",
+  "description": "一款帮助用户学习和掌握垃圾分类知识的微信小程序。",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "jest --verbose"
+  },
+  "jest": {
+    "testMatch": [
+      "<rootDir>/tests/**/*.test.js"
+    ],
+    "moduleDirectories": [
+      "node_modules",
+      "<rootDir>/frontend-mp"
+    ]
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "jest": "^30.4.2"
+  }
+}
