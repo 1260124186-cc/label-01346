@@ -3,7 +3,7 @@
  * @description 展示各类垃圾的详细分类知识，根据首页传递的参数显示对应内容
  */
 const { TRASH_TYPES } = require('../../utils/constants')
-const { showToast, navigateBack } = require('../../utils/util')
+const { showToast, navigateBack, navigateTo } = require('../../utils/util')
 
 Page({
   /**
@@ -118,6 +118,41 @@ Page({
       showCancel: false,
       confirmText: '知道了',
       confirmColor: this.data.classifyData.color
+    })
+  },
+
+  /**
+   * 长按示例项
+   * @param {Object} e 事件对象
+   */
+  onExampleLongPress(e) {
+    const { item } = e.currentTarget.dataset
+    console.log('[Classify] 长按示例', item)
+    
+    wx.showActionSheet({
+      itemList: ['查看详情', '开始练习此类垃圾'],
+      itemColor: '#2D3436',
+      success: (res) => {
+        if (res.tapIndex === 0) {
+          this.onExampleTap(e)
+        } else if (res.tapIndex === 1) {
+          this.startPractice()
+        }
+      }
+    })
+  },
+
+  /**
+   * 开始练习此类垃圾
+   */
+  startPractice() {
+    const { classifyId, classifyData } = this.data
+    console.log('[Classify] 开始练习', classifyData.name)
+    
+    navigateTo('/pages/sort-practice/sort-practice', {
+      mode: 'category',
+      typeId: classifyId,
+      typeName: classifyData.name
     })
   },
 

@@ -157,6 +157,33 @@
   font-size: 32rpx;
   font-weight: 600;
   color: var(--text-primary);
+  flex: 1;
+}
+
+.practice-entry-btn {
+  display: flex;
+  align-items: center;
+  gap: 6rpx;
+  padding: 12rpx 20rpx;
+  background: var(--btn-color);
+  color: #fff;
+  border-radius: 20rpx;
+  font-size: 24rpx;
+  font-weight: 500;
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.1);
+}
+
+.practice-entry-btn:active {
+  transform: scale(0.95);
+  opacity: 0.9;
+}
+
+.practice-icon {
+  font-size: 24rpx;
+}
+
+.practice-text {
+  font-size: 24rpx;
 }
 
 .card-content {

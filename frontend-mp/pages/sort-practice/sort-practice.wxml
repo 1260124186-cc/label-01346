@@ -1,0 +1,135 @@
+<!--
+  垃圾分类练习页面
+  功能：随机展示垃圾名称，用户四选一选择类别
+-->
+<view class="sort-practice-container" wx:if="{{!showResult}}">
+  <view class="progress-section">
+    <view class="progress-header">
+      <text class="progress-text">第 {{currentIndex + 1}} / {{questions.length}} 题</text>
+      <view class="score-info">
+        <text class="correct-count">✓ {{correctCount}}</text>
+        <text class="wrong-count">✗ {{wrongCount}}</text>
+      </view>
+    </view>
+    <view class="progress-bar">
+      <view class="progress-fill" style="width: {{progressPercent}}%"></view>
+    </view>
+  </view>
+
+  <view class="question-section">
+    <view class="question-card">
+      <view class="question-label">请判断这是什么垃圾？</view>
+      <view class="trash-display">
+        <text class="trash-emoji">{{currentQuestion.emoji}}</text>
+        <text class="trash-name">{{currentQuestion.name}}</text>
+        <text class="trash-desc">{{currentQuestion.desc}}</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="options-section">
+    <view class="options-grid">
+      <view
+        class="option-card {{selectedIndex === index ? 'selected' : ''}} {{isAnswered && item.typeId === currentQuestion.typeId ? 'correct' : ''}} {{isAnswered && selectedIndex === index && !isCorrect ? 'wrong' : ''}}"
+        wx:for="{{options}}"
+        wx:key="typeId"
+        data-typeid="{{item.typeId}}"
+        bindtap="onSelectOption"
+        style="--opt-color: {{item.color}}; --opt-bg: {{item.bgColor}};"
+      >
+        <view class="option-icon-wrapper">
+          <text class="option-emoji">{{item.emoji}}</text>
+        </view>
+        <view class="option-name">{{item.name}}</view>
+        <view class="option-icon" wx:if="{{isAnswered}}">
+          <text wx:if="{{item.typeId === currentQuestion.typeId}}" class="icon-correct">✓</text>
+          <text wx:elif="{{selectedIndex === index && !isCorrect}}" class="icon-wrong">✗</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view class="explanation-section" wx:if="{{isAnswered}}">
+    <view class="explanation-card correct-answer" wx:if="{{isCorrect}}">
+      <view class="explanation-title">
+        <text class="title-icon">✅</text>
+        <text>回答正确</text>
+      </view>
+      <view class="explanation-text">
+        {{currentQuestion.name}} 属于 {{currentQuestion.correctType.name}}
+      </view>
+    </view>
+    <view class="explanation-card wrong-answer" wx:else>
+      <view class="explanation-title">
+        <text class="title-icon">💡</text>
+        <text>正确答案</text>
+      </view>
+      <view class="explanation-text">
+        {{currentQuestion.name}} 属于 {{currentQuestion.correctType.name}}
+      </view>
+      <view class="knowledge-link" bindtap="onGoToKnowledge">
+        <text class="link-text">查看分类知识 →</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="footer-section" wx:if="{{isAnswered}}">
+    <view class="next-btn" bindtap="onNextQuestion">
+      {{currentIndex + 1 >= questions.length ? '查看结果' : '下一题'}}
+    </view>
+  </view>
+</view>
+
+<view class="result-container" wx:if="{{showResult}}">
+  <view class="result-header">
+    <view class="result-emoji">{{resultData.emoji}}</view>
+    <view class="result-title">{{resultData.title}}</view>
+    <view class="result-subtitle">练习完成，获得 {{resultData.points}} 积分</view>
+  </view>
+
+  <view class="result-stats">
+    <view class="stat-item">
+      <view class="stat-value">{{resultData.total}}</view>
+      <view class="stat-label">总题数</view>
+    </view>
+    <view class="stat-item correct">
+      <view class="stat-value">{{resultData.correct}}</view>
+      <view class="stat-label">答对</view>
+    </view>
+    <view class="stat-item wrong">
+      <view class="stat-value">{{resultData.wrong}}</view>
+      <view class="stat-label">答错</view>
+    </view>
+    <view class="stat-item accuracy">
+      <view class="stat-value">{{resultData.accuracy}}%</view>
+      <view class="stat-label">正确率</view>
+    </view>
+  </view>
+
+  <view class="result-points-card">
+    <view class="points-icon">🎁</view>
+    <view class="points-info">
+      <view class="points-title">获得积分</view>
+      <view class="points-value">+{{resultData.points}}</view>
+      <view class="points-breakdown">
+        <text class="breakdown-item">答题: +{{resultData.basePoints}}</text>
+        <text class="breakdown-divider">|</text>
+        <text class="breakdown-item bonus" wx:if="{{resultData.bonusPoints > 0}}">完成奖励: +{{resultData.bonusPoints}}</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="result-actions">
+    <view class="action-btn secondary" bindtap="onBack">
+      返回
+    </view>
+    <view class="action-btn primary" bindtap="onRestart">
+      再练一次
+    </view>
+  </view>
+
+  <view class="wrong-review-btn" wx:if="{{resultData.wrong > 0}}" bindtap="onGoToWrong">
+    <text class="review-icon">📝</text>
+    <text>去易错题复习 ({{resultData.wrong}}题)</text>
+  </view>
+</view>

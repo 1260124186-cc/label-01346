@@ -723,6 +723,105 @@ const getDailyQuestions = () => {
   return shuffled.slice(0, 5)
 }
 
+/**
+ * 垃圾分类练习题库
+ * 基于常见垃圾示例生成具体的练习条目
+ */
+const SORT_PRACTICE_ITEMS = [
+  { id: 1, name: '报纸', typeId: 1, emoji: '📰', desc: '废纸张类' },
+  { id: 2, name: '书本', typeId: 1, emoji: '📚', desc: '废纸张类' },
+  { id: 3, name: '纸箱', typeId: 1, emoji: '📦', desc: '废纸张类' },
+  { id: 4, name: '快递盒', typeId: 1, emoji: '📦', desc: '废纸张类' },
+  { id: 5, name: '塑料瓶', typeId: 1, emoji: '🧴', desc: '废塑料类' },
+  { id: 6, name: '塑料盆', typeId: 1, emoji: '🪣', desc: '废塑料类' },
+  { id: 7, name: '塑料玩具', typeId: 1, emoji: '🧸', desc: '废塑料类' },
+  { id: 8, name: '玻璃瓶', typeId: 1, emoji: '🍶', desc: '废玻璃类' },
+  { id: 9, name: '玻璃杯', typeId: 1, emoji: '🥛', desc: '废玻璃类' },
+  { id: 10, name: '镜子', typeId: 1, emoji: '🪞', desc: '废玻璃类' },
+  { id: 11, name: '易拉罐', typeId: 1, emoji: '🥫', desc: '废金属类' },
+  { id: 12, name: '金属罐头', typeId: 1, emoji: '🥫', desc: '废金属类' },
+  { id: 13, name: '金属厨具', typeId: 1, emoji: '🍳', desc: '废金属类' },
+  { id: 14, name: '旧衣服', typeId: 1, emoji: '👕', desc: '废织物类' },
+  { id: 15, name: '床单', typeId: 1, emoji: '🛏️', desc: '废织物类' },
+  { id: 16, name: '毛巾', typeId: 1, emoji: '🧣', desc: '废织物类' },
+  { id: 17, name: '书包', typeId: 1, emoji: '🎒', desc: '废织物类' },
+  { id: 18, name: '电视机', typeId: 1, emoji: '📺', desc: '废电器类' },
+  { id: 19, name: '洗衣机', typeId: 1, emoji: '🧺', desc: '废电器类' },
+  { id: 20, name: '电脑', typeId: 1, emoji: '💻', desc: '废电器类' },
+
+  { id: 21, name: '充电电池', typeId: 2, emoji: '🔋', desc: '废电池类' },
+  { id: 22, name: '纽扣电池', typeId: 2, emoji: '🔋', desc: '废电池类' },
+  { id: 23, name: '蓄电池', typeId: 2, emoji: '🔋', desc: '废电池类' },
+  { id: 24, name: '荧光灯管', typeId: 2, emoji: '💡', desc: '废灯管类' },
+  { id: 25, name: '节能灯', typeId: 2, emoji: '💡', desc: '废灯管类' },
+  { id: 26, name: 'LED灯', typeId: 2, emoji: '💡', desc: '废灯管类' },
+  { id: 27, name: '过期药品', typeId: 2, emoji: '💊', desc: '废药品类' },
+  { id: 28, name: '药品包装', typeId: 2, emoji: '💊', desc: '废药品类' },
+  { id: 29, name: '油漆桶', typeId: 2, emoji: '🎨', desc: '废油漆类' },
+  { id: 30, name: '染发剂', typeId: 2, emoji: '🎨', desc: '废油漆类' },
+  { id: 31, name: '指甲油', typeId: 2, emoji: '💅', desc: '废油漆类' },
+  { id: 32, name: '杀虫喷雾', typeId: 2, emoji: '🧪', desc: '废杀虫剂类' },
+  { id: 33, name: '消毒剂', typeId: 2, emoji: '🧪', desc: '废杀虫剂类' },
+  { id: 34, name: '水银温度计', typeId: 2, emoji: '🌡️', desc: '废水银类' },
+  { id: 35, name: '水银血压计', typeId: 2, emoji: '🩺', desc: '废水银类' },
+
+  { id: 36, name: '剩菜剩饭', typeId: 3, emoji: '🍚', desc: '食物残渣类' },
+  { id: 37, name: '米饭', typeId: 3, emoji: '🍚', desc: '食物残渣类' },
+  { id: 38, name: '面条', typeId: 3, emoji: '🍜', desc: '食物残渣类' },
+  { id: 39, name: '蔬菜', typeId: 3, emoji: '🥬', desc: '食物残渣类' },
+  { id: 40, name: '肉类', typeId: 3, emoji: '🥩', desc: '食物残渣类' },
+  { id: 41, name: '苹果皮', typeId: 3, emoji: '🍎', desc: '果皮果核类' },
+  { id: 42, name: '香蕉皮', typeId: 3, emoji: '🍌', desc: '果皮果核类' },
+  { id: 43, name: '橘子皮', typeId: 3, emoji: '🍊', desc: '果皮果核类' },
+  { id: 44, name: '鸡蛋壳', typeId: 3, emoji: '🥚', desc: '蛋壳类' },
+  { id: 45, name: '鸭蛋壳', typeId: 3, emoji: '🥚', desc: '蛋壳类' },
+  { id: 46, name: '茶叶渣', typeId: 3, emoji: '🍵', desc: '茶渣类' },
+  { id: 47, name: '咖啡渣', typeId: 3, emoji: '☕', desc: '茶渣类' },
+  { id: 48, name: '白菜帮', typeId: 3, emoji: '🥬', desc: '菜叶菜根类' },
+  { id: 49, name: '萝卜缨', typeId: 3, emoji: '🥕', desc: '菜叶菜根类' },
+  { id: 50, name: '鸡骨', typeId: 3, emoji: '🦴', desc: '骨头类' },
+  { id: 51, name: '鱼骨', typeId: 3, emoji: '🐟', desc: '骨头类' },
+  { id: 52, name: '小排骨', typeId: 3, emoji: '🦴', desc: '骨头类' },
+
+  { id: 53, name: '用过的纸巾', typeId: 4, emoji: '🧻', desc: '卫生纸类' },
+  { id: 54, name: '卫生纸', typeId: 4, emoji: '🧻', desc: '卫生纸类' },
+  { id: 55, name: '烟蒂', typeId: 4, emoji: '🚬', desc: '烟蒂类' },
+  { id: 56, name: '烟灰', typeId: 4, emoji: '🚬', desc: '烟蒂类' },
+  { id: 57, name: '陶瓷碎片', typeId: 4, emoji: '🏺', desc: '陶瓷类' },
+  { id: 58, name: '碎花盆', typeId: 4, emoji: '🪴', desc: '陶瓷类' },
+  { id: 59, name: '碎碗碟', typeId: 4, emoji: '🍽️', desc: '陶瓷类' },
+  { id: 60, name: '一次性筷子', typeId: 4, emoji: '🥢', desc: '一次性餐具类' },
+  { id: 61, name: '塑料餐盒', typeId: 4, emoji: '🥡', desc: '一次性餐具类' },
+  { id: 62, name: '尘土', typeId: 4, emoji: '🧹', desc: '尘土类' },
+  { id: 63, name: '渣土', typeId: 4, emoji: '🧹', desc: '尘土类' },
+  { id: 64, name: '猫砂', typeId: 4, emoji: '🐱', desc: '宠物粪便类' },
+  { id: 65, name: '狗粪便', typeId: 4, emoji: '💩', desc: '宠物粪便类' },
+  { id: 66, name: '大骨头', typeId: 4, emoji: '🦴', desc: '其他类' },
+  { id: 67, name: '椰子壳', typeId: 4, emoji: '🥥', desc: '其他类' },
+  { id: 68, name: '榴莲壳', typeId: 4, emoji: '🥥', desc: '其他类' }
+]
+
+/**
+ * 根据类别获取垃圾分类练习题目
+ * @param {number} typeId 分类ID
+ * @returns {Array} 练习题目列表
+ */
+const getSortItemsByType = (typeId) => {
+  return SORT_PRACTICE_ITEMS.filter(item => item.typeId === typeId)
+}
+
+/**
+ * 随机获取指定数量的垃圾分类练习题目
+ * @param {number} count 题目数量
+ * @param {number} typeId 分类ID（可选，不传则全部类别随机）
+ * @returns {Array} 练习题目列表
+ */
+const getRandomSortItems = (count, typeId = null) => {
+  let items = typeId ? getSortItemsByType(typeId) : [...SORT_PRACTICE_ITEMS]
+  const shuffled = items.sort(() => 0.5 - Math.random())
+  return shuffled.slice(0, Math.min(count, shuffled.length))
+}
+
 module.exports = {
   TRASH_TYPES,
   BANNER_LIST,
@@ -737,5 +836,8 @@ module.exports = {
   getQuestionsByChapter,
   getQuestionsByDifficulty,
   getRandomQuestions,
-  getDailyQuestions
+  getDailyQuestions,
+  SORT_PRACTICE_ITEMS,
+  getSortItemsByType,
+  getRandomSortItems
 }

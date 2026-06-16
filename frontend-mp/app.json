@@ -13,7 +13,8 @@
     "pages/quiz-chapter/quiz-chapter",
     "pages/quiz-wrong/quiz-wrong",
     "pages/quiz-difficulty/quiz-difficulty",
-    "pages/signin/signin"
+    "pages/signin/signin",
+    "pages/sort-practice/sort-practice"
   ],
   "window": {
     "backgroundTextStyle": "dark",

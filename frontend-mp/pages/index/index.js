@@ -100,6 +100,42 @@ Page({
   },
 
   /**
+   * 开始练习此类垃圾
+   * @param {Object} e 事件对象
+   */
+  startSortPractice(e) {
+    const { item } = e.currentTarget.dataset
+    console.log('[Index] 开始练习', item.name)
+
+    navigateTo('/pages/sort-practice/sort-practice', {
+      mode: 'category',
+      typeId: item.id,
+      typeName: item.name
+    })
+  },
+
+  /**
+   * 长按垃圾分类卡片
+   * @param {Object} e 事件对象
+   */
+  onTrashCardLongPress(e) {
+    const { item } = e.currentTarget.dataset
+    console.log('[Index] 长按垃圾分类卡片', item.name)
+
+    wx.showActionSheet({
+      itemList: ['查看分类知识', '开始练一练'],
+      itemColor: '#2D3436',
+      success: (res) => {
+        if (res.tapIndex === 0) {
+          this.goToClassify(e)
+        } else if (res.tapIndex === 1) {
+          this.startSortPractice(e)
+        }
+      }
+    })
+  },
+
+  /**
    * 点击"了解分类详情"，跳转到第一个分类（可回收垃圾）
    */
   goToFirstClassify() {

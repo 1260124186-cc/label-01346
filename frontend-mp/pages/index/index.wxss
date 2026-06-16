@@ -286,6 +286,37 @@
   opacity: 0.6;
 }
 
+/* 练一练按钮 */
+.practice-btn {
+  position: absolute;
+  top: 20rpx;
+  right: 20rpx;
+  display: flex;
+  align-items: center;
+  gap: 6rpx;
+  padding: 10rpx 18rpx;
+  background: var(--btn-color);
+  color: #fff;
+  border-radius: 20rpx;
+  font-size: 22rpx;
+  font-weight: 500;
+  z-index: 10;
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.15);
+}
+
+.practice-btn:active {
+  transform: scale(0.95);
+  opacity: 0.9;
+}
+
+.practice-btn-icon {
+  font-size: 22rpx;
+}
+
+.practice-btn-text {
+  font-size: 22rpx;
+}
+
 /* 垃圾桶图标容器 */
 .trash-icon-wrapper {
   position: relative;

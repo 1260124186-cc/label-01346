@@ -56,6 +56,10 @@
         <text class="icon-text" style="color: {{classifyData.color}};">📦</text>
       </view>
       <text class="card-title">常见垃圾</text>
+      <view class="practice-entry-btn" bindtap="startPractice" style="--btn-color: {{classifyData.color}};">
+        <text class="practice-icon">✏️</text>
+        <text class="practice-text">练一练</text>
+      </view>
     </view>
     <view class="card-content">
       <view class="examples-grid">
@@ -65,6 +69,7 @@
           class="example-item"
           style="--item-color: {{classifyData.color}}; --item-bg: {{classifyData.bgColor}};"
           bindtap="onExampleTap"
+          bindlongpress="onExampleLongPress"
           data-item="{{item}}"
         >
           <view class="example-icon-wrapper">
