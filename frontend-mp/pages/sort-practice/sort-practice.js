@@ -6,8 +6,7 @@
 const app = getApp()
 const {
   TRASH_TYPES,
-  getRandomSortItems,
-  SORT_PRACTICE_ITEMS
+  getRandomSortItems
 } = require('../../utils/constants')
 const {
   navigateTo,
@@ -26,23 +25,15 @@ const POINTS_PER_CORRECT = 10
 Page({
   data: {
     practiceMode: 'random',
-    typeId: null,
+    typeId: 0,
     typeName: '',
 
     questions: [],
     currentIndex: 0,
-    currentQuestion: {
-      id: 0,
-      name: '',
-      typeId: 0,
-      emoji: '',
-      desc: '',
-      correctType: null
-    },
+    currentQuestion: null,
 
-    options: [],
-
-    selectedIndex: -1,
+    optionTypes: [],
+    selectedOptIndex: -1,
     isAnswered: false,
     isCorrect: false,
 
@@ -51,10 +42,17 @@ Page({
     totalPoints: 0,
 
     showResult: false,
-    resultData: null,
+    resultTitle: '',
+    resultEmoji: '',
+    resultTotal: 0,
+    resultCorrect: 0,
+    resultWrong: 0,
+    resultPoints: 0,
+    resultBasePoints: 0,
+    resultBonusPoints: 0,
+    resultAccuracy: 0,
 
-    progressPercent: 0,
-    isLoading: true
+    progressPercent: 0
   },
 
   onLoad(options) {
@@ -66,6 +64,7 @@ Page({
     const { mode, typeId, typeName } = options
     let questions = []
     let practiceMode = mode || 'random'
+    let targetTypeId = typeId ? parseInt(typeId) : 0
 
     if (practiceMode === 'wrong') {
       const wrongItems = getStorage('wrongSortItems', [])
@@ -77,13 +76,18 @@ Page({
         return
       }
       questions = wrongItems.map(item => ({
-        ...item,
+        id: item.id,
+        name: item.name,
+        typeId: item.typeId,
+        emoji: item.emoji,
+        desc: item.desc,
         isWrongReview: true
       }))
-    } else if (practiceMode === 'category' && typeId) {
-      questions = getRandomSortItems(QUESTION_COUNT, parseInt(typeId))
+    } else if (practiceMode === 'category' && targetTypeId > 0) {
+      questions = getRandomSortItems(QUESTION_COUNT, targetTypeId)
     } else {
       questions = getRandomSortItems(QUESTION_COUNT)
+      practiceMode = 'random'
     }
 
     if (questions.length === 0) {
@@ -94,49 +98,56 @@ Page({
       return
     }
 
-    const processedQuestions = questions.map(q => ({
-      ...q,
-      correctType: TRASH_TYPES.find(t => t.id === q.typeId)
-    }))
+    const processedQuestions = questions.map(q => {
+      const t = TRASH_TYPES.find(tt => tt.id === q.typeId)
+      return {
+        id: q.id,
+        name: q.name,
+        typeId: q.typeId,
+        emoji: q.emoji || '',
+        desc: q.desc || '',
+        correctTypeId: q.typeId,
+        correctTypeName: t ? t.name : '',
+        correctTypeColor: t ? t.color : '',
+        correctTypeBgColor: t ? t.bgColor : '',
+        isWrongReview: q.isWrongReview || false
+      }
+    })
 
     const shuffled = processedQuestions.sort(() => 0.5 - Math.random())
 
-    const firstQuestion = shuffled[0]
-    const options = this.generateOptions(firstQuestion.typeId)
+    const optionTypes = this.buildOptionTypes()
 
     this.setData({
-      practiceMode,
-      typeId: typeId ? parseInt(typeId) : null,
+      practiceMode: practiceMode,
+      typeId: targetTypeId,
       typeName: typeName || '',
       questions: shuffled,
       currentIndex: 0,
-      currentQuestion: firstQuestion,
-      options,
-      selectedIndex: -1,
+      currentQuestion: shuffled[0],
+      optionTypes: optionTypes,
+      selectedOptIndex: -1,
       isAnswered: false,
       isCorrect: false,
       correctCount: 0,
       wrongCount: 0,
       totalPoints: 0,
       showResult: false,
-      progressPercent: 0,
-      isLoading: false
+      progressPercent: 0
     })
 
     this.updateNavigationTitle()
   },
 
-  generateOptions(correctTypeId) {
-    const types = [...TRASH_TYPES]
-    const options = types.map((type, idx) => ({
-      typeId: type.id,
-      name: type.name,
-      emoji: type.emoji,
-      color: type.color,
-      bgColor: type.bgColor,
-      optIndex: idx
+  buildOptionTypes() {
+    const types = TRASH_TYPES.map(t => ({
+      optTypeId: t.id,
+      optTypeName: t.name,
+      optTypeEmoji: t.emoji,
+      optTypeColor: t.color,
+      optTypeBgColor: t.bgColor
     }))
-    return options.sort(() => 0.5 - Math.random())
+    return types.sort(() => 0.5 - Math.random())
   },
 
   updateNavigationTitle() {
@@ -146,24 +157,24 @@ Page({
     } else if (this.data.practiceMode === 'wrong') {
       title = '易错题练习'
     }
-    wx.setNavigationBarTitle({ title })
+    wx.setNavigationBarTitle({ title: title })
   },
 
   onSelectOption(e) {
     if (this.data.isAnswered) return
 
-    const { typeid } = e.currentTarget.dataset
+    const { opttypeid, optindex } = e.currentTarget.dataset
     const question = this.data.currentQuestion
-    const isCorrect = parseInt(typeid) === question.typeId
-    const selectedIndex = this.data.options.findIndex(opt => opt.typeId === parseInt(typeid))
+    const selectedTypeId = parseInt(opttypeid)
+    const correct = selectedTypeId === question.correctTypeId
 
     this.setData({
-      selectedIndex,
+      selectedOptIndex: parseInt(optindex),
       isAnswered: true,
-      isCorrect
+      isCorrect: correct
     })
 
-    if (isCorrect) {
+    if (correct) {
       const newCorrectCount = this.data.correctCount + 1
       const newTotalPoints = this.data.totalPoints + POINTS_PER_CORRECT
 
@@ -177,12 +188,11 @@ Page({
       app.updateUserPoints(POINTS_PER_CORRECT, {
         category: 'classify',
         title: '垃圾分类练习',
-        desc: `正确分类：${question.name}`,
+        desc: '正确分类：' + question.name,
         emoji: question.emoji
       })
 
-      showSuccess(`答对了！+${POINTS_PER_CORRECT}积分`)
-
+      showSuccess('答对了！+' + POINTS_PER_CORRECT + '积分')
       this.removeFromWrongItems(question.id)
     } else {
       const newWrongCount = this.data.wrongCount + 1
@@ -218,7 +228,11 @@ Page({
 
     if (!exists) {
       wrongItems.push({
-        ...item,
+        id: item.id,
+        name: item.name,
+        typeId: item.typeId,
+        emoji: item.emoji,
+        desc: item.desc,
         wrongTime: new Date().toISOString(),
         wrongCount: 1
       })
@@ -226,7 +240,11 @@ Page({
     } else {
       const updated = wrongItems.map(i => {
         if (i.id === item.id) {
-          return { ...i, wrongCount: (i.wrongCount || 1) + 1, wrongTime: new Date().toISOString() }
+          return {
+            ...i,
+            wrongCount: (i.wrongCount || 1) + 1,
+            wrongTime: new Date().toISOString()
+          }
         }
         return i
       })
@@ -259,13 +277,13 @@ Page({
     }
 
     const nextQuestion = this.data.questions[nextIndex]
-    const options = this.generateOptions(nextQuestion.typeId)
+    const optionTypes = this.buildOptionTypes()
 
     this.setData({
       currentIndex: nextIndex,
       currentQuestion: nextQuestion,
-      options,
-      selectedIndex: -1,
+      optionTypes: optionTypes,
+      selectedOptIndex: -1,
       isAnswered: false,
       isCorrect: false
     })
@@ -295,48 +313,57 @@ Page({
       app.updateUserPoints(bonusPoints, {
         category: 'classify',
         title: '练习奖励',
-        desc: `完成练习正确率${accuracy}%`,
+        desc: '完成练习正确率' + accuracy + '%',
         emoji: '🎁'
       })
     }
 
     this.setData({
       showResult: true,
-      resultData: {
-        title: resultTitle,
-        emoji: resultEmoji,
-        total,
-        correct,
-        wrong,
-        points: totalPoints,
-        basePoints,
-        bonusPoints,
-        accuracy
-      }
+      resultTitle: resultTitle,
+      resultEmoji: resultEmoji,
+      resultTotal: total,
+      resultCorrect: correct,
+      resultWrong: wrong,
+      resultPoints: totalPoints,
+      resultBasePoints: basePoints,
+      resultBonusPoints: bonusPoints,
+      resultAccuracy: accuracy
     })
   },
 
   onGoToKnowledge() {
     const question = this.data.currentQuestion
-    const typeId = question.typeId
-    const typeName = TRASH_TYPES.find(t => t.id === typeId)
+    if (!question) return
 
-    if (typeName) {
+    const typeId = question.correctTypeId
+    const typeName = question.correctTypeName
+
+    if (typeId && typeName) {
       navigateTo('/pages/classify/classify', {
         id: typeId,
-        name: typeName.name
+        name: typeName
       })
     }
   },
 
   onRestart() {
-    this.setData({ isLoading: true, showResult: false })
-    const options = {
-      mode: this.data.practiceMode,
-      typeId: this.data.typeId,
-      typeName: this.data.typeName
-    }
-    this.initPractice(options)
+    const firstQuestion = this.data.questions[0]
+    const optionTypes = this.buildOptionTypes()
+
+    this.setData({
+      currentIndex: 0,
+      currentQuestion: firstQuestion,
+      optionTypes: optionTypes,
+      selectedOptIndex: -1,
+      isAnswered: false,
+      isCorrect: false,
+      correctCount: 0,
+      wrongCount: 0,
+      totalPoints: 0,
+      showResult: false,
+      progressPercent: 0
+    })
   },
 
   onBack() {
@@ -344,7 +371,7 @@ Page({
   },
 
   onGoToWrong() {
-    if (this.data.wrongCount === 0) {
+    if (this.data.resultWrong === 0) {
       showToast('暂无错题')
       return
     }
