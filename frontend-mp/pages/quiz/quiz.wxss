@@ -1,0 +1,276 @@
+.quiz-container {
+  min-height: 100vh;
+  background: linear-gradient(180deg, #E8F5E9 0%, #F0F9FF 100%);
+  padding-bottom: 40rpx;
+}
+
+.header-card {
+  background: linear-gradient(135deg, #5BBD72 0%, #4CAF50 100%);
+  margin: 0;
+  padding: 60rpx 32rpx 40rpx;
+  border-radius: 0 0 48rpx 48rpx;
+  box-shadow: 0 8rpx 32rpx rgba(91, 189, 114, 0.2);
+}
+
+.header-content {
+  color: #fff;
+}
+
+.header-title {
+  font-size: 48rpx;
+  font-weight: 600;
+  margin-bottom: 12rpx;
+}
+
+.header-subtitle {
+  font-size: 26rpx;
+  opacity: 0.9;
+  margin-bottom: 32rpx;
+}
+
+.points-info {
+  display: flex;
+  align-items: baseline;
+  gap: 16rpx;
+}
+
+.points-label {
+  font-size: 26rpx;
+  opacity: 0.85;
+}
+
+.points-value {
+  font-size: 56rpx;
+  font-weight: 700;
+}
+
+.quick-entries {
+  padding: 32rpx;
+}
+
+.section-title {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #2D3436;
+  margin-bottom: 24rpx;
+}
+
+.entries-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 24rpx;
+}
+
+.entry-item {
+  position: relative;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(20rpx);
+  border-radius: 24rpx;
+  padding: 32rpx 24rpx;
+  box-shadow: 0 4rpx 20rpx rgba(91, 189, 114, 0.08);
+  transition: all 0.3s ease;
+}
+
+.entry-item:active {
+  transform: scale(0.98);
+  box-shadow: 0 2rpx 12rpx rgba(91, 189, 114, 0.1);
+}
+
+.entry-icon {
+  font-size: 48rpx;
+  margin-bottom: 16rpx;
+}
+
+.entry-name {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #2D3436;
+  margin-bottom: 8rpx;
+}
+
+.entry-desc {
+  font-size: 22rpx;
+  color: #636E72;
+  line-height: 1.4;
+}
+
+.entry-badge {
+  position: absolute;
+  top: 16rpx;
+  right: 16rpx;
+  background: var(--item-color);
+  color: #fff;
+  font-size: 20rpx;
+  padding: 4rpx 12rpx;
+  border-radius: 20rpx;
+}
+
+.chapters-section,
+.difficulty-section {
+  padding: 0 32rpx;
+  margin-top: 16rpx;
+}
+
+.chapters-list,
+.difficulty-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+}
+
+.chapter-item {
+  display: flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(20rpx);
+  border-radius: 20rpx;
+  padding: 24rpx;
+  box-shadow: 0 4rpx 20rpx rgba(91, 189, 114, 0.08);
+  transition: all 0.3s ease;
+}
+
+.chapter-item:active {
+  transform: scale(0.99);
+}
+
+.chapter-item.locked {
+  opacity: 0.6;
+}
+
+.chapter-item.completed {
+  border: 2rpx solid #5BBD72;
+}
+
+.chapter-icon {
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: 20rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 36rpx;
+  margin-right: 20rpx;
+  flex-shrink: 0;
+}
+
+.chapter-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.chapter-name {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #2D3436;
+  margin-bottom: 6rpx;
+}
+
+.chapter-desc {
+  font-size: 22rpx;
+  color: #636E72;
+  margin-bottom: 12rpx;
+}
+
+.chapter-progress {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+}
+
+.progress-bar {
+  flex: 1;
+  height: 12rpx;
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 6rpx;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  border-radius: 6rpx;
+  transition: width 0.3s ease;
+}
+
+.progress-text {
+  font-size: 22rpx;
+  color: #5BBD72;
+  font-weight: 500;
+}
+
+.chapter-status {
+  display: flex;
+  align-items: center;
+}
+
+.status-completed {
+  font-size: 22rpx;
+  color: #5BBD72;
+  font-weight: 500;
+}
+
+.status-locked {
+  font-size: 22rpx;
+  color: #B2BEC3;
+}
+
+.chapter-arrow {
+  font-size: 36rpx;
+  color: #B2BEC3;
+  margin-left: 16rpx;
+}
+
+.difficulty-item {
+  display: flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(20rpx);
+  border-radius: 20rpx;
+  padding: 24rpx;
+  box-shadow: 0 4rpx 20rpx rgba(91, 189, 114, 0.08);
+  transition: all 0.3s ease;
+  border-left: 6rpx solid var(--diff-color);
+}
+
+.difficulty-item:active {
+  transform: scale(0.99);
+}
+
+.difficulty-icon {
+  font-size: 40rpx;
+  margin-right: 20rpx;
+}
+
+.difficulty-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.difficulty-name {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #2D3436;
+  margin-bottom: 6rpx;
+}
+
+.difficulty-desc {
+  font-size: 22rpx;
+  color: #636E72;
+}
+
+.difficulty-points {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.difficulty-points .points-label {
+  font-size: 20rpx;
+  color: #B2BEC3;
+  margin-bottom: 4rpx;
+}
+
+.difficulty-points .points-value {
+  font-size: 24rpx;
+  font-weight: 600;
+  color: var(--diff-color);
+}

@@ -4,7 +4,7 @@
  */
 const app = getApp()
 const { TRASH_TYPES, BANNER_LIST } = require('../../utils/constants')
-const { navigateTo, showToast } = require('../../utils/util')
+const { navigateTo, showToast, switchTab } = require('../../utils/util')
 
 Page({
   /**
@@ -75,7 +75,7 @@ Page({
   goToClassify(e) {
     const { item } = e.currentTarget.dataset
     console.log('[Index] 点击垃圾分类', item.name)
-    
+
     // 跳转到垃圾分类常识页面，传递分类ID
     navigateTo('/pages/classify/classify', {
       id: item.id,
@@ -89,11 +89,43 @@ Page({
   goToFirstClassify() {
     const firstType = this.data.trashTypes[0]
     console.log('[Index] 点击了解分类详情', firstType.name)
-    
+
     navigateTo('/pages/classify/classify', {
       id: firstType.id,
       name: firstType.name
     })
+  },
+
+  /**
+   * 跳转到知识问答页面
+   */
+  goToQuiz() {
+    console.log('[Index] 点击知识问答')
+    navigateTo('/pages/quiz/quiz')
+  },
+
+  /**
+   * 跳转到每日一练页面
+   */
+  goToDailyQuiz() {
+    console.log('[Index] 点击每日一练')
+    navigateTo('/pages/quiz-daily/quiz-daily')
+  },
+
+  /**
+   * 跳转到积分兑换页面
+   */
+  goToExchange() {
+    console.log('[Index] 点击积分兑换')
+    switchTab('/pages/exchange/exchange')
+  },
+
+  /**
+   * 跳转到个人中心页面
+   */
+  goToProfile() {
+    console.log('[Index] 点击个人中心')
+    switchTab('/pages/profile/profile')
   },
 
   /**

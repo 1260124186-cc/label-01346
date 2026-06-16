@@ -1,0 +1,52 @@
+<view class="daily-container">
+  <view class="header-card">
+    <view class="header-content">
+      <view class="header-icon">📅</view>
+      <view class="header-title">每日一练</view>
+      <view class="header-subtitle">每天5题，轻松学习垃圾分类知识</view>
+    </view>
+
+    <view class="stats-row">
+      <view class="stat-item">
+        <view class="stat-value">{{streakDays}}</view>
+        <view class="stat-label">连续打卡</view>
+      </view>
+      <view class="stat-divider"></view>
+      <view class="stat-item">
+        <view class="stat-value">{{todayQuestions.length}}</view>
+        <view class="stat-label">今日题目</view>
+      </view>
+      <view class="stat-divider"></view>
+      <view class="stat-item">
+        <view class="stat-value">+25</view>
+        <view class="stat-label">预计积分</view>
+      </view>
+    </view>
+  </view>
+
+  <view class="preview-section" wx:if="{{!dailyCompleted}}">
+    <view class="section-title">今日题目预览</view>
+    <view class="preview-list">
+      <view class="preview-item" wx:for="{{todayQuestions}}" wx:key="id" wx:for-item="question">
+        <view class="preview-number">{{index + 1}}</view>
+        <view class="preview-text">{{question.question}}</view>
+        <view class="preview-diff diff-{{question.difficulty}}">
+          {{question.difficulty === 'easy' ? '简单' : question.difficulty === 'medium' ? '中等' : '困难'}}
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view class="completed-section" wx:if="{{dailyCompleted}}">
+    <view class="completed-icon">🎉</view>
+    <view class="completed-title">今日已完成</view>
+    <view class="completed-subtitle">明天再来挑战吧！</view>
+    <view class="completed-tip">每日一练每天0点更新</view>
+  </view>
+
+  <view class="footer-section">
+    <view class="start-btn {{dailyCompleted ? 'disabled' : ''}}" bindtap="onStartQuiz">
+      {{dailyCompleted ? '今日已完成' : '开始答题'}}
+    </view>
+  </view>
+</view>

@@ -6,7 +6,7 @@
 <view class="page-container">
   <!-- 顶部轮播图区域 -->
   <view class="banner-section">
-    <swiper 
+    <swiper
       class="banner-swiper"
       indicator-dots="{{false}}"
       autoplay="{{true}}"
@@ -15,19 +15,19 @@
       circular="{{true}}"
       bindchange="onBannerChange"
     >
-      <swiper-item 
-        wx:for="{{bannerList}}" 
+      <swiper-item
+        wx:for="{{bannerList}}"
         wx:key="id"
         class="banner-item"
       >
-        <view 
+        <view
           class="banner-image-wrapper"
           bindtap="onBannerTap"
           data-item="{{item}}"
         >
-          <image 
-            class="banner-image" 
-            src="{{item.image}}" 
+          <image
+            class="banner-image"
+            src="{{item.image}}"
             mode="aspectFill"
           />
           <view class="banner-overlay">
@@ -36,14 +36,44 @@
         </view>
       </swiper-item>
     </swiper>
-    
+
     <!-- 自定义指示器 -->
     <view class="banner-indicators">
-      <view 
-        wx:for="{{bannerList}}" 
+      <view
+        wx:for="{{bannerList}}"
         wx:key="id"
         class="indicator-dot {{currentBannerIndex === index ? 'active' : ''}}"
       />
+    </view>
+  </view>
+
+  <!-- 快捷功能区域 -->
+  <view class="quick-actions-section">
+    <view class="quick-actions-grid">
+      <view class="quick-action-item" bindtap="goToQuiz">
+        <view class="quick-action-icon-wrapper" style="background: rgba(91, 189, 114, 0.1);">
+          <text class="quick-action-emoji">❓</text>
+        </view>
+        <text class="quick-action-name">知识问答</text>
+      </view>
+      <view class="quick-action-item" bindtap="goToDailyQuiz">
+        <view class="quick-action-icon-wrapper" style="background: rgba(74, 144, 217, 0.1);">
+          <text class="quick-action-emoji">📅</text>
+        </view>
+        <text class="quick-action-name">每日一练</text>
+      </view>
+      <view class="quick-action-item" bindtap="goToExchange">
+        <view class="quick-action-icon-wrapper" style="background: rgba(243, 156, 18, 0.1);">
+          <text class="quick-action-emoji">🎁</text>
+        </view>
+        <text class="quick-action-name">积分兑换</text>
+      </view>
+      <view class="quick-action-item" bindtap="goToProfile">
+        <view class="quick-action-icon-wrapper" style="background: rgba(155, 89, 182, 0.1);">
+          <text class="quick-action-emoji">👤</text>
+        </view>
+        <text class="quick-action-name">个人中心</text>
+      </view>
     </view>
   </view>
 
@@ -62,8 +92,8 @@
   <!-- 四种垃圾分类卡片 - 使用 wx:for 循环渲染 -->
   <view class="trash-types-section">
     <view class="trash-types-grid">
-      <view 
-        wx:for="{{trashTypes}}" 
+      <view
+        wx:for="{{trashTypes}}"
         wx:key="id"
         class="trash-type-card"
         bindtap="goToClassify"
@@ -72,18 +102,18 @@
       >
         <!-- 卡片背景装饰 -->
         <view class="card-decoration"></view>
-        
+
         <!-- 垃圾桶图标 -->
         <view class="trash-icon-wrapper">
           <text class="trash-icon-emoji">{{item.emoji}}</text>
         </view>
-        
+
         <!-- 分类信息 -->
         <view class="trash-info">
           <text class="trash-name">{{item.name}}</text>
           <text class="trash-english">{{item.englishName}}</text>
         </view>
-        
+
         <!-- 箭头指示 -->
         <view class="card-arrow">
           <text class="arrow-icon">›</text>
