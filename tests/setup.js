@@ -45,73 +45,109 @@ global.wx = {
   }))
 }
 
+const defaultClassifyRecords = [
+  { id: 'c1', trashName: '塑料瓶', typeId: 1, typeName: '可回收垃圾', emoji: '🧴', bgColor: 'rgba(74, 144, 217, 0.1)', points: 10, time: '2026-06-16 14:30' },
+  { id: 'c2', trashName: '剩菜剩饭', typeId: 3, typeName: '厨余垃圾', emoji: '🍚', bgColor: 'rgba(91, 189, 114, 0.1)', points: 5, time: '2026-06-16 12:15' },
+  { id: 'c3', trashName: '废电池', typeId: 2, typeName: '有害垃圾', emoji: '🔋', bgColor: 'rgba(232, 93, 93, 0.1)', points: 20, time: '2026-06-16 09:45' },
+  { id: 'c4', trashName: '旧报纸', typeId: 1, typeName: '可回收垃圾', emoji: '📰', bgColor: 'rgba(74, 144, 217, 0.1)', points: 15, time: '2026-06-15 18:20' },
+  { id: 'c5', trashName: '果皮', typeId: 3, typeName: '厨余垃圾', emoji: '🍎', bgColor: 'rgba(91, 189, 114, 0.1)', points: 5, time: '2026-06-15 15:30' },
+  { id: 'c6', trashName: '卫生纸', typeId: 4, typeName: '其他垃圾', emoji: '🧻', bgColor: 'rgba(142, 142, 147, 0.1)', points: 3, time: '2026-06-15 10:00' }
+]
+
+const defaultQuizRecords = [
+  { id: 'q1', quizType: 'chapter', chapterName: '综合知识', totalQuestions: 5, correctCount: 5, wrongCount: 0, accuracy: 100, points: 50, time: '2026-06-14 20:30' }
+]
+
+const defaultSignInRecords = (() => {
+  const records = []
+  const now = new Date('2026-06-16T12:00:00')
+  for (let i = 0; i < 15; i++) {
+    const date = new Date(now.getTime() - 86400000 * i)
+    const y = date.getFullYear()
+    const m = String(date.getMonth() + 1).padStart(2, '0')
+    const d = String(date.getDate()).padStart(2, '0')
+    records.push(`${y}-${m}-${d}`)
+  }
+  records.reverse()
+  return records
+})()
+
 const defaultPointsRecords = [
   {
-    id: 1,
+    id: 'p1',
     type: 'earn',
+    category: 'classify',
     title: '垃圾分类',
     desc: '正确分类塑料瓶',
     emoji: '♻️',
     points: 10,
-    time: '今天 14:30'
+    time: '2026-06-16 14:30'
   },
   {
-    id: 2,
+    id: 'p2',
     type: 'spend',
+    category: 'exchange',
     title: '积分兑换',
     desc: '兑换环保购物袋',
     emoji: '🛍️',
     points: 100,
-    time: '今天 10:15'
+    time: '2026-06-16 10:15'
   },
   {
-    id: 3,
+    id: 'p3',
     type: 'earn',
+    category: 'signin',
     title: '每日签到',
     desc: '连续签到第15天',
     emoji: '📅',
     points: 20,
-    time: '今天 08:00'
+    time: '2026-06-16 08:00'
   },
   {
-    id: 4,
+    id: 'p4',
     type: 'earn',
+    category: 'classify',
     title: '垃圾分类',
     desc: '正确分类厨余垃圾',
     emoji: '🍂',
     points: 5,
-    time: '昨天 18:45'
+    time: '2026-06-15 18:45'
   },
   {
-    id: 5,
+    id: 'p5',
     type: 'spend',
+    category: 'exchange',
     title: '积分兑换',
     desc: '兑换便携餐具套装',
     emoji: '🍴',
     points: 200,
-    time: '昨天 14:20'
+    time: '2026-06-15 14:20'
   },
   {
-    id: 6,
+    id: 'p6',
     type: 'earn',
+    category: 'quiz',
     title: '知识问答',
     desc: '答题正确5道',
     emoji: '❓',
     points: 50,
-    time: '前天 20:30'
+    time: '2026-06-14 20:30'
   },
   {
-    id: 7,
+    id: 'p7',
     type: 'earn',
+    category: 'invite',
     title: '邀请好友',
     desc: '好友注册成功',
     emoji: '👥',
     points: 100,
-    time: '3天前'
+    time: '2026-06-13'
   }
 ]
 
-const appMock = {
+const { TRASH_TYPES } = require('../frontend-mp/utils/constants')
+
+const createAppMock = () => ({
   globalData: {
     userInfo: {
       avatarUrl: '',
@@ -122,14 +158,30 @@ const appMock = {
     },
     orders: [],
     pointsRecords: [...defaultPointsRecords],
+    classifyRecords: [...defaultClassifyRecords],
+    quizRecords: [...defaultQuizRecords],
+    signInRecords: [...defaultSignInRecords],
     systemInfo: null,
     statusBarHeight: 44,
     screenHeight: 812,
     screenWidth: 375
   },
-  updateUserPoints: jest.fn((points) => {
+  updateUserPoints: jest.fn(function(points, recordInfo = null) {
     const app = global.getApp()
     app.globalData.userInfo.points = Math.max(0, app.globalData.userInfo.points + points)
+    if (recordInfo) {
+      const record = {
+        id: 'mock-' + Date.now(),
+        type: points >= 0 ? 'earn' : 'spend',
+        category: recordInfo.category || 'other',
+        title: recordInfo.title || '积分变动',
+        desc: recordInfo.desc || '',
+        emoji: recordInfo.emoji || '💰',
+        points: Math.abs(points),
+        time: '2026-06-16 12:00'
+      }
+      app.addPointsRecord(record)
+    }
   }),
   updateUserInfo: jest.fn((info) => {
     const app = global.getApp()
@@ -151,9 +203,92 @@ const appMock = {
     const app = global.getApp()
     return app.globalData.pointsRecords || []
   }),
+  addClassifyRecord: jest.fn((record) => {
+    const app = global.getApp()
+    app.globalData.classifyRecords.unshift(record)
+  }),
+  getClassifyRecords: jest.fn(() => {
+    const app = global.getApp()
+    return app.globalData.classifyRecords || []
+  }),
+  addQuizRecord: jest.fn((record) => {
+    const app = global.getApp()
+    app.globalData.quizRecords.unshift(record)
+  }),
+  getQuizRecords: jest.fn(() => {
+    const app = global.getApp()
+    return app.globalData.quizRecords || []
+  }),
+  addSignInRecord: jest.fn((dateStr) => {
+    const app = global.getApp()
+    if (!app.globalData.signInRecords.includes(dateStr)) {
+      app.globalData.signInRecords.push(dateStr)
+    }
+  }),
+  getSignInRecords: jest.fn(() => {
+    const app = global.getApp()
+    return app.globalData.signInRecords || []
+  }),
+  getStatistics: jest.fn(() => {
+    const app = global.getApp()
+    const classifyCount = (app.globalData.classifyRecords || []).length
+    const totalEarnedPoints = (app.globalData.pointsRecords || [])
+      .filter(r => r.type === 'earn')
+      .reduce((sum, r) => sum + r.points, 0)
+
+    const sortedDates = [...(app.globalData.signInRecords || [])].sort((a, b) => new Date(b) - new Date(a))
+    let continuousDays = 0
+    if (sortedDates.length > 0) {
+      const today = '2026-06-16'
+      const yesterday = '2026-06-15'
+      const last = sortedDates[0]
+      if (last === today || last === yesterday) {
+        continuousDays = 1
+        for (let i = 1; i < sortedDates.length; i++) {
+          const prev = new Date(sortedDates[i - 1])
+          const curr = new Date(sortedDates[i])
+          const diff = Math.round((prev - curr) / 86400000)
+          if (diff === 1) continuousDays++
+          else break
+        }
+      }
+    }
+
+    return { classifyCount, totalEarnedPoints, continuousDays }
+  }),
+  calculateContinuousDays: jest.fn((records) => {
+    if (!records || records.length === 0) return 0
+    const sorted = [...records].sort((a, b) => new Date(b) - new Date(a))
+    let days = 1
+    for (let i = 1; i < sorted.length; i++) {
+      const prev = new Date(sorted[i - 1])
+      const curr = new Date(sorted[i])
+      const diff = Math.round((prev - curr) / 86400000)
+      if (diff === 1) days++
+      else break
+    }
+    return days
+  }),
+  getCategoryStats: jest.fn(() => {
+    const app = global.getApp()
+    const countMap = {}
+    ;(app.globalData.classifyRecords || []).forEach(r => {
+      countMap[r.typeId] = (countMap[r.typeId] || 0) + 1
+    })
+    return TRASH_TYPES.map(t => ({
+      id: t.id,
+      name: t.name.replace('垃圾', ''),
+      emoji: t.emoji,
+      color: t.color,
+      count: countMap[t.id] || 0
+    }))
+  }),
   initUserInfo: jest.fn(),
   initOrders: jest.fn(),
   initPointsRecords: jest.fn(),
+  initClassifyRecords: jest.fn(),
+  initQuizRecords: jest.fn(),
+  initSignInRecords: jest.fn(),
   getSystemInfo: jest.fn(),
   formatDate: jest.fn((date) => {
     const year = date.getFullYear()
@@ -161,8 +296,10 @@ const appMock = {
     const day = String(date.getDate()).padStart(2, '0')
     return `${year}-${month}-${day}`
   })
-}
+})
+
+const appMock = createAppMock()
 
 global.getApp = jest.fn(() => appMock)
 
-module.exports = { storage }
+module.exports = { storage, defaultClassifyRecords, defaultQuizRecords, defaultSignInRecords, defaultPointsRecords, createAppMock }

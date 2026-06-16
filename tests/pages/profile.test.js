@@ -56,22 +56,33 @@ describe('profile page data', () => {
     })
     expect(pageInstance.data.menuList).toStrictEqual(PROFILE_MENUS)
     expect(pageInstance.data.statistics).toEqual([
-      { id: 'classify', label: '分类次数', value: 128 },
-      { id: 'points', label: '累计积分', value: 2580 },
-      { id: 'days', label: '连续打卡', value: 15 }
+      { id: 'classify', label: '分类次数', value: 0 },
+      { id: 'points', label: '累计积分', value: 0 },
+      { id: 'days', label: '连续打卡', value: 0 }
     ])
     expect(pageInstance.data.isUploading).toBe(false)
   })
 })
 
 describe('initUserInfo / refreshUserInfo', () => {
-  test('refreshUserInfo loads from app.globalData.userInfo and calls getUserLevel for levelInfo', () => {
+  test('refreshUserInfo loads from app.globalData.userInfo and calls getUserLevel and getStatistics', () => {
     const userInfo = moduleApp.globalData.userInfo
+    const expectedStats = moduleApp.getStatistics()
+
     pageInstance.refreshUserInfo()
-    expect(pageInstance.setData).toHaveBeenCalledWith({
-      userInfo: { ...userInfo, points: 1280 },
-      levelInfo: getUserLevel(1280)
-    })
+
+    expect(pageInstance.setData).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userInfo: { ...userInfo, points: 1280 },
+        levelInfo: getUserLevel(1280),
+        statistics: [
+          { id: 'classify', label: '分类次数', value: expectedStats.classifyCount },
+          { id: 'points', label: '累计积分', value: expectedStats.totalEarnedPoints },
+          { id: 'days', label: '连续打卡', value: expectedStats.continuousDays }
+        ]
+      })
+    )
+    expect(moduleApp.getStatistics).toHaveBeenCalled()
   })
 })
 

@@ -30,9 +30,9 @@ Page({
     menuList: PROFILE_MENUS,
     // 统计数据
     statistics: [
-      { id: 'classify', label: '分类次数', value: 128 },
-      { id: 'points', label: '累计积分', value: 2580 },
-      { id: 'days', label: '连续打卡', value: 15 }
+      { id: 'classify', label: '分类次数', value: 0 },
+      { id: 'points', label: '累计积分', value: 0 },
+      { id: 'days', label: '连续打卡', value: 0 }
     ],
     // 是否正在上传头像
     isUploading: false
@@ -68,16 +68,22 @@ Page({
     const userInfo = app.globalData.userInfo
     if (userInfo) {
       const levelInfo = getUserLevel(userInfo.points || 0)
-      
+      const stats = app.getStatistics()
+
       this.setData({
         userInfo: {
           ...userInfo,
           points: userInfo.points || 0
         },
-        levelInfo: levelInfo
+        levelInfo: levelInfo,
+        statistics: [
+          { id: 'classify', label: '分类次数', value: stats.classifyCount },
+          { id: 'points', label: '累计积分', value: stats.totalEarnedPoints },
+          { id: 'days', label: '连续打卡', value: stats.continuousDays }
+        ]
       })
-      
-      console.log('[Profile] 用户信息已刷新', userInfo)
+
+      console.log('[Profile] 用户信息已刷新', userInfo, stats)
     }
   },
 
@@ -86,7 +92,7 @@ Page({
    */
   onAvatarTap() {
     console.log('[Profile] 点击头像')
-    
+
     wx.showActionSheet({
       itemList: ['从相册选择', '拍照'],
       success: (res) => {
@@ -108,7 +114,7 @@ Page({
       success: (res) => {
         const tempFilePath = res.tempFilePaths[0]
         console.log('[Profile] 选择图片成功', tempFilePath)
-        
+
         this.uploadAvatar(tempFilePath)
       },
       fail: (err) => {
@@ -126,7 +132,7 @@ Page({
    */
   uploadAvatar(filePath) {
     this.setData({ isUploading: true })
-    
+
     // 模拟上传过程（实际项目中应上传到服务器）
     setTimeout(() => {
       // 更新用户头像
@@ -134,15 +140,15 @@ Page({
         ...this.data.userInfo,
         avatarUrl: filePath
       }
-      
+
       // 保存到全局和本地存储
       app.updateUserInfo({ avatarUrl: filePath })
-      
+
       this.setData({
         userInfo: userInfo,
         isUploading: false
       })
-      
+
       showToast('头像更新成功')
       console.log('[Profile] 头像上传成功')
     }, 1000)
@@ -153,7 +159,7 @@ Page({
    */
   onNickNameTap() {
     console.log('[Profile] 点击昵称')
-    
+
     wx.showModal({
       title: '修改昵称',
       editable: true,
@@ -180,13 +186,13 @@ Page({
   onMenuTap(e) {
     const { item } = e.currentTarget.dataset
     console.log('[Profile] 点击菜单', item.title)
-    
+
     // 如果有链接，直接跳转
     if (item.link) {
       navigateTo(item.link)
       return
     }
-    
+
     // 没有链接的特殊处理
     switch (item.id) {
       case 'about':

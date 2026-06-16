@@ -1,5 +1,7 @@
 require('../setup')
 
+const { defaultClassifyRecords, defaultQuizRecords } = require('../setup')
+
 let recordsPage
 global.Page = jest.fn(obj => { recordsPage = obj; return obj })
 require('../../frontend-mp/pages/records/records')
@@ -13,36 +15,75 @@ global.Page = jest.fn(obj => { ordersPage = obj; return obj })
 require('../../frontend-mp/pages/orders/orders')
 
 describe('records', () => {
-  test('data 包含 totalCount=128, totalPoints=2580, continuousDays=15', () => {
-    expect(recordsPage.data.totalCount).toBe(128)
-    expect(recordsPage.data.totalPoints).toBe(2580)
-    expect(recordsPage.data.continuousDays).toBe(15)
+  let instance
+
+  beforeEach(() => {
+    jest.clearAllMocks()
+    const app = global.getApp()
+    app.globalData.classifyRecords = [...defaultClassifyRecords]
+    app.globalData.quizRecords = [...defaultQuizRecords]
+
+    instance = { data: JSON.parse(JSON.stringify(recordsPage.data)), setData: jest.fn(function(updates) { Object.assign(this.data, updates) }) }
+    Object.keys(recordsPage).forEach(key => {
+      if (typeof recordsPage[key] === 'function') {
+        instance[key] = recordsPage[key].bind(instance)
+      }
+    })
   })
 
-  test('categoryStats 包含 4 项，每项有 id/name/emoji/color/count', () => {
-    const stats = recordsPage.data.categoryStats
-    expect(stats).toHaveLength(4)
-    stats.forEach(item => {
+  test('data 初始 totalCount=0, totalPoints=0, continuousDays=0', () => {
+    expect(recordsPage.data.totalCount).toBe(0)
+    expect(recordsPage.data.totalPoints).toBe(0)
+    expect(recordsPage.data.continuousDays).toBe(0)
+  })
+
+  test('data 初始 categoryStats 和 recordList 为空数组', () => {
+    expect(recordsPage.data.categoryStats).toEqual([])
+    expect(recordsPage.data.recordList).toEqual([])
+  })
+
+  test('loadRecords 从 app 加载并计算统计数据', () => {
+    instance.loadRecords()
+    expect(instance.data.totalCount).toBe(defaultClassifyRecords.length)
+    expect(instance.data.categoryStats).toHaveLength(4)
+    instance.data.categoryStats.forEach(item => {
       expect(item).toHaveProperty('id')
       expect(item).toHaveProperty('name')
       expect(item).toHaveProperty('emoji')
       expect(item).toHaveProperty('color')
       expect(item).toHaveProperty('count')
     })
+    expect(instance.data.recordList.length).toBeGreaterThan(0)
   })
 
-  test('recordList 包含 6 项，每项有 id/trashName/typeName/emoji/bgColor/points/time', () => {
-    const list = recordsPage.data.recordList
-    expect(list).toHaveLength(6)
+  test('recordList 每项包含 displayTitle/displaySubtitle/emoji/bgColor/points/pointsPrefix/time', () => {
+    instance.loadRecords()
+    const list = instance.data.recordList
+    expect(list.length).toBeGreaterThan(0)
     list.forEach(item => {
-      expect(item).toHaveProperty('id')
-      expect(item).toHaveProperty('trashName')
-      expect(item).toHaveProperty('typeName')
+      expect(item).toHaveProperty('displayTitle')
+      expect(item).toHaveProperty('displaySubtitle')
       expect(item).toHaveProperty('emoji')
       expect(item).toHaveProperty('bgColor')
       expect(item).toHaveProperty('points')
+      expect(item).toHaveProperty('pointsPrefix')
       expect(item).toHaveProperty('time')
     })
+  })
+
+  test('新增答题记录后 loadRecords 反映变化', () => {
+    instance.loadRecords()
+    const beforeCount = instance.data.recordList.length
+
+    const app = global.getApp()
+    app.globalData.quizRecords.unshift({
+      id: 'q-new', quizType: 'daily', chapterName: '每日一练',
+      totalQuestions: 5, correctCount: 4, wrongCount: 1, accuracy: 80,
+      points: 50, time: '2026-06-16 16:00'
+    })
+
+    instance.loadRecords()
+    expect(instance.data.recordList.length).toBe(beforeCount + 1)
   })
 })
 
@@ -53,13 +94,13 @@ describe('points', () => {
     jest.clearAllMocks()
     const app = global.getApp()
     app.globalData.pointsRecords = [
-      { id: 1, type: 'earn', title: '垃圾分类', desc: '正确分类塑料瓶', emoji: '♻️', points: 10, time: '今天 14:30' },
-      { id: 2, type: 'spend', title: '积分兑换', desc: '兑换环保购物袋', emoji: '🛍️', points: 100, time: '今天 10:15' },
-      { id: 3, type: 'earn', title: '每日签到', desc: '连续签到第15天', emoji: '📅', points: 20, time: '今天 08:00' },
-      { id: 4, type: 'earn', title: '垃圾分类', desc: '正确分类厨余垃圾', emoji: '🍂', points: 5, time: '昨天 18:45' },
-      { id: 5, type: 'spend', title: '积分兑换', desc: '兑换便携餐具套装', emoji: '🍴', points: 200, time: '昨天 14:20' },
-      { id: 6, type: 'earn', title: '知识问答', desc: '答题正确5道', emoji: '❓', points: 50, time: '前天 20:30' },
-      { id: 7, type: 'earn', title: '邀请好友', desc: '好友注册成功', emoji: '👥', points: 100, time: '3天前' }
+      { id: 'p1', type: 'earn', title: '垃圾分类', desc: '正确分类塑料瓶', emoji: '♻️', points: 10, time: '2026-06-16 14:30' },
+      { id: 'p2', type: 'spend', title: '积分兑换', desc: '兑换环保购物袋', emoji: '🛍️', points: 100, time: '2026-06-16 10:15' },
+      { id: 'p3', type: 'earn', title: '每日签到', desc: '连续签到第15天', emoji: '📅', points: 20, time: '2026-06-16 08:00' },
+      { id: 'p4', type: 'earn', title: '垃圾分类', desc: '正确分类厨余垃圾', emoji: '🍂', points: 5, time: '2026-06-15 18:45' },
+      { id: 'p5', type: 'spend', title: '积分兑换', desc: '兑换便携餐具套装', emoji: '🍴', points: 200, time: '2026-06-15 14:20' },
+      { id: 'p6', type: 'earn', title: '知识问答', desc: '答题正确5道', emoji: '❓', points: 50, time: '2026-06-14 20:30' },
+      { id: 'p7', type: 'earn', title: '邀请好友', desc: '好友注册成功', emoji: '👥', points: 100, time: '2026-06-13' }
     ]
     app.globalData.userInfo = { avatarUrl: '', nickName: '环保达人', points: 1280, level: 3, joinDate: '2026-01-01' }
 
@@ -123,7 +164,7 @@ describe('points', () => {
   test('新增兑换记录后 loadPointsRecords 能反映变化', () => {
     const app = global.getApp()
     app.globalData.pointsRecords.unshift({
-      id: 100, type: 'spend', title: '积分兑换', desc: '兑换保温杯', emoji: '🛍️', points: 500, time: '刚刚'
+      id: 'p100', type: 'spend', title: '积分兑换', desc: '兑换保温杯', emoji: '🛍️', points: 500, time: '刚刚'
     })
     instance.loadPointsRecords()
     expect(instance.data.allPoints).toHaveLength(8)

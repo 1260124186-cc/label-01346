@@ -2,6 +2,8 @@
  * 垃圾分类小程序 - 入口文件
  * @description 小程序全局逻辑
  */
+const { generateId, formatDate } = require('./utils/util')
+
 App({
   /**
    * 小程序启动时触发
@@ -12,6 +14,9 @@ App({
     this.initUserInfo()
     this.initOrders()
     this.initPointsRecords()
+    this.initClassifyRecords()
+    this.initQuizRecords()
+    this.initSignInRecords()
     this.getSystemInfo()
   },
 
@@ -58,69 +63,82 @@ App({
     if (records) {
       this.globalData.pointsRecords = records
     } else {
+      const now = new Date()
+      const today = formatDate(now, 'YYYY-MM-DD')
+      const yesterday = formatDate(new Date(now.getTime() - 86400000), 'YYYY-MM-DD')
+      const twoDaysAgo = formatDate(new Date(now.getTime() - 86400000 * 2), 'YYYY-MM-DD')
+      const threeDaysAgo = formatDate(new Date(now.getTime() - 86400000 * 3), 'YYYY-MM-DD')
+
       this.globalData.pointsRecords = [
         {
-          id: 1,
+          id: generateId(),
           type: 'earn',
+          category: 'classify',
           title: '垃圾分类',
           desc: '正确分类塑料瓶',
           emoji: '♻️',
           points: 10,
-          time: '今天 14:30'
+          time: today + ' 14:30'
         },
         {
-          id: 2,
+          id: generateId(),
           type: 'spend',
+          category: 'exchange',
           title: '积分兑换',
           desc: '兑换环保购物袋',
           emoji: '🛍️',
           points: 100,
-          time: '今天 10:15'
+          time: today + ' 10:15'
         },
         {
-          id: 3,
+          id: generateId(),
           type: 'earn',
+          category: 'signin',
           title: '每日签到',
           desc: '连续签到第15天',
           emoji: '📅',
           points: 20,
-          time: '今天 08:00'
+          time: today + ' 08:00'
         },
         {
-          id: 4,
+          id: generateId(),
           type: 'earn',
+          category: 'classify',
           title: '垃圾分类',
           desc: '正确分类厨余垃圾',
           emoji: '🍂',
           points: 5,
-          time: '昨天 18:45'
+          time: yesterday + ' 18:45'
         },
         {
-          id: 5,
+          id: generateId(),
           type: 'spend',
+          category: 'exchange',
           title: '积分兑换',
           desc: '兑换便携餐具套装',
           emoji: '🍴',
           points: 200,
-          time: '昨天 14:20'
+          time: yesterday + ' 14:20'
         },
         {
-          id: 6,
+          id: generateId(),
           type: 'earn',
+          category: 'quiz',
           title: '知识问答',
           desc: '答题正确5道',
           emoji: '❓',
           points: 50,
-          time: '前天 20:30'
+          time: twoDaysAgo + ' 20:30'
         },
         {
-          id: 7,
+          id: generateId(),
           type: 'earn',
+          category: 'invite',
           title: '邀请好友',
           desc: '好友注册成功',
           emoji: '👥',
           points: 100,
-          time: '3天前'
+          time: threeDaysAgo
         }
       ]
       wx.setStorageSync('pointsRecords', this.globalData.pointsRecords)
@@ -136,6 +154,249 @@ App({
 
   getPointsRecords() {
     return this.globalData.pointsRecords || []
+  },
+
+  /**
+   * 初始化分类记录
+   */
+  initClassifyRecords() {
+    const records = wx.getStorageSync('classifyRecords')
+    if (records) {
+      this.globalData.classifyRecords = records
+    } else {
+      const now = new Date()
+      const today = formatDate(now, 'YYYY-MM-DD')
+      const yesterday = formatDate(new Date(now.getTime() - 86400000), 'YYYY-MM-DD')
+
+      this.globalData.classifyRecords = [
+        {
+          id: generateId(),
+          trashName: '塑料瓶',
+          typeId: 1,
+          typeName: '可回收垃圾',
+          emoji: '🧴',
+          bgColor: 'rgba(74, 144, 217, 0.1)',
+          points: 10,
+          time: today + ' 14:30'
+        },
+        {
+          id: generateId(),
+          trashName: '剩菜剩饭',
+          typeId: 3,
+          typeName: '厨余垃圾',
+          emoji: '🍚',
+          bgColor: 'rgba(91, 189, 114, 0.1)',
+          points: 5,
+          time: today + ' 12:15'
+        },
+        {
+          id: generateId(),
+          trashName: '废电池',
+          typeId: 2,
+          typeName: '有害垃圾',
+          emoji: '🔋',
+          bgColor: 'rgba(232, 93, 93, 0.1)',
+          points: 20,
+          time: today + ' 09:45'
+        },
+        {
+          id: generateId(),
+          trashName: '旧报纸',
+          typeId: 1,
+          typeName: '可回收垃圾',
+          emoji: '📰',
+          bgColor: 'rgba(74, 144, 217, 0.1)',
+          points: 15,
+          time: yesterday + ' 18:20'
+        },
+        {
+          id: generateId(),
+          trashName: '果皮',
+          typeId: 3,
+          typeName: '厨余垃圾',
+          emoji: '🍎',
+          bgColor: 'rgba(91, 189, 114, 0.1)',
+          points: 5,
+          time: yesterday + ' 15:30'
+        },
+        {
+          id: generateId(),
+          trashName: '卫生纸',
+          typeId: 4,
+          typeName: '其他垃圾',
+          emoji: '🧻',
+          bgColor: 'rgba(142, 142, 147, 0.1)',
+          points: 3,
+          time: yesterday + ' 10:00'
+        }
+      ]
+      wx.setStorageSync('classifyRecords', this.globalData.classifyRecords)
+    }
+    console.log('[App] 分类记录已加载', this.globalData.classifyRecords.length, '条')
+  },
+
+  addClassifyRecord(record) {
+    this.globalData.classifyRecords.unshift(record)
+    wx.setStorageSync('classifyRecords', this.globalData.classifyRecords)
+    console.log('[App] 新增分类记录', record.trashName)
+  },
+
+  getClassifyRecords() {
+    return this.globalData.classifyRecords || []
+  },
+
+  /**
+   * 初始化答题记录
+   */
+  initQuizRecords() {
+    const records = wx.getStorageSync('quizRecords')
+    if (records) {
+      this.globalData.quizRecords = records
+    } else {
+      const now = new Date()
+      const twoDaysAgo = formatDate(new Date(now.getTime() - 86400000 * 2), 'YYYY-MM-DD')
+
+      this.globalData.quizRecords = [
+        {
+          id: generateId(),
+          quizType: 'chapter',
+          chapterName: '综合知识',
+          totalQuestions: 5,
+          correctCount: 5,
+          wrongCount: 0,
+          accuracy: 100,
+          points: 50,
+          time: twoDaysAgo + ' 20:30'
+        }
+      ]
+      wx.setStorageSync('quizRecords', this.globalData.quizRecords)
+    }
+    console.log('[App] 答题记录已加载', this.globalData.quizRecords.length, '条')
+  },
+
+  addQuizRecord(record) {
+    this.globalData.quizRecords.unshift(record)
+    wx.setStorageSync('quizRecords', this.globalData.quizRecords)
+    console.log('[App] 新增答题记录', record.points + '分')
+  },
+
+  getQuizRecords() {
+    return this.globalData.quizRecords || []
+  },
+
+  /**
+   * 初始化签到记录
+   */
+  initSignInRecords() {
+    const records = wx.getStorageSync('signInRecords')
+    if (records) {
+      this.globalData.signInRecords = records
+    } else {
+      const now = new Date()
+      const records = []
+      for (let i = 0; i < 15; i++) {
+        const date = new Date(now.getTime() - 86400000 * i)
+        records.push(formatDate(date, 'YYYY-MM-DD'))
+      }
+      records.reverse()
+      this.globalData.signInRecords = records
+      wx.setStorageSync('signInRecords', records)
+    }
+    console.log('[App] 签到记录已加载', this.globalData.signInRecords.length, '条')
+  },
+
+  addSignInRecord(dateStr) {
+    const records = this.globalData.signInRecords || []
+    if (!records.includes(dateStr)) {
+      records.push(dateStr)
+      this.globalData.signInRecords = records
+      wx.setStorageSync('signInRecords', records)
+      console.log('[App] 新增签到记录', dateStr)
+    }
+  },
+
+  getSignInRecords() {
+    return this.globalData.signInRecords || []
+  },
+
+  /**
+   * 获取统计数据
+   * @returns {Object} 统计数据对象
+   */
+  getStatistics() {
+    const classifyRecords = this.getClassifyRecords()
+    const pointsRecords = this.getPointsRecords()
+    const signInRecords = this.getSignInRecords()
+
+    const classifyCount = classifyRecords.length
+
+    const totalEarnedPoints = pointsRecords
+      .filter(item => item.type === 'earn')
+      .reduce((sum, item) => sum + item.points, 0)
+
+    const continuousDays = this.calculateContinuousDays(signInRecords)
+
+    return {
+      classifyCount,
+      totalEarnedPoints,
+      continuousDays
+    }
+  },
+
+  /**
+   * 计算连续打卡天数
+   * @param {Array} signInRecords 签到日期数组
+   * @returns {number} 连续天数
+   */
+  calculateContinuousDays(signInRecords) {
+    if (!signInRecords || signInRecords.length === 0) return 0
+
+    const sortedRecords = [...signInRecords].sort((a, b) => new Date(b) - new Date(a))
+    const today = formatDate(new Date(), 'YYYY-MM-DD')
+    const yesterday = formatDate(new Date(Date.now() - 86400000), 'YYYY-MM-DD')
+
+    let lastDate = sortedRecords[0]
+    if (lastDate !== today && lastDate !== yesterday) {
+      return 0
+    }
+
+    let continuousDays = 1
+    for (let i = 1; i < sortedRecords.length; i++) {
+      const prevDate = new Date(sortedRecords[i - 1])
+      const currDate = new Date(sortedRecords[i])
+      const diffDays = Math.round((prevDate - currDate) / 86400000)
+
+      if (diffDays === 1) {
+        continuousDays++
+      } else {
+        break
+      }
+    }
+
+    return continuousDays
+  },
+
+  /**
+   * 获取分类统计
+   * @returns {Array} 各分类统计数组
+   */
+  getCategoryStats() {
+    const { TRASH_TYPES } = require('./utils/constants')
+    const classifyRecords = this.getClassifyRecords()
+
+    const categoryCountMap = {}
+    classifyRecords.forEach(record => {
+      const typeId = record.typeId
+      categoryCountMap[typeId] = (categoryCountMap[typeId] || 0) + 1
+    })
+
+    return TRASH_TYPES.map(type => ({
+      id: type.id,
+      name: type.name.replace('垃圾', ''),
+      emoji: type.emoji,
+      color: type.color,
+      count: categoryCountMap[type.id] || 0
+    }))
   },
 
   /**
@@ -167,15 +428,32 @@ App({
   },
 
   /**
-   * 更新用户积分
+   * 更新用户积分并同时添加积分明细记录
    * @param {number} points 积分变化值（正数增加，负数减少）
+   * @param {Object} recordInfo 积分记录信息 { title, desc, emoji, category }
    */
-  updateUserPoints(points) {
+  updateUserPoints(points, recordInfo = null) {
     const userInfo = this.globalData.userInfo
     userInfo.points = Math.max(0, userInfo.points + points)
     this.globalData.userInfo = userInfo
     wx.setStorageSync('userInfo', userInfo)
     console.log('[App] 用户积分已更新', userInfo.points)
+
+    if (recordInfo) {
+      const now = new Date()
+      const timeStr = formatDate(now, 'YYYY-MM-DD HH:mm')
+      const record = {
+        id: generateId(),
+        type: points >= 0 ? 'earn' : 'spend',
+        category: recordInfo.category || 'other',
+        title: recordInfo.title || (points >= 0 ? '积分获取' : '积分消费'),
+        desc: recordInfo.desc || '',
+        emoji: recordInfo.emoji || (points >= 0 ? '💰' : '💸'),
+        points: Math.abs(points),
+        time: timeStr
+      }
+      this.addPointsRecord(record)
+    }
   },
 
   /**
@@ -196,6 +474,9 @@ App({
     userInfo: null,
     orders: [],
     pointsRecords: [],
+    classifyRecords: [],
+    quizRecords: [],
+    signInRecords: [],
     systemInfo: null,
     statusBarHeight: 0,
     screenHeight: 0,
