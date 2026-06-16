@@ -822,6 +822,152 @@ const getRandomSortItems = (count, typeId = null) => {
   return shuffled.slice(0, Math.min(count, shuffled.length))
 }
 
+const TRASH_ENCYCLOPEDIA_BASE = SORT_PRACTICE_ITEMS
+
+function getTrashDescription(name) {
+  const descriptions = {
+    '报纸': '报纸属于可回收垃圾中的废纸张类，是指已经阅读过、废弃的报纸刊物。',
+    '书本': '书本属于可回收垃圾中的废纸张类，包括各种书籍、杂志、教材等印刷品。',
+    '纸箱': '纸箱属于可回收垃圾中的废纸张类，常用于包装运输的纸质容器。',
+    '快递盒': '快递盒属于可回收垃圾中的废纸张类，是快递行业常用的包装材料。',
+    '塑料瓶': '塑料瓶属于可回收垃圾中的废塑料类，主要由PET等塑料材质制成。',
+    '塑料盆': '塑料盆属于可回收垃圾中的废塑料类，包括各种塑料容器和塑料制品。',
+    '塑料玩具': '塑料玩具属于可回收垃圾中的废塑料类，由塑料制成的儿童玩具。',
+    '玻璃瓶': '玻璃瓶属于可回收垃圾中的废玻璃类，包括各种玻璃容器。',
+    '玻璃杯': '玻璃杯属于可回收垃圾中的废玻璃类，包括各种玻璃餐具和容器。',
+    '镜子': '镜子属于可回收垃圾中的废玻璃类，背面镀有金属反射层的玻璃制品。',
+    '易拉罐': '易拉罐属于可回收垃圾中的废金属类，主要由铝或铁制成。',
+    '金属罐头': '金属罐头属于可回收垃圾中的废金属类，用于食品包装的金属容器。',
+    '金属厨具': '金属厨具属于可回收垃圾中的废金属类，包括各种金属炊具和餐具。',
+    '旧衣服': '旧衣服属于可回收垃圾中的废织物类，包括各种穿旧的衣物。',
+    '床单': '床单属于可回收垃圾中的废织物类，包括各种床上纺织用品。',
+    '毛巾': '毛巾属于可回收垃圾中的废织物类，包括各种清洁用纺织用品。',
+    '书包': '书包属于可回收垃圾中的废织物类，包括各种背包和手提包。',
+    '电视机': '电视机属于可回收垃圾中的废电器类，是常见的家用电器。',
+    '洗衣机': '洗衣机属于可回收垃圾中的废电器类，用于清洗衣物的家用电器。',
+    '电脑': '电脑属于可回收垃圾中的废电器类，包括台式机和笔记本电脑。',
+    '充电电池': '充电电池属于有害垃圾中的废电池类，含有重金属等有害物质。',
+    '纽扣电池': '纽扣电池属于有害垃圾中的废电池类，体积小但含有毒物质。',
+    '蓄电池': '蓄电池属于有害垃圾中的废电池类，常用于汽车和储能设备。',
+    '荧光灯管': '荧光灯管属于有害垃圾中的废灯管类，含有汞等有毒物质。',
+    '节能灯': '节能灯属于有害垃圾中的废灯管类，比普通灯管更节能但含汞。',
+    'LED灯': 'LED灯属于有害垃圾中的废灯管类，含少量电子元件和有害物质。',
+    '过期药品': '过期药品属于有害垃圾中的废药品类，可能对环境造成污染。',
+    '药品包装': '药品包装属于有害垃圾中的废药品类，可能残留药品成分。',
+    '油漆桶': '油漆桶属于有害垃圾中的废油漆类，残留的油漆含有毒物质。',
+    '染发剂': '染发剂属于有害垃圾中的废油漆类，含有多种化学成分。',
+    '指甲油': '指甲油属于有害垃圾中的废油漆类，含有机溶剂和色素。',
+    '杀虫喷雾': '杀虫喷雾属于有害垃圾中的废杀虫剂类，含有毒杀虫成分。',
+    '消毒剂': '消毒剂属于有害垃圾中的废杀虫剂类，含有的化学成分可能有害。',
+    '水银温度计': '水银温度计属于有害垃圾中的废水银类，破损后会释放汞蒸气。',
+    '水银血压计': '水银血压计属于有害垃圾中的废水银类，医疗常用的血压测量设备。',
+    '剩菜剩饭': '剩菜剩饭属于厨余垃圾中的食物残渣类，容易腐烂变质。',
+    '米饭': '米饭属于厨余垃圾中的食物残渣类，主要成分为碳水化合物。',
+    '面条': '面条属于厨余垃圾中的食物残渣类，由面粉制成的主食。',
+    '蔬菜': '蔬菜属于厨余垃圾中的食物残渣类，包括各种新鲜或烹饪过的蔬菜。',
+    '肉类': '肉类属于厨余垃圾中的食物残渣类，包括各种畜禽鱼肉。',
+    '苹果皮': '苹果皮属于厨余垃圾中的果皮果核类，水果削皮产生的废弃物。',
+    '香蕉皮': '香蕉皮属于厨余垃圾中的果皮果核类，香蕉的外皮。',
+    '橘子皮': '橘子皮属于厨余垃圾中的果皮果核类，柑橘类水果的外皮。',
+    '鸡蛋壳': '鸡蛋壳属于厨余垃圾中的蛋壳类，主要成分为碳酸钙。',
+    '鸭蛋壳': '鸭蛋壳属于厨余垃圾中的蛋壳类，鸭蛋的外壳。',
+    '茶叶渣': '茶叶渣属于厨余垃圾中的茶渣类，泡茶后剩余的茶叶。',
+    '咖啡渣': '咖啡渣属于厨余垃圾中的茶渣类，冲泡咖啡后剩余的咖啡粉。',
+    '白菜帮': '白菜帮属于厨余垃圾中的菜叶菜根类，白菜的外层老叶。',
+    '萝卜缨': '萝卜缨属于厨余垃圾中的菜叶菜根类，萝卜的叶子部分。',
+    '鸡骨': '鸡骨属于厨余垃圾中的骨头类，体积小、易粉碎。',
+    '鱼骨': '鱼骨属于厨余垃圾中的骨头类，鱼类的骨头。',
+    '小排骨': '小排骨属于厨余垃圾中的骨头类，猪牛羊的小骨头。',
+    '用过的纸巾': '用过的纸巾属于其他垃圾中的卫生纸类，吸水性强无法回收。',
+    '卫生纸': '卫生纸属于其他垃圾中的卫生纸类，遇水即溶无法回收。',
+    '烟蒂': '烟蒂属于其他垃圾中的烟蒂类，烟头过滤嘴难降解。',
+    '烟灰': '烟灰属于其他垃圾中的烟蒂类，烟草燃烧后的灰烬。',
+    '陶瓷碎片': '陶瓷碎片属于其他垃圾中的陶瓷类，破损的陶瓷制品。',
+    '碎花盆': '碎花盆属于其他垃圾中的陶瓷类，破损的陶瓷或塑料花盆。',
+    '碎碗碟': '碎碗碟属于其他垃圾中的陶瓷类，破损的餐具。',
+    '一次性筷子': '一次性筷子属于其他垃圾中的一次性餐具类，受污染无法回收。',
+    '塑料餐盒': '塑料餐盒属于其他垃圾中的一次性餐具类，受油污污染难以回收。',
+    '尘土': '尘土属于其他垃圾中的尘土类，清扫产生的灰尘和渣土。',
+    '渣土': '渣土属于其他垃圾中的尘土类，建筑或装修产生的渣土。',
+    '猫砂': '猫砂属于其他垃圾中的宠物粪便类，宠物使用的垫料。',
+    '狗粪便': '狗粪便属于其他垃圾中的宠物粪便类，宠物的排泄物。',
+    '大骨头': '大骨头属于其他垃圾中的其他类，难以粉碎会损坏处理设备。',
+    '椰子壳': '椰子壳属于其他垃圾中的其他类，质地坚硬难以降解处理。',
+    '榴莲壳': '榴莲壳属于其他垃圾中的其他类，质地坚硬难以降解处理。'
+  }
+  return descriptions[name] || `${name}是日常生活中常见的垃圾物品。`
+}
+
+function getDisposalTips(name, typeId) {
+  const type = TRASH_TYPES.find(t => t.id === typeId)
+  if (!type) return []
+
+  const tips = [...type.tips]
+
+  const specificTips = {
+    '塑料瓶': ['投放前请清空并清洗瓶内残留物', '压扁后投放可节省空间'],
+    '纸箱': ['请去除胶带和打包带', '拆开压平后投放'],
+    '玻璃瓶': ['请清洗干净后投放', '破损的玻璃请包裹后投放'],
+    '充电电池': ['请单独投放至有害垃圾收集点', '不要拆解电池'],
+    '水银温度计': ['如破损请密封后投放', '避免直接接触水银'],
+    '剩菜剩饭': ['请沥干水分后投放', '去除一次性餐具和包装'],
+    '大骨头': ['请勿投入厨余垃圾桶', '可联系环卫部门专门处理']
+  }
+
+  if (specificTips[name]) {
+    return specificTips[name]
+  }
+
+  return tips
+}
+
+function getRelatedItems(name, typeId) {
+  const allItems = TRASH_ENCYCLOPEDIA_BASE.filter(item =>
+    item.typeId === typeId && item.name !== name
+  )
+  return allItems.slice(0, 4)
+}
+
+const TRASH_ENCYCLOPEDIA = TRASH_ENCYCLOPEDIA_BASE.map(item => {
+  const type = TRASH_TYPES.find(t => t.id === item.typeId)
+  return {
+    ...item,
+    typeName: type ? type.name : '',
+    typeColor: type ? type.color : '',
+    typeBgColor: type ? type.bgColor : '',
+    description: getTrashDescription(item.name),
+    disposalTips: getDisposalTips(item.name, item.typeId),
+    relatedItems: getRelatedItems(item.name, item.typeId)
+  }
+})
+
+const HOT_SEARCH_WORDS = [
+  { name: '塑料瓶', emoji: '🧴', hot: true },
+  { name: '废电池', emoji: '🔋', hot: true },
+  { name: '剩菜剩饭', emoji: '🍚', hot: true },
+  { name: '用过的纸巾', emoji: '🧻', hot: false },
+  { name: '快递盒', emoji: '📦', hot: false },
+  { name: '过期药品', emoji: '💊', hot: true },
+  { name: '玻璃瓶', emoji: '🍶', hot: false },
+  { name: '烟蒂', emoji: '🚬', hot: false }
+]
+
+const SEARCH_HISTORY_KEY = 'search_history'
+const MAX_SEARCH_HISTORY = 10
+
+const fuzzySearchTrash = (keyword) => {
+  if (!keyword || keyword.trim() === '') return []
+
+  const lowerKeyword = keyword.trim().toLowerCase()
+
+  return TRASH_ENCYCLOPEDIA.filter(item => {
+    const nameMatch = item.name.toLowerCase().includes(lowerKeyword)
+    const descMatch = item.description.toLowerCase().includes(lowerKeyword)
+    const typeMatch = item.typeName.toLowerCase().includes(lowerKeyword)
+    return nameMatch || descMatch || typeMatch
+  })
+}
+
 module.exports = {
   TRASH_TYPES,
   BANNER_LIST,
@@ -839,5 +985,10 @@ module.exports = {
   getDailyQuestions,
   SORT_PRACTICE_ITEMS,
   getSortItemsByType,
-  getRandomSortItems
+  getRandomSortItems,
+  TRASH_ENCYCLOPEDIA,
+  HOT_SEARCH_WORDS,
+  SEARCH_HISTORY_KEY,
+  MAX_SEARCH_HISTORY,
+  fuzzySearchTrash
 }

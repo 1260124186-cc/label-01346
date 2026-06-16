@@ -10,6 +10,42 @@
   box-sizing: border-box;
 }
 
+/* ==================== 搜索框入口 ==================== */
+.search-section {
+  padding: 24rpx 32rpx 16rpx;
+}
+
+.search-entry {
+  display: flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(20rpx);
+  -webkit-backdrop-filter: blur(20rpx);
+  border-radius: 48rpx;
+  padding: 24rpx 32rpx;
+  gap: 16rpx;
+  box-shadow: 0 4rpx 20rpx rgba(91, 189, 114, 0.12);
+  border: 1rpx solid rgba(255, 255, 255, 0.8);
+  transition: all 0.2s ease;
+}
+
+.search-entry:active {
+  transform: scale(0.98);
+  box-shadow: 0 2rpx 12rpx rgba(91, 189, 114, 0.08);
+}
+
+.search-entry-icon {
+  font-size: 32rpx;
+  color: var(--text-tertiary);
+  flex-shrink: 0;
+}
+
+.search-entry-placeholder {
+  flex: 1;
+  font-size: 28rpx;
+  color: var(--text-tertiary);
+}
+
 /* ==================== 轮播图区域 ==================== */
 .banner-section {
   position: relative;

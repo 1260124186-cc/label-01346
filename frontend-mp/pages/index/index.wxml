@@ -4,6 +4,14 @@
   考核点：swiper组件、wx:for、bindtap事件、view/image标签
 -->
 <view class="page-container">
+  <!-- 搜索框入口 -->
+  <view class="search-section">
+    <view class="search-entry" bindtap="goToSearch">
+      <text class="search-entry-icon">🔍</text>
+      <text class="search-entry-placeholder">搜索垃圾名称，如：塑料瓶、废电池</text>
+    </view>
+  </view>
+
   <!-- 顶部轮播图区域 -->
   <view class="banner-section">
     <swiper

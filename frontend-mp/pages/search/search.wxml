@@ -1,0 +1,201 @@
+<view class="search-page">
+  <!-- 搜索框区域 -->
+  <view class="search-header">
+    <view class="search-bar">
+      <text class="search-icon">🔍</text>
+      <input
+        class="search-input"
+        placeholder="搜索垃圾名称，如：塑料瓶"
+        value="{{searchKeyword}}"
+        bindinput="onSearchInput"
+        bindconfirm="onSearchConfirm"
+        focus="{{inputFocus}}"
+        confirm-type="search"
+        cursor-spacing="20"
+      />
+      <view
+        class="clear-btn"
+        wx:if="{{searchKeyword}}"
+        bindtap="onClearInput"
+      >
+        <text class="clear-icon">✕</text>
+      </view>
+    </view>
+    <view class="cancel-btn" bindtap="goBack">
+      <text class="cancel-text">取消</text>
+    </view>
+  </view>
+
+  <!-- 搜索结果列表 -->
+  <view class="search-results" wx:if="{{searchKeyword && searchResults.length > 0}}">
+    <view class="results-header">
+      <text class="results-title">搜索结果</text>
+      <text class="results-count">找到 {{searchResults.length}} 条</text>
+    </view>
+
+    <view class="result-list">
+      <view
+        wx:for="{{searchResults}}"
+        wx:key="id"
+        class="result-item"
+        bindtap="onResultTap"
+        data-item="{{item}}"
+      >
+        <view class="result-icon-wrapper" style="background: {{item.typeBgColor}};">
+          <text class="result-emoji">{{item.emoji}}</text>
+        </view>
+        <view class="result-info">
+          <view class="result-name">
+            <text>{{item.name}}</text>
+          </view>
+          <view class="result-type" style="color: {{item.typeColor}};">
+            {{item.typeName}}
+          </view>
+        </view>
+        <view class="result-arrow">›</view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 搜索无结果 -->
+  <view class="no-results" wx:if="{{searchKeyword && searchResults.length === 0 && hasSearched}}">
+    <view class="no-results-icon">📭</view>
+    <text class="no-results-title">未找到 "{{searchKeyword}}" 相关结果</text>
+    <text class="no-results-tip">试试其他关键词，或帮助我们完善数据库</text>
+    <view class="feedback-btn" bindtap="onFeedback">
+      <text class="feedback-text">反馈该垃圾</text>
+    </view>
+  </view>
+
+  <!-- 搜索详情弹窗 -->
+  <view class="detail-modal" wx:if="{{showDetail}}" catchtap="onCloseDetail">
+    <view class="detail-content" catchtap="">
+      <view class="detail-header" style="--detail-color: {{currentDetail.typeColor}}; --detail-bg: {{currentDetail.typeBgColor}};">
+        <view class="detail-icon-wrapper">
+          <text class="detail-emoji">{{currentDetail.emoji}}</text>
+        </view>
+        <view class="detail-info">
+          <text class="detail-name">{{currentDetail.name}}</text>
+          <view class="detail-type-tag" style="background: {{currentDetail.typeBgColor}}; color: {{currentDetail.typeColor}};">
+            {{currentDetail.typeName}}
+          </view>
+        </view>
+        <view class="detail-close" bindtap="onCloseDetail">
+          <text class="close-icon">✕</text>
+        </view>
+      </view>
+
+      <view class="detail-body">
+        <view class="detail-section">
+          <view class="section-title">
+            <text class="section-icon">📋</text>
+            <text class="section-text">基本介绍</text>
+          </view>
+          <view class="section-content">
+            <text class="description-text">{{currentDetail.description}}</text>
+          </view>
+        </view>
+
+        <view class="detail-section">
+          <view class="section-title">
+            <text class="section-icon">💡</text>
+            <text class="section-text">投放说明</text>
+          </view>
+          <view class="section-content">
+            <view
+              wx:for="{{currentDetail.disposalTips}}"
+              wx:key="index"
+              class="tip-item"
+            >
+              <view class="tip-dot" style="background: {{currentDetail.typeColor}};"></view>
+              <text class="tip-text">{{item}}</text>
+            </view>
+          </view>
+        </view>
+
+        <view class="detail-section" wx:if="{{currentDetail.relatedItems && currentDetail.relatedItems.length > 0}}">
+          <view class="section-title">
+            <text class="section-icon">🔗</text>
+            <text class="section-text">相关示例</text>
+          </view>
+          <view class="section-content">
+            <view class="related-grid">
+              <view
+                wx:for="{{currentDetail.relatedItems}}"
+                wx:key="id"
+                class="related-item"
+                bindtap="onRelatedItemTap"
+                data-item="{{item}}"
+              >
+                <text class="related-emoji">{{item.emoji}}</text>
+                <text class="related-name">{{item.name}}</text>
+              </view>
+            </view>
+          </view>
+        </view>
+
+        <view class="detail-actions">
+          <view
+            class="action-btn primary"
+            style="--btn-bg: {{currentDetail.typeColor}};"
+            bindtap="goToClassify"
+          >
+            <text class="action-icon">📖</text>
+            <text class="action-text">查看分类详情</text>
+          </view>
+          <view
+            class="action-btn secondary"
+            bindtap="onCloseDetail"
+          >
+            <text class="action-text">关闭</text>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 默认内容（搜索历史和热门搜索） -->
+  <view class="default-content" wx:if="{{!searchKeyword}}">
+    <view class="history-section" wx:if="{{searchHistory.length > 0}}">
+      <view class="section-header">
+        <text class="section-title">⏰ 搜索历史</text>
+        <view class="clear-history" bindtap="onClearHistory">
+          <text class="clear-text">清空</text>
+        </view>
+      </view>
+      <view class="history-list">
+        <view
+          wx:for="{{searchHistory}}"
+          wx:key="*this"
+          class="history-item"
+          bindtap="onHistoryTap"
+          data-keyword="{{item}}"
+        >
+          <text class="history-text">{{item}}</text>
+          <view class="history-delete" catchtap="onDeleteHistory" data-keyword="{{item}}">
+            <text class="delete-icon">✕</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <view class="hot-section">
+      <view class="section-header">
+        <text class="section-title">🔥 热门搜索</text>
+      </view>
+      <view class="hot-list">
+        <view
+          wx:for="{{hotSearchWords}}"
+          wx:key="name"
+          class="hot-item"
+          bindtap="onHotWordTap"
+          data-word="{{item}}"
+        >
+          <text class="hot-emoji">{{item.emoji}}</text>
+          <text class="hot-name">{{item.name}}</text>
+          <text class="hot-tag" wx:if="{{item.hot}}">热</text>
+        </view>
+      </view>
+    </view>
+  </view>
+</view>

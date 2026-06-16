@@ -200,6 +200,11 @@ Page({
     switchTab('/pages/profile/profile')
   },
 
+  goToSearch() {
+    console.log('[Index] 点击搜索框')
+    navigateTo('/pages/search/search')
+  },
+
   /**
    * 页面相关事件处理函数--监听用户下拉动作
    */

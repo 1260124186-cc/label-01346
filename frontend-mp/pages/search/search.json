@@ -1,0 +1,7 @@
+{
+  "navigationBarTitleText": "垃圾百科",
+  "navigationBarBackgroundColor": "#5BBD72",
+  "navigationBarTextStyle": "white",
+  "enablePullDownRefresh": false,
+  "usingComponents": {}
+}

@@ -276,6 +276,58 @@ const isEmpty = (value) => {
   return false
 }
 
+const { SEARCH_HISTORY_KEY, MAX_SEARCH_HISTORY } = require('./constants')
+
+const getSearchHistory = () => {
+  try {
+    const history = getStorage(SEARCH_HISTORY_KEY, [])
+    return Array.isArray(history) ? history : []
+  } catch (e) {
+    console.error('[getSearchHistory] 获取搜索历史失败', e)
+    return []
+  }
+}
+
+const addSearchHistory = (keyword) => {
+  if (!keyword || keyword.trim() === '') return
+  
+  try {
+    let history = getSearchHistory()
+    
+    history = history.filter(item => item !== keyword.trim())
+    
+    history.unshift(keyword.trim())
+    
+    if (history.length > MAX_SEARCH_HISTORY) {
+      history = history.slice(0, MAX_SEARCH_HISTORY)
+    }
+    
+    setStorage(SEARCH_HISTORY_KEY, history)
+  } catch (e) {
+    console.error('[addSearchHistory] 添加搜索历史失败', e)
+  }
+}
+
+const removeSearchHistoryItem = (keyword) => {
+  if (!keyword) return
+  
+  try {
+    let history = getSearchHistory()
+    history = history.filter(item => item !== keyword)
+    setStorage(SEARCH_HISTORY_KEY, history)
+  } catch (e) {
+    console.error('[removeSearchHistoryItem] 删除搜索历史失败', e)
+  }
+}
+
+const clearSearchHistory = () => {
+  try {
+    setStorage(SEARCH_HISTORY_KEY, [])
+  } catch (e) {
+    console.error('[clearSearchHistory] 清空搜索历史失败', e)
+  }
+}
+
 module.exports = {
   formatDate,
   formatNumber,
@@ -295,5 +347,9 @@ module.exports = {
   setStorage,
   removeStorage,
   generateId,
-  isEmpty
+  isEmpty,
+  getSearchHistory,
+  addSearchHistory,
+  removeSearchHistoryItem,
+  clearSearchHistory
 }
