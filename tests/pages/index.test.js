@@ -23,6 +23,27 @@ describe('Index Page', () => {
       expect(pageObj.data.currentBannerIndex).toBe(0)
       expect(pageObj.data.isLoading).toBe(false)
     })
+
+    test('初始 isSignedToday 为 false，今天未签到', () => {
+      expect(pageObj.data.isSignedToday).toBe(false)
+    })
+
+    test('初始 streakDays 为 0', () => {
+      expect(pageObj.data.streakDays).toBe(0)
+    })
+  })
+
+  describe('refreshSignInStatus', () => {
+    test('默认数据下 isSignedToday 为 false（今天未签到）', () => {
+      pageObj.refreshSignInStatus()
+      expect(pageObj.data.isSignedToday).toBe(false)
+    })
+
+    test('默认数据下签到记录不含今天，每日一练记录也不含今天', () => {
+      const app = getApp()
+      expect(app.globalData.signInRecords).not.toContain('2026-06-16')
+      expect(app.globalData.dailyQuizRecords).not.toContain('2026-06-16')
+    })
   })
 
   describe('onBannerChange', () => {

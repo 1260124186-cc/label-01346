@@ -62,6 +62,19 @@ describe('profile page data', () => {
     ])
     expect(pageInstance.data.isUploading).toBe(false)
   })
+
+  test('初始 isSignedToday 为 false，今天未签到', () => {
+    expect(pageInstance.data.isSignedToday).toBe(false)
+  })
+})
+
+describe('refreshUserInfo 初始态', () => {
+  test('默认数据下 refreshUserInfo 后 isSignedToday 仍为 false', () => {
+    const app = getApp()
+    expect(app.globalData.signInRecords).not.toContain('2026-06-16')
+    pageInstance.refreshUserInfo()
+    expect(pageInstance.data.isSignedToday).toBe(false)
+  })
 })
 
 describe('initUserInfo / refreshUserInfo', () => {

@@ -32,6 +32,10 @@ describe('quiz-daily page', () => {
       expect(pageObj.data.dailyCompleted).toBe(false)
     })
 
+    test('初始数据包含 isSignedToday=false', () => {
+      expect(pageObj.data.isSignedToday).toBe(false)
+    })
+
     test('初始数据包含 todayQuestions=[]', () => {
       expect(pageObj.data.todayQuestions).toEqual([])
     })
@@ -42,6 +46,40 @@ describe('quiz-daily page', () => {
 
     test('初始数据包含 streakDays=0', () => {
       expect(pageObj.data.streakDays).toBe(0)
+    })
+  })
+
+  describe('初始态验证', () => {
+    test('默认数据下 checkDailyCompleted 后 dailyCompleted 为 false（今天未答题）', () => {
+      const app = global.getApp()
+      expect(app.globalData.dailyQuizRecords).not.toContain('2026-06-16')
+      page.checkDailyCompleted()
+      expect(page.data.dailyCompleted).toBe(false)
+    })
+
+    test('默认数据下 checkDailyCompleted 后 isSignedToday 为 false（今天未签到）', () => {
+      const app = global.getApp()
+      expect(app.globalData.signInRecords).not.toContain('2026-06-16')
+      page.checkDailyCompleted()
+      expect(page.data.isSignedToday).toBe(false)
+    })
+
+    test('签到与每日一练状态互相独立：签到不影响 dailyCompleted', () => {
+      const app = global.getApp()
+      app.globalData.signInRecords = ['2026-06-16']
+      app.globalData.dailyQuizRecords = ['2026-06-15']
+      page.checkDailyCompleted()
+      expect(page.data.isSignedToday).toBe(true)
+      expect(page.data.dailyCompleted).toBe(false)
+    })
+
+    test('签到与每日一练状态互相独立：答题不影响 isSignedToday', () => {
+      const app = global.getApp()
+      app.globalData.signInRecords = ['2026-06-15']
+      app.globalData.dailyQuizRecords = ['2026-06-16']
+      page.checkDailyCompleted()
+      expect(page.data.isSignedToday).toBe(false)
+      expect(page.data.dailyCompleted).toBe(true)
     })
   })
 

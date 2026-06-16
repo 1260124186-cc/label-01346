@@ -61,8 +61,9 @@ const defaultQuizRecords = [
 const defaultSignInRecords = (() => {
   const records = []
   const now = new Date('2026-06-16T12:00:00')
+  const yesterday = new Date(now.getTime() - 86400000)
   for (let i = 0; i < 15; i++) {
-    const date = new Date(now.getTime() - 86400000 * i)
+    const date = new Date(yesterday.getTime() - 86400000 * i)
     const y = date.getFullYear()
     const m = String(date.getMonth() + 1).padStart(2, '0')
     const d = String(date.getDate()).padStart(2, '0')
@@ -98,10 +99,10 @@ const defaultPointsRecords = [
     type: 'earn',
     category: 'signin',
     title: '每日签到',
-    desc: '连续签到第15天',
+    desc: '签到奖励',
     emoji: '📅',
     points: 20,
-    time: '2026-06-16 08:00'
+    time: '2026-06-15 08:00'
   },
   {
     id: 'p4',
