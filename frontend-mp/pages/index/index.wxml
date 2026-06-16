@@ -122,12 +122,6 @@
         <!-- 卡片背景装饰 -->
         <view class="card-decoration"></view>
 
-        <!-- 练一练按钮 -->
-        <view class="practice-btn" catchtap="startSortPractice" data-item="{{item}}" style="--btn-color: {{item.color}};">
-          <text class="practice-btn-icon">✏️</text>
-          <text class="practice-btn-text">练一练</text>
-        </view>
-
         <!-- 垃圾桶图标 -->
         <view class="trash-icon-wrapper">
           <text class="trash-icon-emoji">{{item.emoji}}</text>
@@ -137,6 +131,12 @@
         <view class="trash-info">
           <text class="trash-name">{{item.name}}</text>
           <text class="trash-english">{{item.englishName}}</text>
+        </view>
+
+        <!-- 练一练按钮 -->
+        <view class="practice-btn" catchtap="startSortPractice" data-item="{{item}}" style="--btn-color: {{item.color}};">
+          <text class="practice-btn-icon">✏️</text>
+          <text class="practice-btn-text">练一练</text>
         </view>
 
         <!-- 箭头指示 -->

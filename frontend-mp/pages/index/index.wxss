@@ -289,8 +289,8 @@
 /* 练一练按钮 */
 .practice-btn {
   position: absolute;
-  top: 20rpx;
-  right: 20rpx;
+  bottom: 20rpx;
+  left: 20rpx;
   display: flex;
   align-items: center;
   gap: 6rpx;

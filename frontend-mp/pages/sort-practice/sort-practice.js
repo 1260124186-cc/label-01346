@@ -31,7 +31,14 @@ Page({
 
     questions: [],
     currentIndex: 0,
-    currentQuestion: null,
+    currentQuestion: {
+      id: 0,
+      name: '',
+      typeId: 0,
+      emoji: '',
+      desc: '',
+      correctType: null
+    },
 
     options: [],
 
@@ -46,7 +53,8 @@ Page({
     showResult: false,
     resultData: null,
 
-    progressPercent: 0
+    progressPercent: 0,
+    isLoading: true
   },
 
   onLoad(options) {
@@ -111,7 +119,8 @@ Page({
       wrongCount: 0,
       totalPoints: 0,
       showResult: false,
-      progressPercent: 0
+      progressPercent: 0,
+      isLoading: false
     })
 
     this.updateNavigationTitle()
@@ -119,13 +128,13 @@ Page({
 
   generateOptions(correctTypeId) {
     const types = [...TRASH_TYPES]
-    const options = types.map((type, index) => ({
+    const options = types.map((type, idx) => ({
       typeId: type.id,
       name: type.name,
       emoji: type.emoji,
       color: type.color,
       bgColor: type.bgColor,
-      index
+      optIndex: idx
     }))
     return options.sort(() => 0.5 - Math.random())
   },
@@ -314,13 +323,14 @@ Page({
 
     if (typeName) {
       navigateTo('/pages/classify/classify', {
-      id: typeId,
-      name: typeName.name
-    })
+        id: typeId,
+        name: typeName.name
+      })
     }
   },
 
   onRestart() {
+    this.setData({ isLoading: true, showResult: false })
     const options = {
       mode: this.data.practiceMode,
       typeId: this.data.typeId,

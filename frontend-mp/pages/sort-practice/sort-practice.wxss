@@ -437,3 +437,34 @@
 .review-icon {
   font-size: 32rpx;
 }
+
+/* 加载状态 */
+.loading-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(180deg, #E8F5E9 0%, #F0F9FF 100%);
+}
+
+.loading-spinner {
+  width: 60rpx;
+  height: 60rpx;
+  border: 4rpx solid rgba(91, 189, 114, 0.2);
+  border-top-color: #5BBD72;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 24rpx;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.loading-text {
+  font-size: 28rpx;
+  color: #636E72;
+}

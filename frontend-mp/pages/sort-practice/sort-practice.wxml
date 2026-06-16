@@ -2,7 +2,12 @@
   垃圾分类练习页面
   功能：随机展示垃圾名称，用户四选一选择类别
 -->
-<view class="sort-practice-container" wx:if="{{!showResult}}">
+<view class="loading-container" wx:if="{{isLoading}}">
+  <view class="loading-spinner"></view>
+  <text class="loading-text">加载中...</text>
+</view>
+
+<view class="sort-practice-container" wx:if="{{!showResult && !isLoading}}">
   <view class="progress-section">
     <view class="progress-header">
       <text class="progress-text">第 {{currentIndex + 1}} / {{questions.length}} 题</text>
@@ -55,7 +60,7 @@
         <text class="title-icon">✅</text>
         <text>回答正确</text>
       </view>
-      <view class="explanation-text">
+      <view class="explanation-text" wx:if="{{currentQuestion.correctType}}">
         {{currentQuestion.name}} 属于 {{currentQuestion.correctType.name}}
       </view>
     </view>
@@ -64,7 +69,7 @@
         <text class="title-icon">💡</text>
         <text>正确答案</text>
       </view>
-      <view class="explanation-text">
+      <view class="explanation-text" wx:if="{{currentQuestion.correctType}}">
         {{currentQuestion.name}} 属于 {{currentQuestion.correctType.name}}
       </view>
       <view class="knowledge-link" bindtap="onGoToKnowledge">
@@ -80,7 +85,7 @@
   </view>
 </view>
 
-<view class="result-container" wx:if="{{showResult}}">
+<view class="result-container" wx:if="{{showResult && !isLoading}}">
   <view class="result-header">
     <view class="result-emoji">{{resultData.emoji}}</view>
     <view class="result-title">{{resultData.title}}</view>
