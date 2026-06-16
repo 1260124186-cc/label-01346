@@ -10,6 +10,30 @@
     </view>
   </view>
 
+  <!-- 打卡状态区域：签到和每日一练独立展示，共用 streakDays -->
+  <view class="checkin-section">
+    <view class="checkin-card">
+      <view class="checkin-streak">
+        <text class="streak-icon">🔥</text>
+        <text class="streak-days">{{streakDays}}</text>
+        <text class="streak-label">连续打卡</text>
+      </view>
+      <view class="checkin-divider"></view>
+      <view class="checkin-actions">
+        <view class="checkin-item {{isSignedToday ? 'done' : ''}}" bindtap="goToSignIn">
+          <text class="checkin-emoji">{{isSignedToday ? '✅' : '📅'}}</text>
+          <text class="checkin-name">每日签到</text>
+          <text class="checkin-status">{{isSignedToday ? '已签到' : '去签到'}}</text>
+        </view>
+        <view class="checkin-item {{dailyCompleted ? 'done' : ''}}" bindtap="goToDailyQuiz">
+          <text class="checkin-emoji">{{dailyCompleted ? '📝' : '✏️'}}</text>
+          <text class="checkin-name">每日一练</text>
+          <text class="checkin-status">{{dailyCompleted ? '已完成' : '去答题'}}</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
   <view class="quick-entries">
     <view class="section-title">快捷入口</view>
     <view class="entries-grid">

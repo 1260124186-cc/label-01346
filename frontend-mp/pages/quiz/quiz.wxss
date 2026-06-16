@@ -44,6 +44,102 @@
   font-weight: 700;
 }
 
+/* ==================== 打卡状态区域 ==================== */
+.checkin-section {
+  padding: 24rpx 32rpx 0;
+}
+
+.checkin-card {
+  display: flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(20rpx);
+  -webkit-backdrop-filter: blur(20rpx);
+  border-radius: 24rpx;
+  padding: 28rpx 32rpx;
+  box-shadow: 0 4rpx 20rpx rgba(91, 189, 114, 0.08);
+}
+
+.checkin-streak {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-right: 28rpx;
+  flex-shrink: 0;
+}
+
+.streak-icon {
+  font-size: 44rpx;
+  margin-bottom: 4rpx;
+}
+
+.streak-days {
+  font-size: 40rpx;
+  font-weight: 700;
+  color: #5BBD72;
+  line-height: 1.2;
+}
+
+.streak-label {
+  font-size: 22rpx;
+  color: #636E72;
+}
+
+.checkin-divider {
+  width: 1rpx;
+  height: 80rpx;
+  background: rgba(0, 0, 0, 0.06);
+  margin-right: 28rpx;
+  flex-shrink: 0;
+}
+
+.checkin-actions {
+  display: flex;
+  flex: 1;
+  gap: 16rpx;
+}
+
+.checkin-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 16rpx 12rpx;
+  border-radius: 16rpx;
+  background: rgba(91, 189, 114, 0.06);
+  transition: all 0.2s;
+}
+
+.checkin-item:active {
+  background: rgba(91, 189, 114, 0.12);
+}
+
+.checkin-item.done {
+  background: rgba(91, 189, 114, 0.1);
+}
+
+.checkin-emoji {
+  font-size: 40rpx;
+  margin-bottom: 8rpx;
+}
+
+.checkin-name {
+  font-size: 24rpx;
+  font-weight: 500;
+  color: #2D3436;
+  margin-bottom: 4rpx;
+}
+
+.checkin-status {
+  font-size: 22rpx;
+  color: #5BBD72;
+  font-weight: 500;
+}
+
+.checkin-item.done .checkin-status {
+  color: #B2BEC3;
+}
+
 .quick-entries {
   padding: 32rpx;
 }

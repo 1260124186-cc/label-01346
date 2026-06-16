@@ -10,6 +10,8 @@ Page({
   data: {
     userPoints: 0,
     dailyCompleted: false,
+    isSignedToday: false,
+    streakDays: 0,
     wrongCount: 0,
     chapters: QUIZ_CHAPTERS,
     difficulties: QUIZ_DIFFICULTIES,
@@ -77,12 +79,14 @@ Page({
   },
 
   checkDailyCompleted() {
-    const today = new Date().toDateString()
-    const lastDailyDate = getStorage('lastDailyQuizDate', '')
-    const dailyCompleted = lastDailyDate === today
+    const dailyCompleted = app.isTodayDailyQuizDone()
+    const isSignedToday = app.isTodaySignedIn()
+    const streakDays = app.getStreakDays()
 
     this.setData({
-      dailyCompleted
+      dailyCompleted,
+      isSignedToday,
+      streakDays
     })
 
     const quickEntries = this.data.quickEntries.map(item => {
@@ -160,6 +164,10 @@ Page({
       return
     }
     navigateTo('/pages/quiz-daily/quiz-daily')
+  },
+
+  goToSignIn() {
+    navigateTo('/pages/signin/signin')
   },
 
   goToChapterQuiz() {

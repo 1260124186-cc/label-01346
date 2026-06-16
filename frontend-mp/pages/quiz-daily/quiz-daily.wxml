@@ -24,6 +24,18 @@
     </view>
   </view>
 
+  <!-- 打卡状态：签到和每日一练独立展示 -->
+  <view class="checkin-row">
+    <view class="checkin-tag {{isSignedToday ? 'done' : ''}}" bindtap="goToSignIn">
+      <text class="checkin-tag-emoji">{{isSignedToday ? '✅' : '📅'}}</text>
+      <text class="checkin-tag-text">{{isSignedToday ? '已签到' : '去签到'}}</text>
+    </view>
+    <view class="checkin-tag {{dailyCompleted ? 'done' : ''}}">
+      <text class="checkin-tag-emoji">{{dailyCompleted ? '📝' : '✏️'}}</text>
+      <text class="checkin-tag-text">{{dailyCompleted ? '已答题' : '未答题'}}</text>
+    </view>
+  </view>
+
   <view class="preview-section" wx:if="{{!dailyCompleted}}">
     <view class="section-title">今日题目预览</view>
     <view class="preview-list">

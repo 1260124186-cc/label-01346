@@ -4,11 +4,12 @@
  */
 const app = getApp()
 const { getDailyQuestions } = require('../../utils/constants')
-const { navigateTo, showToast, getStorage, setStorage, formatDate } = require('../../utils/util')
+const { navigateTo, showToast, getStorage, setStorage } = require('../../utils/util')
 
 Page({
   data: {
     dailyCompleted: false,
+    isSignedToday: false,
     todayQuestions: [],
     userPoints: 0,
     streakDays: 0
@@ -42,12 +43,12 @@ Page({
   },
 
   checkDailyCompleted() {
-    const today = formatDate(new Date(), 'YYYY-MM-DD')
-    const dailyQuizRecords = app.getDailyQuizRecords()
-    const dailyCompleted = dailyQuizRecords.includes(today)
+    const dailyCompleted = app.isTodayDailyQuizDone()
+    const isSignedToday = app.isTodaySignedIn()
 
     this.setData({
-      dailyCompleted
+      dailyCompleted,
+      isSignedToday
     })
   },
 
@@ -74,6 +75,10 @@ Page({
     navigateTo('/pages/quiz-play/quiz-play', {
       type: 'daily'
     })
+  },
+
+  goToSignIn() {
+    navigateTo('/pages/signin/signin')
   },
 
   onPullDownRefresh() {

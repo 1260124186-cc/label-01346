@@ -21,6 +21,8 @@ describe('quiz page', () => {
     page.data = {
       userPoints: 0,
       dailyCompleted: false,
+      isSignedToday: false,
+      streakDays: 0,
       wrongCount: 0,
       chapters: QUIZ_CHAPTERS,
       difficulties: QUIZ_DIFFICULTIES,
@@ -61,27 +63,32 @@ describe('quiz page', () => {
   })
 
   describe('checkDailyCompleted', () => {
-    test('storage中无日期时 dailyCompleted 为 false', () => {
+    test('今日未完成每日一练时 dailyCompleted 为 false', () => {
+      const app = getApp()
+      app.globalData.dailyQuizRecords = ['2026-06-15']
       page.checkDailyCompleted()
       expect(page.data.dailyCompleted).toBe(false)
     })
 
-    test('storage中日期为今天时 dailyCompleted 为 true', () => {
-      const today = new Date().toDateString()
-      storage.lastDailyQuizDate = today
+    test('今日已完成每日一练时 dailyCompleted 为 true', () => {
+      const app = getApp()
+      app.globalData.dailyQuizRecords = ['2026-06-16']
       page.checkDailyCompleted()
       expect(page.data.dailyCompleted).toBe(true)
     })
 
-    test('storage中日期非今天时 dailyCompleted 为 false', () => {
-      storage.lastDailyQuizDate = 'Mon Jan 01 2024'
+    test('签到状态独立于每日一练完成状态', () => {
+      const app = getApp()
+      app.globalData.signInRecords = ['2026-06-16']
+      app.globalData.dailyQuizRecords = ['2026-06-15']
       page.checkDailyCompleted()
+      expect(page.data.isSignedToday).toBe(true)
       expect(page.data.dailyCompleted).toBe(false)
     })
 
     test('dailyCompleted 为 true 时 daily 入口 badge 为 已完成', () => {
-      const today = new Date().toDateString()
-      storage.lastDailyQuizDate = today
+      const app = getApp()
+      app.globalData.dailyQuizRecords = ['2026-06-16']
       page.checkDailyCompleted()
       const setDataCalls = page.setData.mock.calls
       const lastQuickEntriesCall = setDataCalls.find(c => c[0].quickEntries)
@@ -89,6 +96,8 @@ describe('quiz page', () => {
     })
 
     test('dailyCompleted 为 false 时 daily 入口 badge 为空', () => {
+      const app = getApp()
+      app.globalData.dailyQuizRecords = ['2026-06-15']
       page.checkDailyCompleted()
       const setDataCalls = page.setData.mock.calls
       const lastQuickEntriesCall = setDataCalls.find(c => c[0].quickEntries)

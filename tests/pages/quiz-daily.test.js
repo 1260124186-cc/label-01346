@@ -20,6 +20,7 @@ describe('quiz-daily page', () => {
     })
     page.data = {
       dailyCompleted: false,
+      isSignedToday: false,
       todayQuestions: [],
       userPoints: 0,
       streakDays: 0

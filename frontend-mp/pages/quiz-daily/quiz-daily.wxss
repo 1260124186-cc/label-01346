@@ -67,6 +67,46 @@
   background: rgba(255, 255, 255, 0.3);
 }
 
+/* ==================== 打卡状态标签 ==================== */
+.checkin-row {
+  display: flex;
+  gap: 16rpx;
+  padding: 0 32rpx;
+  margin-bottom: 24rpx;
+}
+
+.checkin-tag {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  padding: 14rpx 24rpx;
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 32rpx;
+  box-shadow: 0 2rpx 12rpx rgba(91, 189, 114, 0.08);
+}
+
+.checkin-tag.done {
+  background: rgba(91, 189, 114, 0.1);
+}
+
+.checkin-tag:active {
+  transform: scale(0.97);
+}
+
+.checkin-tag-emoji {
+  font-size: 28rpx;
+}
+
+.checkin-tag-text {
+  font-size: 24rpx;
+  font-weight: 500;
+  color: #5BBD72;
+}
+
+.checkin-tag.done .checkin-tag-text {
+  color: #B2BEC3;
+}
+
 .preview-section {
   padding: 32rpx;
 }
