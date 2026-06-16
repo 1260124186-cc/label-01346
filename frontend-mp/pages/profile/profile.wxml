@@ -91,31 +91,36 @@
     </view>
   </view>
 
-  <!-- 功能菜单 - 使用 weUI 组件 -->
+  <!-- 功能菜单（分组） -->
   <view class="menu-section">
-    <view class="menu-title">
-      <text class="title-text">功能服务</text>
-    </view>
-    
-    <!-- weUI cells 组件 -->
-    <mp-cells ext-class="menu-cells">
-      <mp-cell 
-        wx:for="{{menuList}}" 
-        wx:key="id"
-        ext-class="menu-cell"
-        link="{{true}}"
-        bindtap="onMenuTap"
-        data-item="{{item}}"
-      >
-        <view slot="icon" class="menu-icon-wrapper">
-          <text class="menu-icon-emoji">{{item.emoji}}</text>
+    <block wx:for="{{menuList}}" wx:for-item="group" wx:for-index="groupIndex" wx:key="groupId">
+      <view class="menu-group">
+        <view class="menu-group-title">
+          <text class="group-title-text">{{group.groupName}}</text>
         </view>
-        <view class="menu-content">
-          <text class="menu-title-text">{{item.title}}</text>
-          <text class="menu-desc">{{item.desc}}</text>
+        <view class="menu-group-cells">
+          <view 
+            wx:for="{{group.items}}" 
+            wx:for-item="item" 
+            wx:key="id"
+            class="menu-cell-item"
+            bindtap="onMenuTap"
+            data-item="{{item}}"
+          >
+            <view class="menu-icon-wrapper" style="background: {{item.id === 'quiz' ? 'rgba(91, 189, 114, 0.1)' : item.id === 'daily' ? 'rgba(74, 144, 217, 0.1)' : item.id === 'signin' ? 'rgba(243, 156, 18, 0.1)' : item.id === 'records' ? 'rgba(91, 189, 114, 0.1)' : item.id === 'points' ? 'rgba(243, 156, 18, 0.1)' : item.id === 'orders' ? 'rgba(74, 144, 217, 0.1)' : 'rgba(155, 89, 182, 0.1)'}};">
+              <text class="menu-icon-emoji">{{item.emoji}}</text>
+            </view>
+            <view class="menu-content">
+              <text class="menu-title-text">{{item.title}}</text>
+              <text class="menu-desc">{{item.desc}}</text>
+            </view>
+            <view class="menu-arrow">
+              <text class="arrow-icon">›</text>
+            </view>
+          </view>
         </view>
-      </mp-cell>
-    </mp-cells>
+      </view>
+    </block>
   </view>
 
   <!-- 版本信息 -->

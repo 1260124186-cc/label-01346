@@ -97,15 +97,31 @@ describe('EXCHANGE_BANNERS', () => {
 })
 
 describe('PROFILE_MENUS', () => {
-  test('length is 5', () => {
-    expect(PROFILE_MENUS).toHaveLength(5)
+  test('has 3 groups (学习中心/我的记录/其他)', () => {
+    expect(PROFILE_MENUS).toHaveLength(3)
+    expect(PROFILE_MENUS[0].groupName).toBe('学习中心')
+    expect(PROFILE_MENUS[1].groupName).toBe('我的记录')
+    expect(PROFILE_MENUS[2].groupName).toBe('其他')
   })
 
-  test('each has id/title/link', () => {
-    PROFILE_MENUS.forEach(item => {
-      expect(item).toHaveProperty('id')
-      expect(item).toHaveProperty('title')
-      expect(item).toHaveProperty('link')
+  test('each group has groupId, groupName and items array', () => {
+    PROFILE_MENUS.forEach(group => {
+      expect(group).toHaveProperty('groupId')
+      expect(group).toHaveProperty('groupName')
+      expect(group).toHaveProperty('items')
+      expect(Array.isArray(group.items)).toBe(true)
+      expect(group.items.length).toBeGreaterThan(0)
+    })
+  })
+
+  test('each menu item has id/title/link/emoji', () => {
+    PROFILE_MENUS.forEach(group => {
+      group.items.forEach(item => {
+        expect(item).toHaveProperty('id')
+        expect(item).toHaveProperty('title')
+        expect(item).toHaveProperty('link')
+        expect(item).toHaveProperty('emoji')
+      })
     })
   })
 })

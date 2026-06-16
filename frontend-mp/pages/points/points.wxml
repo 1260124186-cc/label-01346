@@ -25,16 +25,54 @@
     </view>
   </view>
 
+  <!-- 签到入口 -->
+  <view class="signin-entry-section" bindtap="onQuickAction" data-id="signin">
+    <view class="signin-entry-card {{isSignedToday ? 'done' : ''}}">
+      <view class="signin-entry-left">
+        <text class="signin-entry-emoji">{{isSignedToday ? '✅' : '📅'}}</text>
+        <view class="signin-entry-text">
+          <text class="signin-entry-title">{{isSignedToday ? '今日已签到' : '每日签到'}}</text>
+          <text class="signin-entry-subtitle">
+            {{isSignedToday ? '连续打卡' + streakDays + '天，明天继续' : '连续打卡' + streakDays + '天，点击签到+5积分'}}</text>
+        </view>
+      </view>
+      <view class="signin-entry-btn">{{isSignedToday ? '已完成' : '去签到'}}</view>
+    </view>
+  </view>
+
+  <!-- 快捷功能入口 -->
+  <view class="quick-section">
+    <view class="quick-title">赚取积分</view>
+    <view class="quick-grid">
+      <view 
+        wx:for="{{quickActions}}" 
+        wx:key="id"
+        class="quick-item"
+        bindtap="onQuickAction"
+        data-id="{{item.id}}"
+      >
+        <view class="quick-icon" style="background: {{item.color}}1A;">
+          <text class="quick-emoji">{{item.emoji}}</text>
+        </view>
+        <text class="quick-title-text">{{item.title}}</text>
+        <text class="quick-desc">{{item.desc}}</text>
+      </view>
+    </view>
+  </view>
+
   <!-- 筛选标签 -->
   <view class="filter-section">
-    <view 
-      wx:for="{{filterTabs}}" 
-      wx:key="id"
-      class="filter-tab {{currentFilter === item.id ? 'active' : ''}}"
-      bindtap="onFilterChange"
-      data-id="{{item.id}}"
-    >
-      <text class="filter-text">{{item.name}}</text>
+    <view class="filter-title">积分明细</view>
+    <view class="filter-tabs">
+      <view 
+        wx:for="{{filterTabs}}" 
+        wx:key="id"
+        class="filter-tab {{currentFilter === item.id ? 'active' : ''}}"
+        bindtap="onFilterChange"
+        data-id="{{item.id}}"
+      >
+        <text class="filter-text">{{item.name}}</text>
+      </view>
     </view>
   </view>
 

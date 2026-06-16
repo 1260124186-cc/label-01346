@@ -2,6 +2,7 @@
  * 积分明细页面
  */
 const app = getApp()
+const { navigateTo, formatDate } = require('../../utils/util')
 
 Page({
   data: {
@@ -17,7 +18,19 @@ Page({
     currentFilter: 'all',
 
     allPoints: [],
-    pointsList: []
+    pointsList: [],
+
+    // 快捷功能入口
+    quickActions: [
+      { id: 'signin', emoji: '📅', title: '每日签到', desc: '连续签到赢积分', color: '#5BBD72' },
+      { id: 'quiz', emoji: '❓', title: '知识问答', desc: '答题获得积分', color: '#4A90D9' },
+      { id: 'exchange', emoji: '🎁', title: '积分兑换', desc: '积分兑换好礼', color: '#F39C12' },
+      { id: 'daily', emoji: '📝', title: '每日一练', desc: '每日答题打卡', color: '#9B59B6' }
+    ],
+
+    // 签到状态
+    isSignedToday: false,
+    streakDays: 0
   },
 
   onLoad() {
@@ -27,6 +40,14 @@ Page({
 
   onShow() {
     this.loadPointsRecords()
+    this.refreshSignInStatus()
+  },
+
+  refreshSignInStatus() {
+    this.setData({
+      isSignedToday: app.isTodaySignedIn(),
+      streakDays: app.getStreakDays()
+    })
   },
 
   loadPointsRecords() {
@@ -69,9 +90,29 @@ Page({
     this.filterPoints(id)
   },
 
+  onQuickAction(e) {
+    const { id } = e.currentTarget.dataset
+    console.log('[Points] 点击快捷功能:', id)
+    switch (id) {
+      case 'signin':
+        navigateTo('/pages/signin/signin')
+        break
+      case 'quiz':
+        navigateTo('/pages/quiz/quiz')
+        break
+      case 'exchange':
+        wx.switchTab({ url: '/pages/exchange/exchange' })
+        break
+      case 'daily':
+        navigateTo('/pages/quiz-daily/quiz-daily')
+        break
+    }
+  },
+
   onPullDownRefresh() {
     console.log('[Points] 下拉刷新')
     this.loadPointsRecords()
+    this.refreshSignInStatus()
     setTimeout(() => {
       wx.stopPullDownRefresh()
     }, 1000)

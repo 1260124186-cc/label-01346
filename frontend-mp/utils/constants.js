@@ -228,48 +228,82 @@ const EXCHANGE_BANNERS = [
 ]
 
 /**
- * 个人中心菜单项
+ * 个人中心菜单项（分组）
  */
 const PROFILE_MENUS = [
   {
-    id: 'quiz',
-    icon: 'quiz',
-    emoji: '❓',
-    title: '知识问答',
-    desc: '答题赢取积分奖励',
-    link: '/pages/quiz/quiz'
+    groupId: 'learn',
+    groupName: '学习中心',
+    items: [
+      {
+        id: 'quiz',
+        icon: 'quiz',
+        emoji: '❓',
+        title: '知识问答',
+        desc: '答题赢取积分奖励',
+        link: '/pages/quiz/quiz'
+      },
+      {
+        id: 'daily',
+        icon: 'daily',
+        emoji: '📅',
+        title: '每日一练',
+        desc: '每日打卡答题',
+        link: '/pages/quiz-daily/quiz-daily'
+      },
+      {
+        id: 'signin',
+        icon: 'signin',
+        emoji: '📝',
+        title: '每日签到',
+        desc: '签到获取积分',
+        link: '/pages/signin/signin'
+      }
+    ]
   },
   {
-    id: 'records',
-    icon: 'history',
-    emoji: '📊',
-    title: '分类记录',
-    desc: '查看历史分类记录',
-    link: '/pages/records/records'
+    groupId: 'record',
+    groupName: '我的记录',
+    items: [
+      {
+        id: 'records',
+        icon: 'history',
+        emoji: '📊',
+        title: '分类记录',
+        desc: '查看历史分类记录',
+        link: '/pages/records/records'
+      },
+      {
+        id: 'points',
+        icon: 'coin',
+        emoji: '💰',
+        title: '积分明细',
+        desc: '查看积分获取与消费',
+        link: '/pages/points/points'
+      },
+      {
+        id: 'orders',
+        icon: 'order',
+        emoji: '📦',
+        title: '兑换订单',
+        desc: '查看商品兑换记录',
+        link: '/pages/orders/orders'
+      }
+    ]
   },
   {
-    id: 'points',
-    icon: 'coin',
-    emoji: '💰',
-    title: '积分明细',
-    desc: '查看积分获取与消费',
-    link: '/pages/points/points'
-  },
-  {
-    id: 'orders',
-    icon: 'order',
-    emoji: '📦',
-    title: '兑换订单',
-    desc: '查看商品兑换记录',
-    link: '/pages/orders/orders'
-  },
-  {
-    id: 'about',
-    icon: 'info',
-    emoji: 'ℹ️',
-    title: '关于我们',
-    desc: '了解垃圾分类助手',
-    link: ''
+    groupId: 'other',
+    groupName: '其他',
+    items: [
+      {
+        id: 'about',
+        icon: 'info',
+        emoji: 'ℹ️',
+        title: '关于我们',
+        desc: '了解垃圾分类助手',
+        link: ''
+      }
+    ]
   }
 ]
 
