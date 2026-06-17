@@ -117,6 +117,34 @@
     </view>
   </view>
 
+  <!-- 功能菜单：消息中心 -->
+  <view class="menu-section" wx:if="{{noticeMenus.length > 0}}">
+    <view class="menu-group-title">
+      <text class="group-title-text">消息中心</text>
+    </view>
+    <mp-cells ext-class="menu-cells">
+      <mp-cell
+        wx:for="{{noticeMenus}}"
+        wx:key="id"
+        ext-class="menu-cell"
+        link="{{true}}"
+        bindtap="onMenuTap"
+        data-item="{{item}}"
+      >
+        <view slot="icon" class="menu-icon-wrapper" style="background: rgba(91, 189, 114, 0.1); position: relative;">
+          <text class="menu-icon-emoji">{{item.emoji}}</text>
+          <view wx:if="{{item.badgeCount > 0}}" class="menu-badge">
+            <text class="menu-badge-text">{{item.badgeCount > 99 ? '99+' : item.badgeCount}}</text>
+          </view>
+        </view>
+        <view class="menu-content">
+          <text class="menu-title-text">{{item.title}}</text>
+          <text class="menu-desc">{{item.desc}}</text>
+        </view>
+      </mp-cell>
+    </mp-cells>
+  </view>
+
   <!-- 功能菜单：学习中心 -->
   <view class="menu-section">
     <view class="menu-group-title">

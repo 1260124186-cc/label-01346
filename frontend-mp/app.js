@@ -4,6 +4,10 @@
  */
 const { generateId, formatDate } = require('./utils/util')
 const { getUserLevel, ACHIEVEMENTS } = require('./utils/constants')
+const {
+  MESSAGE_TYPES,
+  messageManager
+} = require('./utils/message')
 
 App({
   /**
@@ -44,12 +48,15 @@ App({
     this.getSystemInfo()
     this.simulateAutoShipping()
     this.processInviterOnLaunch(options)
+    this.initMessageSystem()
+    this.checkPushStrategies()
   },
 
   onShow() {
     console.log('[App] 小程序显示')
     this.simulateAutoShipping()
     this.simulateRecycleProgress()
+    this.checkPushStrategies()
   },
 
   /**
@@ -280,6 +287,23 @@ App({
       logisticsCompany: company,
       logisticsNo: logisticsNo
     })
+
+    const order = this.getOrderById(orderId)
+    if (order && messageManager.getSubscriptionSetting('shipmentNotice')) {
+      messageManager.addMessage({
+        type: MESSAGE_TYPES.ORDER,
+        title: '订单已发货',
+        content: `您兑换的「${order.goodsName}」已通过${company}发货，物流单号：${logisticsNo}，预计3天内送达。`,
+        emoji: '🚚',
+        data: {
+          orderId: orderId,
+          goodsName: order.goodsName,
+          logisticsCompany: company,
+          logisticsNo: logisticsNo,
+          link: '/pages/orders/orders'
+        }
+      })
+    }
 
     return { company, logisticsNo }
   },
@@ -2702,6 +2726,163 @@ App({
     return true
   },
 
+  initMessageSystem() {
+    this.globalData.messageManager = messageManager
+    console.log('[App] 消息系统初始化完成')
+  },
+
+  checkPushStrategies() {
+    console.log('[App] 检查推送策略')
+
+    if (!this.isTodaySignedIn()) {
+      const signInRecords = this.getSignInRecords()
+      const today = formatDate(new Date(), 'YYYY-MM-DD')
+      const yesterday = formatDate(new Date(Date.now() - 86400000), 'YYYY-MM-DD')
+      const twoDaysAgo = formatDate(new Date(Date.now() - 86400000 * 2), 'YYYY-MM-DD')
+
+      const missedYesterday = !signInRecords.includes(yesterday)
+      const missedTwoDaysAgo = !signInRecords.includes(twoDaysAgo)
+
+      if (missedYesterday && missedTwoDaysAgo) {
+        if (messageManager.shouldSendSigninReminder()) {
+          messageManager.addMessage({
+            type: MESSAGE_TYPES.SIGNIN,
+            title: '连续2天未签到提醒',
+            content: '您已经连续2天没有签到啦！连续签到7天可获得额外50积分奖励，快去签到吧~',
+            emoji: '⚠️',
+            data: {
+              link: '/pages/signin/signin'
+            }
+          })
+          messageManager.updateSigninReminderTime()
+          console.log('[App] 已推送连续2天未签到提醒')
+        }
+      } else if (!signInRecords.includes(today)) {
+        if (messageManager.shouldSendSigninReminder()) {
+          messageManager.addMessage({
+            type: MESSAGE_TYPES.SIGNIN,
+            title: '今日签到提醒',
+            content: '今天还没有签到哦！签到可获得5积分奖励，连续签到还有额外奖励~',
+            emoji: '📅',
+            data: {
+              link: '/pages/signin/signin'
+            }
+          })
+          messageManager.updateSigninReminderTime()
+          console.log('[App] 已推送今日签到提醒')
+        }
+      }
+    }
+
+    const expiringInfo = this.getExpiringPoints()
+    if (expiringInfo.points > 0 && expiringInfo.points >= 50) {
+      if (messageManager.shouldSendPointsExpireReminder()) {
+        messageManager.addMessage({
+          type: MESSAGE_TYPES.SYSTEM,
+          title: '积分即将过期提醒',
+          content: `您有 ${expiringInfo.points} 积分将于 ${expiringInfo.expireDate} 过期，快去积分商城兑换心仪的商品吧！`,
+          emoji: '⏰',
+          data: {
+            link: '/pages/exchange/exchange'
+          }
+        })
+        messageManager.updatePointsExpireReminderTime()
+        console.log('[App] 已推送积分即将过期提醒', expiringInfo.points, '分')
+      }
+    }
+  },
+
+  addSystemMessage(title, content, data = {}) {
+    return messageManager.addMessage({
+      type: MESSAGE_TYPES.SYSTEM,
+      title,
+      content,
+      emoji: '🔔',
+      data
+    })
+  },
+
+  addActivityMessage(title, content, activityId, link = '/pages/activity/activity') {
+    return messageManager.addMessage({
+      type: MESSAGE_TYPES.ACTIVITY,
+      title,
+      content,
+      emoji: '🎉',
+      data: {
+        activityId,
+        link,
+        ...arguments[4] || {}
+      }
+    })
+  },
+
+  addQuizNewQuestionsMessage(title, content, chapterId = null) {
+    return messageManager.addMessage({
+      type: MESSAGE_TYPES.QUIZ,
+      title,
+      content,
+      emoji: '📚',
+      data: {
+        chapterId,
+        link: '/pages/quiz/quiz'
+      }
+    })
+  },
+
+  getUnreadMessageCount(type = null) {
+    return messageManager.getUnreadCount(type)
+  },
+
+  getUnreadMessageCountByType() {
+    return messageManager.getUnreadCountByType()
+  },
+
+  markMessageAsRead(messageId) {
+    return messageManager.markAsRead(messageId)
+  },
+
+  markAllMessagesAsRead(type = null) {
+    return messageManager.markAllAsRead(type)
+  },
+
+  deleteMessage(messageId) {
+    return messageManager.deleteMessage(messageId)
+  },
+
+  getMessages(type = null) {
+    return messageManager.getMessagesByType(type)
+  },
+
+  getSubscriptionSettings() {
+    return messageManager.getAllSubscriptionSettings()
+  },
+
+  getSubscriptionSetting(key) {
+    return messageManager.getSubscriptionSetting(key)
+  },
+
+  setSubscriptionSetting(key, value) {
+    messageManager.setSubscriptionSetting(key, value)
+  },
+
+  requestSubscribeMessage(tmplIds = []) {
+    return new Promise((resolve) => {
+      if (typeof wx.requestSubscribeMessage !== 'function') {
+        resolve({ success: false, reason: 'unsupported' })
+        return
+      }
+      if (tmplIds.length === 0) {
+        resolve({ success: false, reason: 'no_templates' })
+        return
+      }
+      wx.requestSubscribeMessage({
+        tmplIds,
+        success: (res) => resolve({ success: true, result: res }),
+        fail: (err) => resolve({ success: false, reason: 'fail', error: err })
+      })
+    })
+  },
+
   /**
    * 全局数据
    */
@@ -2737,6 +2918,7 @@ App({
     antiCheatData: null,
     gameRecords: [],
     dailyGamePlays: null,
-    recycleOrders: []
+    recycleOrders: [],
+    messageManager: null
   }
 })

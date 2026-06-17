@@ -537,3 +537,28 @@
 .safe-area-bottom {
   height: 48rpx;
 }
+
+/* ==================== 菜单红点 ==================== */
+.menu-badge {
+  position: absolute;
+  top: -8rpx;
+  right: -8rpx;
+  min-width: 32rpx;
+  height: 32rpx;
+  padding: 0 8rpx;
+  background: #FF3B30;
+  border-radius: 16rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 3rpx solid #FFFFFF;
+  box-shadow: 0 2rpx 8rpx rgba(255, 59, 48, 0.3);
+  transform: scale(0.9);
+}
+
+.menu-badge-text {
+  font-size: 20rpx;
+  color: #FFFFFF;
+  font-weight: 600;
+  line-height: 1;
+}

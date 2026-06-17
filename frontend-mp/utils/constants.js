@@ -197,6 +197,13 @@ const INVITE_CONFIG = {
 
 const PROFILE_MENUS = [
   {
+    groupId: 'notice',
+    groupName: '消息中心',
+    items: [
+      { id: 'messages', icon: 'message', emoji: '🔔', title: '消息通知', desc: '查看系统消息、活动提醒等', link: '/pages/messages/messages', hasBadge: true }
+    ]
+  },
+  {
     groupId: 'learn',
     groupName: '学习中心',
     items: [

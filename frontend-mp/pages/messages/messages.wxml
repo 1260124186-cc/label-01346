@@ -1,0 +1,160 @@
+<view class="page-container">
+
+  <view class="tabs-section">
+    <scroll-view scroll-x="{{true}}" class="tabs-scroll" enhanced="{{true}}" show-scrollbar="{{false}}">
+      <view class="tabs-wrapper">
+        <view
+          wx:for="{{tabList}}"
+          wx:key="id"
+          class="tab-item {{currentTab === item.id ? 'active' : ''}}"
+          bindtap="onTabTap"
+          data-id="{{item.id}}"
+        >
+          <text class="tab-name">{{item.name}}</text>
+          <view wx:if="{{unreadCount[item.id] > 0}}" class="tab-badge">
+            <text class="badge-text">{{unreadCount[item.id] > 99 ? '99+' : unreadCount[item.id]}}</text>
+          </view>
+        </view>
+      </view>
+    </scroll-view>
+  </view>
+
+  <view class="header-section">
+    <view class="header-left">
+      <text class="message-count">共 {{messageList.length}} 条消息</text>
+    </view>
+    <view class="header-right">
+      <view
+        class="header-action"
+        bindtap="onMarkAllRead"
+        wx:if="{{unreadCount[currentTab] > 0}}"
+      >
+        <text class="action-icon">✓</text>
+        <text class="action-text">全部已读</text>
+      </view>
+      <view
+        class="header-action"
+        bindtap="onClearRead"
+        wx:if="{{hasReadMessages}}"
+      >
+        <text class="action-icon">🧹</text>
+        <text class="action-text">清除已读</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="message-list" wx:if="{{messageList.length > 0}}">
+    <view
+      wx:for="{{messageList}}"
+      wx:key="id"
+      class="message-card {{item.isRead ? 'read' : 'unread'}}"
+      bindtap="onMessageTap"
+      data-item="{{item}}"
+      bindlongpress="onMessageLongPress"
+      data-id="{{item.id}}"
+    >
+      <view class="message-icon-wrapper" style="background: {{item.typeConfig.bgColor}};">
+        <text class="message-emoji">{{item.emoji || item.typeConfig.emoji}}</text>
+        <view wx:if="{{!item.isRead}}" class="unread-dot"></view>
+      </view>
+
+      <view class="message-content">
+        <view class="message-header">
+          <text class="message-title">{{item.title}}</text>
+          <text class="message-time">{{item.time}}</text>
+        </view>
+        <view class="message-body">
+          <text class="message-desc">{{item.content}}</text>
+        </view>
+        <view class="message-type-tag" style="color: {{item.typeConfig.color}}; background: {{item.typeConfig.bgColor}};">
+          <text class="type-tag-text">{{item.typeConfig.name}}</text>
+        </view>
+      </view>
+
+      <view class="message-arrow">
+        <text class="arrow-icon">›</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="empty-state" wx:else>
+    <view class="empty-icon-wrapper">
+      <text class="empty-emoji">📭</text>
+    </view>
+    <text class="empty-title">暂无消息</text>
+    <text class="empty-desc">{{emptyTip}}</text>
+  </view>
+
+  <view class="subscription-section" wx:if="{{currentTab === 'all'}}">
+    <view class="section-header">
+      <text class="section-title">📬 订阅消息管理</text>
+    </view>
+    <view class="subscription-card">
+      <view class="subscription-item">
+        <view class="sub-left">
+          <view class="sub-icon" style="background: rgba(155, 89, 182, 0.1);">
+            <text class="sub-emoji">📅</text>
+          </view>
+          <view class="sub-info">
+            <text class="sub-title">签到提醒</text>
+            <text class="sub-desc">每日提醒签到获取积分</text>
+          </view>
+        </view>
+        <view class="sub-right">
+          <switch
+            checked="{{subSettings.signinReminder}}"
+            bindchange="onSubSettingChange"
+            data-key="signinReminder"
+            color="#5BBD72"
+          />
+        </view>
+      </view>
+
+      <view class="subscription-item">
+        <view class="sub-left">
+          <view class="sub-icon" style="background: rgba(74, 144, 217, 0.1);">
+            <text class="sub-emoji">📦</text>
+          </view>
+          <view class="sub-info">
+            <text class="sub-title">兑换发货通知</text>
+            <text class="sub-desc">兑换商品发货时通知</text>
+          </view>
+        </view>
+        <view class="sub-right">
+          <switch
+            checked="{{subSettings.shipmentNotice}}"
+            bindchange="onSubSettingChange"
+            data-key="shipmentNotice"
+            color="#5BBD72"
+          />
+        </view>
+      </view>
+
+      <view class="subscription-item">
+        <view class="sub-left">
+          <view class="sub-icon" style="background: rgba(243, 156, 18, 0.1);">
+            <text class="sub-emoji">🎉</text>
+          </view>
+          <view class="sub-info">
+            <text class="sub-title">活动开始提醒</text>
+            <text class="sub-desc">关注的活动开始前通知</text>
+          </view>
+        </view>
+        <view class="sub-right">
+          <switch
+            checked="{{subSettings.activityStart}}"
+            bindchange="onSubSettingChange"
+            data-key="activityStart"
+            color="#5BBD72"
+          />
+        </view>
+      </view>
+
+      <view class="subscribe-btn-wrapper" bindtap="onRequestSubscribe">
+        <text class="subscribe-btn-text">一键开启微信订阅消息</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="safe-area-bottom"></view>
+</view>

@@ -40,7 +40,8 @@
     "pages/game-match/game-match",
     "pages/recycle-book/recycle-book",
     "pages/recycle-orders/recycle-orders",
-    "pages/recycle-order-detail/recycle-order-detail"
+    "pages/recycle-order-detail/recycle-order-detail",
+    "pages/messages/messages"
   ],
   "window": {
     "backgroundTextStyle": "dark",

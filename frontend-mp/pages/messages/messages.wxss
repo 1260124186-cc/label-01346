@@ -1,0 +1,398 @@
+.page-container {
+  min-height: 100vh;
+  background: #F7FAF8;
+  padding-bottom: 40rpx;
+}
+
+.tabs-section {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: #FFFFFF;
+  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.04);
+}
+
+.tabs-scroll {
+  white-space: nowrap;
+}
+
+.tabs-wrapper {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 24rpx;
+  height: 96rpx;
+}
+
+.tab-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  padding: 0 28rpx;
+  height: 96rpx;
+  margin-right: 8rpx;
+  flex-shrink: 0;
+}
+
+.tab-name {
+  font-size: 28rpx;
+  color: #8E8E93;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.tab-item.active .tab-name {
+  color: #5BBD72;
+  font-weight: 600;
+  font-size: 30rpx;
+}
+
+.tab-item.active::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 48rpx;
+  height: 6rpx;
+  background: linear-gradient(135deg, #5BBD72 0%, #4CAF50 100%);
+  border-radius: 3rpx;
+}
+
+.tab-badge {
+  position: absolute;
+  top: 16rpx;
+  right: 8rpx;
+  min-width: 32rpx;
+  height: 32rpx;
+  padding: 0 8rpx;
+  background: #FF3B30;
+  border-radius: 16rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform: scale(0.8);
+}
+
+.badge-text {
+  font-size: 20rpx;
+  color: #FFFFFF;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.header-section {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24rpx 32rpx 16rpx;
+}
+
+.header-left {
+  flex: 1;
+}
+
+.message-count {
+  font-size: 24rpx;
+  color: #8E8E93;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+}
+
+.header-action {
+  display: flex;
+  align-items: center;
+  padding: 12rpx 20rpx;
+  margin-left: 16rpx;
+  background: rgba(91, 189, 114, 0.08);
+  border-radius: 32rpx;
+}
+
+.action-icon {
+  font-size: 24rpx;
+  margin-right: 6rpx;
+}
+
+.action-text {
+  font-size: 24rpx;
+  color: #5BBD72;
+  font-weight: 500;
+}
+
+.message-list {
+  padding: 0 24rpx;
+}
+
+.message-card {
+  display: flex;
+  align-items: flex-start;
+  padding: 28rpx 24rpx;
+  margin-bottom: 20rpx;
+  background: #FFFFFF;
+  border-radius: 24rpx;
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.04);
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.message-card:active {
+  transform: scale(0.98);
+  background: #FAFAFA;
+}
+
+.message-card.unread {
+  background: linear-gradient(135deg, #FFFFFF 0%, #F1F8E9 100%);
+}
+
+.message-icon-wrapper {
+  position: relative;
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: 24rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 24rpx;
+  flex-shrink: 0;
+}
+
+.message-emoji {
+  font-size: 40rpx;
+  line-height: 1;
+}
+
+.unread-dot {
+  position: absolute;
+  top: -4rpx;
+  right: -4rpx;
+  width: 18rpx;
+  height: 18rpx;
+  background: #FF3B30;
+  border-radius: 50%;
+  border: 3rpx solid #FFFFFF;
+}
+
+.message-content {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.message-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 12rpx;
+}
+
+.message-title {
+  flex: 1;
+  font-size: 30rpx;
+  color: #1D1D1F;
+  font-weight: 600;
+  line-height: 1.4;
+  margin-right: 16rpx;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.message-card.read .message-title {
+  font-weight: 500;
+  color: #6E6E73;
+}
+
+.message-time {
+  font-size: 22rpx;
+  color: #AEAEB2;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.message-body {
+  margin-bottom: 14rpx;
+}
+
+.message-desc {
+  font-size: 26rpx;
+  color: #6E6E73;
+  line-height: 1.6;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.message-type-tag {
+  display: inline-flex;
+  padding: 6rpx 16rpx;
+  border-radius: 20rpx;
+}
+
+.type-tag-text {
+  font-size: 22rpx;
+  font-weight: 500;
+}
+
+.message-arrow {
+  display: flex;
+  align-items: center;
+  padding-left: 16rpx;
+  height: 80rpx;
+  flex-shrink: 0;
+}
+
+.arrow-icon {
+  font-size: 40rpx;
+  color: #C7C7CC;
+  font-weight: 300;
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 160rpx 48rpx;
+}
+
+.empty-icon-wrapper {
+  width: 180rpx;
+  height: 180rpx;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #E8F5E9 0%, #C8E6C9 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 32rpx;
+}
+
+.empty-emoji {
+  font-size: 80rpx;
+  line-height: 1;
+}
+
+.empty-title {
+  font-size: 32rpx;
+  color: #1D1D1F;
+  font-weight: 600;
+  margin-bottom: 12rpx;
+}
+
+.empty-desc {
+  font-size: 26rpx;
+  color: #8E8E93;
+  text-align: center;
+  line-height: 1.6;
+}
+
+.subscription-section {
+  padding: 32rpx 24rpx 0;
+}
+
+.section-header {
+  margin-bottom: 20rpx;
+  padding: 0 8rpx;
+}
+
+.section-title {
+  font-size: 30rpx;
+  color: #1D1D1F;
+  font-weight: 600;
+}
+
+.subscription-card {
+  background: #FFFFFF;
+  border-radius: 24rpx;
+  padding: 8rpx 0;
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.04);
+  overflow: hidden;
+}
+
+.subscription-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 28rpx 28rpx;
+  border-bottom: 1rpx solid #F2F2F7;
+}
+
+.subscription-item:last-child {
+  border-bottom: none;
+}
+
+.sub-left {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+}
+
+.sub-icon {
+  width: 72rpx;
+  height: 72rpx;
+  border-radius: 20rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 20rpx;
+  flex-shrink: 0;
+}
+
+.sub-emoji {
+  font-size: 36rpx;
+  line-height: 1;
+}
+
+.sub-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.sub-title {
+  display: block;
+  font-size: 28rpx;
+  color: #1D1D1F;
+  font-weight: 500;
+  margin-bottom: 6rpx;
+}
+
+.sub-desc {
+  display: block;
+  font-size: 24rpx;
+  color: #8E8E93;
+}
+
+.sub-right {
+  flex-shrink: 0;
+  padding-left: 20rpx;
+}
+
+.subscribe-btn-wrapper {
+  padding: 28rpx;
+}
+
+.subscribe-btn-text {
+  display: block;
+  width: 100%;
+  height: 88rpx;
+  line-height: 88rpx;
+  text-align: center;
+  background: linear-gradient(135deg, #5BBD72 0%, #4CAF50 100%);
+  color: #FFFFFF;
+  font-size: 30rpx;
+  font-weight: 600;
+  border-radius: 44rpx;
+  box-shadow: 0 8rpx 24rpx rgba(91, 189, 114, 0.3);
+}
+
+.subscribe-btn-text:active {
+  opacity: 0.9;
+  transform: scale(0.98);
+}
+
+.safe-area-bottom {
+  height: env(safe-area-inset-bottom);
+}

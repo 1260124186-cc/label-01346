@@ -11,7 +11,6 @@ Page({
    * 页面的初始数据
    */
   data: {
-    // 用户信息
     userInfo: {
       avatarUrl: '',
       nickName: '环保达人',
@@ -19,33 +18,27 @@ Page({
       level: 1,
       joinDate: ''
     },
-    // 用户等级信息
     levelInfo: {
       level: 1,
       name: '环保新手',
       icon: '🌱',
       progress: 0
     },
-    // 功能菜单（按分组拆分）
+    noticeMenus: [],
     learnMenus: PROFILE_MENUS.find(g => g.groupId === 'learn').items,
     recordMenus: PROFILE_MENUS.find(g => g.groupId === 'record').items,
     serviceMenus: PROFILE_MENUS.find(g => g.groupId === 'service').items,
     otherMenus: PROFILE_MENUS.find(g => g.groupId === 'other').items,
-    // 兼容旧的 menuList（测试用）
     menuList: PROFILE_MENUS,
-    // 统计数据
+    unreadMessageCount: 0,
     statistics: [
       { id: 'classify', label: '分类次数', value: 0 },
       { id: 'points', label: '累计积分', value: 0 },
       { id: 'days', label: '连续打卡', value: 0 }
     ],
-    // 是否正在上传头像
     isUploading: false,
-    // 签到状态
     isSignedToday: false,
-    // 成就勋章列表
     achievements: [],
-    // 已解锁成就数量
     unlockedAchievementCount: 0
   },
 
@@ -89,6 +82,14 @@ Page({
         unlockedAchievementCount = achievements.filter(a => a.unlocked).length
       }
 
+      const noticeMenusRaw = PROFILE_MENUS.find(g => g.groupId === 'notice')?.items || []
+      const unreadMessageCount = app.getUnreadMessageCount ? app.getUnreadMessageCount() : 0
+
+      const noticeMenus = noticeMenusRaw.map(menu => ({
+        ...menu,
+        badgeCount: menu.id === 'messages' ? unreadMessageCount : 0
+      }))
+
       this.setData({
         userInfo: {
           ...userInfo,
@@ -102,10 +103,12 @@ Page({
         ],
         isSignedToday: app.isTodaySignedIn(),
         achievements,
-        unlockedAchievementCount
+        unlockedAchievementCount,
+        noticeMenus,
+        unreadMessageCount
       })
 
-      console.log('[Profile] 用户信息已刷新', userInfo, stats)
+      console.log('[Profile] 用户信息已刷新', userInfo, stats, '未读消息:', unreadMessageCount)
     }
   },
 
