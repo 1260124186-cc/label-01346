@@ -1,6 +1,3 @@
-/**
- * 积分明细页面
- */
 const app = getApp()
 const { navigateTo, formatDate } = require('../../utils/util')
 
@@ -9,6 +6,8 @@ Page({
     currentPoints: 0,
     totalEarned: 0,
     totalSpent: 0,
+    expiringPoints: 0,
+    nearestExpireDate: '',
 
     filterTabs: [
       { id: 'all', name: '全部' },
@@ -20,7 +19,6 @@ Page({
     allPoints: [],
     pointsList: [],
 
-    // 快捷功能入口
     quickActions: [
       { id: 'signin', emoji: '📅', title: '每日签到', desc: '连续签到赢积分', color: '#5BBD72' },
       { id: 'quiz', emoji: '❓', title: '知识问答', desc: '答题获得积分', color: '#4A90D9' },
@@ -28,9 +26,9 @@ Page({
       { id: 'daily', emoji: '📝', title: '每日一练', desc: '每日答题打卡', color: '#9B59B6' }
     ],
 
-    // 签到状态
     isSignedToday: false,
-    streakDays: 0
+    streakDays: 0,
+    showValidityModal: false
   },
 
   onLoad() {
@@ -41,12 +39,21 @@ Page({
   onShow() {
     this.loadPointsRecords()
     this.refreshSignInStatus()
+    this.loadExpiringInfo()
   },
 
   refreshSignInStatus() {
     this.setData({
       isSignedToday: app.isTodaySignedIn(),
       streakDays: app.getStreakDays()
+    })
+  },
+
+  loadExpiringInfo() {
+    const validityInfo = app.getPointsValidityInfo()
+    this.setData({
+      expiringPoints: validityInfo.expiringPoints,
+      nearestExpireDate: validityInfo.nearestExpireDate
     })
   },
 
@@ -109,10 +116,21 @@ Page({
     }
   },
 
+  showValidityRules() {
+    this.setData({ showValidityModal: true })
+  },
+
+  hideValidityRules() {
+    this.setData({ showValidityModal: false })
+  },
+
+  preventClose() {},
+
   onPullDownRefresh() {
     console.log('[Points] 下拉刷新')
     this.loadPointsRecords()
     this.refreshSignInStatus()
+    this.loadExpiringInfo()
     setTimeout(() => {
       wx.stopPullDownRefresh()
     }, 1000)

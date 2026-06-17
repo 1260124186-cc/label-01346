@@ -1,0 +1,142 @@
+<view class="page-container" wx:if="{{order}}">
+  <view class="status-section status-{{order.status}}">
+    <view class="status-icon">
+      <text class="icon-emoji">
+        {{order.status === 'pending' ? '📦' : order.status === 'shipped' ? '🚚' : '✅'}}
+      </text>
+    </view>
+    <view class="status-info">
+      <text class="status-title">{{order.statusText}}</text>
+      <text class="status-desc" wx:if="{{order.status === 'pending'}}">商家正在备货，请耐心等待</text>
+      <text class="status-desc" wx:elif="{{order.status === 'shipped'}}">商品已发出，请注意查收</text>
+      <text class="status-desc" wx:else>感谢您的兑换，期待您的再次光临</text>
+    </view>
+  </view>
+  
+  <view class="progress-section" wx:if="{{order.status !== 'pending'}}">
+    <view class="progress-steps">
+      <view class="step-item done">
+        <view class="step-dot"></view>
+        <text class="step-text">提交订单</text>
+        <text class="step-time">{{order.createTime}}</text>
+      </view>
+      <view class="step-line {{order.status === 'shipped' || order.status === 'completed' ? 'done' : ''}}"></view>
+      <view class="step-item {{order.status === 'shipped' || order.status === 'completed' ? 'done' : ''}}">
+        <view class="step-dot"></view>
+        <text class="step-text">商品发货</text>
+        <text class="step-time" wx:if="{{order.shipTime}}">{{order.shipTime}}</text>
+      </view>
+      <view class="step-line {{order.status === 'completed' ? 'done' : ''}}"></view>
+      <view class="step-item {{order.status === 'completed' ? 'done' : ''}}">
+        <view class="step-dot"></view>
+        <text class="step-text">确认收货</text>
+        <text class="step-time" wx:if="{{order.completeTime}}">{{order.completeTime}}</text>
+      </view>
+    </view>
+  </view>
+  
+  <view class="logistics-card" wx:if="{{order.status !== 'pending'}}">
+    <view class="card-header">
+      <text class="card-title">物流信息</text>
+    </view>
+    <view class="logistics-info" bindtap="onCopyLogisticsNo">
+      <view class="logistics-row">
+        <text class="logistics-label">物流公司</text>
+        <text class="logistics-value">{{order.logisticsCompany || '—'}}</text>
+      </view>
+      <view class="logistics-row">
+        <text class="logistics-label">物流单号</text>
+        <view class="logistics-no">
+          <text class="logistics-value">{{order.logisticsNo || '—'}}</text>
+          <text class="copy-btn">复制</text>
+        </view>
+      </view>
+      <view class="logistics-tip" wx:if="{{order.status === 'shipped'}}">
+        <text class="tip-text">物流信息更新可能有延迟，请稍后查看</text>
+      </view>
+    </view>
+  </view>
+  
+  <view class="address-card">
+    <view class="card-header">
+      <text class="card-title">收货地址</text>
+    </view>
+    <view class="address-info" wx:if="{{order.addressInfo}}">
+      <view class="address-top">
+        <text class="address-name">{{order.addressInfo.name}}</text>
+        <text class="address-phone">{{order.addressInfo.phone}}</text>
+      </view>
+      <view class="address-detail">
+        <text class="detail-text">
+          {{order.addressInfo.province}}{{order.addressInfo.city}}{{order.addressInfo.district}}{{order.addressInfo.detail}}
+        </text>
+      </view>
+    </view>
+  </view>
+  
+  <view class="goods-card">
+    <view class="card-header">
+      <text class="card-title">商品信息</text>
+    </view>
+    <view class="goods-item">
+      <image class="goods-image" src="{{order.goodsImage}}" mode="aspectFill" />
+      <view class="goods-info">
+        <text class="goods-name">{{order.goodsName}}</text>
+        <text class="goods-desc">{{order.goodsDesc}}</text>
+        <view class="goods-bottom">
+          <text class="goods-points">{{order.points}}积分</text>
+          <text class="goods-quantity">x{{order.quantity}}</text>
+        </view>
+      </view>
+    </view>
+  </view>
+  
+  <view class="order-info-card">
+    <view class="card-header">
+      <text class="card-title">订单信息</text>
+    </view>
+    <view class="info-list">
+      <view class="info-row">
+        <text class="info-label">订单编号</text>
+        <text class="info-value">{{order.id}}</text>
+      </view>
+      <view class="info-row">
+        <text class="info-label">下单时间</text>
+        <text class="info-value">{{order.createTime}}</text>
+      </view>
+      <view class="info-row">
+        <text class="info-label">订单状态</text>
+        <text class="info-value status-text">{{order.statusText}}</text>
+      </view>
+    </view>
+  </view>
+  
+  <view class="bottom-space"></view>
+  
+  <view class="bottom-bar" wx:if="{{order.status === 'pending'}}">
+    <view class="bar-btn secondary" bindtap="onContactService">
+      <text class="btn-text">联系客服</text>
+    </view>
+    <view class="bar-btn primary disabled">
+      <text class="btn-text">等待发货</text>
+    </view>
+  </view>
+  
+  <view class="bottom-bar" wx:elif="{{order.status === 'shipped'}}">
+    <view class="bar-btn secondary" bindtap="onContactService">
+      <text class="btn-text">联系客服</text>
+    </view>
+    <view class="bar-btn primary" bindtap="onConfirmReceive">
+      <text class="btn-text">确认收货</text>
+    </view>
+  </view>
+  
+  <view class="bottom-bar" wx:else>
+    <view class="bar-btn secondary" bindtap="onGoExchange">
+      <text class="btn-text">继续兑换</text>
+    </view>
+    <view class="bar-btn primary" bindtap="onContactService">
+      <text class="btn-text">申请售后</text>
+    </view>
+  </view>
+</view>

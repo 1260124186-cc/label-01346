@@ -1,6 +1,6 @@
 <!--
   积分明细页面
-  功能：展示用户积分的获取与消费记录
+  功能：展示用户积分的获取与消费记录，包含即将过期积分提醒
 -->
 <view class="page-container">
   <!-- 积分概览 -->
@@ -21,6 +21,20 @@
             <text class="detail-label">累计消费</text>
           </view>
         </view>
+        
+        <!-- 即将过期提醒 -->
+        <view class="expiring-tip" wx:if="{{expiringPoints > 0}}" bindtap="showValidityRules">
+          <text class="expiring-icon">⏰</text>
+          <text class="expiring-text">
+            有 {{expiringPoints}} 积分将于 {{nearestExpireDate}} 过期，快去使用吧
+          </text>
+          <text class="expiring-arrow">></text>
+        </view>
+        
+        <view class="validity-link" bindtap="showValidityRules">
+          <text class="link-text">积分有效期说明</text>
+          <text class="link-arrow">></text>
+        </view>
       </view>
     </view>
   </view>
@@ -33,7 +47,8 @@
         <view class="signin-entry-text">
           <text class="signin-entry-title">{{isSignedToday ? '今日已签到' : '每日签到'}}</text>
           <text class="signin-entry-subtitle">
-            {{isSignedToday ? '连续打卡' + streakDays + '天，明天继续' : '连续打卡' + streakDays + '天，点击签到+5积分'}}</text>
+            {{isSignedToday ? '连续打卡' + streakDays + '天，明天继续' : '连续打卡' + streakDays + '天，点击签到+5积分'}}
+          </text>
         </view>
       </view>
       <view class="signin-entry-btn">{{isSignedToday ? '已完成' : '去签到'}}</view>
@@ -90,6 +105,9 @@
         <view class="record-info">
           <text class="record-title">{{item.title}}</text>
           <text class="record-desc">{{item.desc}}</text>
+          <view class="record-expired" wx:if="{{item.expired}}">
+            <text class="expired-text">已过期</text>
+          </view>
         </view>
         <view class="record-right">
           <text class="record-points {{item.type === 'earn' ? 'earn' : 'spend'}}">
@@ -104,6 +122,62 @@
     <view class="empty-state" wx:if="{{pointsList.length === 0}}">
       <text class="empty-emoji">💰</text>
       <text class="empty-text">暂无积分记录</text>
+    </view>
+  </view>
+  
+  <!-- 积分有效期弹窗 -->
+  <view class="validity-modal {{showValidityModal ? 'show' : ''}}" bindtap="hideValidityRules">
+    <view class="validity-content" catchtap="preventClose">
+      <view class="validity-header">
+        <text class="validity-title">积分有效期说明</text>
+        <view class="validity-close" bindtap="hideValidityRules">
+          <text class="close-icon">×</text>
+        </view>
+      </view>
+      
+      <scroll-view class="validity-body" scroll-y="{{true}}">
+        <view class="validity-section">
+          <view class="section-icon">📅</view>
+          <view class="section-info">
+            <text class="section-title">有效期规则</text>
+            <text class="section-desc">积分自获取之日起，有效期为1年（365天）</text>
+          </view>
+        </view>
+        
+        <view class="validity-section">
+          <view class="section-icon">⏰</view>
+          <view class="section-info">
+            <text class="section-title">过期提醒</text>
+            <text class="section-desc">系统会在积分到期前30天进行提醒，请及时使用</text>
+          </view>
+        </view>
+        
+        <view class="validity-section">
+          <view class="section-icon">🔄</view>
+          <view class="section-info">
+            <text class="section-title">扣减规则</text>
+            <text class="section-desc">积分到期后将自动从账户中扣除，无法恢复</text>
+          </view>
+        </view>
+        
+        <view class="validity-section">
+          <view class="section-icon">🎁</view>
+          <view class="section-info">
+            <text class="section-title">使用范围</text>
+            <text class="section-desc">积分可用于积分商城兑换各类环保商品</text>
+          </view>
+        </view>
+        
+        <view class="validity-section tip-section">
+          <text class="tip-text">
+            💡 小贴士：多参与垃圾分类、每日签到、知识问答等活动获取积分，积分多多，福利多多！
+          </text>
+        </view>
+        
+        <view class="validity-footer">
+          <text class="footer-text">最终解释权归垃圾分类助手所有</text>
+        </view>
+      </scroll-view>
     </view>
   </view>
 </view>

@@ -199,6 +199,13 @@ const PROFILE_MENUS = [
     ]
   },
   {
+    groupId: 'service',
+    groupName: '我的服务',
+    items: [
+      { id: 'address', icon: 'address', emoji: '📍', title: '收货地址', desc: '管理收货地址信息', link: '/pages/address-list/address-list' }
+    ]
+  },
+  {
     groupId: 'other',
     groupName: '其他',
     items: [

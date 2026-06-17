@@ -141,6 +141,31 @@
     </mp-cells>
   </view>
 
+  <!-- 功能菜单：我的服务 -->
+  <view class="menu-section">
+    <view class="menu-group-title">
+      <text class="group-title-text">我的服务</text>
+    </view>
+    <mp-cells ext-class="menu-cells">
+      <mp-cell 
+        wx:for="{{serviceMenus}}" 
+        wx:key="id"
+        ext-class="menu-cell"
+        link="{{true}}"
+        bindtap="onMenuTap"
+        data-item="{{item}}"
+      >
+        <view slot="icon" class="menu-icon-wrapper" style="background: rgba(230, 126, 34, 0.1);">
+          <text class="menu-icon-emoji">{{item.emoji}}</text>
+        </view>
+        <view class="menu-content">
+          <text class="menu-title-text">{{item.title}}</text>
+          <text class="menu-desc">{{item.desc}}</text>
+        </view>
+      </mp-cell>
+    </mp-cells>
+  </view>
+
   <!-- 功能菜单：其他 -->
   <view class="menu-section">
     <view class="menu-group-title">

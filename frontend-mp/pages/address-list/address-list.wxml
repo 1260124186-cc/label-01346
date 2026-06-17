@@ -1,0 +1,55 @@
+<view class="page-container">
+  <view class="address-list">
+    <view 
+      wx:for="{{addressList}}" 
+      wx:key="id"
+      class="address-item {{selectMode && selectedId === item.id ? 'selected' : ''}}"
+      bindtap="{{selectMode ? 'onSelectAddress' : ''}}"
+      data-item="{{item}}"
+    >
+      <view class="address-info">
+        <view class="address-top">
+          <text class="name">{{item.name}}</text>
+          <text class="phone">{{item.phone}}</text>
+          <view class="default-tag" wx:if="{{item.isDefault}}">
+            <text class="default-text">默认</text>
+          </view>
+        </view>
+        <view class="address-detail">
+          <text class="detail-text">{{item.province}}{{item.city}}{{item.district}}{{item.detail}}</text>
+        </view>
+      </view>
+      
+      <view class="address-actions" wx:if="{{!selectMode}}">
+        <view class="action-btn" bindtap="onSetDefault" data-id="{{item.id}}">
+          <text class="action-text {{item.isDefault ? 'active' : ''}}">
+            {{item.isDefault ? '✓ 默认' : '设为默认'}}
+          </text>
+        </view>
+        <view class="action-btn" bindtap="onEditAddress" data-id="{{item.id}}">
+          <text class="action-text">编辑</text>
+        </view>
+        <view class="action-btn delete" bindtap="onDeleteAddress" data-id="{{item.id}}">
+          <text class="action-text">删除</text>
+        </view>
+      </view>
+      
+      <view class="select-icon" wx:if="{{selectMode && selectedId === item.id}}">
+        <text class="check-icon">✓</text>
+      </view>
+    </view>
+    
+    <view class="empty-state" wx:if="{{addressList.length === 0}}">
+      <text class="empty-emoji">📍</text>
+      <text class="empty-text">暂无收货地址</text>
+      <text class="empty-desc">添加收货地址，方便兑换商品配送</text>
+    </view>
+  </view>
+  
+  <view class="bottom-bar">
+    <view class="add-btn" bindtap="onAddAddress">
+      <text class="add-icon">+</text>
+      <text class="add-text">新增收货地址</text>
+    </view>
+  </view>
+</view>

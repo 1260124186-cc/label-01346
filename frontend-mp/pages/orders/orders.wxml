@@ -1,15 +1,22 @@
 <!--
   兑换订单页面
-  功能：展示用户的商品兑换订单记录
+  功能：展示用户的商品兑换订单记录，支持状态筛选
 -->
 <view class="page-container">
-  <!-- 页面标题 -->
-  <view class="page-header">
-    <view class="header-icon">
-      <text class="success-emoji">🎉</text>
+  <!-- 状态筛选 Tab -->
+  <view class="tabs-section">
+    <view class="tabs-list">
+      <view 
+        wx:for="{{tabs}}" 
+        wx:key="id"
+        class="tab-item {{currentTab === item.id ? 'active' : ''}}"
+        bindtap="onTabChange"
+        data-id="{{item.id}}"
+      >
+        <text class="tab-text">{{item.name}}</text>
+        <view class="tab-indicator" wx:if="{{currentTab === item.id}}"></view>
+      </view>
     </view>
-    <text class="header-title">兑换成功</text>
-    <text class="header-desc">共 {{orderList.length}} 笔兑换记录</text>
   </view>
 
   <!-- 订单列表 -->
@@ -18,10 +25,13 @@
       wx:for="{{orderList}}" 
       wx:key="id"
       class="order-card"
+      bindtap="onOrderTap"
+      data-id="{{item.id}}"
     >
-      <!-- 成功标识 -->
-      <view class="success-badge">
-        <text class="success-icon">✓</text>
+      <!-- 订单头部：状态 -->
+      <view class="order-header">
+        <text class="order-status {{item.status}}">{{item.statusText}}</text>
+        <text class="order-time">{{item.createTime}}</text>
       </view>
 
       <!-- 商品信息 -->
@@ -37,11 +47,32 @@
         </view>
       </view>
 
-      <!-- 订单底部 -->
+      <!-- 物流信息（已发货状态显示） -->
+      <view class="logistics-info" wx:if="{{item.status === 'shipped' && item.logisticsNo}}">
+        <view class="logistics-row">
+          <text class="logistics-label">{{item.logisticsCompany}}</text>
+          <text class="logistics-no">{{item.logisticsNo}}</text>
+        </view>
+      </view>
+
+      <!-- 订单底部操作 -->
       <view class="order-footer">
-        <text class="order-time">兑换时间：{{item.createTime}}</text>
-        <view class="action-btn" bindtap="onReorder" data-item="{{item}}">
-          再次兑换
+        <text class="total-points">共{{item.quantity}}件，合计 {{item.points}}积分</text>
+        <view class="order-actions">
+          <view 
+            class="action-btn primary" 
+            wx:if="{{item.status === 'shipped'}}"
+            catchtap="onConfirmReceive"
+            data-id="{{item.id}}"
+          >
+            <text class="btn-text">确认收货</text>
+          </view>
+          <view class="action-btn" wx:elif="{{item.status === 'pending'}}">
+            <text class="btn-text">等待发货</text>
+          </view>
+          <view class="action-btn" wx:else>
+            <text class="btn-text">查看详情</text>
+          </view>
         </view>
       </view>
     </view>
@@ -49,8 +80,9 @@
     <!-- 空状态 -->
     <view class="empty-state" wx:if="{{orderList.length === 0}}">
       <text class="empty-emoji">📦</text>
-      <text class="empty-text">暂无兑换记录</text>
-      <view class="empty-btn" bindtap="goExchange">去兑换商品</view>
+      <text class="empty-text">暂无订单记录</text>
+      <text class="empty-desc">快去积分商城兑换好物吧</text>
+      <view class="empty-btn" bindtap="onGoExchange">去兑换</view>
     </view>
   </view>
 </view>

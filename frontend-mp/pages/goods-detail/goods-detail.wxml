@@ -1,0 +1,153 @@
+<view class="page-container" wx:if="{{goods}}">
+  <swiper 
+    class="goods-swiper"
+    indicator-dots="{{false}}"
+    autoplay="{{true}}"
+    interval="{{3000}}"
+    duration="{{500}}"
+    circular="{{true}}"
+    bindchange="onImageChange"
+  >
+    <swiper-item wx:for="{{goods.images}}" wx:key="index">
+      <image class="swiper-image" src="{{item}}" mode="aspectFill" />
+    </swiper-item>
+  </swiper>
+  
+  <view class="swiper-indicators">
+    <view 
+      wx:for="{{goods.images}}" 
+      wx:key="index"
+      class="indicator-dot {{currentImageIndex === index ? 'active' : ''}}"
+    />
+  </view>
+  
+  <view class="goods-info-section">
+    <view class="goods-header">
+      <view class="goods-price">
+        <text class="price-value">{{goods.points}}</text>
+        <text class="price-unit">积分</text>
+        <text class="original-price" wx:if="{{goods.originalPoints > goods.points}}">
+          {{goods.originalPoints}}积分
+        </text>
+      </view>
+      <view class="goods-tag" wx:if="{{goods.tag}}">
+        <text class="tag-text">{{goods.tag}}</text>
+      </view>
+    </view>
+    
+    <view class="goods-name">
+      <text class="name-text">{{goods.name}}</text>
+    </view>
+    
+    <view class="goods-desc">
+      <text class="desc-text">{{goods.description}}</text>
+    </view>
+    
+    <view class="goods-stats">
+      <view class="stat-item">
+        <text class="stat-label">库存</text>
+        <text class="stat-value">{{goods.stock}}件</text>
+      </view>
+      <view class="stat-divider"></view>
+      <view class="stat-item">
+        <text class="stat-label">已兑</text>
+        <text class="stat-value">{{goods.sales}}件</text>
+      </view>
+    </view>
+  </view>
+  
+  <view class="section-card" bindtap="onChooseAddress">
+    <view class="section-header">
+      <text class="section-title">收货地址</text>
+      <text class="section-arrow">></text>
+    </view>
+    <view class="address-info" wx:if="{{selectedAddress}}">
+      <view class="address-top">
+        <text class="address-name">{{selectedAddress.name}}</text>
+        <text class="address-phone">{{selectedAddress.phone}}</text>
+      </view>
+      <view class="address-detail">
+        <text class="detail-text">
+          {{selectedAddress.province}}{{selectedAddress.city}}{{selectedAddress.district}}{{selectedAddress.detail}}
+        </text>
+      </view>
+    </view>
+    <view class="address-empty" wx:else>
+      <text class="empty-text">请选择收货地址</text>
+    </view>
+  </view>
+  
+  <view class="section-card">
+    <view class="section-header">
+      <text class="section-title">商品规格</text>
+    </view>
+    <view class="specs-list">
+      <view class="spec-item" wx:for="{{specs}}" wx:key="name">
+        <text class="spec-name">{{item.name}}</text>
+        <text class="spec-value">{{item.value}}</text>
+      </view>
+    </view>
+  </view>
+  
+  <view class="section-card">
+    <view class="section-header">
+      <text class="section-title">兑换须知</text>
+    </view>
+    <view class="notes-list">
+      <view class="note-item" wx:for="{{exchangeNotes}}" wx:key="index">
+        <view class="note-bullet"></view>
+        <text class="note-text">{{item}}</text>
+      </view>
+    </view>
+  </view>
+  
+  <view class="section-card">
+    <view class="section-header">
+      <text class="section-title">用户评价</text>
+      <text class="section-count">{{reviews.length}}条</text>
+    </view>
+    <view class="reviews-list">
+      <view class="review-item" wx:for="{{reviews}}" wx:key="id">
+        <view class="review-header">
+          <view class="review-avatar">
+            <text class="avatar-emoji">😊</text>
+          </view>
+          <view class="review-info">
+            <text class="review-nickname">{{item.nickname}}</text>
+            <view class="review-rating">
+              <text class="star" wx:for="{{item.rating}}" wx:key="index">⭐</text>
+            </view>
+          </view>
+          <text class="review-time">{{item.time}}</text>
+        </view>
+        <view class="review-content">
+          <text class="content-text">{{item.content}}</text>
+        </view>
+      </view>
+    </view>
+  </view>
+  
+  <view class="bottom-space"></view>
+  
+  <view class="bottom-bar">
+    <view class="bar-left">
+      <view class="points-info">
+        <text class="points-label">可用积分</text>
+        <text class="points-value">{{userPoints}}</text>
+      </view>
+    </view>
+    <view 
+      class="exchange-btn {{userPoints < goods.points || goods.stock <= 0 ? 'disabled' : ''}} {{exchanging ? 'loading' : ''}}"
+      bindtap="onExchange"
+    >
+      <text wx:if="{{!exchanging}}">
+        {{goods.stock <= 0 ? '已售罄' : (userPoints < goods.points ? '积分不足' : '立即兑换')}}
+      </text>
+      <text wx:else>兑换中...</text>
+    </view>
+  </view>
+</view>
+
+<view class="loading-state" wx:if="{{!goods}}">
+  <text class="loading-text">加载中...</text>
+</view>

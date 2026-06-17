@@ -29,6 +29,7 @@ Page({
     // 功能菜单（按分组拆分）
     learnMenus: PROFILE_MENUS.find(g => g.groupId === 'learn').items,
     recordMenus: PROFILE_MENUS.find(g => g.groupId === 'record').items,
+    serviceMenus: PROFILE_MENUS.find(g => g.groupId === 'service').items,
     otherMenus: PROFILE_MENUS.find(g => g.groupId === 'other').items,
     // 兼容旧的 menuList（测试用）
     menuList: PROFILE_MENUS,

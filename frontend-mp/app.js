@@ -12,6 +12,8 @@ App({
     console.log('[App] 小程序启动')
 
     this.initUserInfo()
+    this.initGoodsStock()
+    this.initAddresses()
     this.initOrders()
     this.initPointsRecords()
     this.initClassifyRecords()
@@ -22,7 +24,14 @@ App({
     this.initDailyPoints()
     this.initMasteredQuestions()
     this.initDailyCompletionBonus()
+    this.checkAndExpirePoints()
     this.getSystemInfo()
+    this.simulateAutoShipping()
+  },
+
+  onShow() {
+    console.log('[App] 小程序显示')
+    this.simulateAutoShipping()
   },
 
   /**
@@ -47,6 +56,134 @@ App({
     }
   },
 
+  initGoodsStock() {
+    const { EXCHANGE_GOODS } = require('./utils/constants')
+    const storedStock = wx.getStorageSync('goodsStock')
+
+    if (storedStock && storedStock.length > 0) {
+      const goodsWithStock = EXCHANGE_GOODS.map(goods => {
+        const stockInfo = storedStock.find(s => s.id === goods.id)
+        if (stockInfo) {
+          return { ...goods, stock: stockInfo.stock, sales: stockInfo.sales || goods.sales }
+        }
+        return goods
+      })
+      this.globalData.goodsList = goodsWithStock
+      console.log('[App] 商品库存已从存储加载')
+    } else {
+      this.globalData.goodsList = [...EXCHANGE_GOODS]
+      this.saveGoodsStock()
+      console.log('[App] 商品库存已初始化')
+    }
+  },
+
+  saveGoodsStock() {
+    const stockData = this.globalData.goodsList.map(goods => ({
+      id: goods.id,
+      stock: goods.stock,
+      sales: goods.sales
+    }))
+    wx.setStorageSync('goodsStock', stockData)
+  },
+
+  getGoodsList() {
+    return this.globalData.goodsList || []
+  },
+
+  getGoodsById(goodsId) {
+    return this.globalData.goodsList.find(g => g.id === goodsId)
+  },
+
+  updateGoodsStock(goodsId, stockDelta = -1, salesDelta = 1) {
+    const goods = this.getGoodsById(goodsId)
+    if (!goods) return false
+
+    goods.stock = Math.max(0, goods.stock + stockDelta)
+    goods.sales = Math.max(0, goods.sales + salesDelta)
+    this.saveGoodsStock()
+    return true
+  },
+
+  initAddresses() {
+    const addresses = wx.getStorageSync('addresses')
+    if (addresses && addresses.length > 0) {
+      this.globalData.addresses = addresses
+    } else {
+      this.globalData.addresses = []
+    }
+    console.log('[App] 收货地址已加载', this.globalData.addresses.length, '条')
+  },
+
+  saveAddresses() {
+    wx.setStorageSync('addresses', this.globalData.addresses)
+  },
+
+  getAddresses() {
+    return this.globalData.addresses || []
+  },
+
+  getAddressById(addressId) {
+    return this.globalData.addresses.find(a => a.id === addressId)
+  },
+
+  getDefaultAddress() {
+    return this.globalData.addresses.find(a => a.isDefault) || this.globalData.addresses[0] || null
+  },
+
+  addAddress(address) {
+    const newAddress = {
+      ...address,
+      id: generateId()
+    }
+    if (newAddress.isDefault) {
+      this.globalData.addresses.forEach(a => { a.isDefault = false })
+    }
+    if (this.globalData.addresses.length === 0) {
+      newAddress.isDefault = true
+    }
+    this.globalData.addresses.push(newAddress)
+    this.saveAddresses()
+    return newAddress
+  },
+
+  updateAddress(addressId, address) {
+    const index = this.globalData.addresses.findIndex(a => a.id === addressId)
+    if (index === -1) return false
+
+    if (address.isDefault) {
+      this.globalData.addresses.forEach(a => { a.isDefault = false })
+    }
+
+    this.globalData.addresses[index] = {
+      ...this.globalData.addresses[index],
+      ...address
+    }
+    this.saveAddresses()
+    return true
+  },
+
+  deleteAddress(addressId) {
+    const index = this.globalData.addresses.findIndex(a => a.id === addressId)
+    if (index === -1) return false
+
+    const wasDefault = this.globalData.addresses[index].isDefault
+    this.globalData.addresses.splice(index, 1)
+
+    if (wasDefault && this.globalData.addresses.length > 0) {
+      this.globalData.addresses[0].isDefault = true
+    }
+
+    this.saveAddresses()
+    return true
+  },
+
+  setDefaultAddress(addressId) {
+    this.globalData.addresses.forEach(a => {
+      a.isDefault = a.id === addressId
+    })
+    this.saveAddresses()
+  },
+
   initOrders() {
     const orders = wx.getStorageSync('orders')
     this.globalData.orders = orders || []
@@ -54,13 +191,188 @@ App({
   },
 
   addOrder(order) {
-    this.globalData.orders.unshift(order)
+    const newOrder = {
+      ...order,
+      status: 'pending',
+      statusText: '待发货'
+    }
+    this.globalData.orders.unshift(newOrder)
     wx.setStorageSync('orders', this.globalData.orders)
     console.log('[App] 新增订单', order.goodsName)
+    return newOrder
   },
 
   getOrders() {
     return this.globalData.orders || []
+  },
+
+  getOrdersByStatus(status) {
+    if (status === 'all') return this.getOrders()
+    return this.globalData.orders.filter(o => o.status === status)
+  },
+
+  getOrderById(orderId) {
+    return this.globalData.orders.find(o => o.id === orderId)
+  },
+
+  updateOrderStatus(orderId, status, extra = {}) {
+    const order = this.getOrderById(orderId)
+    if (!order) return false
+
+    const statusMap = {
+      'pending': '待发货',
+      'shipped': '已发货',
+      'completed': '已完成'
+    }
+
+    order.status = status
+    order.statusText = statusMap[status] || status
+
+    if (extra.logisticsNo) {
+      order.logisticsNo = extra.logisticsNo
+    }
+    if (extra.logisticsCompany) {
+      order.logisticsCompany = extra.logisticsCompany
+    }
+    if (status === 'shipped') {
+      order.shipTime = formatDate(new Date(), 'YYYY-MM-DD HH:mm')
+    }
+    if (status === 'completed') {
+      order.completeTime = formatDate(new Date(), 'YYYY-MM-DD HH:mm')
+    }
+
+    wx.setStorageSync('orders', this.globalData.orders)
+    return true
+  },
+
+  simulateShipping(orderId) {
+    const companies = ['顺丰速运', '中通快递', '圆通速递', '韵达快递', '京东物流']
+    const company = companies[Math.floor(Math.random() * companies.length)]
+    const logisticsNo = 'SF' + Date.now().toString().slice(-10) + Math.floor(Math.random() * 1000)
+
+    this.updateOrderStatus(orderId, 'shipped', {
+      logisticsCompany: company,
+      logisticsNo: logisticsNo
+    })
+
+    return { company, logisticsNo }
+  },
+
+  simulateAutoShipping() {
+    const pendingOrders = this.getOrdersByStatus('pending')
+    if (pendingOrders.length === 0) return
+
+    const now = Date.now()
+    let shippedCount = 0
+
+    pendingOrders.forEach(order => {
+      const orderTime = new Date(order.createTime).getTime()
+      const timeDiff = now - orderTime
+      const hoursDiff = timeDiff / (1000 * 60 * 60)
+
+      if (hoursDiff >= 2) {
+        this.simulateShipping(order.id)
+        shippedCount++
+      }
+    })
+
+    if (shippedCount > 0) {
+      console.log('[App] 自动模拟发货', shippedCount, '笔订单')
+    }
+  },
+
+  checkAndExpirePoints() {
+    const now = new Date()
+    const oneYearAgo = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000)
+    const oneYearAgoStr = formatDate(oneYearAgo, 'YYYY-MM-DD')
+
+    const records = this.getPointsRecords()
+    let totalExpired = 0
+    const expiredIds = []
+
+    records.forEach(record => {
+      if (record.type === 'earn' && !record.expired) {
+        const recordDate = record.time ? record.time.split(' ')[0]
+        if (recordDate < oneYearAgoStr) {
+          record.expired = true
+          record.expireTime = formatDate(now, 'YYYY-MM-DD HH:mm')
+          expiredIds.push(record.id)
+          totalExpired += record.points
+        }
+      }
+    })
+
+    if (totalExpired > 0) {
+      wx.setStorageSync('pointsRecords', records)
+      this.globalData.pointsRecords = records
+
+      const userInfo = this.globalData.userInfo
+      userInfo.points = Math.max(0, userInfo.points - totalExpired)
+      this.globalData.userInfo = userInfo
+      wx.setStorageSync('userInfo', userInfo)
+
+      const expireRecord = {
+        id: generateId(),
+        type: 'spend',
+        category: 'expire',
+        title: '积分过期',
+        desc: expiredIds.length + '笔积分到期自动过期',
+        emoji: '⏰',
+        points: totalExpired,
+        time: formatDate(now, 'YYYY-MM-DD HH:mm')
+      }
+      this.addPointsRecord(expireRecord)
+
+      console.log('[App] 积分过期扣减', totalExpired, '分')
+    }
+
+    return totalExpired
+  },
+
+  getExpiringPoints() {
+    const now = new Date()
+    const thirtyDaysLater = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000)
+    const thirtyDaysLaterStr = formatDate(thirtyDaysLater, 'YYYY-MM-DD')
+    const oneYearAgo = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000)
+
+    const records = this.getPointsRecords()
+    let expiringPoints = 0
+    let expireDate = ''
+
+    records.forEach(record => {
+      if (record.type === 'earn' && !record.expired && record.time) {
+        const recordDateStr = record.time.split(' ')[0]
+        const recordDate = new Date(recordDateStr)
+        const expireTime = new Date(recordDate.getTime() + 365 * 24 * 60 * 60 * 1000)
+        const expireTimeStr = formatDate(expireTime, 'YYYY-MM-DD')
+
+        if (expireTimeStr <= thirtyDaysLaterStr && expireTime > now) {
+          expiringPoints += record.points
+          if (!expireDate || expireTimeStr < expireDate) {
+            expireDate = expireTimeStr
+          }
+        }
+      }
+    })
+
+    return {
+      points: expiringPoints,
+      expireDate: expireDate || '—'
+    }
+  },
+
+  getPointsValidityInfo() {
+    const expiring = this.getExpiringPoints()
+    const totalEarned = this.getPointsRecords()
+      .filter(r => r.type === 'earn' && !r.expired)
+      .reduce((sum, r) => sum + r.points, 0)
+
+    return {
+      totalValid: totalEarned,
+      expiringPoints: expiring.points,
+      nearestExpireDate: expiring.expireDate,
+      validityPeriod: '自获取之日起1年内有效'
+    }
   },
 
   initPointsRecords() {
@@ -782,6 +1094,8 @@ App({
    */
   globalData: {
     userInfo: null,
+    goodsList: [],
+    addresses: [],
     orders: [],
     pointsRecords: [],
     classifyRecords: [],

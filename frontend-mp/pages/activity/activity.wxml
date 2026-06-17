@@ -1,0 +1,110 @@
+<view class="page-container" wx:if="{{activity}}">
+  <view class="activity-banner" style="background: {{activity.bgColor}};">
+    <view class="banner-content">
+      <text class="banner-title">{{activity.title}}</text>
+      <text class="banner-subtitle">{{activity.subtitle}}</text>
+    </view>
+    <view class="banner-time" wx:if="{{activity.startTime}}">
+      <text class="time-text">活动时间：{{activity.startTime}} - {{activity.endTime}}</text>
+    </view>
+  </view>
+  
+  <view class="countdown-section" wx:if="{{activity.type === 'flashsale'}}">
+    <view class="countdown-box">
+      <text class="countdown-label">距离下一场秒杀</text>
+      <view class="countdown-timer">
+        <view class="time-block">
+          <text class="time-num">{{countdown.hours}}</text>
+        </view>
+        <text class="time-colon">:</text>
+        <view class="time-block">
+          <text class="time-num">{{countdown.minutes}}</text>
+        </view>
+        <text class="time-colon">:</text>
+        <view class="time-block">
+          <text class="time-num">{{countdown.seconds}}</text>
+        </view>
+      </view>
+    </view>
+  </view>
+  
+  <view class="discount-badge" wx:if="{{activity.type === 'discount'}}">
+    <view class="badge-content">
+      <text class="badge-label">当前等级</text>
+      <text class="badge-level">{{userLevel}}</text>
+      <text class="badge-discount">可享 {{activity.userDiscount}} 优惠</text>
+    </view>
+  </view>
+  
+  <view class="section-card">
+    <view class="section-header">
+      <text class="section-title">活动介绍</text>
+    </view>
+    <view class="section-content">
+      <text class="desc-text">{{activity.description}}</text>
+    </view>
+  </view>
+  
+  <view class="section-card" wx:if="{{activity.flashGoods || activity.discountGoods}}">
+    <view class="section-header">
+      <text class="section-title">
+        {{activity.type === 'flashsale' ? '秒杀商品' : '折扣商品'}}
+      </text>
+      <text class="section-more" bindtap="onGoExchange">更多 ></text>
+    </view>
+    <view class="goods-list">
+      <view 
+        class="goods-item" 
+        wx:for="{{activity.type === 'flashsale' ? activity.flashGoods : activity.discountGoods}}" 
+        wx:key="id"
+        bindtap="onGoodsTap"
+        data-id="{{item.id}}"
+      >
+        <image class="goods-image" src="{{item.image}}" mode="aspectFill" />
+        <view class="goods-info">
+          <text class="goods-name">{{item.name}}</text>
+          <view class="goods-price">
+            <text class="sale-price">
+              {{activity.type === 'flashsale' ? item.salePoints : item.discountPoints}}
+            </text>
+            <text class="price-unit">积分</text>
+            <text class="original-price">{{item.originalPoints}}积分</text>
+          </view>
+          <view class="goods-tag" wx:if="{{item.discount}}">
+            <text class="tag-text">{{item.discount}}</text>
+          </view>
+          <view class="goods-progress" wx:if="{{item.stock !== undefined}}">
+            <view class="progress-bar">
+              <view class="progress-fill" style="width: {{item.sold / item.stock * 100}}%"></view>
+            </view>
+            <text class="progress-text">已抢{{item.sold}}件</text>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+  
+  <view class="section-card">
+    <view class="section-header">
+      <text class="section-title">活动规则</text>
+    </view>
+    <view class="rules-list">
+      <view class="rule-item" wx:for="{{activity.rules}}" wx:key="index">
+        <view class="rule-index">{{index + 1}}</view>
+        <text class="rule-text">{{item}}</text>
+      </view>
+    </view>
+  </view>
+  
+  <view class="bottom-space"></view>
+  
+  <view class="bottom-bar">
+    <view class="bar-left">
+      <text class="points-label">我的积分</text>
+      <text class="points-value">{{userPoints}}</text>
+    </view>
+    <view class="bar-btn" bindtap="onGoExchange">
+      <text class="btn-text">去兑换</text>
+    </view>
+  </view>
+</view>

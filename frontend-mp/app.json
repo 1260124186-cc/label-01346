@@ -17,7 +17,12 @@
     "pages/quiz-records/quiz-records",
     "pages/quiz-record-detail/quiz-record-detail",
     "pages/signin/signin",
-    "pages/sort-practice/sort-practice"
+    "pages/sort-practice/sort-practice",
+    "pages/address-list/address-list",
+    "pages/address-edit/address-edit",
+    "pages/goods-detail/goods-detail",
+    "pages/order-detail/order-detail",
+    "pages/activity/activity"
   ],
   "window": {
     "backgroundTextStyle": "dark",
