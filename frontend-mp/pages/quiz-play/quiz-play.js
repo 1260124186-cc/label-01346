@@ -110,9 +110,9 @@ Page({
       questions = getDailyQuestions()
     } else if (type === 'chapter' && chapterId) {
       if (isBossMode) {
-        questions = this.getBossQuestions(parseInt(chapterId))
+        questions = this.getBossQuestions(parseInt(chapterId, 10))
       } else {
-        questions = getQuestionsByChapter(parseInt(chapterId))
+        questions = getQuestionsByChapter(parseInt(chapterId, 10))
       }
     } else if (type === 'difficulty' && difficulty) {
       questions = getQuestionsByDifficulty(difficulty)
@@ -135,7 +135,7 @@ Page({
 
     this.setData({
       quizType,
-      chapterId: chapterId ? parseInt(chapterId) : null,
+      chapterId: chapterId ? parseInt(chapterId, 10) : null,
       chapterName: chapterName || '',
       difficulty: difficulty || '',
       difficultyName: difficultyName || '',
@@ -434,7 +434,7 @@ Page({
     if (diffConfig) {
       let base = diffConfig.pointsPerQuestion
       if (question.type === 'multiple') base = Math.round(base * 1.5)
-      if (question.type === 'hard') base = Math.round(base * 1.2)
+      if (question.difficulty === 'hard') base = Math.round(base * 1.2)
       return base
     }
 

@@ -80,8 +80,31 @@ describe('quiz-play page', () => {
       page.initQuiz({ type: 'chapter', chapterId: '1', chapterName: '可回收垃圾' })
       expect(page.data.quizType).toBe('chapter')
       expect(page.data.chapterId).toBe(1)
+      expect(typeof page.data.chapterId).toBe('number')
       expect(page.data.chapterName).toBe('可回收垃圾')
       expect(page.data.questions.length).toBeGreaterThan(0)
+    })
+
+    test('chapterId 字符串正确解析为十进制数字', () => {
+      page.initQuiz({ type: 'chapter', chapterId: '5', chapterName: '综合知识' })
+      expect(page.data.chapterId).toBe(5)
+      expect(typeof page.data.chapterId).toBe('number')
+    })
+
+    test('isBoss=true 加载 Boss 题目', () => {
+      page.initQuiz({ type: 'chapter', chapterId: '1', chapterName: '可回收垃圾', isBoss: 'true' })
+      expect(page.data.isBossMode).toBe(true)
+      expect(page.data.quizType).toBe('chapter')
+      expect(page.data.chapterId).toBe(1)
+      expect(page.data.questions.length).toBeGreaterThan(0)
+    })
+
+    test('isTimed=true 加载限时挑战题目', () => {
+      page.initQuiz({ isTimed: 'true' })
+      expect(page.data.isTimedMode).toBe(true)
+      expect(page.data.quizType).toBe('timed')
+      expect(page.data.questions.length).toBeGreaterThan(0)
+      expect(page.data.timeLeft).toBeGreaterThan(0)
     })
 
     test('type=difficulty 加载难度题目', () => {
@@ -181,9 +204,29 @@ describe('quiz-play page', () => {
       expect(page.calculatePoints()).toBe(10)
     })
 
-    test('hard 难度返回 20 分', () => {
-      page.data.currentQuestion = { difficulty: 'hard' }
-      expect(page.calculatePoints()).toBe(20)
+    test('hard 难度返回 24 分（基础 20 * 1.2 难度加成）', () => {
+      page.data.currentQuestion = { difficulty: 'hard', type: 'single' }
+      expect(page.calculatePoints()).toBe(24)
+    })
+
+    test('easy 难度多选题返回 8 分（基础 5 * 1.5 多选加成）', () => {
+      page.data.currentQuestion = { difficulty: 'easy', type: 'multiple' }
+      expect(page.calculatePoints()).toBe(8)
+    })
+
+    test('medium 难度多选题返回 15 分（基础 10 * 1.5 多选加成）', () => {
+      page.data.currentQuestion = { difficulty: 'medium', type: 'multiple' }
+      expect(page.calculatePoints()).toBe(15)
+    })
+
+    test('hard 难度多选题返回 36 分（基础 20 * 1.5 * 1.2）', () => {
+      page.data.currentQuestion = { difficulty: 'hard', type: 'multiple' }
+      expect(page.calculatePoints()).toBe(36)
+    })
+
+    test('判断题型 easy 返回 5 分', () => {
+      page.data.currentQuestion = { difficulty: 'easy', type: 'judge' }
+      expect(page.calculatePoints()).toBe(5)
     })
 
     test('未知难度返回默认 5 分', () => {
