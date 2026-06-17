@@ -146,7 +146,7 @@ const defaultPointsRecords = [
   }
 ]
 
-const { TRASH_TYPES } = require('../frontend-mp/utils/constants')
+const { TRASH_TYPES, SHARE_CONFIG, INVITE_CONFIG } = require('../frontend-mp/utils/constants')
 
 const defaultDailyQuizRecords = [
   '2026-06-02', '2026-06-03', '2026-06-04', '2026-06-05', '2026-06-06',
@@ -184,6 +184,9 @@ const createAppMock = () => {
     dailyPoints: mockDailyPoints,
     masteredQuestions: [],
     dailyCompletionBonus: { date: mockToday, claimed: false },
+    shareRecords: { date: mockToday, shareCount: 0, pointsEarned: 0 },
+    inviteRecords: [],
+    deviceId: 'dev_mock_device_id',
     systemInfo: null,
     statusBarHeight: 44,
     screenHeight: 812,
@@ -480,6 +483,106 @@ const createAppMock = () => {
     const month = String(date.getMonth() + 1).padStart(2, '0')
     const day = String(date.getDate()).padStart(2, '0')
     return `${year}-${month}-${day}`
+  }),
+  initShareRecords: jest.fn(),
+  getShareInfo: jest.fn(() => {
+    const app = global.getApp()
+    return app.globalData.shareRecords || { date: '2026-06-16', shareCount: 0, pointsEarned: 0 }
+  }),
+  handleShareSuccess: jest.fn(() => {
+    const app = global.getApp()
+    const shareRecords = app.globalData.shareRecords || { date: '2026-06-16', shareCount: 0, pointsEarned: 0 }
+    const currentPoints = shareRecords.pointsEarned || 0
+    const maxPoints = SHARE_CONFIG.dailyShareMaxPoints
+    const sharePoints = SHARE_CONFIG.dailySharePoints
+
+    if (currentPoints >= maxPoints) {
+      return { success: false, points: 0, reason: 'daily_limit' }
+    }
+
+    const actualPoints = Math.min(sharePoints, maxPoints - currentPoints)
+    shareRecords.shareCount = (shareRecords.shareCount || 0) + 1
+    shareRecords.pointsEarned = currentPoints + actualPoints
+    app.globalData.shareRecords = shareRecords
+
+    if (actualPoints > 0) {
+      app.updateUserPoints(actualPoints, {
+        category: 'share',
+        title: '分享奖励',
+        desc: '分享小程序给好友',
+        emoji: '📤'
+      })
+    }
+
+    return { success: true, points: actualPoints }
+  }),
+  isTodayShared: jest.fn(() => {
+    const app = global.getApp()
+    const shareRecords = app.globalData.shareRecords
+    return shareRecords ? (shareRecords.shareCount || 0) > 0 : false
+  }),
+  getRemainingSharePoints: jest.fn(() => {
+    const app = global.getApp()
+    const shareRecords = app.globalData.shareRecords
+    const currentPoints = shareRecords ? (shareRecords.pointsEarned || 0) : 0
+    return Math.max(0, SHARE_CONFIG.dailyShareMaxPoints - currentPoints)
+  }),
+  initInviteRecords: jest.fn(),
+  getInviteRecords: jest.fn(() => {
+    const app = global.getApp()
+    return app.globalData.inviteRecords || []
+  }),
+  addInviteRecord: jest.fn((record) => {
+    const app = global.getApp()
+    const records = app.globalData.inviteRecords || []
+    records.unshift(record)
+    app.globalData.inviteRecords = records
+  }),
+  getInviteStats: jest.fn(() => {
+    const app = global.getApp()
+    const records = app.globalData.inviteRecords || []
+    const totalInvited = records.length
+    const totalRewards = records.reduce((sum, r) => sum + (r.rewardPoints || 0), 0)
+    return { totalInvited, totalRewards, records }
+  }),
+  initDeviceId: jest.fn(),
+  getDeviceId: jest.fn(() => 'dev_mock_device_id'),
+  processInviterOnLaunch: jest.fn(),
+  extractInviterId: jest.fn((options) => {
+    if (!options) return null
+    if (options.query && options.query.inviterId) return options.query.inviterId
+    return null
+  }),
+  tryBindInviter: jest.fn(() => false),
+  bindInviter: jest.fn(),
+  getInviterId: jest.fn(() => null),
+  getUserId: jest.fn(() => 'user_mock_id'),
+  generateSharePath: jest.fn(() => '/pages/index/index?inviterId=user_mock_id'),
+  generateShareInfo: jest.fn(() => ({
+    title: SHARE_CONFIG.shareTitle,
+    path: `${SHARE_CONFIG.sharePath}?inviterId=user_mock_id`,
+    imageUrl: SHARE_CONFIG.shareImageUrl
+  })),
+  simulateInviteAccepted: jest.fn(() => {
+    const app = global.getApp()
+    const record = {
+      id: 'mock-invite-1',
+      inviterId: 'user_mock_id',
+      inviteeId: 'user_invitee_mock',
+      inviteeName: '测试用户',
+      inviteeAvatar: '',
+      rewardPoints: INVITE_CONFIG.inviterRewardPoints,
+      time: '2026-06-16 12:00',
+      status: 'success'
+    }
+    app.addInviteRecord(record)
+    app.updateUserPoints(INVITE_CONFIG.inviterRewardPoints, {
+      category: 'invite',
+      title: '邀请好友奖励',
+      desc: '好友测试用户注册成功',
+      emoji: '👥'
+    })
+    return record
   })
   }
 }

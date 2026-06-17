@@ -124,13 +124,11 @@ describe('Index Page', () => {
   })
 
   describe('onShareAppMessage', () => {
-    test('返回正确的 title 和 path', () => {
+    test('返回正确的 title 和 path (含 inviterId)', () => {
       const result = pageObj.onShareAppMessage()
-      expect(result).toEqual({
-        title: '垃圾分类助手 - 让垃圾分类更简单',
-        path: '/pages/index/index',
-        imageUrl: ''
-      })
+      expect(result).toHaveProperty('title')
+      expect(result).toHaveProperty('path')
+      expect(result.path).toContain('inviterId=')
     })
   })
 })

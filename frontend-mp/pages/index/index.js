@@ -220,10 +220,29 @@ Page({
    * 用户点击右上角分享
    */
   onShareAppMessage() {
+    console.log('[Index] 用户分享')
+    const shareInfo = app.generateShareInfo()
+
+    const result = app.handleShareSuccess()
+    if (result.success && result.points > 0) {
+      showToast(`分享成功 +${result.points}积分`)
+    } else if (result.reason === 'daily_limit') {
+      console.log('[Index] 今日分享积分已达上限')
+    }
+
+    return shareInfo
+  },
+
+  /**
+   * 分享到朋友圈
+   */
+  onShareTimeline() {
+    console.log('[Index] 分享到朋友圈')
+    const { SHARE_CONFIG } = require('../../utils/constants')
     return {
-      title: '垃圾分类助手 - 让垃圾分类更简单',
-      path: '/pages/index/index',
-      imageUrl: ''
+      title: SHARE_CONFIG.shareTitle,
+      query: `inviterId=${app.getUserId()}`,
+      imageUrl: SHARE_CONFIG.shareImageUrl
     }
   }
 })

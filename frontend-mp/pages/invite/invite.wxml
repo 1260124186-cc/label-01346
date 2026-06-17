@@ -1,0 +1,177 @@
+<view class="page-container">
+  <!-- 顶部统计卡片 -->
+  <view class="stats-section">
+    <view class="stats-card">
+      <view class="stats-bg-decoration"></view>
+      <view class="stats-bg-circle"></view>
+
+      <view class="stats-header">
+        <text class="stats-title">👥 我的邀请</text>
+        <text class="stats-subtitle">邀请好友一起学垃圾分类</text>
+      </view>
+
+      <view class="stats-grid">
+        <view class="stat-item">
+          <text class="stat-value">{{totalInvited}}</text>
+          <text class="stat-label">邀请人数</text>
+        </view>
+        <view class="stat-divider"></view>
+        <view class="stat-item">
+          <text class="stat-value">{{totalRewards}}</text>
+          <text class="stat-label">累计奖励(积分)</text>
+        </view>
+        <view class="stat-divider"></view>
+        <view class="stat-item">
+          <text class="stat-value">+{{inviterRewardPoints}}</text>
+          <text class="stat-label">每人奖励</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 分享状态提示 -->
+  <view class="share-tip-section">
+    <view class="share-tip-card">
+      <text class="share-tip-icon">{{todayShared ? '✅' : '📤'}}</text>
+      <view class="share-tip-text">
+        <text class="share-tip-title">{{todayShared ? '今日已分享' : '今日尚未分享'}}</text>
+        <text class="share-tip-desc">{{shareTips}}</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 操作按钮区 -->
+  <view class="action-section">
+    <button class="action-btn primary-btn" open-type="share">
+      <text class="btn-icon">📤</text>
+      <text class="btn-text">分享给好友</text>
+    </button>
+    <button class="action-btn secondary-btn" bindtap="generatePoster">
+      <text class="btn-icon">🎨</text>
+      <text class="btn-text">生成邀请海报</text>
+    </button>
+  </view>
+
+  <!-- 奖励规则 -->
+  <view class="rules-section">
+    <view class="section-header">
+      <text class="section-title">🎁 邀请奖励</text>
+    </view>
+    <view class="rules-card">
+      <view class="rule-item">
+        <view class="rule-icon" style="background: rgba(91, 189, 114, 0.1);">
+          <text class="rule-emoji">👤</text>
+        </view>
+        <view class="rule-content">
+          <text class="rule-title">好友获得</text>
+          <text class="rule-desc">新人注册成功后获得 {{inviteeRewardPoints}} 积分奖励</text>
+        </view>
+        <view class="rule-points">
+          <text class="points-text">+{{inviteeRewardPoints}}</text>
+        </view>
+      </view>
+      <view class="rule-divider"></view>
+      <view class="rule-item">
+        <view class="rule-icon" style="background: rgba(243, 156, 18, 0.1);">
+          <text class="rule-emoji">🏆</text>
+        </view>
+        <view class="rule-content">
+          <text class="rule-title">您获得</text>
+          <text class="rule-desc">每成功邀请一位好友获得 {{inviterRewardPoints}} 积分奖励</text>
+        </view>
+        <view class="rule-points">
+          <text class="points-text">+{{inviterRewardPoints}}</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 邀请记录 -->
+  <view class="records-section">
+    <view class="section-header">
+      <text class="section-title">📋 邀请记录</text>
+      <text class="section-count">共 {{totalInvited}} 人</text>
+    </view>
+
+    <view class="records-list" wx:if="{{inviteRecords.length > 0}}">
+      <view 
+        wx:for="{{inviteRecords}}" 
+        wx:key="id"
+        class="record-item"
+      >
+        <view class="record-avatar">
+          <text class="avatar-emoji">👤</text>
+        </view>
+        <view class="record-info">
+          <text class="record-name">{{item.inviteeName}}</text>
+          <text class="record-time">{{item.time}}</text>
+        </view>
+        <view class="record-reward">
+          <text class="reward-text">+{{item.rewardPoints}}</text>
+          <text class="reward-label">积分</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="empty-state" wx:else>
+      <text class="empty-emoji">📭</text>
+      <text class="empty-text">暂无邀请记录</text>
+      <text class="empty-desc">分享给好友，双方都能获得积分奖励</text>
+    </view>
+  </view>
+
+  <!-- 模拟按钮（测试用） -->
+  <view class="simulate-section">
+    <button class="simulate-btn" bindtap="simulateInvite">
+      模拟邀请成功（测试）
+    </button>
+  </view>
+
+  <!-- 底部安全区域 -->
+  <view class="safe-area-bottom"></view>
+
+  <!-- 海报弹窗 -->
+  <view class="poster-modal" wx:if="{{showPoster}}" bindtap="closePoster">
+    <view class="poster-content" catchtap="preventClose">
+      <view class="poster-header">
+        <text class="poster-title">邀请海报</text>
+        <view class="poster-close" bindtap="closePoster">
+          <text class="close-icon">✕</text>
+        </view>
+      </view>
+
+      <view class="poster-image-wrapper">
+        <image 
+          wx:if="{{posterImage}}"
+          class="poster-image" 
+          src="{{posterImage}}" 
+          mode="aspectFit"
+        />
+        <view wx:else class="poster-placeholder">
+          <text class="placeholder-icon">📱</text>
+          <text class="placeholder-text">请点击右上角分享给好友</text>
+          <text class="placeholder-desc">或生成海报保存到相册</text>
+        </view>
+      </view>
+
+      <view class="poster-actions">
+        <button class="poster-btn save-btn" bindtap="savePoster" wx:if="{{posterImage}}">
+          <text class="btn-icon">💾</text>
+          <text class="btn-text">保存到相册</text>
+        </button>
+        <button class="poster-btn share-btn" open-type="share">
+          <text class="btn-icon">📤</text>
+          <text class="btn-text">分享给好友</text>
+        </button>
+      </view>
+    </view>
+  </view>
+
+  <!-- 隐藏的 Canvas 用于生成海报 -->
+  <canvas 
+    type="2d" 
+    id="posterCanvas" 
+    class="hidden-canvas"
+    style="width: 300px; height: 500px;"
+  ></canvas>
+</view>

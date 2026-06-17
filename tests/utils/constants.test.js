@@ -97,11 +97,12 @@ describe('EXCHANGE_BANNERS', () => {
 })
 
 describe('PROFILE_MENUS', () => {
-  test('has 3 groups (学习中心/我的记录/其他)', () => {
-    expect(PROFILE_MENUS).toHaveLength(3)
+  test('has 4 groups (学习中心/我的记录/我的服务/其他)', () => {
+    expect(PROFILE_MENUS).toHaveLength(4)
     expect(PROFILE_MENUS[0].groupName).toBe('学习中心')
     expect(PROFILE_MENUS[1].groupName).toBe('我的记录')
-    expect(PROFILE_MENUS[2].groupName).toBe('其他')
+    expect(PROFILE_MENUS[2].groupName).toBe('我的服务')
+    expect(PROFILE_MENUS[3].groupName).toBe('其他')
   })
 
   test('each group has groupId, groupName and items array', () => {

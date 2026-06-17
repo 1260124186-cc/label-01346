@@ -244,10 +244,30 @@ Page({
    * 用户点击右上角分享
    */
   onShareAppMessage() {
+    console.log('[Profile] 用户分享')
+    const shareInfo = app.generateShareInfo()
+
+    const result = app.handleShareSuccess()
+    if (result.success && result.points > 0) {
+      showToast(`分享成功 +${result.points}积分`)
+    } else if (result.reason === 'daily_limit') {
+      showToast('今日分享积分已达上限')
+    }
+
+    this.refreshUserInfo()
+    return shareInfo
+  },
+
+  /**
+   * 分享到朋友圈
+   */
+  onShareTimeline() {
+    console.log('[Profile] 分享到朋友圈')
+    const { SHARE_CONFIG } = require('../../utils/constants')
     return {
-      title: '垃圾分类助手 - 一起来保护环境吧',
-      path: '/pages/index/index',
-      imageUrl: ''
+      title: SHARE_CONFIG.shareTitle,
+      query: `inviterId=${app.getUserId()}`,
+      imageUrl: SHARE_CONFIG.shareImageUrl
     }
   }
 })

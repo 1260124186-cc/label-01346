@@ -205,12 +205,12 @@ describe('onStatTap', () => {
 })
 
 describe('onShareAppMessage', () => {
-  test('returns correct title and path', () => {
+  test('returns correct share info with inviterId and calls handleShareSuccess', () => {
+    pageInstance.refreshUserInfo = jest.fn()
     const result = pageInstance.onShareAppMessage()
-    expect(result).toEqual({
-      title: '垃圾分类助手 - 一起来保护环境吧',
-      path: '/pages/index/index',
-      imageUrl: ''
-    })
+    expect(result).toHaveProperty('title')
+    expect(result).toHaveProperty('path')
+    expect(result.path).toContain('inviterId=')
+    expect(moduleApp.handleShareSuccess).toHaveBeenCalled()
   })
 })

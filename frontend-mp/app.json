@@ -22,7 +22,8 @@
     "pages/address-edit/address-edit",
     "pages/goods-detail/goods-detail",
     "pages/order-detail/order-detail",
-    "pages/activity/activity"
+    "pages/activity/activity",
+    "pages/invite/invite"
   ],
   "window": {
     "backgroundTextStyle": "dark",

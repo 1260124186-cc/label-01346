@@ -8,7 +8,7 @@ App({
   /**
    * 小程序启动时触发
    */
-  onLaunch() {
+  onLaunch(options = {}) {
     console.log('[App] 小程序启动')
 
     this.initUserInfo()
@@ -24,9 +24,13 @@ App({
     this.initDailyPoints()
     this.initMasteredQuestions()
     this.initDailyCompletionBonus()
+    this.initShareRecords()
+    this.initInviteRecords()
+    this.initDeviceId()
     this.checkAndExpirePoints()
     this.getSystemInfo()
     this.simulateAutoShipping()
+    this.processInviterOnLaunch(options)
   },
 
   onShow() {
@@ -292,7 +296,7 @@ App({
 
     records.forEach(record => {
       if (record.type === 'earn' && !record.expired) {
-        const recordDate = record.time ? record.time.split(' ')[0]
+        const recordDate = record.time ? record.time.split(' ')[0] : ''
         if (recordDate < oneYearAgoStr) {
           record.expired = true
           record.expireTime = formatDate(now, 'YYYY-MM-DD HH:mm')
@@ -1089,6 +1093,296 @@ App({
     console.log('[App] 用户信息已更新', userInfo)
   },
 
+  initShareRecords() {
+    const { SHARE_CONFIG } = require('./utils/constants')
+    const today = formatDate(new Date(), 'YYYY-MM-DD')
+    const stored = wx.getStorageSync('shareRecords')
+
+    if (stored && stored.date === today) {
+      this.globalData.shareRecords = stored
+    } else {
+      this.globalData.shareRecords = {
+        date: today,
+        shareCount: 0,
+        pointsEarned: 0
+      }
+      wx.setStorageSync('shareRecords', this.globalData.shareRecords)
+    }
+    console.log('[App] 分享记录已加载', this.globalData.shareRecords)
+  },
+
+  getShareInfo() {
+    const today = formatDate(new Date(), 'YYYY-MM-DD')
+    const shareRecords = this.globalData.shareRecords
+
+    if (!shareRecords || shareRecords.date !== today) {
+      this.initShareRecords()
+    }
+
+    return this.globalData.shareRecords || { date: today, shareCount: 0, pointsEarned: 0 }
+  },
+
+  handleShareSuccess() {
+    const { SHARE_CONFIG } = require('./utils/constants')
+    const today = formatDate(new Date(), 'YYYY-MM-DD')
+    const shareRecords = this.globalData.shareRecords
+
+    if (!shareRecords || shareRecords.date !== today) {
+      this.initShareRecords()
+    }
+
+    const currentPoints = this.globalData.shareRecords.pointsEarned || 0
+    const maxPoints = SHARE_CONFIG.dailyShareMaxPoints
+    const sharePoints = SHARE_CONFIG.dailySharePoints
+
+    if (currentPoints >= maxPoints) {
+      console.log('[App] 今日分享积分已达上限')
+      return { success: false, points: 0, reason: 'daily_limit' }
+    }
+
+    const actualPoints = Math.min(sharePoints, maxPoints - currentPoints)
+
+    this.globalData.shareRecords.shareCount = (this.globalData.shareRecords.shareCount || 0) + 1
+    this.globalData.shareRecords.pointsEarned = currentPoints + actualPoints
+    this.globalData.shareRecords.date = today
+    wx.setStorageSync('shareRecords', this.globalData.shareRecords)
+
+    if (actualPoints > 0) {
+      this.updateUserPoints(actualPoints, {
+        category: 'share',
+        title: '分享奖励',
+        desc: '分享小程序给好友',
+        emoji: '📤'
+      })
+    }
+
+    console.log('[App] 分享成功，获得积分', actualPoints)
+    return { success: true, points: actualPoints }
+  },
+
+  isTodayShared() {
+    const shareInfo = this.getShareInfo()
+    return shareInfo.shareCount > 0
+  },
+
+  getRemainingSharePoints() {
+    const { SHARE_CONFIG } = require('./utils/constants')
+    const shareInfo = this.getShareInfo()
+    return Math.max(0, SHARE_CONFIG.dailyShareMaxPoints - (shareInfo.pointsEarned || 0))
+  },
+
+  initInviteRecords() {
+    const inviteRecords = wx.getStorageSync('inviteRecords')
+    if (inviteRecords) {
+      this.globalData.inviteRecords = inviteRecords
+    } else {
+      this.globalData.inviteRecords = []
+      wx.setStorageSync('inviteRecords', [])
+    }
+    console.log('[App] 邀请记录已加载', this.globalData.inviteRecords.length, '条')
+  },
+
+  getInviteRecords() {
+    return this.globalData.inviteRecords || []
+  },
+
+  addInviteRecord(record) {
+    const records = this.globalData.inviteRecords || []
+    records.unshift(record)
+    this.globalData.inviteRecords = records
+    wx.setStorageSync('inviteRecords', records)
+    console.log('[App] 新增邀请记录', record.inviteeName)
+  },
+
+  getInviteStats() {
+    const records = this.getInviteRecords()
+    const totalInvited = records.length
+    const totalRewards = records.reduce((sum, r) => sum + (r.rewardPoints || 0), 0)
+
+    return {
+      totalInvited,
+      totalRewards,
+      records
+    }
+  },
+
+  initDeviceId() {
+    let deviceId = wx.getStorageSync('deviceId')
+    if (!deviceId) {
+      deviceId = 'dev_' + generateId()
+      wx.setStorageSync('deviceId', deviceId)
+    }
+    this.globalData.deviceId = deviceId
+    console.log('[App] 设备ID已加载', deviceId)
+  },
+
+  getDeviceId() {
+    return this.globalData.deviceId || ''
+  },
+
+  processInviterOnLaunch(options) {
+    console.log('[App] 处理邀请关系', options)
+
+    const inviterId = this.extractInviterId(options)
+    if (!inviterId) {
+      console.log('[App] 无邀请人ID')
+      return
+    }
+
+    console.log('[App] 检测到邀请人ID:', inviterId)
+    this.tryBindInviter(inviterId)
+  },
+
+  extractInviterId(options) {
+    if (!options) return null
+
+    if (options.query && options.query.inviterId) {
+      return options.query.inviterId
+    }
+
+    if (options.scene) {
+      const sceneStr = String(options.scene)
+      const match = sceneStr.match(/inviterId=([^&]+)/)
+      if (match) {
+        return match[1]
+      }
+    }
+
+    return null
+  },
+
+  tryBindInviter(inviterId) {
+    const { INVITE_CONFIG } = require('./utils/constants')
+
+    if (!inviterId) return false
+
+    const userInfo = this.globalData.userInfo
+    if (userInfo && userInfo.inviterId) {
+      console.log('[App] 用户已绑定邀请人', userInfo.inviterId)
+      return false
+    }
+
+    const deviceId = this.getDeviceId()
+    const boundDevices = wx.getStorageSync('boundDevices') || []
+
+    if (boundDevices.includes(deviceId)) {
+      console.log('[App] 该设备已绑定过邀请关系，防刷')
+      return false
+    }
+
+    const currentUserId = this.getUserId()
+    if (inviterId === currentUserId) {
+      console.log('[App] 不能邀请自己')
+      return false
+    }
+
+    this.bindInviter(inviterId)
+
+    boundDevices.push(deviceId)
+    wx.setStorageSync('boundDevices', boundDevices)
+
+    this.updateUserPoints(INVITE_CONFIG.inviteeRewardPoints, {
+      category: 'invite',
+      title: '新人邀请奖励',
+      desc: '接受好友邀请注册',
+      emoji: '🎁'
+    })
+
+    this.addInviteRecord({
+      id: generateId(),
+      inviterId: inviterId,
+      inviteeId: currentUserId,
+      inviteeName: '环保达人',
+      inviteeAvatar: '',
+      rewardPoints: INVITE_CONFIG.inviterRewardPoints,
+      time: formatDate(new Date(), 'YYYY-MM-DD HH:mm'),
+      status: 'success'
+    })
+
+    console.log('[App] 邀请关系绑定成功')
+    return true
+  },
+
+  bindInviter(inviterId) {
+    const userInfo = this.globalData.userInfo || {}
+    userInfo.inviterId = inviterId
+    userInfo.bindTime = formatDate(new Date(), 'YYYY-MM-DD HH:mm')
+    this.globalData.userInfo = userInfo
+    wx.setStorageSync('userInfo', userInfo)
+    console.log('[App] 已绑定邀请人', inviterId)
+  },
+
+  getInviterId() {
+    const userInfo = this.globalData.userInfo
+    return userInfo ? userInfo.inviterId : null
+  },
+
+  getUserId() {
+    const userInfo = this.globalData.userInfo
+    if (userInfo && userInfo.userId) {
+      return userInfo.userId
+    }
+
+    let userId = wx.getStorageSync('userId')
+    if (!userId) {
+      userId = 'user_' + generateId()
+      wx.setStorageSync('userId', userId)
+      if (this.globalData.userInfo) {
+        this.globalData.userInfo.userId = userId
+        wx.setStorageSync('userInfo', this.globalData.userInfo)
+      }
+    }
+
+    return userId
+  },
+
+  generateSharePath() {
+    const { SHARE_CONFIG } = require('./utils/constants')
+    const userId = this.getUserId()
+    const basePath = SHARE_CONFIG.sharePath
+    return `${basePath}?inviterId=${userId}`
+  },
+
+  generateShareInfo() {
+    const { SHARE_CONFIG } = require('./utils/constants')
+    const userId = this.getUserId()
+
+    return {
+      title: SHARE_CONFIG.shareTitle,
+      path: `${SHARE_CONFIG.sharePath}?inviterId=${userId}`,
+      imageUrl: SHARE_CONFIG.shareImageUrl
+    }
+  },
+
+  simulateInviteAccepted() {
+    const { INVITE_CONFIG } = require('./utils/constants')
+
+    const inviteeNames = ['小明', '小红', '小李', '小王', '小张', '小刘', '小陈', '小杨']
+    const randomName = inviteeNames[Math.floor(Math.random() * inviteeNames.length)] + Math.floor(Math.random() * 100)
+
+    const record = {
+      id: generateId(),
+      inviterId: this.getUserId(),
+      inviteeId: 'user_' + generateId(),
+      inviteeName: randomName,
+      inviteeAvatar: '',
+      rewardPoints: INVITE_CONFIG.inviterRewardPoints,
+      time: formatDate(new Date(), 'YYYY-MM-DD HH:mm'),
+      status: 'success'
+    }
+
+    this.addInviteRecord(record)
+
+    this.updateUserPoints(INVITE_CONFIG.inviterRewardPoints, {
+      category: 'invite',
+      title: '邀请好友奖励',
+      desc: `好友${randomName}注册成功`,
+      emoji: '👥'
+    })
+
+    return record
+  },
+
   /**
    * 全局数据
    */
@@ -1105,6 +1399,9 @@ App({
     dailyPoints: null,
     masteredQuestions: [],
     dailyCompletionBonus: null,
+    shareRecords: null,
+    inviteRecords: [],
+    deviceId: '',
     systemInfo: null,
     statusBarHeight: 0,
     screenHeight: 0,

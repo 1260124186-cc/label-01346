@@ -178,6 +178,23 @@ const EXCHANGE_BANNERS = [
 /**
  * 个人中心菜单项（分组）
  */
+const SHARE_CONFIG = {
+  dailySharePoints: 10,
+  dailyShareMaxPoints: 10,
+  shareTitle: '垃圾分类助手 - 让垃圾分类更简单',
+  shareImageUrl: '',
+  sharePath: '/pages/index/index'
+}
+
+const INVITE_CONFIG = {
+  inviterRewardPoints: 100,
+  inviteeRewardPoints: 50,
+  maxInviteCount: 100,
+  posterTitle: '邀请好友一起学垃圾分类',
+  posterSubtitle: '双方都能获得积分奖励哦',
+  posterBgColor: '#5BBD72'
+}
+
 const PROFILE_MENUS = [
   {
     groupId: 'learn',
@@ -202,6 +219,7 @@ const PROFILE_MENUS = [
     groupId: 'service',
     groupName: '我的服务',
     items: [
+      { id: 'invite', icon: 'invite', emoji: '👥', title: '我的邀请', desc: '邀请好友得积分奖励', link: '/pages/invite/invite' },
       { id: 'address', icon: 'address', emoji: '📍', title: '收货地址', desc: '管理收货地址信息', link: '/pages/address-list/address-list' }
     ]
   },
@@ -2345,6 +2363,8 @@ module.exports = {
   QUIZ_BOSS_CONFIG,
   QUIZ_WRONG_SORT_CONFIG,
   QUIZ_POINTS_CONFIG,
+  SHARE_CONFIG,
+  INVITE_CONFIG,
   getQuestionsByChapter,
   getQuestionsByDifficulty,
   getQuestionsByScene,
