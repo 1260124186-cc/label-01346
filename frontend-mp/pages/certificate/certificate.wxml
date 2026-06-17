@@ -1,0 +1,164 @@
+<view class="page-container" wx:if="{{certificate}}">
+  <view class="cert-section">
+    <view class="cert-wrapper">
+      <view
+        class="cert-card"
+        style="--primary: {{courseColor.primary}}; --gradient-start: {{courseColor.gradientStart}}; --gradient-end: {{courseColor.gradientEnd}}; --accent: {{courseColor.accent}};"
+      >
+        <view class="cert-border-outer"></view>
+        <view class="cert-border-inner"></view>
+        <view class="cert-border-mid"></view>
+
+        <view class="corner top-left">
+          <view class="corner-deco"></view>
+          <view class="corner-star">★</view>
+        </view>
+        <view class="corner top-right">
+          <view class="corner-deco"></view>
+          <view class="corner-star">★</view>
+        </view>
+        <view class="corner bottom-left">
+          <view class="corner-deco"></view>
+          <view class="corner-star">★</view>
+        </view>
+        <view class="corner bottom-right">
+          <view class="corner-deco"></view>
+          <view class="corner-star">★</view>
+        </view>
+
+        <view class="cert-header">
+          <view class="header-stars">★ ★ ★</view>
+          <view class="header-en">OFFICIAL CERTIFICATE</view>
+          <view class="header-divider">
+            <view class="divider-line"></view>
+            <view class="divider-dot"></view>
+            <view class="divider-line"></view>
+          </view>
+        </view>
+
+        <view class="cert-title-section">
+          <view class="cert-title">电子结业证书</view>
+          <view class="cert-title-en">ELECTRONIC COMPLETION CERTIFICATE</view>
+        </view>
+
+        <view class="cert-body">
+          <view class="cert-intro-line">
+            <text class="intro-label">兹证明</text>
+            <text class="intro-name" style="color: var(--primary);">{{certificate.userNickName}}</text>
+            <text class="intro-suffix">（学员），已完成</text>
+          </view>
+
+          <view class="cert-course-title">
+            《{{certificate.courseTitle}}》
+          </view>
+
+          <view class="cert-completion-text">
+            全部课程学习，并通过考核，特发此证。
+          </view>
+
+          <view class="cert-info-grid">
+            <view class="info-row">
+              <view class="info-item">
+                <text class="info-label">证书名称</text>
+                <text class="info-value" style="color: var(--primary);">{{certificate.certificateName}}</text>
+              </view>
+              <view class="info-item">
+                <text class="info-label">证书等级</text>
+                <text class="info-value" style="color: var(--primary);">{{certificate.certificateLevel}}</text>
+              </view>
+            </view>
+            <view class="info-row">
+              <view class="info-item">
+                <text class="info-label">学习时长</text>
+                <text class="info-value">{{certificate.totalDuration}} 学时</text>
+              </view>
+              <view class="info-item">
+                <text class="info-label">考核成绩</text>
+                <text class="info-value">{{certificate.accuracy}} 分</text>
+              </view>
+            </view>
+            <view class="info-row">
+              <view class="info-item">
+                <text class="info-label">通过日期</text>
+                <text class="info-value">{{certificate.passDate}}</text>
+              </view>
+              <view class="info-item">
+                <text class="info-label">奖励积分</text>
+                <text class="info-value" style="color: #E67E22;">+{{certificate.pointsReward}}</text>
+              </view>
+            </view>
+          </view>
+
+          <view class="cert-no-row">
+            <text class="cert-no-label">证书编号：</text>
+            <text class="cert-no-value">{{certificate.certNo}}</text>
+          </view>
+        </view>
+
+        <view class="cert-footer">
+          <view class="qr-section">
+            <view class="qr-placeholder">
+              <view class="qr-pattern">
+                <view class="qr-corner tl"></view>
+                <view class="qr-corner tr"></view>
+                <view class="qr-corner bl"></view>
+                <view class="qr-dots" style="border-color: var(--primary);"></view>
+              </view>
+            </view>
+            <text class="qr-label">扫码验证真伪</text>
+          </view>
+
+          <view class="seal-section">
+            <view class="seal-ring" style="border-color: var(--primary);">
+              <view class="seal-inner-ring" style="border-color: var(--primary);"></view>
+              <view class="seal-text-arc" style="color: var(--primary);">
+                垃圾分类培训中心
+              </view>
+              <view class="seal-star" style="color: var(--primary);">★</view>
+              <view class="seal-text" style="color: var(--primary);">专用章</view>
+              <view class="seal-en" style="color: var(--primary);">CERTIFIED</view>
+            </view>
+          </view>
+        </view>
+
+        <view class="cert-watermark">
+          <text class="watermark-text" wx:for="{{6}}" wx:key="index" style="color: var(--primary);">
+            {{certificate.certificateName}}
+          </text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view class="action-section">
+    <view class="action-grid">
+      <button class="action-btn primary" bindtap="onSaveToAlbum" loading="{{isDrawing}}" disabled="{{isDrawing}}">
+        <text class="btn-icon">💾</text>
+        <text class="btn-text">保存证书</text>
+      </button>
+      <button class="action-btn share-friend" open-type="share">
+        <text class="btn-icon">👥</text>
+        <text class="btn-text">分享好友</text>
+      </button>
+      <button class="action-btn share-timeline" bindtap="onShareTimeline">
+        <text class="btn-icon">📢</text>
+        <text class="btn-text">朋友圈</text>
+      </button>
+      <button class="action-btn back" bindtap="goBackProfile">
+        <text class="btn-icon">👤</text>
+        <text class="btn-text">个人中心</text>
+      </button>
+    </view>
+  </view>
+
+  <view class="canvas-container">
+    <canvas
+      type="2d"
+      id="certCanvas"
+      class="cert-canvas"
+      style="width: {{canvasWidth}}px; height: {{canvasHeight}}px;"
+    ></canvas>
+  </view>
+
+  <view class="safe-area-bottom"></view>
+</view>

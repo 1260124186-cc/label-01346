@@ -151,7 +151,8 @@ const QUIZ_QUESTION_TYPES = [
 const BANNER_LIST = [
   { id: 1, image: '/images/banner/banner1.jpg', title: '新人专享 双倍积分', linkType: 'activity', linkId: '1' },
   { id: 2, image: '/images/banner/banner2.jpg', title: '知识问答 挑战赢积分', linkType: 'quiz', linkId: '' },
-  { id: 3, image: '/images/banner/banner3.jpg', title: '了解厨余分类详情', linkType: 'classify', linkId: '3' }
+  { id: 3, image: '/images/banner/banner3.jpg', title: '了解厨余分类详情', linkType: 'classify', linkId: '3' },
+  { id: 4, image: '/images/banner/banner4.jpg', title: '📚 环保课程免费学，结业领证书', linkType: 'learning', linkId: '', bgColor: 'linear-gradient(135deg, #9B59B6 0%, #5BBD72 100%)' }
 ]
 
 /**
@@ -207,6 +208,8 @@ const PROFILE_MENUS = [
     groupId: 'learn',
     groupName: '学习中心',
     items: [
+      { id: 'learning', icon: 'learning', emoji: '📚', title: '学习中心', desc: '结构化环保课程，学成拿证书', link: '/pages/learning-center/learning-center', badge: 'NEW' },
+      { id: 'certificates', icon: 'certificate', emoji: '🎓', title: '我的证书', desc: '查看获得的结业证书', link: '/pages/certificates/certificates' },
       { id: 'quiz', icon: 'quiz', emoji: '❓', title: '知识问答', desc: '答题赢取积分奖励', link: '/pages/quiz/quiz' },
       { id: 'daily', icon: 'daily', emoji: '📅', title: '每日一练', desc: '每日打卡答题', link: '/pages/quiz-daily/quiz-daily' },
       { id: 'signin', icon: 'signin', emoji: '📝', title: '每日签到', desc: '签到获取积分', link: '/pages/signin/signin' },

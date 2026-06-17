@@ -639,6 +639,26 @@ Page({
     }
 
     setStorage('chaptersProgress', chaptersProgress)
+
+    const certificate = app.checkAndGrantCertificate(this.data.chapterId, accuracy)
+    if (certificate) {
+      setTimeout(() => {
+        wx.showModal({
+          title: '🎓 恭喜获得证书',
+          content: `您已完成所有章节学习并通过考核，\n获得「${certificate.certificateName}」${certificate.certificateLevel}证书！\n\n是否立即查看证书？`,
+          confirmText: '查看证书',
+          cancelText: '稍后再看',
+          confirmColor: '#5BBD72',
+          success(res) {
+            if (res.confirm) {
+              wx.redirectTo({
+                url: `/pages/certificate/certificate?certId=${certificate.id}`
+              })
+            }
+          }
+        })
+      }, 500)
+    }
   },
 
   markDailyCompleted() {

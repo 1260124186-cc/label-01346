@@ -289,6 +289,62 @@
   background: linear-gradient(135deg, #5BBD72 0%, #4AA862 50%, #3D9140 100%);
 }
 
+.learning-entry-card {
+  position: relative;
+  border-radius: 24rpx;
+  overflow: hidden;
+  box-shadow: 0 8rpx 28rpx rgba(155, 89, 182, 0.25);
+}
+
+.learning-entry-card:active {
+  transform: scale(0.98);
+}
+
+.learning-entry-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, #9B59B6 0%, #7D66C8 40%, #5BBD72 100%);
+}
+
+.learning-entry-bg::after {
+  content: '';
+  position: absolute;
+  top: -60rpx;
+  right: -60rpx;
+  width: 260rpx;
+  height: 260rpx;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 50%;
+}
+
+.learning-entry-bg::before {
+  content: '';
+  position: absolute;
+  bottom: -80rpx;
+  left: -40rpx;
+  width: 200rpx;
+  height: 200rpx;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 50%;
+}
+
+.learning-entry-tag {
+  position: absolute;
+  top: 20rpx;
+  right: -42rpx;
+  transform: rotate(45deg);
+  background: linear-gradient(90deg, #FF6B6B, #EE5A5A);
+  color: #fff;
+  font-size: 20rpx;
+  font-weight: 700;
+  padding: 6rpx 60rpx;
+  letter-spacing: 2rpx;
+  box-shadow: 0 4rpx 12rpx rgba(238, 90, 90, 0.4);
+}
+
 /* ==================== 快捷功能区域 ==================== */
 .quick-actions-section {
   padding: 0 32rpx;

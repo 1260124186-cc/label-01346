@@ -102,6 +102,9 @@ Page({
       case 'quiz':
         navigateTo('/pages/quiz/quiz')
         break
+      case 'learning':
+        navigateTo('/pages/learning-center/learning-center')
+        break
       case 'classify':
         if (item.linkId) {
           const trashType = TRASH_TYPES.find(t => t.id === parseInt(item.linkId))
@@ -112,6 +115,11 @@ Page({
         }
         break
     }
+  },
+
+  goToLearningCenter() {
+    console.log('[Index] 点击学习中心')
+    navigateTo('/pages/learning-center/learning-center')
   },
 
   /**

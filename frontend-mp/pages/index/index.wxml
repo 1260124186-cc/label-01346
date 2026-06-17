@@ -122,6 +122,31 @@
     </view>
   </view>
 
+  <!-- 学习中心入口 -->
+  <view class="game-entry-section" bindtap="goToLearningCenter">
+    <view class="learning-entry-card">
+      <view class="learning-entry-bg"></view>
+      <view class="game-entry-content">
+        <view class="game-entry-left">
+          <view class="game-entry-emoji">📚</view>
+          <view class="game-entry-text">
+            <view class="game-entry-title">环保学习中心</view>
+            <view class="game-entry-subtitle">
+              结构化课程 · 视频/图文讲解 · 课后测验 · 结业拿电子证书
+            </view>
+          </view>
+        </view>
+        <view class="game-entry-right">
+          <view class="game-entry-btn" style="background: linear-gradient(135deg, #9B59B6 0%, #5BBD72 100%);">
+            <text>去学习</text>
+            <text class="game-arrow">›</text>
+          </view>
+        </view>
+      </view>
+      <view class="learning-entry-tag">NEW</view>
+    </view>
+  </view>
+
   <!-- 快捷功能区域 -->
   <view class="quick-actions-section">
     <view class="quick-actions-grid eight-grid">

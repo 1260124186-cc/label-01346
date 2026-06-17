@@ -44,6 +44,8 @@ App({
     this.initGameRecords()
     this.initDailyGamePlays()
     this.initRecycleOrders()
+    this.initLearningProgress()
+    this.initCertificates()
     this.checkAndExpirePoints()
     this.getSystemInfo()
     this.simulateAutoShipping()
@@ -2726,6 +2728,206 @@ App({
     return true
   },
 
+  initLearningProgress() {
+    const progress = wx.getStorageSync('learningProgress')
+    this.globalData.learningProgress = progress || {}
+    console.log('[App] 学习进度已加载', Object.keys(this.globalData.learningProgress).length, '门课程')
+  },
+
+  saveLearningProgress() {
+    wx.setStorageSync('learningProgress', this.globalData.learningProgress)
+  },
+
+  getLearningProgress() {
+    return this.globalData.learningProgress || {}
+  },
+
+  getCourseProgress(courseId) {
+    return this.globalData.learningProgress[courseId] || { completedChapters: [], lastChapter: null, lastTime: 0 }
+  },
+
+  markChapterCompleted(courseId, chapterId, chapterDuration = 0) {
+    const progress = this.getCourseProgress(courseId)
+    const isFirstTime = !progress.completedChapters.includes(chapterId)
+
+    if (isFirstTime) {
+      progress.completedChapters.push(chapterId)
+    }
+    progress.lastChapter = chapterId
+    progress.lastTime = Date.now()
+    progress.totalDuration = (progress.totalDuration || 0) + (isFirstTime ? chapterDuration : 0)
+
+    this.globalData.learningProgress[courseId] = progress
+    this.saveLearningProgress()
+
+    if (isFirstTime && chapterDuration > 0) {
+      const studyPoints = Math.min(20, Math.max(5, Math.floor(chapterDuration / 2)))
+      this.updateUserPoints(studyPoints, {
+        category: 'learning',
+        title: '章节学习奖励',
+        desc: `完成章节学习，时长约${chapterDuration}分钟`,
+        emoji: '📖'
+      })
+    }
+
+    console.log('[App] 章节已完成', courseId, chapterId, '首次:', isFirstTime)
+    return { isFirstTime, progress }
+  },
+
+  isChapterCompleted(courseId, chapterId) {
+    const progress = this.getCourseProgress(courseId)
+    return progress.completedChapters.includes(chapterId)
+  },
+
+  isChapterUnlocked(courseId, chapterIndex, chapters) {
+    if (chapterIndex <= 0) return true
+    const prevChapter = chapters[chapterIndex - 1]
+    if (!prevChapter) return false
+    return this.isChapterCompleted(courseId, prevChapter.id)
+  },
+
+  isCourseFullyLearned(courseId, totalChapters) {
+    const progress = this.getCourseProgress(courseId)
+    return progress.completedChapters.length >= totalChapters
+  },
+
+  getLearningStats() {
+    const progress = this.getLearningProgress()
+    const { COURSES } = require('./data/courses')
+    const certs = this.getCertificates()
+
+    let completedCourses = 0
+    let totalMinutes = 0
+
+    COURSES.forEach(course => {
+      const p = progress[course.id]
+      if (p) {
+        totalMinutes += p.totalDuration || 0
+        if (p.completedChapters.length >= course.totalChapters) {
+          completedCourses++
+        }
+      }
+    })
+
+    return {
+      completedCourses,
+      certificates: certs.length,
+      totalMinutes,
+      inProgressCourses: Object.keys(progress).filter(id => {
+        const p = progress[id]
+        const course = COURSES.find(c => c.id === id)
+        return course && p.completedChapters.length > 0 && p.completedChapters.length < course.totalChapters
+      }).length
+    }
+  },
+
+  initCertificates() {
+    const certs = wx.getStorageSync('certificates')
+    this.globalData.certificates = certs || []
+    console.log('[App] 证书数据已加载', this.globalData.certificates.length, '张')
+  },
+
+  saveCertificates() {
+    wx.setStorageSync('certificates', this.globalData.certificates)
+  },
+
+  getCertificates() {
+    return this.globalData.certificates || []
+  },
+
+  getCertificateById(certId) {
+    return this.globalData.certificates.find(c => c.id === certId)
+  },
+
+  getCertificateByCourse(courseId) {
+    return this.globalData.certificates.find(c => c.courseId === courseId)
+  },
+
+  grantCertificate(course, accuracy) {
+    const existing = this.getCertificateByCourse(course.id)
+    if (existing) {
+      console.log('[App] 该课程证书已存在，跳过发放')
+      return existing
+    }
+
+    const certId = 'cert_' + generateId()
+    const now = new Date()
+    const { COURSE_CATEGORIES } = require('./data/courses')
+    const category = COURSE_CATEGORIES.find(c => c.id === course.categoryId) || COURSE_CATEGORIES[0]
+    const userInfo = this.globalData.userInfo || {}
+
+    const certificate = {
+      id: certId,
+      certNo: 'CERT' + Date.now().toString().slice(-10) + Math.floor(Math.random() * 1000),
+      courseId: course.id,
+      courseTitle: course.title,
+      certificateName: course.certificateName,
+      certificateLevel: course.certificateLevel,
+      categoryId: course.categoryId,
+      categoryColor: category.color,
+      categoryIcon: category.icon,
+      holderName: userInfo.nickName || '环保达人',
+      holderAvatar: userInfo.avatarUrl || '',
+      totalDuration: course.totalDuration,
+      totalChapters: course.totalChapters,
+      accuracy: accuracy || 100,
+      pointsReward: course.pointsReward || 0,
+      issueDate: formatDate(now, 'YYYY-MM-DD'),
+      issueTime: formatDate(now, 'YYYY-MM-DD HH:mm:ss'),
+      expireDate: formatDate(new Date(now.getTime() + 365 * 24 * 3600 * 1000), 'YYYY-MM-DD'),
+      issuer: '垃圾分类培训认证中心',
+      instructor: course.instructor ? course.instructor.name : ''
+    }
+
+    this.globalData.certificates.unshift(certificate)
+    this.saveCertificates()
+
+    if (course.pointsReward && course.pointsReward > 0) {
+      this.updateUserPoints(course.pointsReward, {
+        category: 'certificate',
+        title: '结业证书奖励',
+        desc: `通过《${course.title}》获得「${course.certificateName}」证书`,
+        emoji: '🏆'
+      })
+    }
+
+    this.addSystemMessage('🎓 获得新证书', `恭喜您通过《${course.title}》考核，获得「${course.certificateName}」${course.certificateLevel}证书！`, {
+      type: 'certificate',
+      link: `/pages/certificate/certificate?certId=${certId}`
+    })
+
+    const achievement = {
+      id: 'ach_cert_first',
+      name: '初出茅庐',
+      desc: '获得第一张结业证书',
+      icon: '🎓',
+      points: 50,
+      unlockedAt: formatDate(now, 'YYYY-MM-DD HH:mm')
+    }
+    this.unlockAchievement(achievement)
+
+    console.log('[App] 证书已发放', certId, certificate.certificateName)
+    return certificate
+  },
+
+  checkAndGrantCertificate(chapterId, accuracy) {
+    const { COURSES } = require('./data/courses')
+    const course = COURSES.find(c => c.quizChapterId === Number(chapterId))
+    if (!course) return null
+
+    if (!this.isCourseFullyLearned(course.id, course.totalChapters)) {
+      console.log('[App] 课程章节尚未全部学完，暂不发证')
+      return null
+    }
+
+    if (accuracy < 60) {
+      console.log('[App] 正确率不足60%，未通过考核', accuracy)
+      return null
+    }
+
+    return this.grantCertificate(course, accuracy)
+  },
+
   initMessageSystem() {
     this.globalData.messageManager = messageManager
     console.log('[App] 消息系统初始化完成')
@@ -2919,6 +3121,8 @@ App({
     gameRecords: [],
     dailyGamePlays: null,
     recycleOrders: [],
+    learningProgress: {},
+    certificates: [],
     messageManager: null
   }
 })

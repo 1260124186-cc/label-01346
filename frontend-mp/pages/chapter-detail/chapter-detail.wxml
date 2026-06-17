@@ -1,0 +1,127 @@
+<view class="detail-container" wx:if="{{course && chapter}}">
+  <view class="header-card" style="background: {{course.coverColor}}">
+    <view class="course-info">
+      <view class="course-icon">{{course.icon}}</view>
+      <view class="course-meta">
+        <view class="course-name">{{course.title}}</view>
+        <view class="chapter-progress">
+          <text>进度 {{chapterIndex + 1}}/{{totalChapters}}</text>
+          <text class="completed-badge">已完成 {{completedCount}} 章</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="chapter-type-row">
+      <view class="type-tag video-tag" wx:if="{{chapter.type === 'video'}}">
+        <text class="type-icon">🎬</text>
+        <text>视频章节</text>
+      </view>
+      <view class="type-tag article-tag" wx:else>
+        <text class="type-icon">📖</text>
+        <text>图文章节</text>
+      </view>
+      <view class="duration-info">
+        <text class="duration-icon">⏱️</text>
+        <text>约 {{chapter.duration}} 分钟</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="content-wrapper">
+    <view class="video-section" wx:if="{{chapter.type === 'video'}}">
+      <view class="video-wrapper">
+        <video
+          class="video-player"
+          src="{{chapter.videoUrl || ''}}"
+          poster=""
+          controls="{{true}}"
+          show-center-play-btn="{{true}}"
+          object-fit="cover"
+        >
+        </video>
+        <view class="video-placeholder" wx:if="{{!chapter.videoUrl}}">
+          <view class="placeholder-play">
+            <view class="play-icon">▶</view>
+          </view>
+          <view class="placeholder-text">视频加载中...</view>
+        </view>
+      </view>
+    </view>
+
+    <view class="summary-card" wx:if="{{chapter.content && chapter.content.summary}}">
+      <view class="summary-title">📝 内容概要</view>
+      <view class="summary-text">{{chapter.content.summary}}</view>
+    </view>
+
+    <view class="sections-section" wx:if="{{chapter.content && chapter.content.sections && chapter.content.sections.length > 0}}">
+      <view class="section-title-wrap">
+        <view class="section-title">📚 章节内容</view>
+      </view>
+
+      <view class="sections-list">
+        <view class="section-item" wx:for="{{chapter.content.sections}}" wx:key="title" wx:for-index="idx">
+          <view class="section-header">
+            <view class="section-number" style="background: {{themeColor}}20; color: {{themeColor}}">{{idx + 1}}</view>
+            <view class="section-name">{{item.title}}</view>
+          </view>
+
+          <view class="section-content" wx:if="{{item.content}}">
+            {{item.content}}
+          </view>
+
+          <view class="bullets-list" wx:if="{{item.bullets && item.bullets.length > 0}}">
+            <view class="bullet-item" wx:for="{{item.bullets}}" wx:key="*this" wx:for-item="bullet">
+              <text class="bullet-dot" style="background: {{themeColor}}"></text>
+              <text class="bullet-text">{{bullet}}</text>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <view class="tips-section" wx:if="{{chapter.content && chapter.content.tips && chapter.content.tips.length > 0}}">
+      <view class="tips-card">
+        <view class="tips-header">
+          <text class="tips-icon">💡</text>
+          <text class="tips-title">学习提示</text>
+        </view>
+        <view class="tips-list">
+          <view class="tip-item" wx:for="{{chapter.content.tips}}" wx:key="*this">
+            <text class="tip-number">{{index + 1}}</text>
+            <text class="tip-text">{{item}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <view class="bottom-spacer"></view>
+  </view>
+
+  <view class="bottom-action-bar">
+    <view class="action-inner">
+      <view
+        class="btn-prev"
+        bindtap="onPrevChapter"
+        wx:if="{{!isFirstChapter}}"
+      >
+        <text class="btn-icon">←</text>
+        <text class="btn-text">上一章</text>
+      </view>
+      <view class="btn-prev disabled" wx:else>
+        <text class="btn-icon">←</text>
+        <text class="btn-text">已是第一章</text>
+      </view>
+
+      <view
+        class="btn-next {{isCompleted ? 'completed' : ''}}"
+        style="background: {{isCompleted ? '#B2BEC3' : themeColor}}"
+        bindtap="onMarkCompleteAndNext"
+      >
+        <text class="btn-icon">{{isLastChapter ? '🎉' : (isCompleted ? '✓' : '→')}}</text>
+        <text class="btn-text">
+          {{isLastChapter ? '完成课程，返回详情' : (isCompleted ? '已完成，下一章' : '标记完成并下一章')}}
+        </text>
+      </view>
+    </view>
+  </view>
+</view>

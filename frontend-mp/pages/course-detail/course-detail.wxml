@@ -1,0 +1,157 @@
+<view class="page-container" wx:if="{{course}}">
+  <view class="cover-card" style="background: {{course.coverColor}};">
+    <view class="cover-inner">
+      <view class="cover-top">
+        <view class="course-icon-wrapper">
+          <text class="course-icon">{{course.icon}}</text>
+        </view>
+        <view class="course-info">
+          <view class="course-title">{{course.title}}</view>
+          <view class="course-subtitle">{{course.subtitle}}</view>
+        </view>
+      </view>
+
+      <view class="tags-row">
+        <view class="tag-item" wx:for="{{course.tags}}" wx:key="*this">
+          <text class="tag-text">{{item}}</text>
+        </view>
+      </view>
+
+      <view class="instructor-row">
+        <view class="instructor-avatar">
+          <text class="avatar-emoji">👨‍🏫</text>
+        </view>
+        <view class="instructor-info">
+          <text class="instructor-name">{{course.instructor.name}}</text>
+          <text class="instructor-title">{{course.instructor.title}}</text>
+        </view>
+      </view>
+
+      <view class="stats-row">
+        <view class="stat-item">
+          <text class="stat-icon">⭐</text>
+          <text class="stat-value">{{course.rating}}</text>
+        </view>
+        <view class="stat-divider"></view>
+        <view class="stat-item">
+          <text class="stat-icon">👥</text>
+          <text class="stat-value">{{course.studentCount}}人学习</text>
+        </view>
+        <view class="stat-divider"></view>
+        <view class="stat-item">
+          <text class="stat-icon">🎁</text>
+          <text class="stat-value">+{{course.pointsReward}}积分</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view class="section-card">
+    <view class="section-header">
+      <text class="section-title">课程简介</text>
+    </view>
+    <view class="description-content">
+      <text class="description-text">{{course.description}}</text>
+    </view>
+  </view>
+
+  <view class="section-card progress-card">
+    <view class="section-header">
+      <text class="section-title">学习进度</text>
+      <view class="progress-text">
+        <text class="progress-count">{{completedCount}}/{{totalCount}}章</text>
+        <text class="progress-percent">{{progressPercent}}%</text>
+      </view>
+    </view>
+    <view class="progress-bar-wrapper">
+      <view class="progress-bar">
+        <view class="progress-bar-fill" style="width: {{progressPercent}}%; background: {{course.color}};"></view>
+      </view>
+    </view>
+    <view class="progress-hint">
+      <text wx:if="{{allCompleted}}" class="hint-text hint-success">🎉 恭喜你已完成全部章节，快去参加测验吧！</text>
+      <text wx:elif="{{completedCount === 0}}" class="hint-text">开启你的学习之旅，点击下方按钮开始学习</text>
+      <text wx:else class="hint-text">继续加油，已完成 {{progressPercent}}% 的课程内容</text>
+    </view>
+  </view>
+
+  <view class="section-card chapters-card">
+    <view class="section-header">
+      <text class="section-title">章节目录</text>
+      <text class="section-count">共{{totalCount}}章</text>
+    </view>
+    <view class="chapters-list">
+      <view
+        class="chapter-item {{item.isLocked ? 'locked' : ''}} {{item.isCompleted ? 'completed' : ''}}"
+        wx:for="{{chaptersWithStatus}}"
+        wx:key="id"
+        bindtap="onChapterTap"
+        data-chapterid="{{item.id}}"
+        data-islocked="{{item.isLocked}}"
+      >
+        <view class="chapter-order">
+          <view class="order-circle" wx:if="{{!item.isCompleted}}">
+            <text class="order-text">{{item.orderNum}}</text>
+          </view>
+          <view class="order-circle completed-circle" wx:else>
+            <text class="order-text">✅</text>
+          </view>
+          <view class="lock-icon" wx:if="{{item.isLocked}}">🔒</view>
+        </view>
+
+        <view class="chapter-content">
+          <view class="chapter-title-row">
+            <text class="chapter-title">{{item.title}}</text>
+          </view>
+          <view class="chapter-meta">
+            <view class="meta-tag type-tag">
+              <text class="meta-icon">{{typeMap[item.type].icon}}</text>
+              <text class="meta-text">{{typeMap[item.type].name}}</text>
+            </view>
+            <view class="meta-tag duration-tag">
+              <text class="meta-icon">⏱️</text>
+              <text class="meta-text">{{item.duration}}分钟</text>
+            </view>
+            <view class="status-tag" wx:if="{{item.isCompleted}}">
+              <text class="status-text status-done">已完成</text>
+            </view>
+            <view class="status-tag" wx:elif="{{item.isLocked}}">
+              <text class="status-text status-locked">未解锁</text>
+            </view>
+            <view class="status-tag" wx:else>
+              <text class="status-text status-pending">待学习</text>
+            </view>
+          </view>
+        </view>
+
+        <view class="chapter-arrow">
+          <text class="arrow-icon" wx:if="{{!item.isLocked}}">›</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view class="bottom-space"></view>
+
+  <view class="bottom-bar">
+    <view class="bar-info">
+      <view class="info-item">
+        <text class="info-label">预计时长</text>
+        <text class="info-value">{{course.totalDuration}}分钟</text>
+      </view>
+    </view>
+    <view
+      class="action-btn {{allCompleted ? 'quiz-btn' : ''}}"
+      style="background: {{allCompleted ? 'linear-gradient(135deg, #F39C12, #E67E22)' : 'linear-gradient(135deg, #5BBD72, #4CAF50)'}};"
+      bindtap="{{allCompleted ? 'onGoQuiz' : 'onContinueLearn'}}"
+    >
+      <text wx:if="{{allCompleted}}">参加测验</text>
+      <text wx:elif="{{completedCount === 0}}">开始学习</text>
+      <text wx:else>继续学习</text>
+    </view>
+  </view>
+</view>
+
+<view class="loading-state" wx:if="{{!course}}">
+  <text class="loading-text">加载中...</text>
+</view>

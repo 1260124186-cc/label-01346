@@ -34,7 +34,9 @@ Page({
     statistics: [
       { id: 'classify', label: '分类次数', value: 0 },
       { id: 'points', label: '累计积分', value: 0 },
-      { id: 'days', label: '连续打卡', value: 0 }
+      { id: 'days', label: '连续打卡', value: 0 },
+      { id: 'courses', label: '已学课程', value: 0 },
+      { id: 'certs', label: '获得证书', value: 0 }
     ],
     isUploading: false,
     isSignedToday: false,
@@ -90,6 +92,8 @@ Page({
         badgeCount: menu.id === 'messages' ? unreadMessageCount : 0
       }))
 
+      const learningStats = typeof app.getLearningStats === 'function' ? app.getLearningStats() : { completedCourses: 0, certificates: 0 }
+
       this.setData({
         userInfo: {
           ...userInfo,
@@ -99,7 +103,9 @@ Page({
         statistics: [
           { id: 'classify', label: '分类次数', value: stats.classifyCount },
           { id: 'points', label: '累计积分', value: stats.totalEarnedPoints },
-          { id: 'days', label: '连续打卡', value: stats.continuousDays }
+          { id: 'days', label: '连续打卡', value: stats.continuousDays },
+          { id: 'courses', label: '已学课程', value: learningStats.completedCourses },
+          { id: 'certs', label: '获得证书', value: learningStats.certificates }
         ],
         isSignedToday: app.isTodaySignedIn(),
         achievements,

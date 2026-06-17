@@ -1,0 +1,117 @@
+<view class="learning-container">
+  <view class="header-card">
+    <view class="header-content">
+      <view class="header-title">学习中心</view>
+      <view class="header-subtitle">系统学习环保知识，赢取证书与积分</view>
+    </view>
+
+    <view class="stats-card">
+      <view class="stat-item" wx:for="{{userStats}}" wx:for-item="value" wx:for-index="key" wx:key="key">
+        <block wx:if="{{key === 'completedCourses'}}">
+          <text class="stat-icon">📖</text>
+          <text class="stat-value">{{value}}</text>
+          <text class="stat-label">已完成课程</text>
+        </block>
+        <block wx:elif="{{key === 'certificates'}}">
+          <text class="stat-icon">🏆</text>
+          <text class="stat-value">{{value}}</text>
+          <text class="stat-label">获得证书</text>
+        </block>
+        <block wx:elif="{{key === 'totalMinutes'}}">
+          <text class="stat-icon">⏱️</text>
+          <text class="stat-value">{{value}}</text>
+          <text class="stat-label">学习时长(分)</text>
+        </block>
+        <block wx:elif="{{key === 'points'}}">
+          <text class="stat-icon">💎</text>
+          <text class="stat-value">{{value}}</text>
+          <text class="stat-label">累计积分</text>
+        </block>
+      </view>
+    </view>
+  </view>
+
+  <scroll-view class="category-scroll" scroll-x="{{true}}" enhanced="{{true}}" show-scrollbar="{{false}}">
+    <view class="category-list">
+      <view
+        class="category-item {{activeCategoryId === item.id ? 'active' : ''}}"
+        wx:for="{{categories}}"
+        wx:key="id"
+        data-id="{{item.id}}"
+        bindtap="onCategoryTap"
+        style="--cat-color: {{item.color}}"
+      >
+        <text class="category-icon">{{item.icon}}</text>
+        <text class="category-name">{{item.name}}</text>
+      </view>
+    </view>
+  </scroll-view>
+
+  <view class="course-section">
+    <view class="course-list">
+      <view
+        class="course-card"
+        wx:for="{{courseList}}"
+        wx:key="id"
+        data-course-id="{{item.id}}"
+        bindtap="onCourseTap"
+      >
+        <view class="course-cover" style="background: {{item.coverColor}};">
+          <text class="course-cover-icon">{{item.icon}}</text>
+          <view class="course-tags" wx:if="{{item.tags && item.tags.length > 0}}">
+            <text class="course-tag" wx:for="{{item.tags}}" wx:for-item="tag" wx:key="*this">{{tag}}</text>
+          </view>
+        </view>
+
+        <view class="course-info">
+          <view class="course-title-row">
+            <text class="course-title">{{item.title}}</text>
+          </view>
+
+          <text class="course-subtitle">{{item.subtitle}}</text>
+
+          <view class="course-meta-row">
+            <view class="meta-difficulty" style="background: {{item.difficultyColor}}20; color: {{item.difficultyColor}};">
+              {{item.difficultyName}}
+            </view>
+            <view class="meta-info">
+              <text class="meta-icon">📚</text>
+              <text class="meta-text">{{item.completedChaptersCount}}/{{item.totalChapters}}章</text>
+            </view>
+            <view class="meta-info">
+              <text class="meta-icon">⏰</text>
+              <text class="meta-text">{{item.totalDuration}}分钟</text>
+            </view>
+          </view>
+
+          <view class="course-progress-row">
+            <view class="progress-bar-wrap">
+              <view class="progress-bar-bg">
+                <view class="progress-bar-fill" style="width: {{item.progressPercent}}%; background: {{item.color}};"></view>
+              </view>
+              <text class="progress-text" style="color: {{item.color}};">{{item.progressPercent}}%</text>
+            </view>
+          </view>
+
+          <view class="course-footer">
+            <view class="footer-left">
+              <text class="footer-icon">👥</text>
+              <text class="footer-text">{{item.studentCountText}}人已学</text>
+            </view>
+            <view class="footer-right">
+              <text class="footer-icon">⭐</text>
+              <text class="footer-text">{{item.rating}}</text>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <view class="empty-state" wx:if="{{courseList.length === 0}}">
+      <text class="empty-icon">📭</text>
+      <text class="empty-text">该分类暂无课程</text>
+    </view>
+  </view>
+
+  <view class="safe-area-bottom"></view>
+</view>

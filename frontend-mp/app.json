@@ -41,7 +41,12 @@
     "pages/recycle-book/recycle-book",
     "pages/recycle-orders/recycle-orders",
     "pages/recycle-order-detail/recycle-order-detail",
-    "pages/messages/messages"
+    "pages/messages/messages",
+    "pages/learning-center/learning-center",
+    "pages/course-detail/course-detail",
+    "pages/chapter-detail/chapter-detail",
+    "pages/certificate/certificate",
+    "pages/certificates/certificates"
   ],
   "window": {
     "backgroundTextStyle": "dark",
