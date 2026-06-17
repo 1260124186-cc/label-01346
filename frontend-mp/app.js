@@ -39,6 +39,7 @@ App({
     this.initAntiCheatData()
     this.initGameRecords()
     this.initDailyGamePlays()
+    this.initRecycleOrders()
     this.checkAndExpirePoints()
     this.getSystemInfo()
     this.simulateAutoShipping()
@@ -48,6 +49,7 @@ App({
   onShow() {
     console.log('[App] 小程序显示')
     this.simulateAutoShipping()
+    this.simulateRecycleProgress()
   },
 
   /**
@@ -2527,6 +2529,179 @@ App({
     return actualResult
   },
 
+  initRecycleOrders() {
+    const orders = wx.getStorageSync('recycleOrders')
+    this.globalData.recycleOrders = orders || []
+    console.log('[App] 回收订单数据已加载', this.globalData.recycleOrders.length, '条')
+  },
+
+  saveRecycleOrders() {
+    wx.setStorageSync('recycleOrders', this.globalData.recycleOrders)
+  },
+
+  getRecycleOrders() {
+    return this.globalData.recycleOrders || []
+  },
+
+  getRecycleOrdersByStatus(status) {
+    if (status === 'all') return this.getRecycleOrders()
+    return this.globalData.recycleOrders.filter(o => o.status === status)
+  },
+
+  getRecycleOrderById(orderId) {
+    return this.globalData.recycleOrders.find(o => o.id === orderId)
+  },
+
+  calculateRecyclePoints(categoryId, quantity) {
+    const { RECYCLE_CATEGORIES, RECYCLE_POINTS_CONFIG } = require('./utils/constants')
+    const category = RECYCLE_CATEGORIES.find(c => c.id === categoryId)
+    if (!category) return RECYCLE_POINTS_CONFIG.minPoints
+
+    let points = category.basePoints + category.pointsPerItem * Math.max(0, quantity - 1)
+    points = Math.max(RECYCLE_POINTS_CONFIG.minPoints, Math.min(RECYCLE_POINTS_CONFIG.maxPoints, points))
+    return points
+  },
+
+  addRecycleOrder(orderData) {
+    const { RECYCLE_ORDER_STATUS } = require('./utils/constants')
+    const points = this.calculateRecyclePoints(orderData.categoryId, orderData.quantity || 1)
+
+    const newOrder = {
+      id: 'recycle_' + generateId(),
+      orderNo: 'HS' + Date.now().toString().slice(-10) + Math.floor(Math.random() * 1000),
+      categoryId: orderData.categoryId,
+      categoryName: orderData.categoryName,
+      categoryEmoji: orderData.categoryEmoji,
+      quantity: orderData.quantity || 1,
+      appointmentDate: orderData.appointmentDate,
+      appointmentTimeSlot: orderData.appointmentTimeSlot,
+      appointmentTimeName: orderData.appointmentTimeName,
+      address: orderData.address,
+      contactName: orderData.contactName,
+      contactPhone: orderData.contactPhone,
+      remark: orderData.remark || '',
+      estimatedPoints: points,
+      actualPoints: 0,
+      status: 'pending',
+      statusText: RECYCLE_ORDER_STATUS.pending.text,
+      createTime: formatDate(new Date(), 'YYYY-MM-DD HH:mm'),
+      statusHistory: [
+        { status: 'pending', time: formatDate(new Date(), 'YYYY-MM-DD HH:mm'), desc: '订单已提交，等待接单' }
+      ]
+    }
+
+    this.globalData.recycleOrders.unshift(newOrder)
+    this.saveRecycleOrders()
+    console.log('[App] 新增回收订单', newOrder.orderNo, '预估积分:', points)
+    return newOrder
+  },
+
+  updateRecycleOrderStatus(orderId, status, extra = {}) {
+    const { RECYCLE_ORDER_STATUS, RECYCLE_POINTS_CONFIG } = require('./utils/constants')
+    const order = this.getRecycleOrderById(orderId)
+    if (!order) return false
+
+    const statusInfo = RECYCLE_ORDER_STATUS[status]
+    if (!statusInfo) return false
+
+    order.status = status
+    order.statusText = statusInfo.text
+
+    const nowStr = formatDate(new Date(), 'YYYY-MM-DD HH:mm')
+    const statusDescs = {
+      pending: '订单已提交，等待接单',
+      appointed: '订单已确认，等待上门回收',
+      visiting: '回收人员已出发，正在上门',
+      completed: '回收完成，积分已发放'
+    }
+
+    order.statusHistory.push({
+      status: status,
+      time: nowStr,
+      desc: extra.desc || statusDescs[status] || ''
+    })
+
+    if (status === 'appointed') {
+      order.appointTime = nowStr
+    }
+    if (status === 'visiting') {
+      order.visitTime = nowStr
+    }
+    if (status === 'completed') {
+      order.completeTime = nowStr
+      const bonusPoints = order.estimatedPoints + RECYCLE_POINTS_CONFIG.completeBonus
+      order.actualPoints = bonusPoints
+
+      this.updateUserPoints(bonusPoints, {
+        category: 'recycle',
+        title: '上门回收奖励',
+        desc: `${order.categoryName}回收完成，共${order.quantity}件`,
+        emoji: order.categoryEmoji || '♻️'
+      })
+    }
+
+    this.saveRecycleOrders()
+    console.log('[App] 回收订单状态更新', orderId, '->', status)
+    return true
+  },
+
+  simulateRecycleProgress() {
+    const pendingOrders = this.getRecycleOrdersByStatus('pending')
+    const appointedOrders = this.getRecycleOrdersByStatus('appointed')
+    const visitingOrders = this.getRecycleOrdersByStatus('visiting')
+    const now = Date.now()
+
+    pendingOrders.forEach(order => {
+      const orderTime = new Date(order.createTime).getTime()
+      const timeDiff = now - orderTime
+      const minutesDiff = timeDiff / (1000 * 60)
+      if (minutesDiff >= 1) {
+        this.updateRecycleOrderStatus(order.id, 'appointed')
+      }
+    })
+
+    appointedOrders.forEach(order => {
+      const appointTime = order.appointTime ? new Date(order.appointTime).getTime() : 0
+      if (appointTime > 0) {
+        const timeDiff = now - appointTime
+        const minutesDiff = timeDiff / (1000 * 60)
+        if (minutesDiff >= 2) {
+          this.updateRecycleOrderStatus(order.id, 'visiting')
+        }
+      }
+    })
+
+    visitingOrders.forEach(order => {
+      const visitTime = order.visitTime ? new Date(order.visitTime).getTime() : 0
+      if (visitTime > 0) {
+        const timeDiff = now - visitTime
+        const minutesDiff = timeDiff / (1000 * 60)
+        if (minutesDiff >= 3) {
+          this.updateRecycleOrderStatus(order.id, 'completed')
+        }
+      }
+    })
+  },
+
+  cancelRecycleOrder(orderId) {
+    const order = this.getRecycleOrderById(orderId)
+    if (!order) return false
+    if (order.status === 'completed') return false
+
+    order.status = 'cancelled'
+    order.statusText = '已取消'
+    order.cancelTime = formatDate(new Date(), 'YYYY-MM-DD HH:mm')
+    order.statusHistory.push({
+      status: 'cancelled',
+      time: formatDate(new Date(), 'YYYY-MM-DD HH:mm'),
+      desc: '用户已取消订单'
+    })
+
+    this.saveRecycleOrders()
+    console.log('[App] 回收订单已取消', orderId)
+    return true
+  },
+
   /**
    * 全局数据
    */
@@ -2561,6 +2736,7 @@ App({
     seasonData: null,
     antiCheatData: null,
     gameRecords: [],
-    dailyGamePlays: null
+    dailyGamePlays: null,
+    recycleOrders: []
   }
 })

@@ -291,6 +291,11 @@ Page({
     navigateTo('/pages/game-hall/game-hall')
   },
 
+  goToRecycleBook() {
+    console.log('[Index] 点击预约上门回收')
+    navigateTo('/pages/recycle-book/recycle-book')
+  },
+
   /**
    * 页面相关事件处理函数--监听用户下拉动作
    */

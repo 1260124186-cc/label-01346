@@ -1,0 +1,167 @@
+<view class="page-container" wx:if="{{order}}">
+  <view class="status-section status-{{order.status}}">
+    <view class="status-icon">
+      <text class="icon-emoji">
+        {{order.status === 'pending' ? '⏳' : order.status === 'appointed' ? '✅' : order.status === 'visiting' ? '🚚' : '🎉'}}
+      </text>
+    </view>
+    <view class="status-info">
+      <text class="status-title">{{order.statusText}}</text>
+      <text class="status-desc" wx:if="{{order.status === 'pending'}}">订单已提交，等待工作人员接单</text>
+      <text class="status-desc" wx:elif="{{order.status === 'appointed'}}">订单已确认，请在预约时间等候上门</text>
+      <text class="status-desc" wx:elif="{{order.status === 'visiting'}}">回收人员已出发，请保持电话畅通</text>
+      <text class="status-desc" wx:else>回收已完成，感谢您对环保的支持</text>
+    </view>
+  </view>
+
+  <view class="progress-section">
+    <view class="progress-steps">
+      <view class="step-item {{order.status === 'pending' || order.status === 'appointed' || order.status === 'visiting' || order.status === 'completed' ? 'done' : ''}}">
+        <view class="step-dot"></view>
+        <text class="step-text">待接单</text>
+        <text class="step-time" wx:if="{{order.statusHistory && order.statusHistory[0]}}">{{order.statusHistory[0].time}}</text>
+      </view>
+      <view class="step-line {{order.status === 'appointed' || order.status === 'visiting' || order.status === 'completed' ? 'done' : ''}}"></view>
+      <view class="step-item {{order.status === 'appointed' || order.status === 'visiting' || order.status === 'completed' ? 'done' : ''}}">
+        <view class="step-dot"></view>
+        <text class="step-text">已预约</text>
+        <text class="step-time" wx:if="{{order.appointTime}}">{{order.appointTime}}</text>
+      </view>
+      <view class="step-line {{order.status === 'visiting' || order.status === 'completed' ? 'done' : ''}}"></view>
+      <view class="step-item {{order.status === 'visiting' || order.status === 'completed' ? 'done' : ''}}">
+        <view class="step-dot"></view>
+        <text class="step-text">上门中</text>
+        <text class="step-time" wx:if="{{order.visitTime}}">{{order.visitTime}}</text>
+      </view>
+      <view class="step-line {{order.status === 'completed' ? 'done' : ''}}"></view>
+      <view class="step-item {{order.status === 'completed' ? 'done' : ''}}">
+        <view class="step-dot"></view>
+        <text class="step-text">已完成</text>
+        <text class="step-time" wx:if="{{order.completeTime}}">{{order.completeTime}}</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="goods-card">
+    <view class="card-header">
+      <text class="card-title">回收物品</text>
+    </view>
+    <view class="goods-item">
+      <view class="goods-icon">
+        <text class="icon-emoji">{{order.categoryEmoji || '♻️'}}</text>
+      </view>
+      <view class="goods-info">
+        <text class="goods-name">{{order.categoryName}}</text>
+        <text class="goods-desc">共 {{order.quantity}} 件</text>
+        <view class="goods-bottom">
+          <text class="goods-points">预估 {{order.estimatedPoints}} 积分</text>
+        </view>
+      </view>
+    </view>
+    <view class="actual-points-row" wx:if="{{order.status === 'completed'}}">
+      <text class="points-label">实际获得</text>
+      <text class="points-value">{{order.actualPoints}} 积分</text>
+    </view>
+  </view>
+
+  <view class="appointment-card">
+    <view class="card-header">
+      <text class="card-title">预约信息</text>
+    </view>
+    <view class="info-list">
+      <view class="info-row">
+        <text class="info-label">预约日期</text>
+        <text class="info-value">{{order.appointmentDate || '—'}}</text>
+      </view>
+      <view class="info-row">
+        <text class="info-label">时间段</text>
+        <text class="info-value">{{order.appointmentTimeName || '—'}}</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="address-card">
+    <view class="card-header">
+      <text class="card-title">取件地址</text>
+    </view>
+    <view class="address-info">
+      <view class="address-top">
+        <text class="address-name">{{order.contactName}}</text>
+        <text class="address-phone">{{order.contactPhone}}</text>
+      </view>
+      <view class="address-detail">
+        <text class="detail-text">{{order.address}}</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="remark-card" wx:if="{{order.remark}}">
+    <view class="card-header">
+      <text class="card-title">备注信息</text>
+    </view>
+    <view class="remark-content">
+      <text class="remark-text">{{order.remark}}</text>
+    </view>
+  </view>
+
+  <view class="order-info-card">
+    <view class="card-header">
+      <text class="card-title">订单信息</text>
+    </view>
+    <view class="info-list">
+      <view class="info-row" bindtap="onCopyOrderNo">
+        <text class="info-label">订单编号</text>
+        <view class="order-no-wrapper">
+          <text class="info-value">{{order.orderNo}}</text>
+          <text class="copy-btn">复制</text>
+        </view>
+      </view>
+      <view class="info-row">
+        <text class="info-label">创建时间</text>
+        <text class="info-value">{{order.createTime}}</text>
+      </view>
+      <view class="info-row">
+        <text class="info-label">订单状态</text>
+        <text class="info-value status-text">{{order.statusText}}</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="bottom-space"></view>
+
+  <view class="bottom-bar" wx:if="{{order.status === 'pending' || order.status === 'appointed'}}">
+    <view class="bar-btn secondary" bindtap="onContactService">
+      <text class="btn-text">联系客服</text>
+    </view>
+    <view class="bar-btn danger" bindtap="onCancelOrder">
+      <text class="btn-text">取消订单</text>
+    </view>
+  </view>
+
+  <view class="bottom-bar" wx:elif="{{order.status === 'visiting'}}">
+    <view class="bar-btn secondary" bindtap="onContactService">
+      <text class="btn-text">联系客服</text>
+    </view>
+    <view class="bar-btn primary disabled">
+      <text class="btn-text">上门中</text>
+    </view>
+  </view>
+
+  <view class="bottom-bar" wx:elif="{{order.status === 'completed'}}">
+    <view class="bar-btn secondary" bindtap="onContactService">
+      <text class="btn-text">联系客服</text>
+    </view>
+    <view class="bar-btn primary" bindtap="onReorder">
+      <text class="btn-text">再次预约</text>
+    </view>
+  </view>
+
+  <view class="bottom-bar" wx:else>
+    <view class="bar-btn secondary" bindtap="onContactService">
+      <text class="btn-text">联系客服</text>
+    </view>
+    <view class="bar-btn primary" bindtap="onReorder">
+      <text class="btn-text">再次预约</text>
+    </view>
+  </view>
+</view>

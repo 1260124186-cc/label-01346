@@ -98,6 +98,30 @@
     </view>
   </view>
 
+  <!-- 上门回收入口 -->
+  <view class="game-entry-section" bindtap="goToRecycleBook">
+    <view class="recycle-entry-card">
+      <view class="recycle-entry-bg"></view>
+      <view class="game-entry-content">
+        <view class="game-entry-left">
+          <view class="game-entry-emoji">🚛</view>
+          <view class="game-entry-text">
+            <view class="game-entry-title">预约上门回收</view>
+            <view class="game-entry-subtitle">
+              家电 · 家具 · 过期药品 · 废旧电池 · 完成得高额积分
+            </view>
+          </view>
+        </view>
+        <view class="game-entry-right">
+          <view class="game-entry-btn" style="background: #5BBD72;">
+            <text>去预约</text>
+            <text class="game-arrow">›</text>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+
   <!-- 快捷功能区域 -->
   <view class="quick-actions-section">
     <view class="quick-actions-grid eight-grid">

@@ -221,6 +221,8 @@ const PROFILE_MENUS = [
     groupId: 'service',
     groupName: '我的服务',
     items: [
+      { id: 'recycle', icon: 'recycle', emoji: '🚛', title: '上门回收', desc: '预约家电家具等上门回收', link: '/pages/recycle-book/recycle-book' },
+      { id: 'recycleOrders', icon: 'order', emoji: '📦', title: '回收订单', desc: '查看上门回收订单记录', link: '/pages/recycle-orders/recycle-orders' },
       { id: 'invite', icon: 'invite', emoji: '👥', title: '我的邀请', desc: '邀请好友得积分奖励', link: '/pages/invite/invite' },
       { id: 'address', icon: 'address', emoji: '📍', title: '收货地址', desc: '管理收货地址信息', link: '/pages/address-list/address-list' }
     ]
@@ -3075,6 +3077,72 @@ const GAME_POWERUPS = [
   }
 ]
 
+const RECYCLE_CATEGORIES = [
+  {
+    id: 'appliance',
+    name: '家电',
+    emoji: '📺',
+    color: '#3498DB',
+    bgColor: 'rgba(52, 152, 219, 0.1)',
+    description: '旧电视、冰箱、洗衣机、空调等',
+    basePoints: 100,
+    pointsPerItem: 50,
+    examples: ['旧电视', '冰箱', '洗衣机', '空调', '电脑']
+  },
+  {
+    id: 'furniture',
+    name: '家具',
+    emoji: '🛋️',
+    color: '#E67E22',
+    bgColor: 'rgba(230, 126, 34, 0.1)',
+    description: '旧沙发、桌椅、衣柜、床垫等',
+    basePoints: 80,
+    pointsPerItem: 40,
+    examples: ['沙发', '桌椅', '衣柜', '床垫', '书架']
+  },
+  {
+    id: 'medicine',
+    name: '过期药品',
+    emoji: '💊',
+    color: '#E74C3C',
+    bgColor: 'rgba(231, 76, 60, 0.1)',
+    description: '过期药片、胶囊、口服液等',
+    basePoints: 50,
+    pointsPerItem: 20,
+    examples: ['感冒药', '抗生素', '维生素片', '口服液', '药膏']
+  },
+  {
+    id: 'battery',
+    name: '废旧电池',
+    emoji: '🔋',
+    color: '#9B59B6',
+    bgColor: 'rgba(155, 89, 182, 0.1)',
+    description: '充电电池、纽扣电池、蓄电池等',
+    basePoints: 60,
+    pointsPerItem: 15,
+    examples: ['5号电池', '7号电池', '纽扣电池', '手机电池', '电动车电池']
+  }
+]
+
+const RECYCLE_ORDER_STATUS = {
+  pending: { key: 'pending', text: '待接单', icon: '⏳', color: '#F39C12' },
+  appointed: { key: 'appointed', text: '已预约', icon: '✅', color: '#3498DB' },
+  visiting: { key: 'visiting', text: '上门中', icon: '🚚', color: '#9B59B6' },
+  completed: { key: 'completed', text: '已完成', icon: '🎉', color: '#5BBD72' }
+}
+
+const RECYCLE_TIME_SLOTS = [
+  { id: 'morning', name: '上午 09:00-12:00' },
+  { id: 'afternoon', name: '下午 14:00-17:00' },
+  { id: 'evening', name: '晚间 18:00-20:00' }
+]
+
+const RECYCLE_POINTS_CONFIG = {
+  minPoints: 50,
+  maxPoints: 200,
+  completeBonus: 30
+}
+
 module.exports = {
   TRASH_TYPES,
   QUIZ_SCENES,
@@ -3133,5 +3201,9 @@ module.exports = {
   GAME_CONFIG,
   GAME_LEVELS,
   GAME_ITEMS,
-  GAME_POWERUPS
+  GAME_POWERUPS,
+  RECYCLE_CATEGORIES,
+  RECYCLE_ORDER_STATUS,
+  RECYCLE_TIME_SLOTS,
+  RECYCLE_POINTS_CONFIG
 }

@@ -37,7 +37,10 @@
     "pages/game-hall/game-hall",
     "pages/game-catch/game-catch",
     "pages/game-conveyor/game-conveyor",
-    "pages/game-match/game-match"
+    "pages/game-match/game-match",
+    "pages/recycle-book/recycle-book",
+    "pages/recycle-orders/recycle-orders",
+    "pages/recycle-order-detail/recycle-order-detail"
   ],
   "window": {
     "backgroundTextStyle": "dark",

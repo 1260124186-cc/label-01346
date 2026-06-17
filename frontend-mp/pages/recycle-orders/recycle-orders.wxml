@@ -1,0 +1,73 @@
+<!--
+  回收订单页面
+  功能：展示用户的回收订单记录，支持状态筛选
+-->
+<view class="page-container">
+  <!-- 状态筛选 Tab -->
+  <view class="tabs-section">
+    <view class="tabs-list">
+      <view 
+        wx:for="{{tabs}}" 
+        wx:key="id"
+        class="tab-item {{currentTab === item.id ? 'active' : ''}}"
+        bindtap="onTabChange"
+        data-id="{{item.id}}"
+      >
+        <text class="tab-text">{{item.name}}</text>
+        <view class="tab-indicator" wx:if="{{currentTab === item.id}}"></view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 订单列表 -->
+  <view class="orders-section">
+    <view 
+      wx:for="{{orderList}}" 
+      wx:key="id"
+      class="order-card"
+      bindtap="onOrderTap"
+      data-id="{{item.id}}"
+    >
+      <!-- 订单头部：状态和时间 -->
+      <view class="order-header">
+        <view class="order-status-wrap">
+          <text class="order-status" style="color: {{item.statusColor}}">{{item.statusText}}</text>
+        </view>
+        <text class="order-time">{{item.createTime}}</text>
+      </view>
+
+      <!-- 品类信息 -->
+      <view class="order-content">
+        <view class="category-icon" style="background: {{item.categoryColor}}15;">
+          <text class="category-emoji">{{item.categoryEmoji}}</text>
+        </view>
+        <view class="category-info">
+          <text class="category-name">{{item.categoryName}}</text>
+          <text class="category-quantity">数量：{{item.quantity}}件</text>
+          <view class="appointment-time" wx:if="{{item.appointmentTime}}">
+            <text class="time-label">预约时间：</text>
+            <text class="time-value">{{item.appointmentTime}}</text>
+          </view>
+        </view>
+        <view class="points-info">
+          <text class="points-label">{{item.pointsLabel}}</text>
+          <text class="points-value">{{item.points}}积分</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 空状态 -->
+    <view class="empty-state" wx:if="{{orderList.length === 0}}">
+      <text class="empty-emoji">♻️</text>
+      <text class="empty-text">暂无回收订单</text>
+      <text class="empty-desc">快去预约回收，赚取积分吧</text>
+    </view>
+  </view>
+
+  <!-- 底部按钮 -->
+  <view class="bottom-section">
+    <view class="appointment-btn" bindtap="onGoAppointment">
+      <text class="btn-text">去预约回收</text>
+    </view>
+  </view>
+</view>
