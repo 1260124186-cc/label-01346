@@ -76,7 +76,7 @@
 
   <!-- 快捷功能区域 -->
   <view class="quick-actions-section">
-    <view class="quick-actions-grid seven-grid">
+    <view class="quick-actions-grid eight-grid">
       <view class="quick-action-item" bindtap="goToQuiz">
         <view class="quick-action-icon-wrapper" style="background: rgba(91, 189, 114, 0.1);">
           <text class="quick-action-emoji">❓</text>
@@ -113,8 +113,14 @@
         </view>
         <text class="quick-action-name">积分兑换</text>
       </view>
-      <view class="quick-action-item" bindtap="goToProfile">
+      <view class="quick-action-item" bindtap="goToCommunity">
         <view class="quick-action-icon-wrapper" style="background: rgba(155, 89, 182, 0.1);">
+          <text class="quick-action-emoji">💚</text>
+        </view>
+        <text class="quick-action-name">环保社区</text>
+      </view>
+      <view class="quick-action-item" bindtap="goToProfile">
+        <view class="quick-action-icon-wrapper" style="background: rgba(52, 152, 219, 0.1);">
           <text class="quick-action-emoji">👤</text>
         </view>
         <text class="quick-action-name">个人中心</text>

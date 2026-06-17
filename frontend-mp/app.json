@@ -1,6 +1,9 @@
 {
   "pages": [
     "pages/index/index",
+    "pages/community/community",
+    "pages/community-publish/community-publish",
+    "pages/community-detail/community-detail",
     "pages/search/search",
     "pages/classify/classify",
     "pages/exchange/exchange",

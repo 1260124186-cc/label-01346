@@ -1,0 +1,137 @@
+<view class="page-container">
+  <!-- 顶部用户积分栏 -->
+  <view class="user-bar">
+    <view class="user-info">
+      <text class="user-emoji">💚</text>
+      <view class="user-text">
+        <text class="user-label">我的积分</text>
+        <text class="user-points">{{userPoints}}</text>
+      </view>
+    </view>
+    <view class="publish-btn" bindtap="onPublishTap">
+      <text class="publish-icon">✏️</text>
+      <text class="publish-text">发布</text>
+    </view>
+  </view>
+
+  <!-- 话题标签 -->
+  <view class="topics-section">
+    <scroll-view class="topics-scroll" scroll-x enable-flex>
+      <view
+        wx:for="{{topics}}"
+        wx:key="id"
+        class="topic-tag {{currentTopic === item.id ? 'active' : ''}} {{item.hot ? 'hot' : ''}}"
+        bindtap="onTopicTap"
+        data-topic="{{item.id}}"
+      >
+        <text class="topic-icon">{{item.icon}}</text>
+        <text class="topic-name">#{{item.name}}</text>
+        <text class="topic-count" wx:if="{{currentTopic === item.id}}">{{item.count}}条</text>
+      </view>
+    </scroll-view>
+  </view>
+
+  <!-- 分类筛选 -->
+  <view class="filter-section">
+    <view
+      wx:for="{{postTypes}}"
+      wx:key="id"
+      class="filter-item {{currentType === item.id ? 'active' : ''}}"
+      bindtap="onTypeTap"
+      data-type="{{item.id}}"
+      style="--filter-color: {{item.color}};"
+    >
+      <text class="filter-icon">{{item.icon}}</text>
+      <text class="filter-name">{{item.name}}</text>
+    </view>
+  </view>
+
+  <!-- 帖子列表 -->
+  <view class="posts-section">
+    <view
+      wx:for="{{posts}}"
+      wx:key="id"
+      class="post-card"
+      bindtap="onPostTap"
+      data-id="{{item.id}}"
+    >
+      <!-- 官方内容标识 -->
+      <view class="post-official-badge" wx:if="{{item.isOfficial}}">
+        <text class="badge-icon">🌿</text>
+        <text class="badge-text">{{item.category || '官方'}}</text>
+      </view>
+
+      <!-- 用户信息 -->
+      <view class="post-header">
+        <view class="avatar-wrapper">
+          <text class="avatar-emoji">{{item.userAvatarEmoji}}</text>
+        </view>
+        <view class="post-user-info">
+          <view class="post-user-row">
+            <text class="post-nickname">{{item.userNickName}}</text>
+            <text class="official-icon" wx:if="{{item.isOfficial}}">✓</text>
+          </view>
+          <text class="post-time">{{item.createTime}}</text>
+        </view>
+      </view>
+
+      <!-- 标题（官方内容有） -->
+      <text class="post-title" wx:if="{{item.title}}">{{item.title}}</text>
+
+      <!-- 内容 -->
+      <text class="post-content">{{item.content}}</text>
+
+      <!-- 图片 -->
+      <view class="post-images" wx:if="{{item.images.length > 0}}">
+        <image
+          wx:for="{{item.images}}"
+          wx:for-item="img"
+          wx:key="*this"
+          src="{{img}}"
+          mode="aspectFill"
+          class="post-image {{item.images.length === 1 ? 'single' : ''}}"
+        />
+      </view>
+
+      <!-- 话题标签 -->
+      <view class="post-topics" wx:if="{{item.topicNames.length > 0}}">
+        <text
+          wx:for="{{item.topicNames}}"
+          wx:key="*this"
+          wx:for-item="topicName"
+          class="post-topic"
+        >#{{topicName}}</text>
+      </view>
+
+      <!-- 互动栏 -->
+      <view class="post-actions">
+        <view class="action-item {{item.liked ? 'liked' : ''}}" catchtap="onLikeTap" data-id="{{item.id}}">
+          <text class="action-icon">{{item.liked ? '❤️' : '🤍'}}</text>
+          <text class="action-count">{{item.likes}}</text>
+        </view>
+        <view class="action-item">
+          <text class="action-icon">💬</text>
+          <text class="action-count">{{item.comments}}</text>
+        </view>
+        <view class="action-item" catchtap="onShareTap" data-id="{{item.id}}" open-type="share">
+          <text class="action-icon">📤</text>
+          <text class="action-count">{{item.shares}}</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 空状态 -->
+    <view class="empty-state" wx:if="{{posts.length === 0}}">
+      <text class="empty-emoji">🌱</text>
+      <text class="empty-text">暂无内容，快来发布第一条吧～</text>
+    </view>
+  </view>
+
+  <!-- 底部安全区域 -->
+  <view class="bottom-safe"></view>
+
+  <!-- 发布浮动按钮 -->
+  <view class="fab-publish" bindtap="onPublishTap">
+    <text class="fab-icon">+</text>
+  </view>
+</view>

@@ -2743,6 +2743,219 @@ const DROP_POINT_STORAGE_KEYS = {
   CHECKINS: 'drop_point_checkins'
 }
 
+const COMMUNITY_POST_TYPES = [
+  { id: 'experience', name: '环保心得', icon: '💚', color: '#5BBD72', desc: '分享你的环保感悟和心得体会' },
+  { id: 'skill', name: '分类技巧', icon: '📝', color: '#4A90D9', desc: '实用的垃圾分类小技巧' },
+  { id: 'photo', name: '晒图', icon: '📷', color: '#9B59B6', desc: '晒出你的环保生活瞬间' }
+]
+
+const COMMUNITY_TOPICS = [
+  { id: 'kitchen_sort', name: '厨余垃圾分类', icon: '🍂', count: 1286, hot: true },
+  { id: 'recycle_diy', name: '旧物改造', icon: '♻️', count: 892, hot: true },
+  { id: 'zero_waste', name: '零废弃生活', icon: '🌱', count: 654, hot: false },
+  { id: 'plastic_free', name: '减塑行动', icon: '🥤', count: 521, hot: false },
+  { id: 'green_travel', name: '绿色出行', icon: '🚲', count: 438, hot: false },
+  { id: 'energy_save', name: '节约能源', icon: '💡', count: 376, hot: false }
+]
+
+const OFFICIAL_ACCOUNT = {
+  id: 'official',
+  nickName: '环保小助手',
+  avatarUrl: '',
+  avatarEmoji: '🌿',
+  isOfficial: true,
+  verified: true
+}
+
+const COMMUNITY_POSTS = [
+  {
+    id: 'p1',
+    type: 'experience',
+    userId: 'u1',
+    userNickName: '绿色生活家',
+    userAvatar: '',
+    userAvatarEmoji: '🌳',
+    isOfficial: false,
+    content: '坚持垃圾分类已经3年了，从最开始分不清四色垃圾桶，到现在随手就能准确投放。最大的收获是孩子也跟着养成了好习惯，每次出门都会主动找分类垃圾桶。环保真的要从娃娃抓起！💪',
+    images: [],
+    topics: ['kitchen_sort', 'zero_waste'],
+    topicNames: ['厨余垃圾分类', '零废弃生活'],
+    likes: 328,
+    comments: 45,
+    shares: 12,
+    liked: false,
+    createTime: '2024-06-16 18:30',
+    status: 'normal'
+  },
+  {
+    id: 'p2',
+    type: 'skill',
+    userId: 'u2',
+    userNickName: '分类达人小王',
+    userAvatar: '',
+    userAvatarEmoji: '📚',
+    isOfficial: false,
+    content: '分享一个厨余垃圾沥干小技巧：用家里的旧丝袜做一个简易滤网，放在水槽出水口，饭菜残渣直接过滤，既不会堵下水道，又能轻松收集厨余垃圾沥干水分！亲测好用～',
+    images: ['/images/banner/banner1.jpg'],
+    topics: ['kitchen_sort'],
+    topicNames: ['厨余垃圾分类'],
+    likes: 567,
+    comments: 89,
+    shares: 156,
+    liked: true,
+    createTime: '2024-06-16 14:20',
+    status: 'normal'
+  },
+  {
+    id: 'p3',
+    type: 'official_article',
+    userId: 'official',
+    userNickName: '环保小助手',
+    userAvatar: '',
+    userAvatarEmoji: '🌿',
+    isOfficial: true,
+    title: '【科普】可回收物投放指南：这些细节你注意到了吗？',
+    content: '很多朋友以为可回收物就是"扔进去就行"，其实不然。正确的投放方式能大幅提高回收利用率：\n\n1️⃣ 清空内容物：塑料瓶、易拉罐要倒空残留液体\n2️⃣ 简单清洁：有油污的容器要冲洗干净\n3️⃣ 压扁投放：纸箱、塑料瓶压扁后能节省大量空间\n4️⃣ 分开投放：不同材质不要混装在一起\n\n下一期我们讲讲有害垃圾的正确投放方式，记得关注哦！',
+    images: ['/images/banner/banner2.jpg'],
+    topics: [],
+    topicNames: [],
+    likes: 1256,
+    comments: 234,
+    shares: 489,
+    liked: false,
+    createTime: '2024-06-16 10:00',
+    category: '科普',
+    status: 'normal'
+  },
+  {
+    id: 'p4',
+    type: 'photo',
+    userId: 'u3',
+    userNickName: '手工爱好者',
+    userAvatar: '',
+    userAvatarEmoji: '🎨',
+    isOfficial: false,
+    content: '用快递纸箱+旧布料做的收纳盒，好看又实用！旧物改造真的会上瘾，家里的废旧物品都变成宝贝了～',
+    images: ['/images/banner/banner3.jpg', '/images/banner/exchange1.jpg'],
+    topics: ['recycle_diy', 'zero_waste'],
+    topicNames: ['旧物改造', '零废弃生活'],
+    likes: 892,
+    comments: 156,
+    shares: 78,
+    liked: false,
+    createTime: '2024-06-15 20:15',
+    status: 'normal'
+  },
+  {
+    id: 'p5',
+    type: 'official_activity',
+    userId: 'official',
+    userNickName: '环保小助手',
+    userAvatar: '',
+    userAvatarEmoji: '🌿',
+    isOfficial: true,
+    title: '【活动】"最美环保瞬间"摄影大赛开始啦！',
+    content: '📢 社区首届环保摄影大赛正式启动！\n\n📅 活动时间：6月15日-6月30日\n🎁 奖品设置：\n· 一等奖（3名）：500积分+环保大礼包\n· 二等奖（10名）：200积分+定制水杯\n· 三等奖（30名）：100积分\n· 参与奖：发布即得20积分\n\n📸 参与方式：在社区发布带#最美环保瞬间 话题的晒图即可参与，快来记录你的环保时刻吧！',
+    images: ['/images/banner/exchange2.jpg'],
+    topics: [],
+    topicNames: [],
+    likes: 2341,
+    comments: 567,
+    shares: 892,
+    liked: true,
+    createTime: '2024-06-15 09:00',
+    category: '活动',
+    status: 'normal'
+  },
+  {
+    id: 'p6',
+    type: 'skill',
+    userId: 'u4',
+    userNickName: '环保妈妈',
+    userAvatar: '',
+    userAvatarEmoji: '👩',
+    isOfficial: false,
+    content: '家里废电池太多？教你一个简单的临时储存方法：用一个密封的塑料盒，底部铺一层小苏打，然后放入废电池，盖好盖子放在阴凉处。等到攒够一定数量，再送到社区有害垃圾回收点统一处理，安全又卫生！',
+    images: [],
+    topics: ['kitchen_sort'],
+    topicNames: ['厨余垃圾分类'],
+    likes: 445,
+    comments: 67,
+    shares: 34,
+    liked: false,
+    createTime: '2024-06-14 16:40',
+    status: 'normal'
+  }
+]
+
+const COMMUNITY_COMMENTS = {
+  'p1': [
+    {
+      id: 'c1',
+      postId: 'p1',
+      userId: 'u2',
+      userNickName: '分类达人小王',
+      userAvatarEmoji: '📚',
+      content: '同感！我家孩子现在比我分得还清楚😂',
+      likes: 23,
+      liked: false,
+      createTime: '2024-06-16 18:45'
+    },
+    {
+      id: 'c2',
+      postId: 'p1',
+      userId: 'u3',
+      userNickName: '手工爱好者',
+      userAvatarEmoji: '🎨',
+      content: '3年太厉害了！我才坚持了半年，一起加油～',
+      likes: 12,
+      liked: false,
+      createTime: '2024-06-16 19:10'
+    }
+  ],
+  'p2': [
+    {
+      id: 'c3',
+      postId: 'p2',
+      userId: 'u1',
+      userNickName: '绿色生活家',
+      userAvatarEmoji: '🌳',
+      content: '这个妙招好！明天就试试！',
+      likes: 45,
+      liked: true,
+      createTime: '2024-06-16 14:35'
+    }
+  ]
+}
+
+const COMMUNITY_REPORT_REASONS = [
+  { id: 'spam', name: '垃圾广告或营销信息' },
+  { id: 'porn', name: '色情低俗内容' },
+  { id: 'violence', name: '暴力或血腥内容' },
+  { id: 'rumor', name: '谣言或不实信息' },
+  { id: 'harass', name: '骚扰或人身攻击' },
+  { id: 'plagiarism', name: '抄袭或盗用内容' },
+  { id: 'violate', name: '其他违法违规内容' }
+]
+
+const COMMUNITY_POINTS_CONFIG = {
+  publishPost: 20,
+  dailyPublishMax: 60,
+  likePost: 1,
+  dailyLikeMax: 10,
+  commentPost: 2,
+  dailyCommentMax: 20,
+  sharePost: 5,
+  dailyShareMax: 25,
+  qualityBonus: {
+    likes50: 30,
+    likes200: 100,
+    likes500: 300,
+    comments30: 50,
+    shares50: 80
+  }
+}
+
 module.exports = {
   TRASH_TYPES,
   QUIZ_SCENES,
@@ -2785,5 +2998,12 @@ module.exports = {
   DROP_POINT_TYPES,
   SUPPORTED_CATEGORIES,
   DROP_POINTS,
-  DROP_POINT_STORAGE_KEYS
+  DROP_POINT_STORAGE_KEYS,
+  COMMUNITY_POST_TYPES,
+  COMMUNITY_TOPICS,
+  OFFICIAL_ACCOUNT,
+  COMMUNITY_POSTS,
+  COMMUNITY_COMMENTS,
+  COMMUNITY_REPORT_REASONS,
+  COMMUNITY_POINTS_CONFIG
 }

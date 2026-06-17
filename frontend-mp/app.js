@@ -29,6 +29,10 @@ App({
     this.initInviteRecords()
     this.initDeviceId()
     this.initAchievements()
+    this.initCommunityPosts()
+    this.initCommunityComments()
+    this.initCommunityReports()
+    this.initCommunityDailyPoints()
     this.checkAndExpirePoints()
     this.getSystemInfo()
     this.simulateAutoShipping()
@@ -1537,6 +1541,362 @@ App({
   },
 
   /**
+   * 初始化社区帖子
+   */
+  initCommunityPosts() {
+    const { COMMUNITY_POSTS } = require('./utils/constants')
+    const stored = wx.getStorageSync('communityPosts')
+
+    if (stored && stored.length > 0) {
+      this.globalData.communityPosts = stored
+    } else {
+      this.globalData.communityPosts = [...COMMUNITY_POSTS]
+      wx.setStorageSync('communityPosts', this.globalData.communityPosts)
+    }
+    console.log('[App] 社区帖子已加载', this.globalData.communityPosts.length, '条')
+  },
+
+  saveCommunityPosts() {
+    wx.setStorageSync('communityPosts', this.globalData.communityPosts)
+  },
+
+  getCommunityPosts(filter = {}) {
+    let posts = this.globalData.communityPosts || []
+    posts = posts.filter(p => p.status === 'normal')
+
+    if (filter.type && filter.type !== 'all') {
+      posts = posts.filter(p => p.type === filter.type)
+    }
+    if (filter.topic) {
+      posts = posts.filter(p => (p.topics || []).includes(filter.topic))
+    }
+    if (filter.officialOnly) {
+      posts = posts.filter(p => p.isOfficial)
+    }
+
+    return posts.sort((a, b) => new Date(b.createTime) - new Date(a.createTime))
+  },
+
+  getCommunityPostById(postId) {
+    return this.globalData.communityPosts.find(p => p.id === postId)
+  },
+
+  addCommunityPost(post) {
+    const { COMMUNITY_POINTS_CONFIG } = require('./utils/constants')
+    const userInfo = this.globalData.userInfo
+
+    const newPost = {
+      id: 'post_' + generateId(),
+      type: post.type,
+      userId: this.getUserId(),
+      userNickName: userInfo ? userInfo.nickName : '环保达人',
+      userAvatar: userInfo ? userInfo.avatarUrl : '',
+      userAvatarEmoji: '🌱',
+      isOfficial: false,
+      title: post.title || '',
+      content: post.content || '',
+      images: post.images || [],
+      topics: post.topics || [],
+      topicNames: post.topicNames || [],
+      likes: 0,
+      comments: 0,
+      shares: 0,
+      liked: false,
+      createTime: formatDate(new Date(), 'YYYY-MM-DD HH:mm'),
+      status: 'normal'
+    }
+
+    this.globalData.communityPosts.unshift(newPost)
+    this.saveCommunityPosts()
+
+    const actualPoints = this.addCommunityDailyPoints('publish', COMMUNITY_POINTS_CONFIG.publishPost)
+    if (actualPoints > 0) {
+      this.updateUserPoints(actualPoints, {
+        category: 'community_publish',
+        title: '社区发布',
+        desc: `发布${post.type === 'experience' ? '环保心得' : post.type === 'skill' ? '分类技巧' : '晒图'}`,
+        emoji: '✍️'
+      })
+    }
+
+    console.log('[App] 新增社区帖子', newPost.id)
+    return { post: newPost, points: actualPoints }
+  },
+
+  toggleLikePost(postId) {
+    const { COMMUNITY_POINTS_CONFIG } = require('./utils/constants')
+    const post = this.getCommunityPostById(postId)
+    if (!post) return { success: false }
+
+    let points = 0
+    if (post.liked) {
+      post.likes = Math.max(0, post.likes - 1)
+      post.liked = false
+    } else {
+      post.likes += 1
+      post.liked = true
+      points = this.addCommunityDailyPoints('like', COMMUNITY_POINTS_CONFIG.likePost)
+      if (points > 0) {
+        this.updateUserPoints(points, {
+          category: 'community_like',
+          title: '社区点赞',
+          desc: '为优质内容点赞',
+          emoji: '👍'
+        })
+      }
+    }
+
+    this.checkQualityBonus(post)
+    this.saveCommunityPosts()
+    return { success: true, liked: post.liked, likes: post.likes, points }
+  },
+
+  sharePost(postId) {
+    const { COMMUNITY_POINTS_CONFIG } = require('./utils/constants')
+    const post = this.getCommunityPostById(postId)
+    if (!post) return { success: false }
+
+    post.shares += 1
+    this.saveCommunityPosts()
+
+    const points = this.addCommunityDailyPoints('share', COMMUNITY_POINTS_CONFIG.sharePost)
+    if (points > 0) {
+      this.updateUserPoints(points, {
+        category: 'community_share',
+        title: '社区分享',
+        desc: '分享优质内容',
+        emoji: '📤'
+      })
+    }
+
+    this.checkQualityBonus(post)
+    return { success: true, shares: post.shares, points }
+  },
+
+  checkQualityBonus(post) {
+    const { COMMUNITY_POINTS_CONFIG } = require('./utils/constants')
+    const bonus = COMMUNITY_POINTS_CONFIG.qualityBonus
+    const rewarded = post.qualityBonusRewarded || {}
+
+    let bonusPoints = 0
+    let bonusDesc = []
+
+    if (post.likes >= 500 && !rewarded.likes500) {
+      bonusPoints += bonus.likes500
+      bonusDesc.push('点赞超500')
+      rewarded.likes500 = true
+    } else if (post.likes >= 200 && !rewarded.likes200) {
+      bonusPoints += bonus.likes200
+      bonusDesc.push('点赞超200')
+      rewarded.likes200 = true
+    } else if (post.likes >= 50 && !rewarded.likes50) {
+      bonusPoints += bonus.likes50
+      bonusDesc.push('点赞超50')
+      rewarded.likes50 = true
+    }
+
+    if (post.comments >= 30 && !rewarded.comments30) {
+      bonusPoints += bonus.comments30
+      bonusDesc.push('评论超30')
+      rewarded.comments30 = true
+    }
+
+    if (post.shares >= 50 && !rewarded.shares50) {
+      bonusPoints += bonus.shares50
+      bonusDesc.push('分享超50')
+      rewarded.shares50 = true
+    }
+
+    if (bonusPoints > 0) {
+      post.qualityBonusRewarded = rewarded
+      this.updateUserPoints(bonusPoints, {
+        category: 'community_quality',
+        title: '优质内容奖励',
+        desc: bonusDesc.join('、'),
+        emoji: '🏆'
+      })
+    }
+  },
+
+  /**
+   * 初始化社区评论
+   */
+  initCommunityComments() {
+    const { COMMUNITY_COMMENTS } = require('./utils/constants')
+    const stored = wx.getStorageSync('communityComments')
+
+    if (stored && Object.keys(stored).length > 0) {
+      this.globalData.communityComments = stored
+    } else {
+      this.globalData.communityComments = { ...COMMUNITY_COMMENTS }
+      wx.setStorageSync('communityComments', this.globalData.communityComments)
+    }
+    console.log('[App] 社区评论已加载')
+  },
+
+  saveCommunityComments() {
+    wx.setStorageSync('communityComments', this.globalData.communityComments)
+  },
+
+  getCommentsByPostId(postId) {
+    return this.globalData.communityComments[postId] || []
+  },
+
+  addComment(postId, content) {
+    const { COMMUNITY_POINTS_CONFIG } = require('./utils/constants')
+    const userInfo = this.globalData.userInfo
+    const post = this.getCommunityPostById(postId)
+    if (!post) return { success: false }
+
+    const newComment = {
+      id: 'comment_' + generateId(),
+      postId,
+      userId: this.getUserId(),
+      userNickName: userInfo ? userInfo.nickName : '环保达人',
+      userAvatarEmoji: '🌱',
+      content,
+      likes: 0,
+      liked: false,
+      createTime: formatDate(new Date(), 'YYYY-MM-DD HH:mm')
+    }
+
+    if (!this.globalData.communityComments[postId]) {
+      this.globalData.communityComments[postId] = []
+    }
+    this.globalData.communityComments[postId].unshift(newComment)
+    this.saveCommunityComments()
+
+    post.comments += 1
+    this.saveCommunityPosts()
+
+    const points = this.addCommunityDailyPoints('comment', COMMUNITY_POINTS_CONFIG.commentPost)
+    if (points > 0) {
+      this.updateUserPoints(points, {
+        category: 'community_comment',
+        title: '社区评论',
+        desc: '参与话题讨论',
+        emoji: '💬'
+      })
+    }
+
+    this.checkQualityBonus(post)
+    return { success: true, comment: newComment, points }
+  },
+
+  toggleLikeComment(postId, commentId) {
+    const comments = this.globalData.communityComments[postId]
+    if (!comments) return { success: false }
+
+    const comment = comments.find(c => c.id === commentId)
+    if (!comment) return { success: false }
+
+    if (comment.liked) {
+      comment.likes = Math.max(0, comment.likes - 1)
+      comment.liked = false
+    } else {
+      comment.likes += 1
+      comment.liked = true
+    }
+
+    this.saveCommunityComments()
+    return { success: true, liked: comment.liked, likes: comment.likes }
+  },
+
+  /**
+   * 初始化举报记录
+   */
+  initCommunityReports() {
+    const stored = wx.getStorageSync('communityReports')
+    this.globalData.communityReports = stored || []
+    console.log('[App] 社区举报记录已加载')
+  },
+
+  saveCommunityReports() {
+    wx.setStorageSync('communityReports', this.globalData.communityReports)
+  },
+
+  addReport(report) {
+    const newReport = {
+      id: 'report_' + generateId(),
+      targetId: report.targetId,
+      targetType: report.targetType,
+      reasonId: report.reasonId,
+      reasonName: report.reasonName,
+      description: report.description || '',
+      reporterId: this.getUserId(),
+      createTime: formatDate(new Date(), 'YYYY-MM-DD HH:mm'),
+      status: 'pending'
+    }
+
+    this.globalData.communityReports.push(newReport)
+    this.saveCommunityReports()
+
+    if (report.targetType === 'post') {
+      const post = this.getCommunityPostById(report.targetId)
+      if (post) {
+        post.reportCount = (post.reportCount || 0) + 1
+        if (post.reportCount >= 3) {
+          post.status = 'reviewing'
+        }
+        this.saveCommunityPosts()
+      }
+    }
+
+    console.log('[App] 新增举报', newReport.id)
+    return newReport
+  },
+
+  /**
+   * 初始化社区每日积分
+   */
+  initCommunityDailyPoints() {
+    const today = formatDate(new Date(), 'YYYY-MM-DD')
+    const stored = wx.getStorageSync('communityDailyPoints')
+
+    if (stored && stored.date === today) {
+      this.globalData.communityDailyPoints = stored
+    } else {
+      this.globalData.communityDailyPoints = {
+        date: today,
+        publish: 0,
+        like: 0,
+        comment: 0,
+        share: 0
+      }
+      wx.setStorageSync('communityDailyPoints', this.globalData.communityDailyPoints)
+    }
+    console.log('[App] 社区每日积分已加载')
+  },
+
+  addCommunityDailyPoints(action, points) {
+    const { COMMUNITY_POINTS_CONFIG } = require('./utils/constants')
+    const today = formatDate(new Date(), 'YYYY-MM-DD')
+    const daily = this.globalData.communityDailyPoints
+
+    if (!daily || daily.date !== today) {
+      this.initCommunityDailyPoints()
+    }
+
+    const currentPoints = this.globalData.communityDailyPoints[action] || 0
+    const maxMap = {
+      publish: COMMUNITY_POINTS_CONFIG.dailyPublishMax,
+      like: COMMUNITY_POINTS_CONFIG.dailyLikeMax,
+      comment: COMMUNITY_POINTS_CONFIG.dailyCommentMax,
+      share: COMMUNITY_POINTS_CONFIG.dailyShareMax
+    }
+    const maxPoints = maxMap[action] || Infinity
+    const actualPoints = Math.min(points, Math.max(0, maxPoints - currentPoints))
+
+    if (actualPoints > 0) {
+      this.globalData.communityDailyPoints[action] = currentPoints + actualPoints
+      wx.setStorageSync('communityDailyPoints', this.globalData.communityDailyPoints)
+      console.log(`[App] 社区每日积分 [${action}]: +${actualPoints}`)
+    }
+
+    return actualPoints
+  },
+
+  /**
    * 全局数据
    */
   globalData: {
@@ -1559,6 +1919,10 @@ App({
     statusBarHeight: 0,
     screenHeight: 0,
     screenWidth: 0,
-    unlockedAchievements: []
+    unlockedAchievements: [],
+    communityPosts: [],
+    communityComments: {},
+    communityReports: [],
+    communityDailyPoints: null
   }
 })

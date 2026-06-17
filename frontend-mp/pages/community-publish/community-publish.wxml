@@ -1,0 +1,104 @@
+<view class="page-container">
+  <!-- 发布类型选择 -->
+  <view class="section">
+    <view class="section-title">选择发布类型</view>
+    <view class="type-list">
+      <view
+        wx:for="{{postTypes}}"
+        wx:key="id"
+        class="type-card {{currentType === item.id ? 'active' : ''}}"
+        bindtap="onTypeTap"
+        data-type="{{item.id}}"
+        style="--type-color: {{item.color}};"
+      >
+        <view class="type-icon-wrapper">
+          <text class="type-emoji">{{item.icon}}</text>
+        </view>
+        <view class="type-info">
+          <text class="type-name">{{item.name}}</text>
+          <text class="type-desc">{{item.desc}}</text>
+        </view>
+        <view class="type-check" wx:if="{{currentType === item.id}}">✓</view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 话题选择 -->
+  <view class="section">
+    <view class="section-title">选择话题标签（可选，最多3个）</view>
+    <view class="topics-grid">
+      <view
+        wx:for="{{topics}}"
+        wx:key="id"
+        class="topic-item {{selectedTopics.some(t => t.id === item.id) ? 'selected' : ''}} {{item.hot ? 'hot' : ''}}"
+        bindtap="onTopicTap"
+        data-topic="{{item}}"
+      >
+        <text class="topic-icon">{{item.icon}}</text>
+        <text class="topic-name">#{{item.name}}</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 内容输入 -->
+  <view class="section">
+    <view class="section-title">
+      <text class="section-title-text">说点什么...</text>
+      <text class="section-title-count">{{content.length}}/{{contentMaxLength}}</text>
+    </view>
+    <textarea
+      class="content-textarea"
+      placeholder="分享你的环保故事、分类技巧或生活瞬间..."
+      placeholder-class="textarea-placeholder"
+      maxlength="{{contentMaxLength}}"
+      auto-height
+      value="{{content}}"
+      bindinput="onContentInput"
+    />
+  </view>
+
+  <!-- 图片选择 -->
+  <view class="section">
+    <view class="section-title">
+      <text class="section-title-text">添加图片（{{images.length}}/{{maxImages}}）</text>
+    </view>
+    <view class="images-grid">
+      <view
+        wx:for="{{images}}"
+        wx:key="*this"
+        class="image-item"
+        bindtap="onPreviewImage"
+        data-index="{{index}}"
+      >
+        <image src="{{item}}" mode="aspectFill" class="uploaded-image" />
+        <view class="image-remove" catchtap="onRemoveImage" data-index="{{index}}">
+          <text class="remove-icon">×</text>
+        </view>
+      </view>
+      <view class="image-add" wx:if="{{images.length < maxImages}}" bindtap="onChooseImage">
+        <text class="add-icon">+</text>
+        <text class="add-text">添加图片</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 积分提示 -->
+  <view class="points-hint">
+    <text class="hint-icon">💡</text>
+    <text class="hint-text">发布成功可获得 {{publishPoints}} 积分，优质内容还能获得额外奖励哦～</text>
+  </view>
+
+  <!-- 发布按钮 -->
+  <view class="bottom-bar">
+    <view class="community-guidelines">
+      <text class="guidelines-icon">⚠️</text>
+      <text class="guidelines-text">请遵守社区规范，共同维护绿色健康的交流环境</text>
+    </view>
+    <button class="publish-btn" bindtap="onPublish">
+      <text>立即发布</text>
+    </button>
+  </view>
+
+  <!-- 底部安全 -->
+  <view class="bottom-safe"></view>
+</view>

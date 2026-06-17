@@ -225,6 +225,17 @@
   flex: none;
 }
 
+.quick-actions-grid.eight-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 32rpx 16rpx;
+  padding: 32rpx 24rpx;
+}
+
+.quick-actions-grid.eight-grid .quick-action-item {
+  flex: none;
+}
+
 .quick-action-item {
   display: flex;
   flex-direction: column;

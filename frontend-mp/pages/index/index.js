@@ -278,6 +278,11 @@ Page({
     navigateTo('/pages/drop-point/drop-point')
   },
 
+  goToCommunity() {
+    console.log('[Index] 点击环保社区')
+    navigateTo('/pages/community/community')
+  },
+
   /**
    * 页面相关事件处理函数--监听用户下拉动作
    */

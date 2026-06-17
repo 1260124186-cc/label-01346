@@ -1,0 +1,186 @@
+<view class="page-container" wx:if="{{post}}">
+
+  <!-- 内容审核提示 -->
+  <view class="review-tip" wx:if="{{isReviewing}}">
+    <text class="review-icon">⚠️</text>
+    <text class="review-text">该内容正在审核中，暂时仅部分用户可见</text>
+  </view>
+
+  <!-- 帖子主体 -->
+  <view class="post-card" wx:if="{{!isReviewing || post.isOfficial}}">
+    <!-- 官方标识 -->
+    <view class="post-official-badge" wx:if="{{post.isOfficial}}">
+      <text class="badge-icon">🌿</text>
+      <text class="badge-text">{{post.category || '官方'}}</text>
+    </view>
+
+    <!-- 用户信息 -->
+    <view class="post-header">
+      <view class="avatar-wrapper">
+        <text class="avatar-emoji">{{post.userAvatarEmoji}}</text>
+      </view>
+      <view class="post-user-info">
+        <view class="post-user-row">
+          <text class="post-nickname">{{post.userNickName}}</text>
+          <view class="official-badge" wx:if="{{post.isOfficial}}">
+            <text class="official-text">官方</text>
+          </view>
+        </view>
+        <text class="post-time">{{post.createTime}}</text>
+      </view>
+      <view class="more-btn" bindtap="onMoreTap">
+        <text class="more-icon">⋯</text>
+      </view>
+    </view>
+
+    <!-- 标题 -->
+    <text class="post-title" wx:if="{{post.title}}">{{post.title}}</text>
+
+    <!-- 内容 -->
+    <text class="post-content">{{post.content}}</text>
+
+    <!-- 图片 -->
+    <view class="post-images" wx:if="{{post.images.length > 0}}">
+      <image
+        wx:for="{{post.images}}"
+        wx:for-item="img"
+        wx:key="*this"
+        src="{{img}}"
+        mode="aspectFill"
+        class="post-image {{post.images.length === 1 ? 'single' : ''}}"
+        bindtap="onPreviewImage"
+        data-index="{{index}}"
+      />
+    </view>
+
+    <!-- 话题 -->
+    <view class="post-topics" wx:if="{{post.topicNames.length > 0}}">
+      <text
+        wx:for="{{post.topicNames}}"
+        wx:key="*this"
+        wx:for-item="topicName"
+        class="post-topic"
+      >#{{topicName}}</text>
+    </view>
+
+    <!-- 统计 -->
+    <view class="post-stats">
+      <text class="stats-text">{{post.likes}} 赞 · {{post.comments}} 评论 · {{post.shares}} 转发</text>
+    </view>
+  </view>
+
+  <!-- 评论区域标题 -->
+  <view class="comments-header">
+    <text class="comments-title">全部评论（{{comments.length}}）</text>
+  </view>
+
+  <!-- 评论列表 -->
+  <view class="comments-section">
+    <view
+      wx:for="{{comments}}"
+      wx:key="id"
+      class="comment-item"
+    >
+      <view class="comment-avatar">
+        <text class="comment-avatar-emoji">{{item.userAvatarEmoji}}</text>
+      </view>
+      <view class="comment-body">
+        <view class="comment-header">
+          <text class="comment-nickname">{{item.userNickName}}</text>
+          <text class="comment-time">{{item.createTime}}</text>
+        </view>
+        <text class="comment-content">{{item.content}}</text>
+        <view class="comment-actions">
+          <view class="comment-like {{item.liked ? 'liked' : ''}}" bindtap="onCommentLikeTap" data-id="{{item.id}}">
+            <text class="like-icon">{{item.liked ? '❤️' : '🤍'}}</text>
+            <text class="like-count">{{item.likes}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <view class="comments-empty" wx:if="{{comments.length === 0}}">
+      <text class="empty-emoji">💬</text>
+      <text class="empty-text">还没有评论，快来抢沙发～</text>
+    </view>
+  </view>
+
+  <view class="bottom-space"></view>
+
+  <!-- 底部输入和操作栏 -->
+  <view class="bottom-bar">
+    <view class="comment-input-wrapper">
+      <input
+        class="comment-input"
+        placeholder="友善评论，共同维护良好氛围..."
+        placeholder-class="input-placeholder"
+        value="{{commentContent}}"
+        bindinput="onCommentInput"
+        confirm-type="send"
+        bindconfirm="onSubmitComment"
+        maxlength="200"
+      />
+    </view>
+    <view class="action-btns">
+      <view class="action-btn {{post.liked ? 'liked' : ''}}" bindtap="onLikeTap">
+        <text class="btn-icon">{{post.liked ? '❤️' : '🤍'}}</text>
+        <text class="btn-count">{{post.likes}}</text>
+      </view>
+      <view class="action-btn">
+        <text class="btn-icon">💬</text>
+        <text class="btn-count">{{post.comments}}</text>
+      </view>
+      <button class="action-btn share-btn" open-type="share" bindtap="onShareTap">
+        <text class="btn-icon">📤</text>
+        <text class="btn-count">{{post.shares}}</text>
+      </button>
+      <view class="action-btn report-btn" bindtap="onReportTap">
+        <text class="btn-icon">🚩</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 举报弹窗 -->
+  <view class="report-modal" wx:if="{{showReport}}" catchtap="onReportClose">
+    <view class="report-content" catchtap="">
+      <view class="report-header">
+        <text class="report-title">举报内容</text>
+        <view class="report-close" bindtap="onReportClose">
+          <text class="close-icon">×</text>
+        </view>
+      </view>
+
+      <text class="report-section-title">请选择举报理由</text>
+      <view class="report-reasons">
+        <view
+          wx:for="{{reportReasons}}"
+          wx:key="id"
+          class="report-reason {{selectedReasonId === item.id ? 'selected' : ''}}"
+          bindtap="onReportReasonTap"
+          data-id="{{item.id}}"
+        >
+          <text class="reason-name">{{item.name}}</text>
+          <text class="reason-check" wx:if="{{selectedReasonId === item.id}}">✓</text>
+        </view>
+      </view>
+
+      <text class="report-section-title">补充说明（选填）</text>
+      <textarea
+        class="report-desc"
+        placeholder="请详细描述问题，有助于我们更快处理"
+        placeholder-class="desc-placeholder"
+        value="{{reportDescription}}"
+        bindinput="onReportDescInput"
+        maxlength="200"
+        auto-height
+      />
+
+      <view class="report-tips">
+        <text class="tips-icon">📋</text>
+        <text class="tips-text">我们会在24小时内审核处理。恶意举报将被限制功能。</text>
+      </view>
+
+      <button class="submit-report-btn" bindtap="onReportSubmit">提交举报</button>
+    </view>
+  </view>
+</view>
