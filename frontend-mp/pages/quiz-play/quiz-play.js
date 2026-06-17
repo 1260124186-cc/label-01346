@@ -1,13 +1,17 @@
 /**
  * 答题页面
- * @description 实现答题逻辑和积分发放
+ * @description 实现答题逻辑和积分发放，支持单选、多选、判断三种题型
  */
 const app = getApp()
 const {
   getQuestionsByChapter,
   getQuestionsByDifficulty,
   getDailyQuestions,
-  QUIZ_DIFFICULTIES
+  QUIZ_DIFFICULTIES,
+  QUIZ_QUESTION_TYPES,
+  QUIZ_SCENES,
+  TRASH_TYPES,
+  isQuestionCorrect
 } = require('../../utils/constants')
 const {
   navigateTo,
@@ -34,8 +38,11 @@ Page({
     currentQuestion: null,
 
     selectedIndex: -1,
+    selectedIndexes: [],
     isAnswered: false,
     isCorrect: false,
+
+    userAnswer: null,
 
     correctCount: 0,
     wrongCount: 0,
@@ -44,12 +51,33 @@ Page({
     showResult: false,
     resultData: null,
 
-    progressPercent: 0
+    progressPercent: 0,
+
+    QUESTION_TYPE_MAP: {
+      single: { name: '单选题', icon: '○' },
+      multiple: { name: '多选题', icon: '☐' },
+      judge: { name: '判断题', icon: '✓' }
+    },
+    SCENE_MAP: {
+      kitchen: '厨房',
+      office: '办公室',
+      campus: '校园'
+    },
+    TRASH_TYPE_MAP: {}
   },
 
   onLoad(options) {
     console.log('[QuizPlay] 页面加载', options)
+    this.initTrashTypeMap()
     this.initQuiz(options)
+  },
+
+  initTrashTypeMap() {
+    const map = {}
+    TRASH_TYPES.forEach(t => {
+      map[t.id] = t
+    })
+    this.setData({ TRASH_TYPE_MAP: map })
   },
 
   initQuiz(options) {
@@ -81,14 +109,7 @@ Page({
       return
     }
 
-    const processedQuestions = questions.map(q => ({
-      ...q,
-      optionsWithLabel: q.options.map((opt, idx) => ({
-        text: opt,
-        label: String.fromCharCode(65 + idx)
-      })),
-      correctAnswerLabel: String.fromCharCode(65 + q.correctIndex)
-    }))
+    const processedQuestions = questions.map(q => this.processQuestion(q))
 
     const shuffled = processedQuestions.sort(() => 0.5 - Math.random())
 
@@ -103,8 +124,10 @@ Page({
       currentIndex: 0,
       currentQuestion: shuffled[0],
       selectedIndex: -1,
+      selectedIndexes: [],
       isAnswered: false,
       isCorrect: false,
+      userAnswer: null,
       correctCount: 0,
       wrongCount: 0,
       totalPoints: 0,
@@ -113,6 +136,47 @@ Page({
     })
 
     this.updateNavigationTitle()
+  },
+
+  processQuestion(q) {
+    const type = q.type || 'single'
+    let options = q.options
+    let correctIndex = q.correctIndex
+    let correctIndexes = q.correctIndexes || []
+
+    if (type === 'judge' && (!options || options.length === 0)) {
+      options = ['正确', '错误']
+    }
+
+    const optionsWithLabel = options.map((opt, idx) => ({
+      text: opt,
+      label: type === 'judge' ? (idx === 0 ? '✓' : '✗') : String.fromCharCode(65 + idx)
+    }))
+
+    let correctAnswerLabel = ''
+    if (type === 'multiple') {
+      correctAnswerLabel = correctIndexes
+        .sort((a, b) => a - b)
+        .map(i => String.fromCharCode(65 + i))
+        .join('、')
+    } else if (type === 'judge') {
+      correctAnswerLabel = correctIndex === 0 ? '正确' : '错误'
+    } else {
+      correctAnswerLabel = String.fromCharCode(65 + correctIndex)
+    }
+
+    const sceneLabels = (q.scenes || []).map(s => this.data.SCENE_MAP[s] || s)
+
+    return {
+      ...q,
+      type,
+      options,
+      optionsWithLabel,
+      correctIndex,
+      correctIndexes,
+      correctAnswerLabel,
+      sceneLabels
+    }
   },
 
   updateNavigationTitle() {
@@ -135,14 +199,61 @@ Page({
 
     const { index } = e.currentTarget.dataset
     const question = this.data.currentQuestion
-    const isCorrect = index === question.correctIndex
+    const type = question.type || 'single'
+
+    if (type === 'multiple') {
+      let selected = [...this.data.selectedIndexes]
+      const idx = selected.indexOf(index)
+      if (idx > -1) {
+        selected.splice(idx, 1)
+      } else {
+        selected.push(index)
+      }
+      this.setData({ selectedIndexes: selected })
+      return
+    }
+
+    let userAnswer = index
+    if (type === 'judge') {
+      userAnswer = index
+    }
+
+    const correct = isQuestionCorrect(question, userAnswer)
 
     this.setData({
       selectedIndex: index,
+      userAnswer,
       isAnswered: true,
-      isCorrect
+      isCorrect: correct
     })
 
+    this.handleAnswerResult(correct, question)
+  },
+
+  onSubmitMultiple() {
+    if (this.data.isAnswered) return
+
+    const question = this.data.currentQuestion
+    const selected = [...this.data.selectedIndexes]
+
+    if (selected.length === 0) {
+      showToast('请至少选择一个选项', 'none')
+      return
+    }
+
+    const userAnswer = selected.sort((a, b) => a - b)
+    const correct = isQuestionCorrect(question, userAnswer)
+
+    this.setData({
+      userAnswer,
+      isAnswered: true,
+      isCorrect: correct
+    })
+
+    this.handleAnswerResult(correct, question)
+  },
+
+  handleAnswerResult(isCorrect, question) {
     if (isCorrect) {
       const pointsEarned = this.calculatePoints()
       const newCorrectCount = this.data.correctCount + 1
@@ -181,7 +292,10 @@ Page({
 
     const diffConfig = QUIZ_DIFFICULTIES.find(d => d.id === difficulty)
     if (diffConfig) {
-      return diffConfig.pointsPerQuestion
+      let base = diffConfig.pointsPerQuestion
+      if (question.type === 'multiple') base = Math.round(base * 1.5)
+      if (question.type === 'hard') base = Math.round(base * 1.2)
+      return base
     }
 
     return 5
@@ -228,8 +342,10 @@ Page({
       currentIndex: nextIndex,
       currentQuestion: this.data.questions[nextIndex],
       selectedIndex: -1,
+      selectedIndexes: [],
       isAnswered: false,
-      isCorrect: false
+      isCorrect: false,
+      userAnswer: null
     })
   },
 
@@ -324,12 +440,16 @@ Page({
   },
 
   onRestart() {
+    const shuffled = this.data.questions.sort(() => 0.5 - Math.random())
     this.setData({
+      questions: shuffled,
       currentIndex: 0,
-      currentQuestion: this.data.questions[0],
+      currentQuestion: shuffled[0],
       selectedIndex: -1,
+      selectedIndexes: [],
       isAnswered: false,
       isCorrect: false,
+      userAnswer: null,
       correctCount: 0,
       wrongCount: 0,
       totalPoints: 0,
@@ -348,6 +468,15 @@ Page({
       return
     }
     navigateTo('/pages/quiz-wrong/quiz-wrong')
+  },
+
+  onPreviewImage(e) {
+    const { url } = e.currentTarget.dataset
+    if (!url) return
+    wx.previewImage({
+      urls: [url],
+      current: url
+    })
   },
 
   onShareAppMessage() {

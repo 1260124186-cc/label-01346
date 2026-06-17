@@ -60,9 +60,20 @@
 
         <view class="question-content">
           <view class="question-header">
-            <view class="question-number">第 {{index + 1}} 题</view>
-            <view class="question-diff diff-{{item.difficulty}}">
-              {{item.difficulty === 'easy' ? '简单' : item.difficulty === 'medium' ? '中等' : '困难'}}
+            <view class="question-tags-row">
+              <view class="question-number">第 {{index + 1}} 题</view>
+              <view class="type-tag type-{{item.type}}">
+                <text class="tag-icon">{{QUESTION_TYPE_MAP[item.type].icon}}</text>
+                <text>{{QUESTION_TYPE_MAP[item.type].name}}</text>
+              </view>
+              <view class="question-diff diff-{{item.difficulty}}">
+                {{item.difficulty === 'easy' ? '简单' : item.difficulty === 'medium' ? '中等' : '困难'}}
+              </view>
+            </view>
+            <view class="scene-row" wx:if="{{item.sceneLabels.length > 0}}">
+              <view class="scene-tag" wx:for="{{item.sceneLabels}}" wx:key="*this" wx:for-item="scene">
+                {{scene}}
+              </view>
             </view>
           </view>
 

@@ -10,7 +10,17 @@ Page({
     wrongQuestions: [],
     selectedQuestions: [],
     isSelectMode: false,
-    userPoints: 0
+    userPoints: 0,
+    QUESTION_TYPE_MAP: {
+      single: { name: '单选', icon: '○' },
+      multiple: { name: '多选', icon: '☐' },
+      judge: { name: '判断', icon: '✓' }
+    },
+    SCENE_MAP: {
+      kitchen: '厨房',
+      office: '办公室',
+      campus: '校园'
+    }
   },
 
   onLoad() {
@@ -41,14 +51,46 @@ Page({
   loadWrongQuestions() {
     const wrongQuestions = getStorage('wrongQuestions', [])
 
-    const processedQuestions = wrongQuestions.map(q => ({
-      ...q,
-      optionsWithLabel: q.options.map((opt, idx) => ({
+    const processedQuestions = wrongQuestions.map(q => {
+      const type = q.type || 'single'
+      let options = q.options
+      let correctIndex = q.correctIndex
+      let correctIndexes = q.correctIndexes || []
+
+      if (type === 'judge' && (!options || options.length === 0)) {
+        options = ['正确', '错误']
+      }
+
+      const optionsWithLabel = options.map((opt, idx) => ({
         text: opt,
-        label: String.fromCharCode(65 + idx)
-      })),
-      correctAnswerLabel: String.fromCharCode(65 + q.correctIndex)
-    }))
+        label: type === 'judge' ? (idx === 0 ? '✓' : '✗') : String.fromCharCode(65 + idx)
+      }))
+
+      let correctAnswerLabel = ''
+      if (type === 'multiple') {
+        correctAnswerLabel = correctIndexes
+          .sort((a, b) => a - b)
+          .map(i => String.fromCharCode(65 + i))
+          .join('、')
+      } else if (type === 'judge') {
+        correctAnswerLabel = correctIndex === 0 ? '正确' : '错误'
+      } else {
+        correctAnswerLabel = String.fromCharCode(65 + correctIndex)
+      }
+
+      const sceneLabels = (q.scenes || []).map(s => this.data.SCENE_MAP[s] || s)
+
+      return {
+        ...q,
+        type,
+        options,
+        optionsWithLabel,
+        correctIndex,
+        correctIndexes,
+        correctAnswerLabel,
+        sceneLabels
+      }
+    })
 
     this.setData({
       wrongQuestions: processedQuestions,

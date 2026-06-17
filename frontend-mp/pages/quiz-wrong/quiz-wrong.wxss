@@ -182,21 +182,72 @@
 
 .question-header {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  flex-direction: column;
   margin-bottom: 16rpx;
+  gap: 8rpx;
+}
+
+.question-tags-row {
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
+  flex-wrap: wrap;
+}
+
+.scene-row {
+  display: flex;
+  gap: 8rpx;
+  flex-wrap: wrap;
 }
 
 .question-number {
   font-size: 26rpx;
   color: #636E72;
   font-weight: 500;
+  margin-right: auto;
 }
 
 .question-diff {
   font-size: 20rpx;
   padding: 4rpx 12rpx;
   border-radius: 16rpx;
+}
+
+.type-tag {
+  font-size: 20rpx;
+  padding: 4rpx 12rpx;
+  border-radius: 16rpx;
+  font-weight: 500;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 4rpx;
+  background: rgba(74, 144, 217, 0.15);
+  color: #4A90D9;
+}
+
+.type-tag .tag-icon {
+  font-size: 18rpx;
+}
+
+.type-tag.type-multiple {
+  background: rgba(155, 89, 182, 0.15);
+  color: #9B59B6;
+}
+
+.type-tag.type-judge {
+  background: rgba(243, 156, 18, 0.15);
+  color: #F39C12;
+}
+
+.scene-tag {
+  font-size: 20rpx;
+  padding: 4rpx 12rpx;
+  border-radius: 16rpx;
+  background: rgba(142, 142, 147, 0.1);
+  color: #8E8E93;
+  font-weight: 500;
+  white-space: nowrap;
 }
 
 .diff-easy {

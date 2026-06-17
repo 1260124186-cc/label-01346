@@ -14,41 +14,103 @@
 
   <view class="question-section">
     <view class="question-card">
-      <view class="question-difficulty" wx:if="{{currentQuestion.difficulty}}">
-        <text class="diff-tag diff-{{currentQuestion.difficulty}}">
+      <view class="question-tags">
+        <view class="tag type-tag type-{{currentQuestion.type}}">
+          <text class="tag-icon">{{QUESTION_TYPE_MAP[currentQuestion.type].icon}}</text>
+          <text>{{QUESTION_TYPE_MAP[currentQuestion.type].name}}</text>
+        </view>
+        <view class="diff-tag diff-{{currentQuestion.difficulty}}">
           {{currentQuestion.difficulty === 'easy' ? '简单' : currentQuestion.difficulty === 'medium' ? '中等' : '困难'}}
-        </text>
+        </view>
+        <view class="scene-tag" wx:for="{{currentQuestion.sceneLabels}}" wx:key="*this">
+          {{item}}
+        </view>
       </view>
       <view class="question-text">{{currentQuestion.question}}</view>
+      <view class="question-hint" wx:if="{{currentQuestion.type === 'multiple'}}">
+        <text class="hint-icon">💡</text>
+        <text>多选题，请选择所有正确选项</text>
+      </view>
     </view>
   </view>
 
   <view class="options-section">
-    <view class="options-list">
+    <view class="options-list {{currentQuestion.type === 'judge' ? 'judge-options' : ''}}">
       <view
-        class="option-item {{selectedIndex === index ? 'selected' : ''}} {{isAnswered && index === currentQuestion.correctIndex ? 'correct' : ''}} {{isAnswered && selectedIndex === index && !isCorrect ? 'wrong' : ''}}"
+        class="option-item {{currentQuestion.type === 'judge' ? 'judge-item' : ''}} {{currentQuestion.type !== 'judge' && selectedIndexes.indexOf(index) > -1 ? 'selected' : ''}} {{selectedIndex === index && currentQuestion.type !== 'multiple' ? 'selected' : ''}} {{isAnswered && currentQuestion.type !== 'multiple' && index === currentQuestion.correctIndex ? 'correct' : ''}} {{isAnswered && currentQuestion.type === 'multiple' && currentQuestion.correctIndexes.indexOf(index) > -1 ? 'correct' : ''}} {{isAnswered && selectedIndex === index && !isCorrect && currentQuestion.type !== 'multiple' ? 'wrong' : ''}} {{isAnswered && currentQuestion.type === 'multiple' && selectedIndexes.indexOf(index) > -1 && currentQuestion.correctIndexes.indexOf(index) === -1 ? 'wrong' : ''}}"
         wx:for="{{currentQuestion.optionsWithLabel}}"
         wx:key="index"
         data-index="{{index}}"
         bindtap="onSelectOption"
       >
-        <view class="option-label">{{item.label}}</view>
+        <view wx:if="{{currentQuestion.type === 'multiple'}}" class="option-checkbox {{selectedIndexes.indexOf(index) > -1 ? 'checked' : ''}} {{isAnswered && currentQuestion.correctIndexes.indexOf(index) > -1 ? 'correct' : ''}} {{isAnswered && selectedIndexes.indexOf(index) > -1 && currentQuestion.correctIndexes.indexOf(index) === -1 ? 'wrong' : ''}}">
+          <text wx:if="{{selectedIndexes.indexOf(index) > -1}}" class="checkbox-mark">✓</text>
+        </view>
+        <view wx:elif="{{currentQuestion.type === 'judge'}}" class="option-judge-icon {{index === 0 ? 'icon-true' : 'icon-false'}}">
+          <text>{{index === 0 ? '✓' : '✗'}}</text>
+        </view>
+        <view wx:else class="option-label">{{item.label}}</view>
         <view class="option-text">{{item.text}}</view>
         <view class="option-icon" wx:if="{{isAnswered}}">
-          <text wx:if="{{index === currentQuestion.correctIndex}}" class="icon-correct">✓</text>
-          <text wx:elif="{{selectedIndex === index && !isCorrect}}" class="icon-wrong">✗</text>
+          <text wx:if="{{(currentQuestion.type !== 'multiple' && index === currentQuestion.correctIndex) || (currentQuestion.type === 'multiple' && currentQuestion.correctIndexes.indexOf(index) > -1)}}" class="icon-correct">✓</text>
+          <text wx:elif="{{(currentQuestion.type !== 'multiple' && selectedIndex === index && !isCorrect) || (currentQuestion.type === 'multiple' && selectedIndexes.indexOf(index) > -1 && currentQuestion.correctIndexes.indexOf(index) === -1)}}" class="icon-wrong">✗</text>
         </view>
       </view>
+    </view>
+
+    <view class="multiple-submit-section" wx:if="{{currentQuestion.type === 'multiple' && !isAnswered}}">
+      <view class="selected-info">已选择 {{selectedIndexes.length}} 项</view>
+      <view class="submit-btn" bindtap="onSubmitMultiple">提交答案</view>
     </view>
   </view>
 
   <view class="explanation-section" wx:if="{{isAnswered}}">
-    <view class="explanation-card">
+    <view class="answer-result-card {{isCorrect ? 'result-correct' : 'result-wrong'}}">
+      <view class="result-icon">{{isCorrect ? '✅' : '❌'}}</view>
+      <view class="result-info">
+        <view class="result-title">{{isCorrect ? '回答正确' : '回答错误'}}</view>
+        <view class="correct-answer" wx:if="{{!isCorrect}}">
+          <text class="label">正确答案：</text>
+          <text class="value">{{currentQuestion.correctAnswerLabel}}</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="explanation-card" wx:if="{{currentQuestion.explanation}}">
       <view class="explanation-title">
         <text class="title-icon">💡</text>
         <text>答案解析</text>
       </view>
       <view class="explanation-text">{{currentQuestion.explanation}}</view>
+      <view class="explanation-image-wrap" wx:if="{{currentQuestion.explanationImage}}">
+        <image class="explanation-image" src="{{currentQuestion.explanationImage}}" mode="widthFix" bindtap="onPreviewImage" data-url="{{currentQuestion.explanationImage}}"></image>
+      </view>
+    </view>
+
+    <view class="error-tip-card" wx:if="{{currentQuestion.errorTip}}">
+      <view class="error-tip-title">
+        <text class="title-icon">⚠️</text>
+        <text>易错提示</text>
+      </view>
+      <view class="error-tip-text">{{currentQuestion.errorTip}}</view>
+    </view>
+
+    <view class="related-trash-card" wx:if="{{currentQuestion.relatedTrash && currentQuestion.relatedTrash.length > 0}}">
+      <view class="related-title">
+        <text class="title-icon">🔗</text>
+        <text>关联垃圾条目</text>
+      </view>
+      <scroll-view class="related-scroll" scroll-x enable-flex>
+        <view class="related-item" wx:for="{{currentQuestion.relatedTrash}}" wx:key="name">
+          <view class="related-icon-wrap" style="background: {{TRASH_TYPE_MAP[item.typeId].bgColor}}">
+            <text class="related-emoji">{{item.emoji}}</text>
+          </view>
+          <view class="related-name">{{item.name}}</view>
+          <view class="related-type" style="color: {{TRASH_TYPE_MAP[item.typeId].color}}">
+            {{TRASH_TYPE_MAP[item.typeId].name}}
+          </view>
+        </view>
+      </scroll-view>
     </view>
   </view>
 
