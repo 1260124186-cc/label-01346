@@ -42,7 +42,11 @@ Page({
     // 是否正在上传头像
     isUploading: false,
     // 签到状态
-    isSignedToday: false
+    isSignedToday: false,
+    // 成就勋章列表
+    achievements: [],
+    // 已解锁成就数量
+    unlockedAchievementCount: 0
   },
 
   /**
@@ -77,6 +81,14 @@ Page({
       const levelInfo = getUserLevel(userInfo.points || 0)
       const stats = app.getStatistics()
 
+      let achievements = this.data.achievements || []
+      let unlockedAchievementCount = this.data.unlockedAchievementCount || 0
+
+      if (typeof app.getAchievements === 'function') {
+        achievements = app.getAchievements()
+        unlockedAchievementCount = achievements.filter(a => a.unlocked).length
+      }
+
       this.setData({
         userInfo: {
           ...userInfo,
@@ -88,7 +100,9 @@ Page({
           { id: 'points', label: '累计积分', value: stats.totalEarnedPoints },
           { id: 'days', label: '连续打卡', value: stats.continuousDays }
         ],
-        isSignedToday: app.isTodaySignedIn()
+        isSignedToday: app.isTodaySignedIn(),
+        achievements,
+        unlockedAchievementCount
       })
 
       console.log('[Profile] 用户信息已刷新', userInfo, stats)
@@ -231,13 +245,42 @@ Page({
   },
 
   /**
+   * 点击成就勋章
+   * @param {Object} e 事件对象
+   */
+  onAchievementTap(e) {
+    const { item } = e.currentTarget.dataset
+    console.log('[Profile] 点击成就', item.name)
+
+    if (item.unlocked) {
+      showToast(`已解锁：${item.name}`)
+    } else {
+      showToast(`${item.name}：${item.current}/${item.target}`)
+    }
+  },
+
+  /**
    * 点击统计项
    * @param {Object} e 事件对象
    */
   onStatTap(e) {
     const { item } = e.currentTarget.dataset
     console.log('[Profile] 点击统计', item.label)
-    showToast(`${item.label}：${item.value}`)
+
+    switch (item.id) {
+      case 'classify':
+        navigateTo('/pages/records/records')
+        break
+      case 'points':
+        navigateTo('/pages/points/points')
+        break
+      case 'days':
+        navigateTo('/pages/signin/signin')
+        break
+      default:
+        showToast(`${item.label}：${item.value}`)
+        break
+    }
   },
 
   /**

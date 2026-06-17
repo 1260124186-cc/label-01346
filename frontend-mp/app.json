@@ -23,7 +23,8 @@
     "pages/goods-detail/goods-detail",
     "pages/order-detail/order-detail",
     "pages/activity/activity",
-    "pages/invite/invite"
+    "pages/invite/invite",
+    "pages/settings/settings"
   ],
   "window": {
     "backgroundTextStyle": "dark",

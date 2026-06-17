@@ -10,13 +10,13 @@
       <!-- 背景装饰 -->
       <view class="card-bg-decoration"></view>
       <view class="card-bg-circle"></view>
-      
+
       <!-- 用户头像 -->
       <view class="avatar-wrapper" bindtap="onAvatarTap">
-        <image 
+        <image
           wx:if="{{userInfo.avatarUrl}}"
-          class="avatar-image" 
-          src="{{userInfo.avatarUrl}}" 
+          class="avatar-image"
+          src="{{userInfo.avatarUrl}}"
           mode="aspectFill"
         />
         <view wx:else class="avatar-placeholder">
@@ -30,20 +30,20 @@
           <view class="loading-spinner"></view>
         </view>
       </view>
-      
+
       <!-- 用户信息 -->
       <view class="user-info">
         <view class="nickname-wrapper" bindtap="onNickNameTap">
           <text class="nickname">{{userInfo.nickName}}</text>
           <text class="edit-hint">✎</text>
         </view>
-        
+
         <!-- 等级标签 -->
         <view class="level-tag">
           <text class="level-icon">{{levelInfo.icon}}</text>
           <text class="level-name">{{levelInfo.name}}</text>
         </view>
-        
+
         <!-- 等级进度条 -->
         <view class="level-progress">
           <view class="progress-bar">
@@ -52,7 +52,7 @@
           <text class="progress-text">Lv.{{levelInfo.level}}</text>
         </view>
       </view>
-      
+
       <!-- 积分展示 -->
       <view class="points-badge">
         <text class="points-value">{{userInfo.points}}</text>
@@ -64,11 +64,11 @@
   <!-- 统计数据 -->
   <view class="statistics-section">
     <view class="statistics-card">
-      <view 
-        wx:for="{{statistics}}" 
+      <view
+        wx:for="{{statistics}}"
         wx:key="id"
         class="stat-item"
-        bindtap="{{item.id === 'days' ? 'goToSignIn' : 'onStatTap'}}"
+        bindtap="onStatTap"
         data-item="{{item}}"
       >
         <text class="stat-value">{{item.value}}</text>
@@ -91,14 +91,40 @@
     </view>
   </view>
 
+  <!-- 成就勋章 -->
+  <view class="achievement-section">
+    <view class="achievement-header">
+      <text class="achievement-title">我的成就</text>
+      <text class="achievement-count">已解锁 {{unlockedAchievementCount}}/{{achievements.length}}</text>
+    </view>
+    <view class="achievement-grid">
+      <view
+        wx:for="{{achievements}}"
+        wx:key="id"
+        class="achievement-item {{item.unlocked ? 'unlocked' : 'locked'}}"
+        bindtap="onAchievementTap"
+        data-item="{{item}}"
+      >
+        <view class="achievement-icon-wrapper" style="background: {{item.unlocked ? item.bgColor : 'rgba(142, 142, 147, 0.1)'}};">
+          <text class="achievement-icon">{{item.unlocked ? item.emoji : '🔒'}}</text>
+        </view>
+        <text class="achievement-name">{{item.name}}</text>
+        <view class="achievement-progress-bar" wx:if="{{!item.unlocked}}">
+          <view class="achievement-progress-fill" style="width: {{item.progress}}%; background: {{item.color}};"></view>
+        </view>
+        <text class="achievement-progress-text" wx:if="{{!item.unlocked}}">{{item.current}}/{{item.target}}</text>
+      </view>
+    </view>
+  </view>
+
   <!-- 功能菜单：学习中心 -->
   <view class="menu-section">
     <view class="menu-group-title">
       <text class="group-title-text">学习中心</text>
     </view>
     <mp-cells ext-class="menu-cells">
-      <mp-cell 
-        wx:for="{{learnMenus}}" 
+      <mp-cell
+        wx:for="{{learnMenus}}"
         wx:key="id"
         ext-class="menu-cell"
         link="{{true}}"
@@ -122,8 +148,8 @@
       <text class="group-title-text">我的记录</text>
     </view>
     <mp-cells ext-class="menu-cells">
-      <mp-cell 
-        wx:for="{{recordMenus}}" 
+      <mp-cell
+        wx:for="{{recordMenus}}"
         wx:key="id"
         ext-class="menu-cell"
         link="{{true}}"
@@ -147,8 +173,8 @@
       <text class="group-title-text">我的服务</text>
     </view>
     <mp-cells ext-class="menu-cells">
-      <mp-cell 
-        wx:for="{{serviceMenus}}" 
+      <mp-cell
+        wx:for="{{serviceMenus}}"
         wx:key="id"
         ext-class="menu-cell"
         link="{{true}}"
@@ -172,8 +198,8 @@
       <text class="group-title-text">其他</text>
     </view>
     <mp-cells ext-class="menu-cells">
-      <mp-cell 
-        wx:for="{{otherMenus}}" 
+      <mp-cell
+        wx:for="{{otherMenus}}"
         wx:key="id"
         ext-class="menu-cell"
         link="{{true}}"

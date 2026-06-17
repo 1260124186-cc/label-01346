@@ -406,6 +406,113 @@
   color: #B2BEC3;
 }
 
+/* ==================== 成就勋章 ==================== */
+.achievement-section {
+  padding: 0 32rpx 24rpx;
+}
+
+.achievement-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8rpx 8rpx 16rpx;
+}
+
+.achievement-title {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #2D3436;
+}
+
+.achievement-count {
+  font-size: 24rpx;
+  color: var(--text-tertiary);
+}
+
+.achievement-grid {
+  display: flex;
+  flex-wrap: wrap;
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(20rpx);
+  -webkit-backdrop-filter: blur(20rpx);
+  border-radius: 24rpx;
+  padding: 32rpx 16rpx;
+  box-shadow: 0 4rpx 20rpx rgba(91, 189, 114, 0.08);
+}
+
+.achievement-item {
+  width: 25%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 16rpx 8rpx;
+  transition: transform 0.2s ease;
+}
+
+.achievement-item:active {
+  transform: scale(0.95);
+}
+
+.achievement-icon-wrapper {
+  width: 96rpx;
+  height: 96rpx;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 12rpx;
+  transition: all 0.3s ease;
+}
+
+.achievement-item.unlocked .achievement-icon-wrapper {
+  box-shadow: 0 4rpx 16rpx rgba(91, 189, 114, 0.2);
+}
+
+.achievement-item.locked .achievement-icon-wrapper {
+  opacity: 0.5;
+}
+
+.achievement-icon {
+  font-size: 44rpx;
+  line-height: 1;
+}
+
+.achievement-name {
+  font-size: 22rpx;
+  color: var(--text-primary);
+  text-align: center;
+  line-height: 1.3;
+  margin-bottom: 8rpx;
+  max-width: 120rpx;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.achievement-item.locked .achievement-name {
+  color: var(--text-tertiary);
+}
+
+.achievement-progress-bar {
+  width: 80rpx;
+  height: 6rpx;
+  background: rgba(142, 142, 147, 0.15);
+  border-radius: 3rpx;
+  overflow: hidden;
+  margin-bottom: 4rpx;
+}
+
+.achievement-progress-fill {
+  height: 100%;
+  border-radius: 3rpx;
+  transition: width 0.3s ease;
+}
+
+.achievement-progress-text {
+  font-size: 18rpx;
+  color: var(--text-tertiary);
+}
+
 /* ==================== 版本信息 ==================== */
 .version-section {
   display: flex;

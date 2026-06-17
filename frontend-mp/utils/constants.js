@@ -227,6 +227,7 @@ const PROFILE_MENUS = [
     groupId: 'other',
     groupName: '其他',
     items: [
+      { id: 'settings', icon: 'settings', emoji: '⚙️', title: '设置', desc: '通知、缓存、隐私等', link: '/pages/settings/settings' },
       { id: 'about', icon: 'info', emoji: 'ℹ️', title: '关于我们', desc: '了解垃圾分类助手', link: '' }
     ]
   }
@@ -237,8 +238,8 @@ const PROFILE_MENUS = [
  */
 const USER_LEVELS = [
   { level: 1, name: '环保新手', minPoints: 0, maxPoints: 500, icon: '🌱' },
-  { level: 2, name: '环保学徒', minPoints: 500, maxPoints: 1500, icon: '🌿' },
-  { level: 3, name: '环保达人', minPoints: 1500, maxPoints: 3500, icon: '🌳' },
+  { level: 2, name: '环保学徒', minPoints: 500, maxPoints: 1200, icon: '🌿' },
+  { level: 3, name: '环保达人', minPoints: 1200, maxPoints: 3500, icon: '🌳' },
   { level: 4, name: '环保专家', minPoints: 3500, maxPoints: 7000, icon: '🌲' },
   { level: 5, name: '环保大师', minPoints: 7000, maxPoints: Infinity, icon: '🏆' }
 ]
@@ -2346,6 +2347,69 @@ const fuzzySearchTrash = (keyword) => {
   })
 }
 
+const ACHIEVEMENTS = [
+  {
+    id: 'classify_master',
+    name: '分类达人',
+    emoji: '🏅',
+    description: '累计完成50次垃圾分类',
+    type: 'classify',
+    condition: { type: 'classifyCount', value: 50 },
+    color: '#5BBD72',
+    bgColor: 'rgba(91, 189, 114, 0.15)'
+  },
+  {
+    id: 'quiz_king',
+    name: '答题王者',
+    emoji: '👑',
+    description: '累计正确答题100道',
+    type: 'quiz',
+    condition: { type: 'correctQuizCount', value: 100 },
+    color: '#9B59B6',
+    bgColor: 'rgba(155, 89, 182, 0.15)'
+  },
+  {
+    id: 'signin_30',
+    name: '连续签到30天',
+    emoji: '🔥',
+    description: '连续签到打卡30天',
+    type: 'signin',
+    condition: { type: 'continuousSignIn', value: 30 },
+    color: '#E74C3C',
+    bgColor: 'rgba(231, 76, 60, 0.15)'
+  },
+  {
+    id: 'classify_100',
+    name: '分类专家',
+    emoji: '🌟',
+    description: '累计完成100次垃圾分类',
+    type: 'classify',
+    condition: { type: 'classifyCount', value: 100 },
+    color: '#F39C12',
+    bgColor: 'rgba(243, 156, 18, 0.15)'
+  },
+  {
+    id: 'points_5000',
+    name: '积分大户',
+    emoji: '💰',
+    description: '累计获得5000积分',
+    type: 'points',
+    condition: { type: 'totalPoints', value: 5000 },
+    color: '#3498DB',
+    bgColor: 'rgba(52, 152, 219, 0.15)'
+  },
+  {
+    id: 'invite_10',
+    name: '社交达人',
+    emoji: '👥',
+    description: '邀请10位好友加入',
+    type: 'invite',
+    condition: { type: 'inviteCount', value: 10 },
+    color: '#1ABC9C',
+    bgColor: 'rgba(26, 188, 156, 0.15)'
+  }
+]
+
 module.exports = {
   TRASH_TYPES,
   QUIZ_SCENES,
@@ -2365,6 +2429,7 @@ module.exports = {
   QUIZ_POINTS_CONFIG,
   SHARE_CONFIG,
   INVITE_CONFIG,
+  ACHIEVEMENTS,
   getQuestionsByChapter,
   getQuestionsByDifficulty,
   getQuestionsByScene,

@@ -1,0 +1,106 @@
+<!--
+  设置页面
+  功能：消息通知开关、清除缓存、隐私政策、用户协议、意见反馈
+-->
+<view class="page-container">
+
+  <!-- 通用设置 -->
+  <view class="section">
+    <view class="section-title">通用设置</view>
+    <view class="settings-card">
+      <view class="setting-item">
+        <view class="setting-left">
+          <view class="setting-icon" style="background: rgba(91, 189, 114, 0.1);">
+            <text class="setting-emoji">🔔</text>
+          </view>
+          <view class="setting-info">
+            <text class="setting-title">消息通知</text>
+            <text class="setting-desc">接收活动和签到提醒</text>
+          </view>
+        </view>
+        <view class="setting-right">
+          <switch 
+            checked="{{notifyEnabled}}" 
+            bindchange="onNotifyChange"
+            color="#5BBD72"
+          />
+        </view>
+      </view>
+
+      <view class="setting-item" bindtap="onClearCache">
+        <view class="setting-left">
+          <view class="setting-icon" style="background: rgba(243, 156, 18, 0.1);">
+            <text class="setting-emoji">🧹</text>
+          </view>
+          <view class="setting-info">
+            <text class="setting-title">清除缓存</text>
+            <text class="setting-desc">清除本地缓存数据</text>
+          </view>
+        </view>
+        <view class="setting-right">
+          <text class="setting-value">{{cacheSize}}</text>
+          <text class="setting-arrow">›</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 关于与协议 -->
+  <view class="section">
+    <view class="section-title">关于与协议</view>
+    <view class="settings-card">
+      <view class="setting-item" bindtap="onPrivacyPolicy">
+        <view class="setting-left">
+          <view class="setting-icon" style="background: rgba(74, 144, 217, 0.1);">
+            <text class="setting-emoji">🛡️</text>
+          </view>
+          <view class="setting-info">
+            <text class="setting-title">隐私政策</text>
+            <text class="setting-desc">了解我们如何保护您的隐私</text>
+          </view>
+        </view>
+        <view class="setting-right">
+          <text class="setting-arrow">›</text>
+        </view>
+      </view>
+
+      <view class="setting-item" bindtap="onUserAgreement">
+        <view class="setting-left">
+          <view class="setting-icon" style="background: rgba(155, 89, 182, 0.1);">
+            <text class="setting-emoji">📄</text>
+          </view>
+          <view class="setting-info">
+            <text class="setting-title">用户协议</text>
+            <text class="setting-desc">使用条款与服务协议</text>
+          </view>
+        </view>
+        <view class="setting-right">
+          <text class="setting-arrow">›</text>
+        </view>
+      </view>
+
+      <view class="setting-item" bindtap="onFeedback">
+        <view class="setting-left">
+          <view class="setting-icon" style="background: rgba(231, 76, 60, 0.1);">
+            <text class="setting-emoji">💬</text>
+          </view>
+          <view class="setting-info">
+            <text class="setting-title">意见反馈</text>
+            <text class="setting-desc">告诉我们您的想法和建议</text>
+          </view>
+        </view>
+        <view class="setting-right">
+          <text class="setting-arrow">›</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 版本信息 -->
+  <view class="version-section">
+    <text class="version-text">垃圾分类助手 v{{version}}</text>
+    <text class="copyright-text">让垃圾分类更简单</text>
+  </view>
+
+  <view class="safe-area-bottom"></view>
+</view>

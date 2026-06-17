@@ -3,6 +3,7 @@
  * @description 小程序全局逻辑
  */
 const { generateId, formatDate } = require('./utils/util')
+const { getUserLevel, ACHIEVEMENTS } = require('./utils/constants')
 
 App({
   /**
@@ -27,6 +28,7 @@ App({
     this.initShareRecords()
     this.initInviteRecords()
     this.initDeviceId()
+    this.initAchievements()
     this.checkAndExpirePoints()
     this.getSystemInfo()
     this.simulateAutoShipping()
@@ -44,14 +46,22 @@ App({
   initUserInfo() {
     const userInfo = wx.getStorageSync('userInfo')
     if (userInfo) {
+      const levelInfo = getUserLevel(userInfo.points || 0)
+      const oldLevel = userInfo.level
+      userInfo.level = levelInfo.level
       this.globalData.userInfo = userInfo
+      if (oldLevel !== levelInfo.level) {
+        wx.setStorageSync('userInfo', userInfo)
+      }
       console.log('[App] 用户信息已加载', userInfo)
     } else {
+      const defaultPoints = 1280
+      const levelInfo = getUserLevel(defaultPoints)
       const defaultUserInfo = {
         avatarUrl: '',
         nickName: '环保达人',
-        points: 1280,
-        level: 3,
+        points: defaultPoints,
+        level: levelInfo.level,
         joinDate: this.formatDate(new Date())
       }
       this.globalData.userInfo = defaultUserInfo
@@ -1054,16 +1064,18 @@ App({
   },
 
   /**
-   * 更新用户积分并同时添加积分明细记录
+   * 更新用户积分并同时添加积分明细记录，同步更新用户等级
    * @param {number} points 积分变化值（正数增加，负数减少）
    * @param {Object} recordInfo 积分记录信息 { title, desc, emoji, category }
    */
   updateUserPoints(points, recordInfo = null) {
     const userInfo = this.globalData.userInfo
     userInfo.points = Math.max(0, userInfo.points + points)
+    const levelInfo = getUserLevel(userInfo.points)
+    userInfo.level = levelInfo.level
     this.globalData.userInfo = userInfo
     wx.setStorageSync('userInfo', userInfo)
-    console.log('[App] 用户积分已更新', userInfo.points)
+    console.log('[App] 用户积分已更新', userInfo.points, '等级:', userInfo.level)
 
     if (recordInfo) {
       const now = new Date()
@@ -1080,6 +1092,8 @@ App({
       }
       this.addPointsRecord(record)
     }
+
+    this.checkAchievements()
   },
 
   /**
@@ -1384,6 +1398,115 @@ App({
   },
 
   /**
+   * 初始化成就系统
+   */
+  initAchievements() {
+    const unlocked = wx.getStorageSync('unlockedAchievements')
+    this.globalData.unlockedAchievements = unlocked || []
+    console.log('[App] 成就系统已加载，已解锁成就:', this.globalData.unlockedAchievements.length)
+  },
+
+  /**
+   * 检查并解锁成就
+   * @returns {Array} 新解锁的成就列表
+   */
+  checkAchievements() {
+    const unlockedIds = this.globalData.unlockedAchievements || []
+    const newlyUnlocked = []
+
+    const stats = this.getStatistics()
+    const classifyCount = stats.classifyCount
+    const totalEarnedPoints = stats.totalEarnedPoints
+    const continuousDays = this.getStreakDays()
+    const inviteCount = this.getInviteRecords().length
+    const quizRecords = this.getQuizRecords()
+    const correctQuizCount = quizRecords.reduce((sum, r) => sum + (r.correctCount || 0), 0)
+
+    ACHIEVEMENTS.forEach(achievement => {
+      if (unlockedIds.includes(achievement.id)) return
+
+      let unlocked = false
+      const cond = achievement.condition
+
+      switch (cond.type) {
+        case 'classifyCount':
+          unlocked = classifyCount >= cond.value
+          break
+        case 'correctQuizCount':
+          unlocked = correctQuizCount >= cond.value
+          break
+        case 'continuousSignIn':
+          unlocked = continuousDays >= cond.value
+          break
+        case 'totalPoints':
+          unlocked = totalEarnedPoints >= cond.value
+          break
+        case 'inviteCount':
+          unlocked = inviteCount >= cond.value
+          break
+      }
+
+      if (unlocked) {
+        this.globalData.unlockedAchievements.push(achievement.id)
+        newlyUnlocked.push(achievement)
+        console.log('[App] 解锁成就:', achievement.name)
+      }
+    })
+
+    if (newlyUnlocked.length > 0) {
+      wx.setStorageSync('unlockedAchievements', this.globalData.unlockedAchievements)
+    }
+
+    return newlyUnlocked
+  },
+
+  /**
+   * 获取成就列表（包含解锁状态）
+   * @returns {Array} 成就列表
+   */
+  getAchievements() {
+    const unlockedIds = this.globalData.unlockedAchievements || []
+    const stats = this.getStatistics()
+    const classifyCount = stats.classifyCount
+    const totalEarnedPoints = stats.totalEarnedPoints
+    const continuousDays = this.getStreakDays()
+    const inviteCount = this.getInviteRecords().length
+    const quizRecords = this.getQuizRecords()
+    const correctQuizCount = quizRecords.reduce((sum, r) => sum + (r.correctCount || 0), 0)
+
+    return ACHIEVEMENTS.map(achievement => {
+      let current = 0
+      let target = achievement.condition.value
+
+      switch (achievement.condition.type) {
+        case 'classifyCount':
+          current = classifyCount
+          break
+        case 'correctQuizCount':
+          current = correctQuizCount
+          break
+        case 'continuousSignIn':
+          current = continuousDays
+          break
+        case 'totalPoints':
+          current = totalEarnedPoints
+          break
+        case 'inviteCount':
+          current = inviteCount
+          break
+      }
+
+      return {
+        ...achievement,
+        unlocked: unlockedIds.includes(achievement.id),
+        current: Math.min(current, target),
+        target,
+        progress: Math.min(100, Math.floor((current / target) * 100))
+      }
+    })
+  },
+
+  /**
    * 全局数据
    */
   globalData: {
@@ -1405,6 +1528,7 @@ App({
     systemInfo: null,
     statusBarHeight: 0,
     screenHeight: 0,
-    screenWidth: 0
+    screenWidth: 0,
+    unlockedAchievements: []
   }
 })
