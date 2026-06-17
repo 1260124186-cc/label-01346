@@ -232,4 +232,13 @@
   <view class="footer-tips">
     <text class="tips-text">垃圾分类，从我做起，保护环境，人人有责</text>
   </view>
+
+  <!-- 拍一拍识垃圾悬浮入口 -->
+  <view class="photo-recognize-float" bindtap="goToPhotoRecognize">
+    <view class="photo-float-ring"></view>
+    <view class="photo-float-btn">
+      <text class="photo-float-icon">📷</text>
+    </view>
+    <text class="photo-float-text">拍一拍识垃圾</text>
+  </view>
 </view>

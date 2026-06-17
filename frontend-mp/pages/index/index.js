@@ -268,6 +268,11 @@ Page({
     navigateTo('/pages/search/search')
   },
 
+  goToPhotoRecognize() {
+    console.log('[Index] 点击拍一拍识垃圾')
+    navigateTo('/pages/photo-recognize/photo-recognize')
+  },
+
   /**
    * 页面相关事件处理函数--监听用户下拉动作
    */

@@ -1,0 +1,90 @@
+<!--
+  拍照识别页面
+  功能：相机预览、拍照、识别中动画、跳转到结果页
+-->
+<view class="camera-container">
+  <!-- 相机预览区域 -->
+  <camera
+    wx:if="{{!capturedImage && !isRecognizing}}"
+    class="camera-preview"
+    device-position="back"
+    flash="auto"
+    binderror="onCameraError"
+  >
+    <cover-view class="camera-overlay">
+      <!-- 顶部提示 -->
+      <cover-view class="camera-top-hint">
+        <cover-view class="hint-text">请将垃圾对准框内拍摄</cover-view>
+        <cover-view class="hint-subtext">保持光线充足，图像清晰</cover-view>
+      </cover-view>
+
+      <!-- 扫描框 -->
+      <cover-view class="scan-frame">
+        <cover-view class="scan-corner top-left"></cover-view>
+        <cover-view class="scan-corner top-right"></cover-view>
+        <cover-view class="scan-corner bottom-left"></cover-view>
+        <cover-view class="scan-corner bottom-right"></cover-view>
+        <cover-view class="scan-line" wx:if="{{showScanLine}}"></cover-view>
+      </cover-view>
+
+      <!-- 底部操作栏 -->
+      <cover-view class="camera-bottom-bar">
+        <cover-view class="bottom-btn album-btn" bindtap="chooseFromAlbum">
+          <cover-view class="album-icon">🖼️</cover-view>
+          <cover-view class="btn-text">相册</cover-view>
+        </cover-view>
+
+        <cover-view class="capture-btn-wrapper">
+          <cover-view class="capture-btn" bindtap="takePhoto">
+            <cover-view class="capture-btn-inner"></cover-view>
+          </cover-view>
+        </cover-view>
+
+        <cover-view class="bottom-btn flash-btn" bindtap="toggleFlash">
+          <cover-view class="flash-icon">{{flashOn ? '⚡' : '🌙'}}</cover-view>
+          <cover-view class="btn-text">{{flashOn ? '开' : '关'}}</cover-view>
+        </cover-view>
+      </cover-view>
+    </cover-view>
+  </camera>
+
+  <!-- 拍摄后的图片预览 -->
+  <view wx:if="{{capturedImage && !isRecognizing}}" class="preview-container">
+    <image class="preview-image" src="{{capturedImage}}" mode="aspectFill" />
+
+    <view class="preview-overlay">
+      <view class="preview-top-bar">
+        <view class="back-btn" bindtap="retakePhoto">
+          <text class="back-icon">‹</text>
+          <text class="back-text">重拍</text>
+        </view>
+      </view>
+
+      <view class="preview-bottom-bar">
+        <view class="action-btn cancel-btn" bindtap="retakePhoto">
+          <text class="btn-text">取消</text>
+        </view>
+        <view class="action-btn confirm-btn" bindtap="confirmPhoto">
+          <text class="btn-text">识别</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 识别中状态 -->
+  <view wx:if="{{isRecognizing}}" class="recognizing-container">
+    <view class="recognizing-content">
+      <view class="loading-ring">
+        <view class="ring-animation"></view>
+      </view>
+      <view class="scanning-image">
+        <image class="scanning-preview" src="{{capturedImage}}" mode="aspectFill" />
+        <view class="scan-overlay">
+          <view class="scanning-line"></view>
+        </view>
+      </view>
+      <view class="recognizing-text">正在识别中...</view>
+      <view class="recognizing-subtext">AI 正在分析图片内容</view>
+    </view>
+  </view>
+</view>

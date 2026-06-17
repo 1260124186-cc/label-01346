@@ -1,0 +1,373 @@
+/**
+ * 拍照识别页面样式
+ */
+
+.camera-container {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  background: #000000;
+  overflow: hidden;
+}
+
+.camera-preview {
+  width: 100%;
+  height: 100%;
+}
+
+.camera-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 60rpx 0 40rpx;
+  box-sizing: border-box;
+}
+
+.camera-top-hint {
+  text-align: center;
+  padding: 0 32rpx;
+}
+
+.hint-text {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #ffffff;
+  text-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.5);
+  margin-bottom: 8rpx;
+}
+
+.hint-subtext {
+  font-size: 24rpx;
+  color: rgba(255, 255, 255, 0.7);
+  text-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.3);
+}
+
+.scan-frame {
+  position: relative;
+  width: 520rpx;
+  height: 520rpx;
+  margin: 40rpx auto;
+  box-sizing: border-box;
+}
+
+.scan-corner {
+  position: absolute;
+  width: 48rpx;
+  height: 48rpx;
+  border: 6rpx solid #5BBD72;
+}
+
+.scan-corner.top-left {
+  top: 0;
+  left: 0;
+  border-right: none;
+  border-bottom: none;
+  border-radius: 8rpx 0 0 0;
+}
+
+.scan-corner.top-right {
+  top: 0;
+  right: 0;
+  border-left: none;
+  border-bottom: none;
+  border-radius: 0 8rpx 0 0;
+}
+
+.scan-corner.bottom-left {
+  bottom: 0;
+  left: 0;
+  border-right: none;
+  border-top: none;
+  border-radius: 0 0 0 8rpx;
+}
+
+.scan-corner.bottom-right {
+  bottom: 0;
+  right: 0;
+  border-left: none;
+  border-top: none;
+  border-radius: 0 0 8rpx 0;
+}
+
+.scan-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 4rpx;
+  background: linear-gradient(90deg, transparent 0%, #5BBD72 50%, transparent 100%);
+  animation: scanMove 2s ease-in-out infinite;
+}
+
+@keyframes scanMove {
+  0% {
+    top: 0;
+  }
+  50% {
+    top: calc(100% - 4rpx);
+  }
+  100% {
+    top: 0;
+  }
+}
+
+.camera-bottom-bar {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  padding: 0 60rpx;
+}
+
+.bottom-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100rpx;
+  height: 100rpx;
+}
+
+.album-icon,
+.flash-icon {
+  font-size: 44rpx;
+  margin-bottom: 8rpx;
+}
+
+.btn-text {
+  font-size: 22rpx;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.capture-btn-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.capture-btn {
+  width: 140rpx;
+  height: 140rpx;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  border: 6rpx solid rgba(255, 255, 255, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.15s ease;
+}
+
+.capture-btn:active {
+  transform: scale(0.95);
+}
+
+.capture-btn-inner {
+  width: 112rpx;
+  height: 112rpx;
+  border-radius: 50%;
+  background: #5BBD72;
+}
+
+.preview-container {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  background: #000000;
+}
+
+.preview-image {
+  width: 100%;
+  height: 100%;
+}
+
+.preview-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  pointer-events: none;
+}
+
+.preview-top-bar {
+  padding: 60rpx 32rpx 0;
+  pointer-events: auto;
+}
+
+.back-btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 16rpx 24rpx;
+  background: rgba(0, 0, 0, 0.5);
+  border-radius: 40rpx;
+  backdrop-filter: blur(20rpx);
+}
+
+.back-icon {
+  font-size: 40rpx;
+  color: #ffffff;
+  font-weight: 300;
+  line-height: 1;
+}
+
+.back-text {
+  font-size: 28rpx;
+  color: #ffffff;
+  margin-left: 8rpx;
+}
+
+.preview-bottom-bar {
+  display: flex;
+  justify-content: space-between;
+  padding: 0 32rpx 40rpx;
+  gap: 24rpx;
+  pointer-events: auto;
+}
+
+.action-btn {
+  flex: 1;
+  height: 96rpx;
+  border-radius: 48rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.15s ease;
+}
+
+.action-btn:active {
+  transform: scale(0.98);
+}
+
+.cancel-btn {
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(20rpx);
+  border: 2rpx solid rgba(255, 255, 255, 0.5);
+}
+
+.cancel-btn .btn-text {
+  color: #ffffff;
+  font-size: 30rpx;
+  font-weight: 500;
+}
+
+.confirm-btn {
+  background: linear-gradient(135deg, #5BBD72 0%, #4CAF50 100%);
+  box-shadow: 0 8rpx 24rpx rgba(91, 189, 114, 0.4);
+}
+
+.confirm-btn .btn-text {
+  color: #ffffff;
+  font-size: 30rpx;
+  font-weight: 600;
+}
+
+.recognizing-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.recognizing-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 48rpx;
+}
+
+.loading-ring {
+  position: relative;
+  width: 100rpx;
+  height: 100rpx;
+  margin-bottom: 48rpx;
+}
+
+.ring-animation {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border: 6rpx solid rgba(91, 189, 114, 0.2);
+  border-top-color: #5BBD72;
+  border-radius: 50%;
+  animation: ringRotate 1s linear infinite;
+}
+
+@keyframes ringRotate {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.scanning-image {
+  position: relative;
+  width: 400rpx;
+  height: 400rpx;
+  border-radius: 24rpx;
+  overflow: hidden;
+  margin-bottom: 48rpx;
+  border: 4rpx solid #5BBD72;
+}
+
+.scanning-preview {
+  width: 100%;
+  height: 100%;
+}
+
+.scan-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  overflow: hidden;
+}
+
+.scanning-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 4rpx;
+  background: linear-gradient(90deg, transparent 0%, #5BBD72 50%, transparent 100%);
+  animation: scanningMove 1.5s ease-in-out infinite;
+}
+
+@keyframes scanningMove {
+  0% {
+    top: 0;
+  }
+  50% {
+    top: calc(100% - 4rpx);
+  }
+  100% {
+    top: 0;
+  }
+}
+
+.recognizing-text {
+  font-size: 36rpx;
+  font-weight: 600;
+  color: #ffffff;
+  margin-bottom: 12rpx;
+}
+
+.recognizing-subtext {
+  font-size: 26rpx;
+  color: rgba(255, 255, 255, 0.6);
+}
