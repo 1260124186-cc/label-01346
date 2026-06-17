@@ -2,7 +2,7 @@
  * 垃圾分类常识页面
  * @description 展示各类垃圾的详细分类知识，根据首页传递的参数显示对应内容
  */
-const { TRASH_TYPES } = require('../../utils/constants')
+const { TRASH_TYPES, CITY_STANDARDS, QUIZ_QUESTIONS } = require('../../utils/constants')
 const { showToast, navigateBack, navigateTo } = require('../../utils/util')
 
 Page({
@@ -10,14 +10,14 @@ Page({
    * 页面的初始数据
    */
   data: {
-    // 当前分类ID
     classifyId: 0,
-    // 当前分类数据
     classifyData: null,
-    // 所有分类数据（用于切换）
     allTypes: TRASH_TYPES,
-    // 页面加载状态
-    isLoading: true
+    isLoading: true,
+    cityStandards: CITY_STANDARDS,
+    selectedCityId: 'shanghai',
+    selectedCity: CITY_STANDARDS[0],
+    relatedQuizQuestions: []
   },
 
   /**
@@ -52,13 +52,15 @@ Page({
   initClassifyData(id) {
     console.log('[Classify] 初始化分类数据，ID：', id)
 
-    // 根据ID查找对应的分类数据
     const classifyData = TRASH_TYPES.find(item => item.id === id)
 
     if (classifyData) {
+      const relatedQuestions = this.getRelatedQuestions(id)
+
       this.setData({
         classifyId: id,
         classifyData: classifyData,
+        relatedQuizQuestions: relatedQuestions,
         isLoading: false
       })
 
@@ -166,9 +168,47 @@ Page({
     })
   },
 
-  /**
-   * 返回首页
-   */
+  getRelatedQuestions(typeId) {
+    const questions = QUIZ_QUESTIONS.filter(q => q.chapterId === typeId)
+    const shuffled = questions.sort(() => 0.5 - Math.random())
+    return shuffled.slice(0, 3)
+  },
+
+  onCityChange(e) {
+    const { id } = e.currentTarget.dataset
+    console.log('[Classify] 切换城市', id)
+
+    const selectedCity = CITY_STANDARDS.find(c => c.id === id)
+    if (selectedCity) {
+      this.setData({
+        selectedCityId: id,
+        selectedCity: selectedCity
+      })
+    }
+  },
+
+  onQuizQuestionTap(e) {
+    const { item } = e.currentTarget.dataset
+    console.log('[Classify] 点击相关题目', item.question)
+
+    navigateTo('/pages/quiz-play/quiz-play', {
+      type: 'chapter',
+      chapterId: this.data.classifyId,
+      chapterName: this.data.classifyData.name
+    })
+  },
+
+  goToQuizPlay() {
+    const { classifyId, classifyData } = this.data
+    console.log('[Classify] 去答题', classifyData.name)
+
+    navigateTo('/pages/quiz-play/quiz-play', {
+      type: 'chapter',
+      chapterId: classifyId,
+      chapterName: classifyData.name
+    })
+  },
+
   goBack() {
     navigateBack()
   },

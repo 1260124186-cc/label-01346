@@ -149,9 +149,9 @@ const QUIZ_QUESTION_TYPES = [
  * 首页轮播图数据
  */
 const BANNER_LIST = [
-  { id: 1, image: '/images/banner/banner1.jpg', title: '垃圾分类，从我做起', link: '' },
-  { id: 2, image: '/images/banner/banner2.jpg', title: '保护环境，人人有责', link: '' },
-  { id: 3, image: '/images/banner/banner3.jpg', title: '绿色生活，美好未来', link: '' }
+  { id: 1, image: '/images/banner/banner1.jpg', title: '新人专享 双倍积分', linkType: 'activity', linkId: '1' },
+  { id: 2, image: '/images/banner/banner2.jpg', title: '知识问答 挑战赢积分', linkType: 'quiz', linkId: '' },
+  { id: 3, image: '/images/banner/banner3.jpg', title: '了解厨余分类详情', linkType: 'classify', linkId: '3' }
 ]
 
 /**
@@ -2410,6 +2410,85 @@ const ACHIEVEMENTS = [
   }
 ]
 
+const ECO_TIPS = [
+  { id: 1, title: '减少一次性塑料使用', content: '自带购物袋、水杯和餐具，减少一次性塑料制品的使用。每少用一个塑料袋，就为地球减少一份负担。', icon: '🛍️', tag: '减塑' },
+  { id: 2, title: '厨余垃圾变废为宝', content: '厨余垃圾经过堆肥处理可以变成有机肥料，用于家庭种植花草蔬菜，实现资源循环利用。', icon: '🌱', tag: '堆肥' },
+  { id: 3, title: '正确分类废电池', content: '废电池属于有害垃圾，切勿随意丢弃。一粒纽扣电池可以污染60万升水，请投放至有害垃圾收集点。', icon: '🔋', tag: '有害' },
+  { id: 4, title: '快递包装回收再利用', content: '拆完快递的纸箱和塑料包装，请分类投放。纸箱属于可回收物，塑料气泡膜属于其他垃圾。', icon: '📦', tag: '回收' },
+  { id: 5, title: '旧衣物捐赠比回收更环保', content: '完好的旧衣物建议优先捐赠，比回收再加工更节能环保。脏污严重的旧衣物才属于其他垃圾。', icon: '👕', tag: '捐赠' },
+  { id: 6, title: '厨余垃圾投放前沥干水分', content: '投放厨余垃圾前请沥干水分，去除包装物。含水量过高的厨余垃圾会增加运输和处理成本。', icon: '💧', tag: '厨余' },
+  { id: 7, title: '过期药品切勿随意丢弃', content: '过期药品可能产生有毒有害物质，务必投放至有害垃圾容器。连同包装一起投放更安全。', icon: '💊', tag: '有害' }
+]
+
+const HOT_WASTE_NEWS = [
+  { id: 1, title: '上海垃圾分类实施5周年，居民分类准确率达95%', source: '环保日报', time: '2小时前', tag: '政策', tagColor: '#4A90D9' },
+  { id: 2, title: '北京新增3000个智能垃圾分类投放点', source: '首都环保', time: '5小时前', tag: '设施', tagColor: '#5BBD72' },
+  { id: 3, title: '深圳推出垃圾分类积分兑换地铁票活动', source: '南方都市报', time: '8小时前', tag: '活动', tagColor: '#F39C12' },
+  { id: 4, title: '可回收物价格持续上涨，废纸回收价创新高', source: '循环经济报', time: '1天前', tag: '市场', tagColor: '#9B59B6' },
+  { id: 5, title: '全国多地推进厨余垃圾就地处理设施建设', source: '住建部', time: '1天前', tag: '建设', tagColor: '#E85D5D' },
+  { id: 6, title: '快递包装绿色治理新规出台，减量包装成趋势', source: '新华网', time: '2天前', tag: '政策', tagColor: '#4A90D9' }
+]
+
+const CITY_STANDARDS = [
+  {
+    id: 'shanghai',
+    name: '上海',
+    emoji: '🏙️',
+    color: '#4A90D9',
+    standards: {
+      recyclable: '废纸张、废塑料、废玻璃制品、废金属、废织物等',
+      harmful: '废电池、废灯管、废药品、废油漆及其容器等',
+      kitchen: '剩菜剩饭、瓜皮果核、花卉绿植、过期食品等（上海称"湿垃圾"）',
+      other: '除以上三类之外的其他生活废弃物（上海称"干垃圾"）'
+    },
+    specialRules: [
+      '上海使用"湿垃圾"和"干垃圾"的独特称呼',
+      '大骨头归干垃圾，小骨头归湿垃圾',
+      '蛤蜊壳、蟹壳归干垃圾',
+      '外卖餐盒清洗后归可回收物，未清洗归干垃圾',
+      '奶茶杯清洗后杯身归干垃圾，杯盖归可回收物'
+    ]
+  },
+  {
+    id: 'beijing',
+    name: '北京',
+    emoji: '🏯',
+    color: '#E85D5D',
+    standards: {
+      recyclable: '废纸张、废塑料、废玻璃制品、废金属、废织物等',
+      harmful: '废电池、废灯管、废药品、废油漆及其容器等',
+      kitchen: '菜帮菜叶、剩菜剩饭、瓜果皮核、茶叶渣等',
+      other: '除以上三类之外的其他生活废弃物'
+    },
+    specialRules: [
+      '北京使用标准的四分类名称',
+      '核桃壳归其他垃圾',
+      '大棒骨归其他垃圾',
+      '玉米核归其他垃圾',
+      '卫生纸、纸巾归其他垃圾'
+    ]
+  },
+  {
+    id: 'shenzhen',
+    name: '深圳',
+    emoji: '🌆',
+    color: '#5BBD72',
+    standards: {
+      recyclable: '废纸张、废塑料、废玻璃制品、废金属、废织物等',
+      harmful: '废电池、废灯管、废药品、废油漆及其容器等',
+      kitchen: '剩菜剩饭、骨头内脏、菜根菜叶、果皮等',
+      other: '除以上三类之外的其他生活废弃物'
+    },
+    specialRules: [
+      '深圳推行"集中分类投放+定时定点督导"模式',
+      '椰子壳归其他垃圾',
+      '榴莲壳归其他垃圾',
+      '使用智慧垃圾分类管理系统',
+      '违规投放个人最高罚200元'
+    ]
+  }
+]
+
 module.exports = {
   TRASH_TYPES,
   QUIZ_SCENES,
@@ -2445,5 +2524,8 @@ module.exports = {
   HOT_SEARCH_WORDS,
   SEARCH_HISTORY_KEY,
   MAX_SEARCH_HISTORY,
-  fuzzySearchTrash
+  fuzzySearchTrash,
+  ECO_TIPS,
+  HOT_WASTE_NEWS,
+  CITY_STANDARDS
 }

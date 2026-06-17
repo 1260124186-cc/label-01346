@@ -40,6 +40,7 @@
           />
           <view class="banner-overlay">
             <text class="banner-title">{{item.title}}</text>
+            <text class="banner-link-hint" wx:if="{{item.linkType}}">点击了解更多 ›</text>
           </view>
         </view>
       </swiper-item>
@@ -124,6 +125,66 @@
     <view class="section-subtitle-wrapper" bindtap="goToFirstClassify">
       <text class="section-subtitle">点击了解分类详情</text>
       <text class="section-arrow">›</text>
+    </view>
+  </view>
+
+  <!-- 今日环保小贴士 -->
+  <view class="section-header">
+    <view class="section-title-wrapper">
+      <view class="section-title-icon" style="background: linear-gradient(180deg, #F39C12 0%, #E67E22 100%);"></view>
+      <text class="section-title">今日环保小贴士</text>
+    </view>
+  </view>
+  <view class="eco-tips-section">
+    <view class="eco-tip-card">
+      <view class="eco-tip-icon-wrapper">
+        <text class="eco-tip-emoji">{{currentTip.icon}}</text>
+      </view>
+      <view class="eco-tip-content">
+        <view class="eco-tip-header">
+          <text class="eco-tip-title">{{currentTip.title}}</text>
+          <text class="eco-tip-tag" style="background: rgba(243, 156, 18, 0.1); color: #F39C12;">{{currentTip.tag}}</text>
+        </view>
+        <text class="eco-tip-desc">{{currentTip.content}}</text>
+      </view>
+    </view>
+    <view class="eco-tip-dots">
+      <view
+        wx:for="{{ecoTips}}"
+        wx:key="id"
+        class="eco-dot {{currentTipIndex === index ? 'active' : ''}}"
+        bindtap="onTipDotTap"
+        data-index="{{index}}"
+      />
+    </view>
+  </view>
+
+  <!-- 本周热点垃圾动态 -->
+  <view class="section-header">
+    <view class="section-title-wrapper">
+      <view class="section-title-icon" style="background: linear-gradient(180deg, #E85D5D 0%, #C0392B 100%);"></view>
+      <text class="section-title">本周热点动态</text>
+    </view>
+  </view>
+  <view class="hot-news-section">
+    <view
+      wx:for="{{hotNews}}"
+      wx:key="id"
+      class="hot-news-item"
+      bindtap="onHotNewsTap"
+      data-item="{{item}}"
+    >
+      <view class="hot-news-index">{{index + 1}}</view>
+      <view class="hot-news-content">
+        <view class="hot-news-header">
+          <text class="hot-news-tag" style="background: {{item.tagColor}}20; color: {{item.tagColor}};">{{item.tag}}</text>
+          <text class="hot-news-title">{{item.title}}</text>
+        </view>
+        <view class="hot-news-footer">
+          <text class="hot-news-source">{{item.source}}</text>
+          <text class="hot-news-time">{{item.time}}</text>
+        </view>
+      </view>
     </view>
   </view>
 

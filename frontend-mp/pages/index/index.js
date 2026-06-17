@@ -3,7 +3,7 @@
  * @description 展示垃圾分类小程序的各项功能，点击垃圾桶图片跳转到相应分类页面
  */
 const app = getApp()
-const { TRASH_TYPES, BANNER_LIST } = require('../../utils/constants')
+const { TRASH_TYPES, BANNER_LIST, ECO_TIPS, HOT_WASTE_NEWS } = require('../../utils/constants')
 const { navigateTo, showToast, switchTab } = require('../../utils/util')
 
 Page({
@@ -11,17 +11,17 @@ Page({
    * 页面的初始数据
    */
   data: {
-    // 轮播图数据
     bannerList: BANNER_LIST,
-    // 当前轮播索引
     currentBannerIndex: 0,
-    // 四种垃圾分类数据
     trashTypes: TRASH_TYPES,
-    // 页面加载状态
     isLoading: false,
-    // 签到相关
     isSignedToday: false,
-    streakDays: 0
+    streakDays: 0,
+    ecoTips: ECO_TIPS,
+    currentTipIndex: 0,
+    currentTip: ECO_TIPS[0],
+    tipTimer: null,
+    hotNews: HOT_WASTE_NEWS
   },
 
   /**
@@ -40,12 +40,25 @@ Page({
     this.refreshSignInStatus()
   },
 
+  onHide() {
+    if (this.data.tipTimer) {
+      clearInterval(this.data.tipTimer)
+    }
+  },
+
+  onUnload() {
+    if (this.data.tipTimer) {
+      clearInterval(this.data.tipTimer)
+    }
+  },
+
   /**
    * 初始化页面数据
    */
   initPageData() {
     console.log('[Index] 初始化页面数据')
     this.refreshSignInStatus()
+    this.startTipRotation()
   },
 
   refreshSignInStatus() {
@@ -79,8 +92,25 @@ Page({
   onBannerTap(e) {
     const { item } = e.currentTarget.dataset
     console.log('[Index] 点击轮播图', item)
-    if (item.link) {
-      navigateTo(item.link)
+
+    if (!item.linkType) return
+
+    switch (item.linkType) {
+      case 'activity':
+        navigateTo('/pages/activity/activity', { id: item.linkId || '1' })
+        break
+      case 'quiz':
+        navigateTo('/pages/quiz/quiz')
+        break
+      case 'classify':
+        if (item.linkId) {
+          const trashType = TRASH_TYPES.find(t => t.id === parseInt(item.linkId))
+          navigateTo('/pages/classify/classify', {
+            id: item.linkId,
+            name: trashType ? trashType.name : '垃圾分类'
+          })
+        }
+        break
     }
   },
 
@@ -198,6 +228,39 @@ Page({
   goToProfile() {
     console.log('[Index] 点击个人中心')
     switchTab('/pages/profile/profile')
+  },
+
+  startTipRotation() {
+    if (this.data.tipTimer) {
+      clearInterval(this.data.tipTimer)
+    }
+    const timer = setInterval(() => {
+      const nextIndex = (this.data.currentTipIndex + 1) % this.data.ecoTips.length
+      this.setData({
+        currentTipIndex: nextIndex,
+        currentTip: this.data.ecoTips[nextIndex]
+      })
+    }, 6000)
+    this.setData({ tipTimer: timer })
+  },
+
+  onTipDotTap(e) {
+    const { index } = e.currentTarget.dataset
+    this.setData({
+      currentTipIndex: index,
+      currentTip: this.data.ecoTips[index]
+    })
+    this.startTipRotation()
+  },
+
+  onHotNewsTap(e) {
+    const { item } = e.currentTarget.dataset
+    console.log('[Index] 点击热点动态', item.title)
+    if (item.tag === '活动') {
+      navigateTo('/pages/activity/activity', { id: '1' })
+    } else if (item.tag === '政策') {
+      navigateTo('/pages/classify/classify', { id: 1 })
+    }
   },
 
   goToSearch() {

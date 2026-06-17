@@ -49,6 +49,97 @@
     </view>
   </view>
 
+  <!-- 本地分类标准差异 -->
+  <view class="section-card city-standard-card">
+    <view class="card-header">
+      <view class="card-icon" style="background: {{classifyData.bgColor}};">
+        <text class="icon-text" style="color: {{classifyData.color}};">🏙️</text>
+      </view>
+      <text class="card-title">本地区分类标准</text>
+    </view>
+    <view class="card-content">
+      <!-- 城市选择器 -->
+      <view class="city-selector">
+        <view
+          wx:for="{{cityStandards}}"
+          wx:key="id"
+          class="city-tab {{selectedCityId === item.id ? 'active' : ''}}"
+          style="--city-color: {{item.color}};"
+          bindtap="onCityChange"
+          data-id="{{item.id}}"
+        >
+          <text class="city-emoji">{{item.emoji}}</text>
+          <text class="city-name">{{item.name}}</text>
+        </view>
+      </view>
+      <!-- 选中城市的分类标准 -->
+      <view class="city-standard-content" wx:if="{{selectedCity}}">
+        <view class="standard-type-item">
+          <view class="standard-type-label" style="background: rgba(74, 144, 217, 0.1); color: #4A90D9;">♻️ 可回收</view>
+          <text class="standard-type-text">{{selectedCity.standards.recyclable}}</text>
+        </view>
+        <view class="standard-type-item">
+          <view class="standard-type-label" style="background: rgba(232, 93, 93, 0.1); color: #E85D5D;">☣️ 有害</view>
+          <text class="standard-type-text">{{selectedCity.standards.harmful}}</text>
+        </view>
+        <view class="standard-type-item">
+          <view class="standard-type-label" style="background: rgba(91, 189, 114, 0.1); color: #5BBD72;">🍂 厨余</view>
+          <text class="standard-type-text">{{selectedCity.standards.kitchen}}</text>
+        </view>
+        <view class="standard-type-item">
+          <view class="standard-type-label" style="background: rgba(142, 142, 147, 0.1); color: #8E8E93;">🗑️ 其他</view>
+          <text class="standard-type-text">{{selectedCity.standards.other}}</text>
+        </view>
+        <!-- 特殊规则 -->
+        <view class="special-rules" wx:if="{{selectedCity.specialRules.length > 0}}">
+          <view class="special-rules-header">
+            <text class="special-rules-title">⚠️ {{selectedCity.name}}特殊规则</text>
+          </view>
+          <view class="special-rules-list">
+            <view
+              wx:for="{{selectedCity.specialRules}}"
+              wx:key="index"
+              class="special-rule-item"
+            >
+              <text class="rule-bullet">•</text>
+              <text class="rule-text">{{item}}</text>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 相关题目 -->
+  <view class="section-card quiz-card">
+    <view class="card-header">
+      <view class="card-icon" style="background: {{classifyData.bgColor}};">
+        <text class="icon-text" style="color: {{classifyData.color}};">❓</text>
+      </view>
+      <text class="card-title">相关题目</text>
+      <view class="quiz-more-btn" bindtap="goToQuizPlay" style="--btn-color: {{classifyData.color}};">
+        <text class="quiz-more-text">去答题</text>
+      </view>
+    </view>
+    <view class="card-content">
+      <view class="quiz-list">
+        <view
+          wx:for="{{relatedQuizQuestions}}"
+          wx:key="id"
+          class="quiz-question-item"
+          bindtap="onQuizQuestionTap"
+          data-item="{{item}}"
+        >
+          <view class="quiz-question-header">
+            <text class="quiz-question-type">{{item.type === 'single' ? '单选' : item.type === 'multiple' ? '多选' : '判断'}}</text>
+            <text class="quiz-question-difficulty {{item.difficulty}}">{{item.difficulty === 'easy' ? '简单' : item.difficulty === 'medium' ? '中等' : '困难'}}</text>
+          </view>
+          <text class="quiz-question-text">{{item.question}}</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
   <!-- 常见垃圾列表 -->
   <view class="section-card examples-card">
     <view class="card-header">

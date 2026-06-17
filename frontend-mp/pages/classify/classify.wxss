@@ -197,6 +197,204 @@
   line-height: 1.8;
 }
 
+/* ==================== 本地分类标准 ==================== */
+.city-selector {
+  display: flex;
+  gap: 16rpx;
+  margin-bottom: 24rpx;
+}
+
+.city-tab {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  padding: 14rpx 24rpx;
+  border-radius: 32rpx;
+  background: rgba(255, 255, 255, 0.7);
+  border: 2rpx solid transparent;
+  transition: all 0.3s ease;
+}
+
+.city-tab.active {
+  border-color: var(--city-color);
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.06);
+}
+
+.city-emoji {
+  font-size: 28rpx;
+}
+
+.city-name {
+  font-size: 26rpx;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.city-tab.active .city-name {
+  color: var(--city-color);
+  font-weight: 600;
+}
+
+.city-standard-content {
+  display: flex;
+  flex-direction: column;
+  gap: 20rpx;
+}
+
+.standard-type-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 16rpx;
+}
+
+.standard-type-label {
+  flex-shrink: 0;
+  padding: 6rpx 16rpx;
+  border-radius: 8rpx;
+  font-size: 22rpx;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.standard-type-text {
+  flex: 1;
+  font-size: 26rpx;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+.special-rules {
+  margin-top: 16rpx;
+  padding: 20rpx;
+  background: rgba(243, 156, 18, 0.06);
+  border-radius: 16rpx;
+  border: 1rpx solid rgba(243, 156, 18, 0.15);
+}
+
+.special-rules-header {
+  margin-bottom: 12rpx;
+}
+
+.special-rules-title {
+  font-size: 26rpx;
+  font-weight: 600;
+  color: #E67E22;
+}
+
+.special-rules-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10rpx;
+}
+
+.special-rule-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8rpx;
+}
+
+.rule-bullet {
+  color: #F39C12;
+  font-size: 26rpx;
+  flex-shrink: 0;
+  line-height: 1.6;
+}
+
+.rule-text {
+  font-size: 24rpx;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+/* ==================== 相关题目 ==================== */
+.quiz-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+}
+
+.quiz-question-item {
+  padding: 20rpx 24rpx;
+  background: rgba(0, 0, 0, 0.02);
+  border-radius: 16rpx;
+  transition: all 0.2s ease;
+}
+
+.quiz-question-item:active {
+  transform: scale(0.98);
+  opacity: 0.9;
+}
+
+.quiz-question-header {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  margin-bottom: 10rpx;
+}
+
+.quiz-question-type {
+  font-size: 20rpx;
+  padding: 4rpx 12rpx;
+  border-radius: 8rpx;
+  background: rgba(91, 189, 114, 0.1);
+  color: #5BBD72;
+  font-weight: 500;
+}
+
+.quiz-question-difficulty {
+  font-size: 20rpx;
+  padding: 4rpx 12rpx;
+  border-radius: 8rpx;
+  font-weight: 500;
+}
+
+.quiz-question-difficulty.easy {
+  background: rgba(91, 189, 114, 0.1);
+  color: #5BBD72;
+}
+
+.quiz-question-difficulty.medium {
+  background: rgba(243, 156, 18, 0.1);
+  color: #F39C12;
+}
+
+.quiz-question-difficulty.hard {
+  background: rgba(232, 93, 93, 0.1);
+  color: #E85D5D;
+}
+
+.quiz-question-text {
+  font-size: 28rpx;
+  color: var(--text-primary);
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+
+.quiz-more-btn {
+  display: flex;
+  align-items: center;
+  padding: 10rpx 20rpx;
+  background: var(--btn-color);
+  color: #fff;
+  border-radius: 20rpx;
+  font-size: 24rpx;
+  font-weight: 500;
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.1);
+}
+
+.quiz-more-btn:active {
+  transform: scale(0.95);
+  opacity: 0.9;
+}
+
+.quiz-more-text {
+  font-size: 24rpx;
+}
+
 /* ==================== 常见垃圾列表 ==================== */
 .examples-grid {
   display: flex;
