@@ -193,6 +193,7 @@ const PROFILE_MENUS = [
     groupName: '我的记录',
     items: [
       { id: 'records', icon: 'history', emoji: '📊', title: '分类记录', desc: '查看历史分类记录', link: '/pages/records/records' },
+      { id: 'quizRecords', icon: 'quiz', emoji: '📝', title: '答题历史', desc: '查看每次答题详情', link: '/pages/quiz-records/quiz-records' },
       { id: 'points', icon: 'coin', emoji: '💰', title: '积分明细', desc: '查看积分获取与消费', link: '/pages/points/points' },
       { id: 'orders', icon: 'order', emoji: '📦', title: '兑换订单', desc: '查看商品兑换记录', link: '/pages/orders/orders' }
     ]
@@ -248,6 +249,30 @@ const QUIZ_DIFFICULTIES = [
   { id: 'medium', name: '中等', description: '有一定难度，需要思考', icon: '🌿', color: '#F39C12', pointsPerQuestion: 10, totalQuestions: 60 },
   { id: 'hard', name: '困难', description: '高难度题目，挑战极限', icon: '🌳', color: '#E85D5D', pointsPerQuestion: 20, totalQuestions: 50 }
 ]
+
+const QUIZ_TIMED_CONFIG = {
+  timePerQuestion: 15,
+  totalQuestions: 10,
+  accuracyBonus: [
+    { minAccuracy: 90, bonus: 50, name: '完美' },
+    { minAccuracy: 80, bonus: 30, name: '优秀' },
+    { minAccuracy: 60, bonus: 15, name: '良好' },
+    { minAccuracy: 0, bonus: 5, name: '加油' }
+  ]
+}
+
+const QUIZ_BOSS_CONFIG = {
+  unlockAccuracy: 80,
+  questionsCount: 10,
+  bossIcon: '👹',
+  bossName: 'Boss关',
+  bonusPoints: 100
+}
+
+const QUIZ_WRONG_SORT_CONFIG = {
+  sortBy: ['wrongCount', 'wrongTime'],
+  sortOrder: ['desc', 'desc']
+}
 
 /**
  * 知识问答题库（170+题）
@@ -2016,6 +2041,10 @@ const getRandomQuestions = (count, difficulty = null) => {
   return shuffled.slice(0, Math.min(count, shuffled.length))
 }
 
+const getQuestionById = (id) => {
+  return QUIZ_QUESTIONS.find(q => q.id === id) || null
+}
+
 const getDailyQuestions = () => {
   const today = new Date().toDateString()
   const seed = today.split('').reduce((acc, val) => acc + val.charCodeAt(0), 0)
@@ -2292,11 +2321,15 @@ module.exports = {
   QUIZ_CHAPTERS,
   QUIZ_DIFFICULTIES,
   QUIZ_QUESTIONS,
+  QUIZ_TIMED_CONFIG,
+  QUIZ_BOSS_CONFIG,
+  QUIZ_WRONG_SORT_CONFIG,
   getQuestionsByChapter,
   getQuestionsByDifficulty,
   getQuestionsByScene,
   getQuestionsByType,
   getRandomQuestions,
+  getQuestionById,
   getDailyQuestions,
   isQuestionCorrect,
   SORT_PRACTICE_ITEMS,

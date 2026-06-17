@@ -1,0 +1,105 @@
+<view class="records-container">
+  <view class="header-card">
+    <view class="header-content">
+      <view class="header-icon">📊</view>
+      <view class="header-title">答题历史</view>
+      <view class="header-subtitle">查看每次答题的详细记录</view>
+    </view>
+
+    <view class="stats-grid">
+      <view class="stat-item">
+        <view class="stat-value">{{stats.totalCount}}</view>
+        <view class="stat-label">答题次数</view>
+      </view>
+      <view class="stat-item">
+        <view class="stat-value">{{stats.totalPoints}}</view>
+        <view class="stat-label">累计积分</view>
+      </view>
+      <view class="stat-item">
+        <view class="stat-value">{{stats.avgAccuracy}}%</view>
+        <view class="stat-label">平均正确率</view>
+      </view>
+      <view class="stat-item">
+        <view class="stat-value">{{stats.totalCorrect}}/{{stats.totalQuestions}}</view>
+        <view class="stat-label">答对/总题</view>
+      </view>
+    </view>
+  </view>
+
+  <view class="filter-section">
+    <scroll-view class="filter-scroll" scroll-x="true" show-scrollbar="false">
+      <view class="filter-tabs">
+        <view
+          class="filter-tab {{filterType === item.id ? 'active' : ''}}"
+          wx:for="{{filterOptions}}"
+          wx:key="id"
+          data-filter-type="{{item.id}}"
+          bindtap="onFilterChange"
+        >
+          <text class="filter-icon">{{item.icon}}</text>
+          <text class="filter-name">{{item.name}}</text>
+        </view>
+      </view>
+    </scroll-view>
+  </view>
+
+  <view class="empty-section" wx:if="{{filteredRecords.length === 0}}">
+    <view class="empty-icon">📝</view>
+    <view class="empty-title">暂无答题记录</view>
+    <view class="empty-subtitle">开始答题后会在这里展示记录</view>
+  </view>
+
+  <view class="records-section" wx:else>
+    <view class="records-list">
+      <view
+        class="record-item"
+        wx:for="{{filteredRecords}}"
+        wx:key="id"
+        data-record="{{item}}"
+        bindtap="onRecordTap"
+      >
+        <view class="record-icon" style="background: {{item.typeColor}}20; color: {{item.typeColor}}">
+          <text>{{item.typeIcon}}</text>
+        </view>
+
+        <view class="record-content">
+          <view class="record-header">
+            <view class="record-title">{{item.chapterName || item.typeName}}</view>
+            <view class="record-points">+{{item.points}}</view>
+          </view>
+
+          <view class="record-meta">
+            <view class="meta-item">
+              <text class="meta-icon">📝</text>
+              <text class="meta-text">{{item.totalQuestions}}题</text>
+            </view>
+            <view class="meta-item">
+              <text class="meta-icon">✅</text>
+              <text class="meta-text">对{{item.correctCount}}</text>
+            </view>
+            <view class="meta-item" wx:if="{{item.timeoutCount > 0}}">
+              <text class="meta-icon">⏰</text>
+              <text class="meta-text">超时{{item.timeoutCount}}</text>
+            </view>
+          </view>
+
+          <view class="record-footer">
+            <view class="accuracy-bar">
+              <view class="accuracy-label">正确率</view>
+              <view class="accuracy-track">
+                <view 
+                  class="accuracy-fill accuracy-{{item.accuracyLevel}}" 
+                  style="width: {{item.accuracy}}%"
+                ></view>
+              </view>
+              <view class="accuracy-value accuracy-{{item.accuracyLevel}}">{{item.accuracy}}%</view>
+            </view>
+            <view class="record-time">{{item.time}}</view>
+          </view>
+        </view>
+
+        <view class="record-arrow">›</view>
+      </view>
+    </view>
+  </view>
+</view>

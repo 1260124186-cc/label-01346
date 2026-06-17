@@ -18,6 +18,7 @@ App({
     this.initQuizRecords()
     this.initSignInRecords()
     this.initDailyQuizRecords()
+    this.initWrongQuestions()
     this.getSystemInfo()
   },
 
@@ -363,6 +364,53 @@ App({
     return this.globalData.dailyQuizRecords || []
   },
 
+  initWrongQuestions() {
+    const wrongQuestions = wx.getStorageSync('wrongQuestions')
+    this.globalData.wrongQuestions = wrongQuestions || []
+    console.log('[App] 错题数据已加载', this.globalData.wrongQuestions.length, '条')
+  },
+
+  addWrongQuestion(question) {
+    let wrongQuestions = this.globalData.wrongQuestions || []
+    const existingIndex = wrongQuestions.findIndex(q => q.id === question.id)
+
+    if (existingIndex > -1) {
+      wrongQuestions[existingIndex] = {
+        ...wrongQuestions[existingIndex],
+        wrongCount: (wrongQuestions[existingIndex].wrongCount || 1) + 1,
+        wrongTime: new Date().toISOString()
+      }
+    } else {
+      wrongQuestions.push({
+        ...question,
+        wrongCount: 1,
+        wrongTime: new Date().toISOString()
+      })
+    }
+
+    this.globalData.wrongQuestions = wrongQuestions
+    wx.setStorageSync('wrongQuestions', wrongQuestions)
+    console.log('[App] 错题已更新', question.question, '错误次数:', wrongQuestions.find(q => q.id === question.id)?.wrongCount || 1)
+  },
+
+  removeWrongQuestion(questionId) {
+    let wrongQuestions = this.globalData.wrongQuestions || []
+    wrongQuestions = wrongQuestions.filter(q => q.id !== questionId)
+    this.globalData.wrongQuestions = wrongQuestions
+    wx.setStorageSync('wrongQuestions', wrongQuestions)
+    console.log('[App] 错题已移除', questionId)
+  },
+
+  getWrongQuestions() {
+    return this.globalData.wrongQuestions || []
+  },
+
+  clearWrongQuestions() {
+    this.globalData.wrongQuestions = []
+    wx.setStorageSync('wrongQuestions', [])
+    console.log('[App] 错题本已清空')
+  },
+
   /**
    * 检查今日是否已完成每日一练
    * @returns {boolean} 是否已完成
@@ -604,6 +652,7 @@ App({
     classifyRecords: [],
     quizRecords: [],
     signInRecords: [],
+    wrongQuestions: [],
     systemInfo: null,
     statusBarHeight: 0,
     screenHeight: 0,

@@ -246,3 +246,104 @@
   color: #636E72;
   line-height: 1.6;
 }
+
+.boss-item {
+  display: flex;
+  align-items: center;
+  background: linear-gradient(135deg, rgba(231, 76, 60, 0.08) 0%, rgba(192, 57, 43, 0.08) 100%);
+  backdrop-filter: blur(20rpx);
+  border-radius: 20rpx;
+  padding: 24rpx;
+  margin-top: -10rpx;
+  margin-bottom: 20rpx;
+  border: 2rpx dashed rgba(231, 76, 60, 0.3);
+  transition: all 0.3s ease;
+}
+
+.boss-item:active {
+  transform: scale(0.99);
+}
+
+.boss-item.locked {
+  opacity: 0.5;
+}
+
+.boss-item.completed {
+  background: linear-gradient(135deg, rgba(91, 189, 114, 0.08) 0%, rgba(76, 175, 80, 0.08) 100%);
+  border-color: rgba(91, 189, 114, 0.3);
+}
+
+.boss-icon-wrapper {
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #E74C3C 0%, #C0392B 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 20rpx;
+  flex-shrink: 0;
+  box-shadow: 0 4rpx 16rpx rgba(231, 76, 60, 0.25);
+}
+
+.boss-item.completed .boss-icon-wrapper {
+  background: linear-gradient(135deg, #5BBD72 0%, #4CAF50 100%);
+  box-shadow: 0 4rpx 16rpx rgba(91, 189, 114, 0.25);
+}
+
+.boss-icon {
+  font-size: 40rpx;
+}
+
+.boss-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.boss-name {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #C0392B;
+  margin-bottom: 8rpx;
+}
+
+.boss-item.completed .boss-name {
+  color: #5BBD72;
+}
+
+.boss-desc {
+  font-size: 22rpx;
+  color: #636E72;
+  margin-bottom: 8rpx;
+}
+
+.boss-reward {
+  font-size: 22rpx;
+  color: #F39C12;
+  font-weight: 500;
+}
+
+.boss-status {
+  flex-shrink: 0;
+  margin-left: 16rpx;
+}
+
+.boss-status-completed {
+  font-size: 24rpx;
+  color: #5BBD72;
+  font-weight: 500;
+  background: rgba(91, 189, 114, 0.1);
+  padding: 8rpx 16rpx;
+  border-radius: 16rpx;
+}
+
+.boss-status-locked {
+  font-size: 22rpx;
+  color: #B2BEC3;
+}
+
+.boss-status-challenge {
+  font-size: 26rpx;
+  color: #E74C3C;
+  font-weight: 600;
+}

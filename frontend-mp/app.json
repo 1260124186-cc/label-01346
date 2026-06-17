@@ -14,6 +14,8 @@
     "pages/quiz-chapter/quiz-chapter",
     "pages/quiz-wrong/quiz-wrong",
     "pages/quiz-difficulty/quiz-difficulty",
+    "pages/quiz-records/quiz-records",
+    "pages/quiz-record-detail/quiz-record-detail",
     "pages/signin/signin",
     "pages/sort-practice/sort-practice"
   ],

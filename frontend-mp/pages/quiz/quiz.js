@@ -3,7 +3,7 @@
  * @description 包含每日一练、章节闯关、错题本、难度分层入口
  */
 const app = getApp()
-const { QUIZ_CHAPTERS, QUIZ_DIFFICULTIES, getDailyQuestions } = require('../../utils/constants')
+const { QUIZ_CHAPTERS, QUIZ_DIFFICULTIES, QUIZ_TIMED_CONFIG, getDailyQuestions } = require('../../utils/constants')
 const { navigateTo, showToast, getStorage, setStorage } = require('../../utils/util')
 
 Page({
@@ -47,6 +47,16 @@ Page({
         color: '#F39C12',
         description: '选择适合的难度',
         badge: ''
+      },
+      {
+        id: 'timed',
+        name: '限时挑战',
+        icon: '⏱️',
+        color: '#9B59B6',
+        description: '15秒每题，正确率加成',
+        badge: '',
+        timePerQuestion: QUIZ_TIMED_CONFIG.timePerQuestion,
+        totalQuestions: QUIZ_TIMED_CONFIG.totalQuestions
       }
     ]
   },
@@ -155,6 +165,9 @@ Page({
       case 'difficulty':
         this.goToDifficultyQuiz()
         break
+      case 'timed':
+        this.goToTimedQuiz()
+        break
     }
   },
 
@@ -184,6 +197,13 @@ Page({
 
   goToDifficultyQuiz() {
     navigateTo('/pages/quiz-difficulty/quiz-difficulty')
+  },
+
+  goToTimedQuiz() {
+    navigateTo('/pages/quiz-play/quiz-play', {
+      type: 'timed',
+      isTimed: 'true'
+    })
   },
 
   onChapterTap(e) {

@@ -1,0 +1,7 @@
+{
+  "navigationBarTitleText": "答题历史",
+  "enablePullDownRefresh": true,
+  "backgroundTextStyle": "dark",
+  "navigationBarBackgroundColor": "#4A90D9",
+  "navigationBarTextStyle": "white"
+}

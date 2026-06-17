@@ -33,6 +33,18 @@
         <text class="title-count">({{wrongQuestions.length}}题)</text>
       </view>
       <view class="section-actions">
+        <view class="sort-tabs">
+          <view 
+            class="sort-tab {{sortBy === item.id ? 'active' : ''}}"
+            wx:for="{{sortOptions}}"
+            wx:key="id"
+            data-sort-by="{{item.id}}"
+            bindtap="onSortChange"
+          >
+            <text class="sort-icon">{{item.icon}}</text>
+            <text class="sort-name">{{item.name}}</text>
+          </view>
+        </view>
         <view class="action-btn" wx:if="{{!isSelectMode}}" bindtap="onEnterSelectMode">
           选择
         </view>
@@ -89,6 +101,17 @@
           <view class="question-answer">
             <text class="answer-label">正确答案：</text>
             <text class="answer-value">{{item.correctAnswerLabel}}</text>
+          </view>
+
+          <view class="question-meta">
+            <view class="meta-item wrong-count">
+              <text class="meta-icon">❌</text>
+              <text class="meta-text">错误 {{item.wrongCount}} 次</text>
+            </view>
+            <view class="meta-item wrong-time">
+              <text class="meta-icon">⏰</text>
+              <text class="meta-text">{{item.wrongTimeDisplay}}</text>
+            </view>
           </view>
         </view>
       </view>

@@ -5,11 +5,24 @@
       <view class="score-info">
         <text class="correct-count">✓ {{correctCount}}</text>
         <text class="wrong-count">✗ {{wrongCount}}</text>
+        <text class="timeout-count" wx:if="{{isTimedMode}}">⏱ {{timeoutCount}}</text>
       </view>
     </view>
     <view class="progress-bar">
       <view class="progress-fill" style="width: {{progressPercent}}%"></view>
     </view>
+  </view>
+
+  <view class="timer-section" wx:if="{{isTimedMode}}">
+    <view class="timer-circle {{timeLeft <= 5 ? 'warning' : ''}}">
+      <text class="timer-text">{{timeLeft}}</text>
+    </view>
+    <view class="timer-label">剩余时间(秒)</view>
+  </view>
+
+  <view class="boss-badge" wx:if="{{isBossMode}}">
+    <text class="boss-icon">👹</text>
+    <text class="boss-text">Boss关 · 综合挑战</text>
   </view>
 
   <view class="question-section">
@@ -122,7 +135,15 @@
 </view>
 
 <view class="result-container" wx:if="{{showResult}}">
-  <view class="result-header">
+  <view class="result-header {{resultData.isTimedMode ? 'timed-mode' : ''}} {{resultData.isBossMode ? 'boss-mode' : ''}}">
+    <view class="result-mode-badge" wx:if="{{resultData.isTimedMode}}">
+      <text class="badge-icon">⏱</text>
+      <text class="badge-text">限时挑战</text>
+    </view>
+    <view class="result-mode-badge boss" wx:if="{{resultData.isBossMode}}">
+      <text class="badge-icon">👹</text>
+      <text class="badge-text">Boss关</text>
+    </view>
     <view class="result-emoji">{{resultData.emoji}}</view>
     <view class="result-title">{{resultData.title}}</view>
     <view class="result-subtitle">答题完成，获得 {{resultData.points}} 积分</view>
@@ -141,6 +162,10 @@
       <view class="stat-value">{{resultData.wrong}}</view>
       <view class="stat-label">答错</view>
     </view>
+    <view class="stat-item timeout" wx:if="{{resultData.timeout > 0}}">
+      <view class="stat-value">{{resultData.timeout}}</view>
+      <view class="stat-label">超时</view>
+    </view>
     <view class="stat-item accuracy">
       <view class="stat-value">{{resultData.accuracy}}%</view>
       <view class="stat-label">正确率</view>
@@ -155,7 +180,32 @@
       <view class="points-breakdown">
         <text class="breakdown-item">答题: +{{resultData.basePoints}}</text>
         <text class="breakdown-divider">|</text>
-        <text class="breakdown-item bonus">完成奖励: +{{resultData.bonusPoints}}</text>
+        <text class="breakdown-item bonus">{{resultData.bonusTitle}}: +{{resultData.bonusPoints}}</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="accuracy-bonus-card" wx:if="{{resultData.isTimedMode}}">
+    <view class="bonus-title">
+      <text class="bonus-icon">⭐</text>
+      <text>正确率加成说明</text>
+    </view>
+    <view class="bonus-rules">
+      <view class="bonus-rule">
+        <text class="rule-name">完美(≥90%)</text>
+        <text class="rule-points">+50分</text>
+      </view>
+      <view class="bonus-rule">
+        <text class="rule-name">优秀(≥80%)</text>
+        <text class="rule-points">+30分</text>
+      </view>
+      <view class="bonus-rule">
+        <text class="rule-name">良好(≥60%)</text>
+        <text class="rule-points">+15分</text>
+      </view>
+      <view class="bonus-rule">
+        <text class="rule-name">加油(<60%)</text>
+        <text class="rule-points">+5分</text>
       </view>
     </view>
   </view>

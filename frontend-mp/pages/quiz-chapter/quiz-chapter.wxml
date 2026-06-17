@@ -62,6 +62,27 @@
 
         <view class="chapter-arrow" wx:if="{{item.unlocked}}">›</view>
       </view>
+
+      <view
+        class="boss-item {{!item.bossUnlocked ? 'locked' : ''}} {{item.isBossCompleted ? 'completed' : ''}}"
+        wx:if="{{item.unlocked}}"
+        data-chapter="{{item}}"
+        bindtap="onBossTap"
+      >
+        <view class="boss-icon-wrapper">
+          <text class="boss-icon">{{item.bossConfig.bossIcon}}</text>
+        </view>
+        <view class="boss-info">
+          <view class="boss-name">{{item.name}} · {{item.bossConfig.bossName}}</view>
+          <view class="boss-desc">综合挑战 · {{item.bossConfig.questionsCount}}题 · 80%正确率通关</view>
+          <view class="boss-reward">🎁 通关奖励 +{{item.bossConfig.bonusPoints}}积分</view>
+        </view>
+        <view class="boss-status">
+          <text wx:if="{{item.isBossCompleted}}" class="boss-status-completed">✓ 已通关</text>
+          <text wx:elif="{{!item.bossUnlocked}}" class="boss-status-locked">🔒 先完成章节</text>
+          <text wx:else class="boss-status-challenge">挑战 ›</text>
+        </view>
+      </view>
     </view>
   </view>
 

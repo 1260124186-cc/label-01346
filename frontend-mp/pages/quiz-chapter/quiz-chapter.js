@@ -3,7 +3,7 @@
  * @description 按章节学习垃圾分类知识
  */
 const app = getApp()
-const { QUIZ_CHAPTERS, getQuestionsByChapter } = require('../../utils/constants')
+const { QUIZ_CHAPTERS, QUIZ_BOSS_CONFIG, getQuestionsByChapter } = require('../../utils/constants')
 const { navigateTo, showToast, getStorage, setStorage } = require('../../utils/util')
 
 Page({
@@ -40,6 +40,7 @@ Page({
   loadChapters() {
     const chaptersProgress = getStorage('chaptersProgress', {})
     const unlockedChapters = getStorage('unlockedChapters', [1, 2])
+    const bossCompleted = getStorage('bossCompleted', {})
 
     const chapters = QUIZ_CHAPTERS.map((chapter, index) => {
       const progress = chaptersProgress[chapter.id] || 0
@@ -49,12 +50,18 @@ Page({
       const questions = getQuestionsByChapter(chapter.id)
       const questionCount = questions.length
 
+      const bossUnlocked = completed
+      const isBossCompleted = bossCompleted[chapter.id] || false
+
       return {
         ...chapter,
         progress,
         completed,
         unlocked,
-        questionCount
+        questionCount,
+        bossUnlocked,
+        isBossCompleted,
+        bossConfig: QUIZ_BOSS_CONFIG
       }
     })
 
@@ -81,6 +88,23 @@ Page({
       type: 'chapter',
       chapterId: chapter.id,
       chapterName: chapter.name
+    })
+  },
+
+  onBossTap(e) {
+    const { chapter } = e.currentTarget.dataset
+    console.log('[QuizChapter] 点击Boss关', chapter.name)
+
+    if (!chapter.bossUnlocked) {
+      showToast('请先完成章节学习（正确率≥80%）')
+      return
+    }
+
+    navigateTo('/pages/quiz-play/quiz-play', {
+      type: 'chapter',
+      chapterId: chapter.id,
+      chapterName: chapter.name,
+      isBoss: 'true'
     })
   },
 

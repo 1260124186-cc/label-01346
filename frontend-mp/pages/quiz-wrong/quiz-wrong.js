@@ -3,7 +3,8 @@
  * @description 复习做错的题目
  */
 const app = getApp()
-const { navigateTo, showToast, showModal, getStorage, setStorage } = require('../../utils/util')
+const { QUIZ_WRONG_SORT_CONFIG } = require('../../utils/constants')
+const { navigateTo, showToast, showModal, getStorage, setStorage, formatDate } = require('../../utils/util')
 
 Page({
   data: {
@@ -11,6 +12,11 @@ Page({
     selectedQuestions: [],
     isSelectMode: false,
     userPoints: 0,
+    sortBy: 'wrongCount',
+    sortOptions: [
+      { id: 'wrongCount', name: '错误次数', icon: '📊' },
+      { id: 'wrongTime', name: '最近错误', icon: '⏰' }
+    ],
     QUESTION_TYPE_MAP: {
       single: { name: '单选', icon: '○' },
       multiple: { name: '多选', icon: '☐' },
@@ -49,13 +55,18 @@ Page({
   },
 
   loadWrongQuestions() {
-    const wrongQuestions = getStorage('wrongQuestions', [])
+    let wrongQuestions = app.getWrongQuestions()
+
+    const sortBy = this.data.sortBy
+    wrongQuestions = this.sortWrongQuestions(wrongQuestions, sortBy)
 
     const processedQuestions = wrongQuestions.map(q => {
       const type = q.type || 'single'
       let options = q.options
       let correctIndex = q.correctIndex
       let correctIndexes = q.correctIndexes || []
+      const wrongCount = q.wrongCount || 1
+      const wrongTime = q.wrongTime || new Date().toISOString()
 
       if (type === 'judge' && (!options || options.length === 0)) {
         options = ['正确', '错误']
@@ -80,6 +91,8 @@ Page({
 
       const sceneLabels = (q.scenes || []).map(s => this.data.SCENE_MAP[s] || s)
 
+      const wrongTimeDisplay = formatDate(new Date(wrongTime), 'MM-DD HH:mm')
+
       return {
         ...q,
         type,
@@ -88,7 +101,10 @@ Page({
         correctIndex,
         correctIndexes,
         correctAnswerLabel,
-        sceneLabels
+        sceneLabels,
+        wrongCount,
+        wrongTime,
+        wrongTimeDisplay
       }
     })
 
@@ -97,6 +113,39 @@ Page({
       selectedQuestions: [],
       isSelectMode: false
     })
+  },
+
+  sortWrongQuestions(questions, sortBy) {
+    const sorted = [...questions]
+    
+    if (sortBy === 'wrongCount') {
+      sorted.sort((a, b) => {
+        const countA = a.wrongCount || 1
+        const countB = b.wrongCount || 1
+        if (countB !== countA) {
+          return countB - countA
+        }
+        return new Date(b.wrongTime || 0) - new Date(a.wrongTime || 0)
+      })
+    } else if (sortBy === 'wrongTime') {
+      sorted.sort((a, b) => {
+        const timeA = new Date(a.wrongTime || 0)
+        const timeB = new Date(b.wrongTime || 0)
+        if (timeB.getTime() !== timeA.getTime()) {
+          return timeB - timeA
+        }
+        return (b.wrongCount || 1) - (a.wrongCount || 1)
+      })
+    }
+
+    return sorted
+  },
+
+  onSortChange(e) {
+    const { sortBy } = e.currentTarget.dataset
+    console.log('[QuizWrong] 切换排序', sortBy)
+    this.setData({ sortBy })
+    this.loadWrongQuestions()
   },
 
   onQuestionTap(e) {

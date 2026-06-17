@@ -7,10 +7,13 @@ const {
   getQuestionsByChapter,
   getQuestionsByDifficulty,
   getDailyQuestions,
+  getRandomQuestions,
   QUIZ_DIFFICULTIES,
   QUIZ_QUESTION_TYPES,
   QUIZ_SCENES,
   TRASH_TYPES,
+  QUIZ_TIMED_CONFIG,
+  QUIZ_BOSS_CONFIG,
   isQuestionCorrect
 } = require('../../utils/constants')
 const {
@@ -32,6 +35,8 @@ Page({
     difficulty: '',
     difficultyName: '',
     isWrongReview: false,
+    isTimedMode: false,
+    isBossMode: false,
 
     questions: [],
     currentIndex: 0,
@@ -41,17 +46,22 @@ Page({
     selectedIndexes: [],
     isAnswered: false,
     isCorrect: false,
+    isTimeout: false,
 
     userAnswer: null,
 
     correctCount: 0,
     wrongCount: 0,
+    timeoutCount: 0,
     totalPoints: 0,
 
     showResult: false,
     resultData: null,
 
     progressPercent: 0,
+
+    timeLeft: 0,
+    timer: null,
 
     QUESTION_TYPE_MAP: {
       single: { name: '单选题', icon: '○' },
@@ -81,14 +91,16 @@ Page({
   },
 
   initQuiz(options) {
-    const { type, chapterId, chapterName, difficulty, difficultyName, isWrongReview } = options
+    const { type, chapterId, chapterName, difficulty, difficultyName, isWrongReview, isTimed, isBoss } = options
 
     let questions = []
     let quizType = type || 'chapter'
+    let isTimedMode = isTimed === 'true'
+    let isBossMode = isBoss === 'true'
 
     if (isWrongReview === 'true') {
       quizType = 'wrong'
-      const wrongQuestions = getStorage('wrongQuestions', [])
+      const wrongQuestions = app.getWrongQuestions()
       questions = wrongQuestions.map(q => ({
         ...q,
         isWrongReview: true
@@ -96,9 +108,16 @@ Page({
     } else if (type === 'daily') {
       questions = getDailyQuestions()
     } else if (type === 'chapter' && chapterId) {
-      questions = getQuestionsByChapter(parseInt(chapterId))
+      if (isBossMode) {
+        questions = this.getBossQuestions(parseInt(chapterId))
+      } else {
+        questions = getQuestionsByChapter(parseInt(chapterId))
+      }
     } else if (type === 'difficulty' && difficulty) {
       questions = getQuestionsByDifficulty(difficulty)
+    } else if (isTimedMode) {
+      quizType = 'timed'
+      questions = getRandomQuestions(QUIZ_TIMED_CONFIG.totalQuestions)
     }
 
     if (questions.length === 0) {
@@ -120,6 +139,8 @@ Page({
       difficulty: difficulty || '',
       difficultyName: difficultyName || '',
       isWrongReview: isWrongReview === 'true',
+      isTimedMode,
+      isBossMode,
       questions: shuffled,
       currentIndex: 0,
       currentQuestion: shuffled[0],
@@ -127,15 +148,22 @@ Page({
       selectedIndexes: [],
       isAnswered: false,
       isCorrect: false,
+      isTimeout: false,
       userAnswer: null,
       correctCount: 0,
       wrongCount: 0,
+      timeoutCount: 0,
       totalPoints: 0,
       showResult: false,
-      progressPercent: 0
+      progressPercent: 0,
+      timeLeft: isTimedMode ? QUIZ_TIMED_CONFIG.timePerQuestion : 0
     })
 
     this.updateNavigationTitle()
+
+    if (isTimedMode) {
+      this.startTimer()
+    }
   },
 
   processQuestion(q) {
@@ -181,7 +209,11 @@ Page({
 
   updateNavigationTitle() {
     let title = '知识问答'
-    if (this.data.chapterName) {
+    if (this.data.isBossMode) {
+      title = QUIZ_BOSS_CONFIG.bossName
+    } else if (this.data.isTimedMode) {
+      title = '限时挑战'
+    } else if (this.data.chapterName) {
       title = this.data.chapterName
     } else if (this.data.difficultyName) {
       title = this.data.difficultyName + '难度'
@@ -192,6 +224,61 @@ Page({
     }
 
     wx.setNavigationBarTitle({ title })
+  },
+
+  startTimer() {
+    this.stopTimer()
+    const timer = setInterval(() => {
+      const timeLeft = this.data.timeLeft - 1
+      if (timeLeft <= 0) {
+        this.stopTimer()
+        this.handleTimeout()
+      } else {
+        this.setData({ timeLeft })
+      }
+    }, 1000)
+    this.setData({ timer })
+  },
+
+  stopTimer() {
+    if (this.data.timer) {
+      clearInterval(this.data.timer)
+      this.setData({ timer: null })
+    }
+  },
+
+  handleTimeout() {
+    if (this.data.isAnswered) return
+
+    const question = this.data.currentQuestion
+    const userAnswer = question.type === 'multiple' ? [] : -1
+
+    this.setData({
+      isAnswered: true,
+      isCorrect: false,
+      isTimeout: true,
+      userAnswer,
+      timeoutCount: this.data.timeoutCount + 1,
+      wrongCount: this.data.wrongCount + 1
+    })
+
+    showToast('时间到！答错了', 'none')
+    this.addToWrongQuestions(question)
+    this.updateProgress()
+  },
+
+  getBossQuestions(chapterId) {
+    const chapterQuestions = getQuestionsByChapter(chapterId)
+    const allQuestions = [...chapterQuestions]
+
+    const otherChapters = [1, 2, 3, 4, 5].filter(id => id !== chapterId)
+    otherChapters.forEach(id => {
+      const qs = getQuestionsByChapter(id)
+      const randomQs = qs.sort(() => 0.5 - Math.random()).slice(0, 2)
+      allQuestions.push(...randomQs)
+    })
+
+    return allQuestions.sort(() => 0.5 - Math.random()).slice(0, QUIZ_BOSS_CONFIG.questionsCount)
   },
 
   onSelectOption(e) {
@@ -211,6 +298,10 @@ Page({
       }
       this.setData({ selectedIndexes: selected })
       return
+    }
+
+    if (this.data.isTimedMode) {
+      this.stopTimer()
     }
 
     let userAnswer = index
@@ -241,6 +332,10 @@ Page({
       return
     }
 
+    if (this.data.isTimedMode) {
+      this.stopTimer()
+    }
+
     const userAnswer = selected.sort((a, b) => a - b)
     const correct = isQuestionCorrect(question, userAnswer)
 
@@ -254,6 +349,14 @@ Page({
   },
 
   handleAnswerResult(isCorrect, question) {
+    const questions = [...this.data.questions]
+    const currentIndex = this.data.currentIndex
+    questions[currentIndex] = {
+      ...questions[currentIndex],
+      userAnswer: this.data.userAnswer,
+      isCorrect
+    }
+
     if (isCorrect) {
       const pointsEarned = this.calculatePoints()
       const newCorrectCount = this.data.correctCount + 1
@@ -261,7 +364,8 @@ Page({
 
       this.setData({
         correctCount: newCorrectCount,
-        totalPoints: newTotalPoints
+        totalPoints: newTotalPoints,
+        questions
       })
 
       app.updateUserPoints(pointsEarned, {
@@ -276,7 +380,8 @@ Page({
     } else {
       const newWrongCount = this.data.wrongCount + 1
       this.setData({
-        wrongCount: newWrongCount
+        wrongCount: newWrongCount,
+        questions
       })
 
       showToast('答错了，继续加油！', 'none')
@@ -302,22 +407,11 @@ Page({
   },
 
   addToWrongQuestions(question) {
-    const wrongQuestions = getStorage('wrongQuestions', [])
-    const exists = wrongQuestions.some(q => q.id === question.id)
-
-    if (!exists) {
-      wrongQuestions.push({
-        ...question,
-        wrongTime: new Date().toISOString()
-      })
-      setStorage('wrongQuestions', wrongQuestions)
-    }
+    app.addWrongQuestion(question)
   },
 
   removeFromWrongQuestions(questionId) {
-    const wrongQuestions = getStorage('wrongQuestions', [])
-    const filtered = wrongQuestions.filter(q => q.id !== questionId)
-    setStorage('wrongQuestions', filtered)
+    app.removeWrongQuestion(questionId)
   },
 
   updateProgress() {
@@ -345,23 +439,44 @@ Page({
       selectedIndexes: [],
       isAnswered: false,
       isCorrect: false,
-      userAnswer: null
+      isTimeout: false,
+      userAnswer: null,
+      timeLeft: this.data.isTimedMode ? QUIZ_TIMED_CONFIG.timePerQuestion : 0
     })
+
+    if (this.data.isTimedMode) {
+      this.startTimer()
+    }
   },
 
   showQuizResult() {
     const total = this.data.questions.length
     const correct = this.data.correctCount
     const wrong = this.data.wrongCount
+    const timeout = this.data.timeoutCount
     const basePoints = this.data.totalPoints
-    const bonusPoints = 20
-    const totalPoints = basePoints + bonusPoints
     const accuracy = total > 0 ? Math.round((correct / total) * 100) : 0
 
+    let bonusPoints = 20
+    let bonusTitle = '完成奖励'
     let resultTitle = '继续加油！'
     let resultEmoji = '💪'
 
-    if (accuracy >= 80) {
+    if (this.data.isTimedMode) {
+      const bonusConfig = QUIZ_TIMED_CONFIG.accuracyBonus.find(b => accuracy >= b.minAccuracy)
+      bonusPoints = bonusConfig ? bonusConfig.bonus : 0
+      bonusTitle = `${bonusConfig ? bonusConfig.name : '加油'}奖励`
+    } else if (this.data.isBossMode) {
+      bonusPoints = QUIZ_BOSS_CONFIG.bonusPoints
+      bonusTitle = 'Boss奖励'
+    }
+
+    const totalPoints = basePoints + bonusPoints
+
+    if (accuracy >= 90) {
+      resultTitle = '完美！'
+      resultEmoji = '🏆'
+    } else if (accuracy >= 80) {
       resultTitle = '太棒了！'
       resultEmoji = '🎉'
     } else if (accuracy >= 60) {
@@ -371,8 +486,8 @@ Page({
 
     app.updateUserPoints(bonusPoints, {
       category: 'quiz',
-      title: '答题奖励',
-      desc: `完成答题正确率${accuracy}%`,
+      title: bonusTitle,
+      desc: `${this.data.isTimedMode ? '限时挑战' : this.data.isBossMode ? 'Boss关' : '答题'}正确率${accuracy}%`,
       emoji: '🎁'
     })
 
@@ -384,28 +499,62 @@ Page({
         total,
         correct,
         wrong,
+        timeout,
         points: totalPoints,
         basePoints,
         bonusPoints,
-        accuracy
+        bonusTitle,
+        accuracy,
+        isTimedMode: this.data.isTimedMode,
+        isBossMode: this.data.isBossMode
       }
     })
+
+    let recordChapterName = this.data.chapterName
+    if (!recordChapterName) {
+      if (this.data.isTimedMode) {
+        recordChapterName = '限时挑战'
+      } else if (this.data.isBossMode) {
+        recordChapterName = 'Boss关'
+      } else if (this.data.quizType === 'daily') {
+        recordChapterName = '每日一练'
+      } else if (this.data.quizType === 'difficulty') {
+        recordChapterName = this.data.difficultyName + '难度'
+      } else if (this.data.isWrongReview) {
+        recordChapterName = '错题复习'
+      } else {
+        recordChapterName = '知识问答'
+      }
+    }
 
     const quizRecord = {
       id: generateId(),
       quizType: this.data.quizType,
-      chapterName: this.data.chapterName || (this.data.quizType === 'daily' ? '每日一练' : (this.data.quizType === 'difficulty' ? this.data.difficultyName + '难度' : (this.data.isWrongReview ? '错题复习' : ''))),
+      isTimedMode: this.data.isTimedMode,
+      isBossMode: this.data.isBossMode,
+      chapterName: recordChapterName,
       totalQuestions: total,
       correctCount: correct,
       wrongCount: wrong,
+      timeoutCount: timeout,
       accuracy,
       points: totalPoints,
-      time: formatDate(new Date(), 'YYYY-MM-DD HH:mm')
+      time: formatDate(new Date(), 'YYYY-MM-DD HH:mm'),
+      questions: this.data.questions.map(q => ({
+        id: q.id,
+        question: q.question,
+        userAnswer: q.userAnswer,
+        isCorrect: q.isCorrect
+      }))
     }
     app.addQuizRecord(quizRecord)
 
     this.updateChapterProgress()
     this.markDailyCompleted()
+
+    if (this.data.isTimedMode) {
+      this.stopTimer()
+    }
   },
 
   updateChapterProgress() {
@@ -418,7 +567,9 @@ Page({
     const newProgress = Math.max(currentProgress, accuracy)
     chaptersProgress[this.data.chapterId] = newProgress
 
-    if (newProgress >= 80) {
+    const unlockAccuracy = this.data.isBossMode ? QUIZ_BOSS_CONFIG.unlockAccuracy : 80
+
+    if (newProgress >= unlockAccuracy) {
       const nextChapterId = this.data.chapterId + 1
       if (nextChapterId <= 5) {
         const unlockedChapters = getStorage('unlockedChapters', [1, 2])
@@ -484,5 +635,9 @@ Page({
       title: '我在垃圾分类助手答题赢积分，快来一起学习吧！',
       path: '/pages/index/index'
     }
+  },
+
+  onUnload() {
+    this.stopTimer()
   }
 })

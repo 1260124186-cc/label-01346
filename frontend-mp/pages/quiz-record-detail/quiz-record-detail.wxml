@@ -1,0 +1,124 @@
+<view class="detail-container" wx:if="{{record}}">
+  <view class="header-card" style="background: linear-gradient(135deg, {{record.typeColor}} 0%, {{record.typeColor}}dd 100%)">
+    <view class="header-content">
+      <view class="type-icon">{{record.typeIcon}}</view>
+      <view class="type-name">{{record.typeName}}</view>
+      <view class="chapter-name">{{record.chapterName || record.typeName}}</view>
+    </view>
+
+    <view class="stats-row">
+      <view class="stat-item">
+        <view class="stat-value">{{record.totalQuestions}}</view>
+        <view class="stat-label">总题数</view>
+      </view>
+      <view class="stat-divider"></view>
+      <view class="stat-item">
+        <view class="stat-value">{{record.correctCount}}</view>
+        <view class="stat-label">答对</view>
+      </view>
+      <view class="stat-divider"></view>
+      <view class="stat-item">
+        <view class="stat-value">{{record.wrongCount}}</view>
+        <view class="stat-label">答错</view>
+      </view>
+      <view class="stat-divider" wx:if="{{record.timeoutCount > 0}}"></view>
+      <view class="stat-item" wx:if="{{record.timeoutCount > 0}}">
+        <view class="stat-value">{{record.timeoutCount}}</view>
+        <view class="stat-label">超时</view>
+      </view>
+      <view class="stat-divider"></view>
+      <view class="stat-item">
+        <view class="stat-value accuracy-{{record.accuracyLevel}}">{{record.accuracy}}%</view>
+        <view class="stat-label">正确率</view>
+      </view>
+      <view class="stat-divider"></view>
+      <view class="stat-item">
+        <view class="stat-value points">+{{record.points}}</view>
+        <view class="stat-label">积分</view>
+      </view>
+    </view>
+
+    <view class="record-time">{{record.time}}</view>
+  </view>
+
+  <view class="actions-section">
+    <view class="action-btn review-btn" bindtap="onReviewWrongTap" wx:if="{{isWrongReview}}">
+      <text class="btn-icon">📝</text>
+      <text class="btn-text">复习错题</text>
+    </view>
+    <view class="action-btn delete-btn" bindtap="onDeleteTap">
+      <text class="btn-icon">🗑️</text>
+      <text class="btn-text">删除记录</text>
+    </view>
+  </view>
+
+  <view class="questions-section">
+    <view class="section-title">答题详情</view>
+    
+    <view class="questions-list">
+      <view
+        class="question-item {{item.isCorrect ? 'correct' : 'wrong'}} {{item.expanded ? 'expanded' : ''}}"
+        wx:for="{{questions}}"
+        wx:key="index"
+        data-index="{{index}}"
+        bindtap="onQuestionTap"
+      >
+        <view class="question-header">
+          <view class="question-number">
+            <text class="number-text">第{{item.index}}题</text>
+            <view class="type-tag type-{{item.type}}">
+              <text class="tag-icon">{{QUESTION_TYPE_MAP[item.type].icon}}</text>
+              <text>{{QUESTION_TYPE_MAP[item.type].name}}</text>
+            </view>
+            <view class="diff-tag diff-{{item.difficulty}}">
+              {{item.difficulty === 'easy' ? '简单' : item.difficulty === 'medium' ? '中等' : '困难'}}
+            </view>
+          </view>
+          <view class="question-status">
+            <text wx:if="{{item.isCorrect}}" class="status-icon correct">✅</text>
+            <text wx:else class="status-icon wrong">❌</text>
+          </view>
+        </view>
+
+        <view class="question-text">{{item.question}}</view>
+
+        <view class="answer-section" wx:if="{{item.expanded}}">
+          <view class="answer-row">
+            <text class="answer-label">你的答案：</text>
+            <text class="answer-value user-answer {{item.isCorrect ? 'correct' : 'wrong'}}">
+              {{item.userAnswerLabel}}
+            </text>
+          </view>
+          <view class="answer-row">
+            <text class="answer-label">正确答案：</text>
+            <text class="answer-value correct-answer">{{item.correctAnswerLabel}}</text>
+          </view>
+
+          <view class="options-list">
+            <view 
+              class="option-item {{opt.isCorrectOption ? 'correct' : ''}} {{opt.isUserOption && !opt.isCorrectOption ? 'wrong' : ''}}"
+              wx:for="{{item.optionsWithLabel}}"
+              wx:for-item="opt"
+              wx:key="label"
+            >
+              <view class="option-label">{{opt.label}}.</view>
+              <view class="option-text">{{opt.text}}</view>
+              <view class="option-indicator" wx:if="{{opt.isCorrectOption}}">✓</view>
+              <view class="option-indicator wrong" wx:if="{{opt.isUserOption && !opt.isCorrectOption}}">✗</view>
+            </view>
+          </view>
+
+          <view class="explanation" wx:if="{{item.explanation}}">
+            <view class="explanation-label">💡 解析</view>
+            <view class="explanation-text">{{item.explanation}}</view>
+          </view>
+        </view>
+
+        <view class="expand-hint">
+          <text>{{item.expanded ? '收起' : '点击查看详情'}}</text>
+          <text class="arrow">{{item.expanded ? '▲' : '▼'}}</text>
+        </view>
+      </view>
+    </view>
+  </view>
+</view>
