@@ -37,6 +37,8 @@ App({
     this.initPKRecords()
     this.initSeasonData()
     this.initAntiCheatData()
+    this.initGameRecords()
+    this.initDailyGamePlays()
     this.checkAndExpirePoints()
     this.getSystemInfo()
     this.simulateAutoShipping()
@@ -2422,6 +2424,109 @@ App({
     return (this.globalData.antiCheatData && this.globalData.antiCheatData.flaggedActions) || []
   },
 
+  initGameRecords() {
+    const records = wx.getStorageSync('gameRecords')
+    this.globalData.gameRecords = records || []
+    console.log('[App] 游戏记录已加载', this.globalData.gameRecords.length, '条')
+  },
+
+  addGameRecord(record) {
+    const newRecord = {
+      id: generateId(),
+      ...record,
+      time: formatDate(new Date(), 'YYYY-MM-DD HH:mm')
+    }
+    this.globalData.gameRecords.unshift(newRecord)
+    wx.setStorageSync('gameRecords', this.globalData.gameRecords)
+    console.log('[App] 新增游戏记录', record.gameType, record.points + '分')
+  },
+
+  getGameRecords(gameType = null) {
+    const records = this.globalData.gameRecords || []
+    return gameType ? records.filter(r => r.gameType === gameType) : records
+  },
+
+  initDailyGamePlays() {
+    const { GAME_CONFIG } = require('./utils/constants')
+    const today = formatDate(new Date(), 'YYYY-MM-DD')
+    const stored = wx.getStorageSync('dailyGamePlays')
+
+    if (stored && stored.date === today) {
+      this.globalData.dailyGamePlays = stored
+    } else {
+      this.globalData.dailyGamePlays = {
+        date: today,
+        plays: {
+          catch: 0,
+          conveyor: 0,
+          match: 0
+        }
+      }
+      wx.setStorageSync('dailyGamePlays', this.globalData.dailyGamePlays)
+    }
+    console.log('[App] 每日游戏次数已加载', this.globalData.dailyGamePlays)
+  },
+
+  getTodayGamePlayCount(gameType) {
+    const today = formatDate(new Date(), 'YYYY-MM-DD')
+    const plays = this.globalData.dailyGamePlays
+
+    if (!plays || plays.date !== today) {
+      this.initDailyGamePlays()
+    }
+
+    if (!gameType) {
+      const total = Object.values(this.globalData.dailyGamePlays.plays || {}).reduce((sum, n) => sum + n, 0)
+      return total
+    }
+    return (this.globalData.dailyGamePlays.plays && this.globalData.dailyGamePlays.plays[gameType]) || 0
+  },
+
+  canPlayGame(gameType) {
+    const { GAME_CONFIG } = require('./utils/constants')
+    const totalPlays = this.getTodayGamePlayCount()
+    if (totalPlays >= GAME_CONFIG.dailyPlayLimit) {
+      return { canPlay: false, reason: 'daily_limit' }
+    }
+    return { canPlay: true }
+  },
+
+  recordGamePlay(gameType) {
+    const today = formatDate(new Date(), 'YYYY-MM-DD')
+    let plays = this.globalData.dailyGamePlays
+
+    if (!plays || plays.date !== today) {
+      this.initDailyGamePlays()
+      plays = this.globalData.dailyGamePlays
+    }
+
+    if (!plays.plays) {
+      plays.plays = {}
+    }
+    plays.plays[gameType] = (plays.plays[gameType] || 0) + 1
+    this.globalData.dailyGamePlays = plays
+    wx.setStorageSync('dailyGamePlays', plays)
+    console.log('[App] 记录游戏次数', gameType, '今日累计:', plays.plays[gameType])
+  },
+
+  getGameBestScore(gameType) {
+    const records = this.getGameRecords(gameType)
+    if (records.length === 0) return 0
+    return Math.max(...records.map(r => r.score || 0))
+  },
+
+  addGamePoints(points, gameType, gameName) {
+    const actualResult = this.addPoints(points, 'game')
+    if (actualResult.success && actualResult.points > 0) {
+      this.addGameRecord({
+        gameType: gameType,
+        gameName: gameName,
+        score: actualResult.points
+      })
+    }
+    return actualResult
+  },
+
   /**
    * 全局数据
    */
@@ -2454,6 +2559,8 @@ App({
     pkRecords: [],
     currentPKSession: null,
     seasonData: null,
-    antiCheatData: null
+    antiCheatData: null,
+    gameRecords: [],
+    dailyGamePlays: null
   }
 })

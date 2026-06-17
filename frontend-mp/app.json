@@ -33,7 +33,11 @@
     "pages/drop-point/drop-point",
     "pages/leaderboard/leaderboard",
     "pages/pk-battle/pk-battle",
-    "pages/pk-result/pk-result"
+    "pages/pk-result/pk-result",
+    "pages/game-hall/game-hall",
+    "pages/game-catch/game-catch",
+    "pages/game-conveyor/game-conveyor",
+    "pages/game-match/game-match"
   ],
   "window": {
     "backgroundTextStyle": "dark",

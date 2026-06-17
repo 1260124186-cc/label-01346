@@ -1,0 +1,195 @@
+<!-- 记忆配对游戏页面 -->
+<view class="game-match-container">
+  <!-- 准备阶段 -->
+  <view class="ready-screen" wx:if="{{gameState === 'ready'}}">
+    <view class="ready-bg"></view>
+    <view class="ready-content">
+      <view class="ready-emoji">🧠</view>
+      <view class="ready-title">第 {{currentLevel}} 关 · {{levelInfo.name}}</view>
+      <view class="ready-desc">翻开卡片，将垃圾物品与对应的垃圾类别进行配对。物品卡和类别卡两两配对即为正确！</view>
+      
+      <view class="level-info-grid">
+        <view class="level-info-item">
+          <text class="info-value">{{levelInfo.pairCount}}</text>
+          <text class="info-label">配对数量</text>
+        </view>
+        <view class="level-info-item">
+          <text class="info-value">{{levelInfo.timeLimit}}s</text>
+          <text class="info-label">时间限制</text>
+        </view>
+        <view class="level-info-item">
+          <text class="info-value">{{levelInfo.targetScore}}</text>
+          <text class="info-label">目标分数</text>
+        </view>
+      </view>
+
+      <view class="card-types-preview">
+        <view class="preview-row">
+          <view class="preview-card item-card">
+            <text class="preview-emoji">🍎</text>
+            <text class="preview-text">苹果</text>
+          </view>
+          <text class="preview-arrow">→</text>
+          <view class="preview-card type-card">
+            <text class="preview-emoji">🟢</text>
+            <text class="preview-text">厨余垃圾</text>
+          </view>
+        </view>
+      </view>
+
+      <view class="start-btn" bindtap="startGame">
+        <text>开始游戏</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 游戏中 -->
+  <view class="playing-screen" wx:if="{{gameState === 'playing' || gameState === 'paused'}}">
+    <!-- 顶部状态栏 -->
+    <view class="game-header">
+      <view class="header-left">
+        <view class="score-box">
+          <text class="score-label">分数</text>
+          <text class="score-value">{{score}}</text>
+        </view>
+        <view class="combo-box" wx:if="{{combo >= 2}}">
+          <text class="combo-value">{{combo}}连击</text>
+          <text class="combo-fire">🔥</text>
+        </view>
+      </view>
+      <view class="header-center">
+        <text class="level-badge">第 {{currentLevel}} 关</text>
+      </view>
+      <view class="header-right">
+        <view class="time-box {{timeLeft <= 10 ? 'urgent' : ''}}">
+          <text class="time-emoji">⏰</text>
+          <text class="time-value">{{timeLeft}}s</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 道具栏 -->
+    <view class="powerup-bar">
+      <view class="powerup-btn" bindtap="useHint">
+        <text class="pu-emoji">💡</text>
+        <text class="pu-label">提示</text>
+      </view>
+      <view class="powerup-btn" bindtap="useTimeBoost">
+        <text class="pu-emoji">⏰</text>
+        <text class="pu-label">加时</text>
+      </view>
+      <view class="powerup-btn {{comboBoostActive ? 'active' : ''}}" bindtap="useComboBoost">
+        <text class="pu-emoji">🔥</text>
+        <text class="pu-label">连击</text>
+      </view>
+    </view>
+
+    <!-- 配对进度 -->
+    <view class="progress-section">
+      <view class="matched-info">
+        <text class="matched-label">配对进度</text>
+        <text class="matched-count">{{matchedPairs}}/{{totalPairs}}</text>
+      </view>
+      <view class="progress-bar">
+        <view class="progress-fill" style="width: {{matchedPairs / totalPairs * 100}}%"></view>
+      </view>
+    </view>
+
+    <!-- 卡牌区域 -->
+    <view class="cards-area">
+      <view class="cards-grid">
+        <view 
+          wx:for="{{cards}}" 
+          wx:key="id"
+          class="card-wrapper"
+          data-cardid="{{item.id}}"
+          bindtap="onCardTap"
+        >
+          <view class="card-inner {{item.isFlipped || item.isMatched ? 'flipped' : ''}}">
+            <!-- 卡片背面 -->
+            <view class="card-face card-back">
+              <text class="card-back-emoji">❓</text>
+            </view>
+            <!-- 卡片正面 -->
+            <view 
+              class="card-face card-front {{item.isMatched ? 'matched' : ''}} {{item.isHinted ? 'hinted' : ''}}"
+              style="--card-color: {{item.color}};"
+            >
+              <view class="card-type-tag" wx:if="{{item.type === 'item'}}">物品</view>
+              <view class="card-type-tag" wx:if="{{item.type === 'type'}}">类别</view>
+              <text class="card-emoji">{{item.displayEmoji}}</text>
+              <text class="card-text">{{item.displayText}}</text>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 反馈动画 -->
+    <view wx:if="{{showFeedback}}" class="feedback-overlay">
+      <view class="feedback-popup {{feedbackType}}">{{feedbackText}}</view>
+    </view>
+  </view>
+
+  <!-- 暂停遮罩 -->
+  <view class="pause-overlay" wx:if="{{gameState === 'paused'}}">
+    <view class="pause-card">
+      <view class="pause-emoji">⏸️</view>
+      <view class="pause-title">游戏暂停</view>
+      <view class="pause-actions">
+        <view class="pause-btn secondary" bindtap="onBack">退出</view>
+        <view class="pause-btn primary" bindtap="resumeGame">继续</view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 结果页 -->
+  <view class="result-screen" wx:if="{{showResult}}">
+    <view class="result-bg"></view>
+    <view class="result-content">
+      <view class="result-emoji">{{resultEmoji}}</view>
+      <view class="result-title">{{resultTitle}}</view>
+      
+      <view class="result-stats">
+        <view class="result-stat-row">
+          <text class="stat-label">游戏得分</text>
+          <text class="stat-value">{{resultScore}}</text>
+        </view>
+        <view class="result-stat-row">
+          <text class="stat-label">配对成功</text>
+          <text class="stat-value">{{matchedPairs}}/{{totalPairs}}</text>
+        </view>
+        <view class="result-stat-row">
+          <text class="stat-label">错误次数</text>
+          <text class="stat-value">{{wrongAttempts}}</text>
+        </view>
+        <view class="result-stat-row">
+          <text class="stat-label">最大连击</text>
+          <text class="stat-value">{{maxCombo}}</text>
+        </view>
+        <view class="result-stat-row">
+          <text class="stat-label">正确率</text>
+          <text class="stat-value">{{resultAccuracy}}%</text>
+        </view>
+      </view>
+
+      <view class="points-card">
+        <view class="points-icon">🎁</view>
+        <view class="points-info">
+          <view class="points-title">获得积分</view>
+          <view class="points-total">+{{resultTotalPoints}}</view>
+          <view class="points-detail">
+            <text>游戏: +{{resultBasePoints}}</text>
+            <text wx:if="{{resultBonusPoints > 0}}"> | 奖励: +{{resultBonusPoints}}</text>
+          </view>
+        </view>
+      </view>
+
+      <view class="result-actions">
+        <view class="result-btn secondary" bindtap="onBack">返回</view>
+        <view class="result-btn secondary" bindtap="onRestart">再玩一次</view>
+        <view class="result-btn primary" wx:if="{{resultPassed}}" bindtap="onNextLevel">下一关</view>
+      </view>
+    </view>
+  </view>
+</view>

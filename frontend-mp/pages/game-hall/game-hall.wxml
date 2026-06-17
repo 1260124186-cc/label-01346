@@ -1,0 +1,120 @@
+<!-- 游戏大厅页面 -->
+<view class="game-hall-container">
+  <!-- 顶部状态栏 -->
+  <view class="hall-header">
+    <view class="header-bg"></view>
+    <view class="header-content">
+      <view class="points-info">
+        <text class="points-emoji">💰</text>
+        <text class="points-value">{{userPoints}}</text>
+        <text class="points-label">积分</text>
+      </view>
+      <view class="daily-info">
+        <view class="daily-count">
+          <text class="daily-label">今日剩余</text>
+          <text class="daily-value">{{remainingPlays}}/{{dailyLimit}}</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 游戏标题区 -->
+  <view class="hall-title-section">
+    <text class="hall-title">🎮 垃圾分类小游戏</text>
+    <text class="hall-subtitle">寓教于乐，边玩边学垃圾分类</text>
+  </view>
+
+  <!-- 游戏列表 -->
+  <view class="game-list-section">
+    <view
+      wx:for="{{games}}"
+      wx:key="id"
+      class="game-card"
+      bindtap="onGameTap"
+      data-game="{{item}}"
+      style="--gradient-start: {{item.gradientStart}}; --gradient-end: {{item.gradientEnd}};"
+    >
+      <view class="game-card-bg"></view>
+      <view class="game-card-content">
+        <view class="game-icon-wrapper">
+          <text class="game-emoji">{{item.emoji}}</text>
+        </view>
+        <view class="game-info">
+          <view class="game-name-row">
+            <text class="game-name">{{item.name}}</text>
+            <text class="game-english">{{item.englishName}}</text>
+          </view>
+          <text class="game-desc">{{item.description}}</text>
+          <view class="game-stats">
+            <view class="stat-badge">
+              <text class="stat-emoji">🏆</text>
+              <text class="stat-text">最高分: {{bestScores[item.id]}}</text>
+            </view>
+          </view>
+        </view>
+        <view class="game-arrow">
+          <text class="arrow-icon">›</text>
+        </view>
+      </view>
+      <view class="play-tag">
+        <text>开始游戏</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 道具区 -->
+  <view class="powerup-section">
+    <view class="section-header">
+      <view class="section-title-icon" style="background: linear-gradient(135deg, #F39C12 0%, #E67E22 100%);"></view>
+      <text class="section-title">游戏道具</text>
+    </view>
+    <view class="powerup-grid">
+      <view
+        wx:for="{{powerups}}"
+        wx:key="id"
+        class="powerup-card"
+        bindtap="onPowerupTap"
+        data-powerup="{{item}}"
+      >
+        <view class="powerup-icon">
+          <text class="powerup-emoji">{{item.emoji}}</text>
+        </view>
+        <text class="powerup-name">{{item.name}}</text>
+        <view class="powerup-cost">
+          <text class="cost-emoji">💰</text>
+          <text class="cost-value">{{item.cost}}</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 游戏规则提示 -->
+  <view class="rules-section">
+    <view class="rules-card">
+      <view class="rules-title">
+        <text class="rules-emoji">📋</text>
+        <text>游戏规则</text>
+      </view>
+      <view class="rules-list">
+        <view class="rule-item">
+          <text class="rule-dot">•</text>
+          <text class="rule-text">每日最多可游玩 {{dailyLimit}} 次小游戏</text>
+        </view>
+        <view class="rule-item">
+          <text class="rule-dot">•</text>
+          <text class="rule-text">连续正确可获得连击加分</text>
+        </view>
+        <view class="rule-item">
+          <text class="rule-dot">•</text>
+          <text class="rule-text">通关可获得额外积分奖励</text>
+        </view>
+        <view class="rule-item">
+          <text class="rule-dot">•</text>
+          <text class="rule-text">关卡越高，难度越大，奖励越多</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view class="bottom-spacer"></view>
+</view>

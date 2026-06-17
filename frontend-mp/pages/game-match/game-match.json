@@ -1,0 +1,7 @@
+{
+  "navigationBarTitleText": "记忆配对",
+  "navigationBarBackgroundColor": "#A78BFA",
+  "navigationBarTextStyle": "white",
+  "enablePullDownRefresh": false,
+  "disableScroll": true
+}

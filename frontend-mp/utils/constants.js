@@ -3024,6 +3024,57 @@ const ANTI_CHEAT_CONFIG = {
   suspiciousScoreMultiplier: 3
 }
 
+const GAME_CONFIG = {
+  dailyPlayLimit: 5,
+  comboMultiplier: [1, 1, 1.2, 1.5, 2, 2.5, 3],
+  basePoints: 10,
+  clearBonus: [0, 0, 20, 50, 100, 200, 500],
+  passAccuracyBonus: [
+    { minAccuracy: 90, bonus: 50, name: '完美' },
+    { minAccuracy: 80, bonus: 30, name: '优秀' },
+    { minAccuracy: 60, bonus: 15, name: '良好' },
+    { minAccuracy: 0, bonus: 5, name: '加油' }
+  ]
+}
+
+const GAME_LEVELS = {
+  catch: [
+    { level: 1, name: '初入江湖', spawnInterval: 2000, fallSpeed: 2, targetScore: 100, itemCount: 15, timeLimit: 60 },
+    { level: 2, name: '小试牛刀', spawnInterval: 1600, fallSpeed: 3, targetScore: 200, itemCount: 20, timeLimit: 60 },
+    { level: 3, name: '渐入佳境', spawnInterval: 1300, fallSpeed: 4, targetScore: 350, itemCount: 25, timeLimit: 60 },
+    { level: 4, name: '炉火纯青', spawnInterval: 1000, fallSpeed: 5, targetScore: 500, itemCount: 30, timeLimit: 60 },
+    { level: 5, name: '登峰造极', spawnInterval: 800, fallSpeed: 6, targetScore: 700, itemCount: 35, timeLimit: 60 }
+  ],
+  conveyor: [
+    { level: 1, name: '学徒', beltSpeed: 3000, spawnInterval: 2500, targetScore: 80, itemCount: 12, timeLimit: 60 },
+    { level: 2, name: '熟练', beltSpeed: 2500, spawnInterval: 2000, targetScore: 150, itemCount: 18, timeLimit: 60 },
+    { level: 3, name: '精通', beltSpeed: 2000, spawnInterval: 1600, targetScore: 250, itemCount: 25, timeLimit: 60 },
+    { level: 4, name: '大师', beltSpeed: 1500, spawnInterval: 1300, targetScore: 380, itemCount: 32, timeLimit: 60 },
+    { level: 5, name: '宗师', beltSpeed: 1200, spawnInterval: 1000, targetScore: 500, itemCount: 40, timeLimit: 60 }
+  ],
+  match: [
+    { level: 1, name: '入门', pairCount: 6, timeLimit: 60 },
+    { level: 2, name: '初级', pairCount: 8, timeLimit: 75 },
+    { level: 3, name: '中级', pairCount: 10, timeLimit: 90 },
+    { level: 4, name: '高级', pairCount: 12, timeLimit: 100 },
+    { level: 5, name: '专家', pairCount: 14, timeLimit: 110 }
+  ]
+}
+
+const GAME_ITEMS = SORT_PRACTICE_ITEMS
+
+const GAME_POWERUPS = [
+  {
+    id: 'hint', name: '提示道具', emoji: '💡', description: '高亮显示一个正确答案', cost: 50
+  },
+  {
+    id: 'time', name: '加时道具', emoji: '⏰', description: '增加10秒游戏时间', cost: 30
+  },
+  {
+    id: 'combo', name: '连击道具', emoji: '🔥', description: '下次正确获得双倍分数', cost: 80
+  }
+]
+
 module.exports = {
   TRASH_TYPES,
   QUIZ_SCENES,
@@ -3078,5 +3129,9 @@ module.exports = {
   LEADERBOARD_USERS,
   PK_CONFIG,
   SEASON_CONFIG,
-  ANTI_CHEAT_CONFIG
+  ANTI_CHEAT_CONFIG,
+  GAME_CONFIG,
+  GAME_LEVELS,
+  GAME_ITEMS,
+  GAME_POWERUPS
 }

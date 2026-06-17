@@ -1,0 +1,7 @@
+{
+  "navigationBarTitleText": "分拣流水线",
+  "navigationBarBackgroundColor": "#4ECDC4",
+  "navigationBarTextStyle": "white",
+  "enablePullDownRefresh": false,
+  "disableScroll": true
+}

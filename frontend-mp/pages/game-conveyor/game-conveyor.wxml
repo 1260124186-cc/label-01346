@@ -1,0 +1,215 @@
+<!-- 分拣流水线游戏页面 -->
+<view class="game-conveyor-container">
+  <!-- 准备阶段 -->
+  <view class="ready-screen" wx:if="{{gameState === 'ready'}}">
+    <view class="ready-bg"></view>
+    <view class="ready-content">
+      <view class="ready-emoji">🏭</view>
+      <view class="ready-title">第 {{currentLevel}} 关 · {{levelInfo.name}}</view>
+      <view class="ready-desc">物品沿传送带从左向右移动，请在到达末端前点击下方正确的垃圾桶进行分拣</view>
+      
+      <view class="level-info-grid">
+        <view class="level-info-item">
+          <text class="info-value">{{levelInfo.itemCount}}</text>
+          <text class="info-label">物品数量</text>
+        </view>
+        <view class="level-info-item">
+          <text class="info-value">{{levelInfo.timeLimit}}s</text>
+          <text class="info-label">时间限制</text>
+        </view>
+        <view class="level-info-item">
+          <text class="info-value">{{levelInfo.targetScore}}</text>
+          <text class="info-label">目标分数</text>
+        </view>
+      </view>
+
+      <view class="trash-preview">
+        <view 
+          wx:for="{{trashTypes}}" 
+          wx:key="id" 
+          class="trash-type-preview"
+          style="--type-color: {{item.color}};"
+        >
+          <text class="trash-preview-emoji">{{item.emoji}}</text>
+          <text class="trash-preview-name">{{item.name}}</text>
+        </view>
+      </view>
+
+      <view class="start-btn" bindtap="startGame">
+        <text>开始游戏</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 游戏中 -->
+  <view class="playing-screen" wx:if="{{gameState === 'playing' || gameState === 'paused'}}">
+    <!-- 顶部状态栏 -->
+    <view class="game-header">
+      <view class="header-left">
+        <view class="score-box">
+          <text class="score-label">分数</text>
+          <text class="score-value">{{score}}</text>
+        </view>
+        <view class="combo-box" wx:if="{{combo >= 2}}">
+          <text class="combo-value">{{combo}}连击</text>
+          <text class="combo-fire">🔥</text>
+        </view>
+      </view>
+      <view class="header-center">
+        <text class="level-badge">第 {{currentLevel}} 关</text>
+      </view>
+      <view class="header-right">
+        <view class="time-box {{timeLeft <= 10 ? 'urgent' : ''}}">
+          <text class="time-emoji">⏰</text>
+          <text class="time-value">{{timeLeft}}s</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 道具栏 -->
+    <view class="powerup-bar">
+      <view class="powerup-btn" bindtap="useHint">
+        <text class="pu-emoji">💡</text>
+        <text class="pu-label">提示</text>
+      </view>
+      <view class="powerup-btn" bindtap="useTimeBoost">
+        <text class="pu-emoji">⏰</text>
+        <text class="pu-label">加时</text>
+      </view>
+      <view class="powerup-btn {{comboBoostActive ? 'active' : ''}}" bindtap="useComboBoost">
+        <text class="pu-emoji">🔥</text>
+        <text class="pu-label">连击</text>
+      </view>
+    </view>
+
+    <!-- 进度条 -->
+    <view class="progress-section">
+      <view class="progress-bar">
+        <view class="progress-fill" style="width: {{processedItems / totalItems * 100}}%"></view>
+      </view>
+      <text class="progress-text">{{processedItems}}/{{totalItems}}</text>
+    </view>
+
+    <!-- 传送带区域 -->
+    <view class="conveyor-section">
+      <view class="conveyor-label-wrapper">
+        <text class="conveyor-label">→ 分拣传送带 →</text>
+      </view>
+      
+      <view class="conveyor-belt">
+        <view class="belt-pattern"></view>
+        
+        <!-- 传送带上的物品 -->
+        <view 
+          wx:for="{{conveyorItems}}" 
+          wx:key="id" 
+          class="conveyor-item {{item.isHinted ? 'hinted' : ''}}"
+          style="transform: translateX({{item.x}}px);"
+        >
+          <view class="item-emoji">{{item.emoji}}</view>
+          <view class="item-name">{{item.name}}</view>
+          <view class="hint-badge" wx:if="{{item.isHinted}}">
+            →{{trashTypes[item.hintedBinIndex].emoji}}
+          </view>
+        </view>
+
+        <!-- 末端警告线 -->
+        <view class="end-warning-line"></view>
+      </view>
+    </view>
+
+    <!-- 反馈动画 -->
+    <view 
+      wx:if="{{showFeedback}}" 
+      class="feedback-popup {{feedbackType}}"
+      style="transform: translateX({{feedbackX}}px);"
+    >
+      {{feedbackText}}
+    </view>
+
+    <!-- 底部垃圾桶按钮区 -->
+    <view class="trash-buttons-area">
+      <view 
+        wx:for="{{trashTypes}}" 
+        wx:key="id"
+        wx:for-index="idx"
+        class="trash-button {{selectedBin === idx ? 'selected' : ''}} {{item.isHinted && item.hintedBinIndex === idx ? 'hinted' : ''}}"
+        data-binid="{{item.id}}"
+        data-binindex="{{idx}}"
+        bindtap="onBinTap"
+        style="--bin-color: {{item.color}};"
+      >
+        <view class="bin-icon-wrapper">
+          <text class="bin-emoji">{{item.emoji}}</text>
+        </view>
+        <view class="bin-label">{{item.name}}</view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 暂停遮罩 -->
+  <view class="pause-overlay" wx:if="{{gameState === 'paused'}}">
+    <view class="pause-card">
+      <view class="pause-emoji">⏸️</view>
+      <view class="pause-title">游戏暂停</view>
+      <view class="pause-actions">
+        <view class="pause-btn secondary" bindtap="onBack">退出</view>
+        <view class="pause-btn primary" bindtap="resumeGame">继续</view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 结果页 -->
+  <view class="result-screen" wx:if="{{showResult}}">
+    <view class="result-bg"></view>
+    <view class="result-content">
+      <view class="result-emoji">{{resultEmoji}}</view>
+      <view class="result-title">{{resultTitle}}</view>
+      
+      <view class="result-stats">
+        <view class="result-stat-row">
+          <text class="stat-label">游戏得分</text>
+          <text class="stat-value">{{resultScore}}</text>
+        </view>
+        <view class="result-stat-row">
+          <text class="stat-label">正确/错误</text>
+          <text class="stat-value">
+            <text class="correct">{{correctCount}}</text>
+            /
+            <text class="wrong">{{wrongCount}}</text>
+          </text>
+        </view>
+        <view class="result-stat-row">
+          <text class="stat-label">漏分拣</text>
+          <text class="stat-value">{{missedCount}}</text>
+        </view>
+        <view class="result-stat-row">
+          <text class="stat-label">最大连击</text>
+          <text class="stat-value">{{maxCombo}}</text>
+        </view>
+        <view class="result-stat-row">
+          <text class="stat-label">正确率</text>
+          <text class="stat-value">{{resultAccuracy}}%</text>
+        </view>
+      </view>
+
+      <view class="points-card">
+        <view class="points-icon">🎁</view>
+        <view class="points-info">
+          <view class="points-title">获得积分</view>
+          <view class="points-total">+{{resultTotalPoints}}</view>
+          <view class="points-detail">
+            <text>游戏: +{{resultBasePoints}}</text>
+            <text wx:if="{{resultBonusPoints > 0}}"> | 奖励: +{{resultBonusPoints}}</text>
+          </view>
+        </view>
+      </view>
+
+      <view class="result-actions">
+        <view class="result-btn secondary" bindtap="onBack">返回</view>
+        <view class="result-btn secondary" bindtap="onRestart">再玩一次</view>
+        <view class="result-btn primary" wx:if="{{resultPassed}}" bindtap="onNextLevel">下一关</view>
+      </view>
+    </view>
+  </view>
+</view>

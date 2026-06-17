@@ -284,6 +284,14 @@ Page({
   },
 
   /**
+   * 跳转到游戏大厅
+   */
+  goToGameHall() {
+    console.log('[Index] 点击垃圾分类小游戏')
+    navigateTo('/pages/game-hall/game-hall')
+  },
+
+  /**
    * 页面相关事件处理函数--监听用户下拉动作
    */
   onPullDownRefresh() {

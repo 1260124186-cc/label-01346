@@ -1,0 +1,216 @@
+<!-- 接垃圾游戏页面 -->
+<view class="game-catch-container">
+  <!-- 准备阶段 -->
+  <view class="ready-screen" wx:if="{{gameState === 'ready'}}">
+    <view class="ready-bg"></view>
+    <view class="ready-content">
+      <view class="ready-emoji">🎯</view>
+      <view class="ready-title">第 {{currentLevel}} 关 · {{levelInfo.name}}</view>
+      <view class="ready-desc">左右滑动或点击底部区域移动篮子，接住下落的物品并投入正确的垃圾桶</view>
+      
+      <view class="level-info-grid">
+        <view class="level-info-item">
+          <text class="info-value">{{levelInfo.itemCount}}</text>
+          <text class="info-label">物品数量</text>
+        </view>
+        <view class="level-info-item">
+          <text class="info-value">{{levelInfo.timeLimit}}s</text>
+          <text class="info-label">时间限制</text>
+        </view>
+        <view class="level-info-item">
+          <text class="info-value">{{levelInfo.targetScore}}</text>
+          <text class="info-label">目标分数</text>
+        </view>
+      </view>
+
+      <view class="trash-preview">
+        <view 
+          wx:for="{{trashTypes}}" 
+          wx:key="id" 
+          class="trash-type-preview"
+          style="--type-color: {{item.color}};"
+        >
+          <text class="trash-preview-emoji">{{item.emoji}}</text>
+          <text class="trash-preview-name">{{item.name}}</text>
+        </view>
+      </view>
+
+      <view class="start-btn" bindtap="startGame">
+        <text>开始游戏</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 游戏中 -->
+  <view class="playing-screen" wx:if="{{gameState === 'playing' || gameState === 'paused'}}">
+    <!-- 顶部状态栏 -->
+    <view class="game-header">
+      <view class="header-left">
+        <view class="score-box">
+          <text class="score-label">分数</text>
+          <text class="score-value">{{score}}</text>
+        </view>
+        <view class="combo-box" wx:if="{{combo >= 2}}">
+          <text class="combo-value">{{combo}}连击</text>
+          <text class="combo-fire">🔥</text>
+        </view>
+      </view>
+      <view class="header-center">
+        <text class="level-badge">第 {{currentLevel}} 关</text>
+      </view>
+      <view class="header-right">
+        <view class="time-box {{timeLeft <= 10 ? 'urgent' : ''}}">
+          <text class="time-emoji">⏰</text>
+          <text class="time-value">{{timeLeft}}s</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 道具栏 -->
+    <view class="powerup-bar">
+      <view class="powerup-btn" bindtap="useHint">
+        <text class="pu-emoji">💡</text>
+        <text class="pu-label">提示</text>
+      </view>
+      <view class="powerup-btn" bindtap="useTimeBoost">
+        <text class="pu-emoji">⏰</text>
+        <text class="pu-label">加时</text>
+      </view>
+      <view class="powerup-btn {{comboBoostActive ? 'active' : ''}}" bindtap="useComboBoost">
+        <text class="pu-emoji">🔥</text>
+        <text class="pu-label">连击</text>
+      </view>
+    </view>
+
+    <!-- 进度条 -->
+    <view class="progress-section">
+      <view class="progress-bar">
+        <view class="progress-fill" style="width: {{processedItems / totalItems * 100}}%"></view>
+      </view>
+      <text class="progress-text">{{processedItems}}/{{totalItems}}</text>
+    </view>
+
+    <!-- 游戏区域 -->
+    <view 
+      class="game-area"
+      bindtouchstart="onTouchStart"
+      bindtouchmove="onTouchMove"
+    >
+      <!-- 下落物品 -->
+      <view 
+        wx:for="{{fallingItems}}" 
+        wx:key="id" 
+        class="falling-item {{item.isHinted ? 'hinted' : ''}}"
+        style="left: {{item.x}}px; top: {{item.y}}px;"
+      >
+        <view class="item-emoji">{{item.emoji}}</view>
+        <view class="item-name">{{item.name}}</view>
+        <view class="hint-arrow" wx:if="{{item.isHinted}}">
+          → 第{{item.hintedZone + 1}}桶
+        </view>
+      </view>
+
+      <!-- 反馈动画 -->
+      <view 
+        wx:if="{{showFeedback}}" 
+        class="feedback-popup {{feedbackType}}"
+        style="left: {{feedbackX}}px; top: {{feedbackY}}px;"
+      >
+        {{feedbackText}}
+      </view>
+    </view>
+
+    <!-- 底部垃圾桶区域 -->
+    <view class="trash-bins-area">
+      <view 
+        wx:for="{{trashTypes}}" 
+        wx:key="id" 
+        wx:for-index="idx"
+        class="trash-bin {{basketZone === idx ? 'active' : ''}} {{item.isHinted && item.hintedZone === idx ? 'hinted' : ''}}"
+        data-zone="{{idx}}"
+        bindtap="onZoneTap"
+        style="--bin-color: {{item.color}};"
+      >
+        <view class="bin-emoji">{{item.emoji}}</view>
+        <view class="bin-name">{{item.name}}</view>
+      </view>
+
+      <!-- 可移动篮子 -->
+      <view 
+        class="catching-basket"
+        style="left: {{basketX}}px; width: {{basketWidth}}px;"
+      >
+        <view class="basket-top"></view>
+        <view class="basket-body">
+          <text class="basket-emoji">🧺</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 暂停遮罩 -->
+  <view class="pause-overlay" wx:if="{{gameState === 'paused'}}">
+    <view class="pause-card">
+      <view class="pause-emoji">⏸️</view>
+      <view class="pause-title">游戏暂停</view>
+      <view class="pause-actions">
+        <view class="pause-btn secondary" bindtap="onBack">退出</view>
+        <view class="pause-btn primary" bindtap="resumeGame">继续</view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 结果页 -->
+  <view class="result-screen" wx:if="{{showResult}}">
+    <view class="result-bg"></view>
+    <view class="result-content">
+      <view class="result-emoji">{{resultEmoji}}</view>
+      <view class="result-title">{{resultTitle}}</view>
+      
+      <view class="result-stats">
+        <view class="result-stat-row">
+          <text class="stat-label">游戏得分</text>
+          <text class="stat-value">{{resultScore}}</text>
+        </view>
+        <view class="result-stat-row">
+          <text class="stat-label">正确/错误</text>
+          <text class="stat-value">
+            <text class="correct">{{correctCount}}</text>
+            /
+            <text class="wrong">{{wrongCount}}</text>
+          </text>
+        </view>
+        <view class="result-stat-row">
+          <text class="stat-label">漏接</text>
+          <text class="stat-value">{{missedCount}}</text>
+        </view>
+        <view class="result-stat-row">
+          <text class="stat-label">最大连击</text>
+          <text class="stat-value">{{maxCombo}}</text>
+        </view>
+        <view class="result-stat-row">
+          <text class="stat-label">正确率</text>
+          <text class="stat-value">{{resultAccuracy}}%</text>
+        </view>
+      </view>
+
+      <view class="points-card">
+        <view class="points-icon">🎁</view>
+        <view class="points-info">
+          <view class="points-title">获得积分</view>
+          <view class="points-total">+{{resultTotalPoints}}</view>
+          <view class="points-detail">
+            <text>游戏: +{{resultBasePoints}}</text>
+            <text wx:if="{{resultBonusPoints > 0}}"> | 奖励: +{{resultBonusPoints}}</text>
+          </view>
+        </view>
+      </view>
+
+      <view class="result-actions">
+        <view class="result-btn secondary" bindtap="onBack">返回</view>
+        <view class="result-btn secondary" bindtap="onRestart">再玩一次</view>
+        <view class="result-btn primary" wx:if="{{resultPassed}}" bindtap="onNextLevel">下一关</view>
+      </view>
+    </view>
+  </view>
+</view>

@@ -74,6 +74,30 @@
     </view>
   </view>
 
+  <!-- 垃圾分类小游戏入口 -->
+  <view class="game-entry-section" bindtap="goToGameHall">
+    <view class="game-entry-card">
+      <view class="game-entry-bg"></view>
+      <view class="game-entry-content">
+        <view class="game-entry-left">
+          <view class="game-entry-emoji">🎮</view>
+          <view class="game-entry-text">
+            <view class="game-entry-title">垃圾分类小游戏</view>
+            <view class="game-entry-subtitle">
+              接垃圾 · 分拣流水线 · 记忆配对 · 通关赢积分
+            </view>
+          </view>
+        </view>
+        <view class="game-entry-right">
+          <view class="game-entry-btn">
+            <text>去挑战</text>
+            <text class="game-arrow">›</text>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+
   <!-- 快捷功能区域 -->
   <view class="quick-actions-section">
     <view class="quick-actions-grid eight-grid">
