@@ -204,7 +204,7 @@
         <text class="rule-points">+15分</text>
       </view>
       <view class="bonus-rule">
-        <text class="rule-name">加油(<60%)</text>
+        <text class="rule-name">加油(&lt;60%)</text>
         <text class="rule-points">+5分</text>
       </view>
     </view>
