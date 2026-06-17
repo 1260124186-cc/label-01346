@@ -1,0 +1,75 @@
+<view class="pk-result-container {{showContent ? 'show' : ''}}">
+  <view class="result-banner" style="background: linear-gradient(135deg, {{resultColor}} 0%, {{resultColor}}CC 100%);">
+    <view class="result-emoji-wrap">
+      <text class="result-emoji">{{resultEmoji}}</text>
+    </view>
+    <view class="result-title-text">{{resultTitle}}</view>
+    <view class="result-points-badge">+{{pointsEarned}}积分</view>
+  </view>
+
+  <view class="vs-section">
+    <view class="vs-header">
+      <view class="player-info my-info">
+        <view class="player-avatar">
+          <text class="avatar-emoji">🌱</text>
+        </view>
+        <text class="player-name">我</text>
+      </view>
+      <view class="vs-badge">
+        <text class="vs-text">VS</text>
+      </view>
+      <view class="player-info opponent-info">
+        <view class="player-avatar opponent">
+          <text class="avatar-emoji">{{opponentAvatarEmoji}}</text>
+        </view>
+        <text class="player-name">{{opponentName}}</text>
+      </view>
+    </view>
+
+    <view class="stats-comparison">
+      <view class="stat-row">
+        <view class="stat-value my {{myCorrectCount > opponentCorrectCount ? 'winner' : ''}}">{{myCorrectCount}}</view>
+        <view class="stat-label-wrap">
+          <text class="stat-label-text">正确数</text>
+        </view>
+        <view class="stat-value opponent {{opponentCorrectCount > myCorrectCount ? 'winner' : ''}}">{{opponentCorrectCount}}</view>
+      </view>
+
+      <view class="stat-row">
+        <view class="stat-value my {{myTotalTime < opponentTotalTime ? 'winner' : ''}}">{{myTotalTime}}s</view>
+        <view class="stat-label-wrap">
+          <text class="stat-label-text">用时</text>
+        </view>
+        <view class="stat-value opponent {{opponentTotalTime < myTotalTime ? 'winner' : ''}}">{{opponentTotalTime}}s</view>
+      </view>
+
+      <view class="stat-row">
+        <view class="stat-value my {{myAccuracy > opponentAccuracy ? 'winner' : ''}}">{{myAccuracy}}</view>
+        <view class="stat-label-wrap">
+          <text class="stat-label-text">正确率</text>
+        </view>
+        <view class="stat-value opponent {{opponentAccuracy > myAccuracy ? 'winner' : ''}}">{{opponentAccuracy}}</view>
+      </view>
+    </view>
+  </view>
+
+  <view class="points-card">
+    <view class="points-icon">🎁</view>
+    <view class="points-info">
+      <text class="points-label">获得积分</text>
+      <text class="points-amount" style="color: {{resultColor}};">+{{pointsEarned}}</text>
+    </view>
+    <view class="points-detail">
+      <text class="detail-text">共{{totalQuestions}}题 · {{resultTitle}}奖励</text>
+    </view>
+  </view>
+
+  <view class="action-section">
+    <view class="action-btn primary" style="background: linear-gradient(135deg, {{resultColor}} 0%, {{resultColor}}CC 100%); box-shadow: 0 8rpx 24rpx {{resultColor}}4D;" bindtap="onPlayAgain">
+      再来一局
+    </view>
+    <view class="action-btn outline" style="color: {{resultColor}}; border-color: {{resultColor}};" bindtap="onViewLeaderboard">
+      查看排行榜
+    </view>
+  </view>
+</view>

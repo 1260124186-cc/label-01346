@@ -33,6 +33,7 @@ global.wx = {
   }),
   navigateTo: jest.fn(),
   navigateBack: jest.fn(),
+  redirectTo: jest.fn(),
   switchTab: jest.fn(),
   setNavigationBarTitle: jest.fn(),
   setNavigationBarColor: jest.fn(),
@@ -146,7 +147,7 @@ const defaultPointsRecords = [
   }
 ]
 
-const { TRASH_TYPES, SHARE_CONFIG, INVITE_CONFIG } = require('../frontend-mp/utils/constants')
+const { TRASH_TYPES, SHARE_CONFIG, INVITE_CONFIG, LEADERBOARD_CONFIG, LEADERBOARD_USERS, PK_CONFIG, SEASON_CONFIG, ANTI_CHEAT_CONFIG } = require('../frontend-mp/utils/constants')
 
 const defaultDailyQuizRecords = [
   '2026-06-02', '2026-06-03', '2026-06-04', '2026-06-05', '2026-06-06',
@@ -190,7 +191,27 @@ const createAppMock = () => {
     systemInfo: null,
     statusBarHeight: 44,
     screenHeight: 812,
-    screenWidth: 375
+    screenWidth: 375,
+    leaderboardData: { users: [...LEADERBOARD_USERS], lastUpdated: '2026-06-16 12:00' },
+    pkRecords: [],
+    currentPKSession: null,
+    seasonData: {
+      seasonId: '2026-06',
+      seasonName: '2026年6月赛季',
+      startDate: '2026-06-01',
+      endDate: '2026-06-30',
+      medals: [],
+      vouchers: [],
+      resetDone: false
+    },
+    antiCheatData: {
+      date: '2026-06-16',
+      hourlyScores: {},
+      hourlyPKCount: {},
+      lastMatchOpponent: null,
+      lastMatchTime: 0,
+      flaggedActions: []
+    }
   },
   updateUserPoints: jest.fn(function(points, recordInfo = null) {
     const app = global.getApp()
@@ -583,7 +604,209 @@ const createAppMock = () => {
       emoji: '👥'
     })
     return record
-  })
+  }),
+  initLeaderboardData: jest.fn(),
+  getLeaderboard: jest.fn((period, dimension) => {
+    const app = global.getApp()
+    const users = [...(app.globalData.leaderboardData.users || [])]
+    const userInfo = app.globalData.userInfo
+    const currentUserId = 'user_mock_id'
+
+    const totalQuestions = (app.globalData.quizRecords || []).reduce((sum, r) => sum + (r.totalQuestions || 0), 0)
+    const totalCorrect = (app.globalData.quizRecords || []).reduce((sum, r) => sum + (r.correctCount || 0), 0)
+    const accuracy = totalQuestions > 0 ? Math.round((totalCorrect / totalQuestions) * 100) : 0
+    const currentUserStats = {
+      points: userInfo ? userInfo.points : 0,
+      accuracy,
+      classifyCount: (app.globalData.classifyRecords || []).length,
+      streakDays: 16
+    }
+
+    const existingIndex = users.findIndex(u => u.id === currentUserId)
+    if (existingIndex > -1) {
+      users[existingIndex] = { ...users[existingIndex], ...currentUserStats }
+    } else {
+      users.push({
+        id: currentUserId,
+        nickName: userInfo ? userInfo.nickName : '环保达人',
+        avatarEmoji: '🌱',
+        ...currentUserStats
+      })
+    }
+
+    users.sort((a, b) => (b[dimension] || 0) - (a[dimension] || 0))
+
+    const rankedUsers = users.map((user, index) => ({
+      ...user,
+      rank: index + 1,
+      isCurrentUser: user.id === currentUserId
+    }))
+
+    const myRank = rankedUsers.find(u => u.isCurrentUser)
+    return {
+      list: rankedUsers,
+      myRank: myRank ? myRank.rank : rankedUsers.length + 1,
+      myData: myRank || null
+    }
+  }),
+  getCurrentUserStats: jest.fn(() => {
+    const app = global.getApp()
+    const quizRecords = app.globalData.quizRecords || []
+    const totalQuestions = quizRecords.reduce((sum, r) => sum + (r.totalQuestions || 0), 0)
+    const totalCorrect = quizRecords.reduce((sum, r) => sum + (r.correctCount || 0), 0)
+    const accuracy = totalQuestions > 0 ? Math.round((totalCorrect / totalQuestions) * 100) : 0
+    return {
+      points: app.globalData.userInfo ? app.globalData.userInfo.points : 0,
+      accuracy,
+      classifyCount: (app.globalData.classifyRecords || []).length,
+      streakDays: 16
+    }
+  }),
+  initPKRecords: jest.fn(),
+  getPKRecords: jest.fn(() => {
+    const app = global.getApp()
+    return app.globalData.pkRecords || []
+  }),
+  addPKRecord: jest.fn((record) => {
+    const app = global.getApp()
+    app.globalData.pkRecords.unshift(record)
+  }),
+  getDailyPKCount: jest.fn(() => {
+    const app = global.getApp()
+    const today = '2026-06-16'
+    return (app.globalData.pkRecords || []).filter(r => r.time && r.time.startsWith(today)).length
+  }),
+  getSameOpponentCountToday: jest.fn((opponentId) => {
+    const app = global.getApp()
+    const today = '2026-06-16'
+    return (app.globalData.pkRecords || []).filter(r =>
+      r.time && r.time.startsWith(today) && r.opponentId === opponentId
+    ).length
+  }),
+  startPK: jest.fn(() => {
+    const app = global.getApp()
+    if (app.getDailyPKCount() >= PK_CONFIG.maxDailyPK) {
+      return { success: false, reason: 'daily_limit' }
+    }
+    const opponent = LEADERBOARD_USERS[0]
+    const { getRandomQuestions } = require('../frontend-mp/utils/constants')
+    const questions = getRandomQuestions(PK_CONFIG.questionCount)
+    const session = {
+      id: 'pk_mock_session',
+      opponentId: opponent.id,
+      opponentName: opponent.nickName,
+      opponentAvatarEmoji: opponent.avatarEmoji,
+      questions: questions.map(q => ({
+        id: q.id,
+        question: q.question,
+        options: q.options,
+        type: q.type || 'single',
+        correctIndex: q.correctIndex,
+        correctIndexes: q.correctIndexes || [],
+        chapterId: q.chapterId,
+        difficulty: q.difficulty
+      })),
+      startTime: Date.now(),
+      myAnswers: [],
+      myCorrectCount: 0,
+      myTotalTime: 0,
+      opponentCorrectCount: 0,
+      opponentTotalTime: 0,
+      status: 'playing',
+      currentQuestionIndex: 0
+    }
+    app.globalData.currentPKSession = session
+    return { success: true, session, opponent }
+  }),
+  matchRandomOpponent: jest.fn(() => LEADERBOARD_USERS[0]),
+  submitPKAnswer: jest.fn((questionIndex, answer, timeSpent) => {
+    const app = global.getApp()
+    const session = app.globalData.currentPKSession
+    if (!session || session.status !== 'playing') {
+      return { success: false, reason: 'no_session' }
+    }
+    const question = session.questions[questionIndex]
+    const { isQuestionCorrect } = require('../frontend-mp/utils/constants')
+    const isCorrect = isQuestionCorrect(question, answer)
+    session.myAnswers.push({ questionIndex, answer, isCorrect, timeSpent })
+    if (isCorrect) session.myCorrectCount++
+    session.myTotalTime += timeSpent
+    session.currentQuestionIndex = questionIndex + 1
+    return { success: true, isCorrect }
+  }),
+  finishPK: jest.fn(() => {
+    const app = global.getApp()
+    const session = app.globalData.currentPKSession
+    if (!session || session.status !== 'playing') {
+      return { success: false, reason: 'no_session' }
+    }
+    session.opponentCorrectCount = 3
+    session.opponentTotalTime = 25000
+    session.status = 'finished'
+    const result = session.myCorrectCount > session.opponentCorrectCount ? 'win' :
+      session.myCorrectCount === session.opponentCorrectCount ? 'draw' : 'lose'
+    const pointsEarned = result === 'win' ? PK_CONFIG.winPoints :
+      result === 'draw' ? PK_CONFIG.drawPoints : PK_CONFIG.losePoints
+    app.addPKRecord({
+      id: session.id,
+      opponentId: session.opponentId,
+      opponentName: session.opponentName,
+      myCorrectCount: session.myCorrectCount,
+      opponentCorrectCount: session.opponentCorrectCount,
+      myTotalTime: session.myTotalTime,
+      opponentTotalTime: session.opponentTotalTime,
+      totalQuestions: PK_CONFIG.questionCount,
+      result,
+      points: pointsEarned,
+      time: '2026-06-16 12:00'
+    })
+    app.globalData.currentPKSession = null
+    return {
+      success: true,
+      pkResult: {
+        session,
+        result,
+        pointsEarned,
+        myCorrectCount: session.myCorrectCount,
+        opponentCorrectCount: session.opponentCorrectCount,
+        myTotalTime: session.myTotalTime,
+        opponentTotalTime: session.opponentTotalTime,
+        totalQuestions: PK_CONFIG.questionCount
+      }
+    }
+  }),
+  initSeasonData: jest.fn(),
+  checkSeasonReset: jest.fn(),
+  processSeasonEnd: jest.fn(),
+  addSeasonMedal: jest.fn((medal) => {
+    const app = global.getApp()
+    if (!app.globalData.seasonData.medals) app.globalData.seasonData.medals = []
+    app.globalData.seasonData.medals.push(medal)
+  }),
+  addSeasonVoucher: jest.fn((voucher) => {
+    const app = global.getApp()
+    if (!app.globalData.seasonData.vouchers) app.globalData.seasonData.vouchers = []
+    app.globalData.seasonData.vouchers.push(voucher)
+  }),
+  getSeasonInfo: jest.fn(() => {
+    const app = global.getApp()
+    const seasonData = app.globalData.seasonData
+    if (!seasonData) return null
+    return {
+      seasonId: seasonData.seasonId,
+      seasonName: seasonData.seasonName,
+      startDate: seasonData.startDate,
+      endDate: seasonData.endDate,
+      daysRemaining: 14,
+      medals: seasonData.medals || [],
+      vouchers: seasonData.vouchers || []
+    }
+  }),
+  initAntiCheatData: jest.fn(),
+  checkAntiCheat: jest.fn(() => ({ passed: true })),
+  recordAntiCheatScore: jest.fn(),
+  recordAntiCheatPK: jest.fn(),
+  getAntiCheatFlaggedActions: jest.fn(() => [])
   }
 }
 

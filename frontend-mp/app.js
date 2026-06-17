@@ -33,6 +33,10 @@ App({
     this.initCommunityComments()
     this.initCommunityReports()
     this.initCommunityDailyPoints()
+    this.initLeaderboardData()
+    this.initPKRecords()
+    this.initSeasonData()
+    this.initAntiCheatData()
     this.checkAndExpirePoints()
     this.getSystemInfo()
     this.simulateAutoShipping()
@@ -1896,6 +1900,528 @@ App({
     return actualPoints
   },
 
+  initLeaderboardData() {
+    const { LEADERBOARD_USERS } = require('./utils/constants')
+    const stored = wx.getStorageSync('leaderboardData')
+
+    if (stored && stored.users && stored.users.length > 0) {
+      this.globalData.leaderboardData = stored
+    } else {
+      this.globalData.leaderboardData = {
+        users: [...LEADERBOARD_USERS],
+        lastUpdated: formatDate(new Date(), 'YYYY-MM-DD HH:mm')
+      }
+      wx.setStorageSync('leaderboardData', this.globalData.leaderboardData)
+    }
+    console.log('[App] 排行榜数据已加载', this.globalData.leaderboardData.users.length, '位用户')
+  },
+
+  getLeaderboard(period, dimension) {
+    const { LEADERBOARD_CONFIG } = require('./utils/constants')
+    const leaderboardData = this.globalData.leaderboardData
+    const userInfo = this.globalData.userInfo
+
+    let users = [...(leaderboardData.users || [])]
+
+    const currentUserStats = this.getCurrentUserStats()
+    const currentUserId = this.getUserId()
+    const existingIndex = users.findIndex(u => u.id === currentUserId)
+    if (existingIndex > -1) {
+      users[existingIndex] = { ...users[existingIndex], ...currentUserStats }
+    } else {
+      users.push({
+        id: currentUserId,
+        nickName: userInfo ? userInfo.nickName : '环保达人',
+        avatarEmoji: userInfo && userInfo.avatarUrl ? '' : '🌱',
+        ...currentUserStats
+      })
+    }
+
+    users.sort((a, b) => {
+      const aVal = a[dimension] || 0
+      const bVal = b[dimension] || 0
+      return bVal - aVal
+    })
+
+    if (period === 'week') {
+      users = users.map(u => ({
+        ...u,
+        points: Math.round(u.points * 0.3),
+        classifyCount: Math.round(u.classifyCount * 0.3)
+      }))
+    } else if (period === 'month') {
+      users = users.map(u => ({
+        ...u,
+        points: Math.round(u.points * 0.6),
+        classifyCount: Math.round(u.classifyCount * 0.6)
+      }))
+    }
+
+    const rankedUsers = users.map((user, index) => ({
+      ...user,
+      rank: index + 1,
+      isCurrentUser: user.id === currentUserId
+    }))
+
+    const myRank = rankedUsers.find(u => u.isCurrentUser)
+
+    return {
+      list: rankedUsers,
+      myRank: myRank ? myRank.rank : rankedUsers.length + 1,
+      myData: myRank || null
+    }
+  },
+
+  getCurrentUserStats() {
+    const quizRecords = this.getQuizRecords()
+    const classifyRecords = this.getClassifyRecords()
+    const userInfo = this.globalData.userInfo
+
+    const totalQuestions = quizRecords.reduce((sum, r) => sum + (r.totalQuestions || 0), 0)
+    const totalCorrect = quizRecords.reduce((sum, r) => sum + (r.correctCount || 0), 0)
+    const accuracy = totalQuestions > 0 ? Math.round((totalCorrect / totalQuestions) * 100) : 0
+
+    return {
+      points: userInfo ? userInfo.points : 0,
+      accuracy,
+      classifyCount: classifyRecords.length,
+      streakDays: this.getStreakDays()
+    }
+  },
+
+  initPKRecords() {
+    const records = wx.getStorageSync('pkRecords')
+    this.globalData.pkRecords = records || []
+    console.log('[App] PK记录已加载', this.globalData.pkRecords.length, '条')
+  },
+
+  getPKRecords() {
+    return this.globalData.pkRecords || []
+  },
+
+  addPKRecord(record) {
+    this.globalData.pkRecords.unshift(record)
+    wx.setStorageSync('pkRecords', this.globalData.pkRecords)
+    console.log('[App] 新增PK记录')
+  },
+
+  getDailyPKCount() {
+    const today = formatDate(new Date(), 'YYYY-MM-DD')
+    const records = this.getPKRecords()
+    return records.filter(r => r.time && r.time.startsWith(today)).length
+  },
+
+  getSameOpponentCountToday(opponentId) {
+    const today = formatDate(new Date(), 'YYYY-MM-DD')
+    const records = this.getPKRecords()
+    return records.filter(r =>
+      r.time && r.time.startsWith(today) && r.opponentId === opponentId
+    ).length
+  },
+
+  startPK() {
+    const { PK_CONFIG, ANTI_CHEAT_CONFIG } = require('./utils/constants')
+
+    if (this.getDailyPKCount() >= PK_CONFIG.maxDailyPK) {
+      return { success: false, reason: 'daily_limit' }
+    }
+
+    const antiCheat = this.checkAntiCheat()
+    if (!antiCheat.passed) {
+      return { success: false, reason: 'anti_cheat', detail: antiCheat.reason }
+    }
+
+    const { getRandomQuestions } = require('./utils/constants')
+    const questions = getRandomQuestions(PK_CONFIG.questionCount)
+
+    const opponent = this.matchRandomOpponent()
+
+    if (!opponent) {
+      return { success: false, reason: 'no_opponent' }
+    }
+
+    const pkSession = {
+      id: generateId(),
+      opponentId: opponent.id,
+      opponentName: opponent.nickName,
+      opponentAvatarEmoji: opponent.avatarEmoji,
+      questions: questions.map(q => ({
+        id: q.id,
+        question: q.question,
+        options: q.options,
+        type: q.type || 'single',
+        correctIndex: q.correctIndex,
+        correctIndexes: q.correctIndexes || [],
+        chapterId: q.chapterId,
+        difficulty: q.difficulty
+      })),
+      startTime: Date.now(),
+      myAnswers: [],
+      myCorrectCount: 0,
+      myTotalTime: 0,
+      opponentCorrectCount: 0,
+      opponentTotalTime: 0,
+      status: 'playing',
+      currentQuestionIndex: 0
+    }
+
+    this.globalData.currentPKSession = pkSession
+    console.log('[App] PK匹配成功，对手:', opponent.nickName)
+
+    return {
+      success: true,
+      session: pkSession,
+      opponent
+    }
+  },
+
+  matchRandomOpponent() {
+    const { LEADERBOARD_USERS } = require('./utils/constants')
+    const { PK_CONFIG } = require('./utils/constants')
+    const currentUserId = this.getUserId()
+
+    const candidates = LEADERBOARD_USERS.filter(u => u.id !== currentUserId)
+
+    const eligible = candidates.filter(u => {
+      const count = this.getSameOpponentCountToday(u.id)
+      return count < PK_CONFIG.sameOpponentMaxPerDay
+    })
+
+    if (eligible.length === 0) {
+      const idx = Math.floor(Math.random() * candidates.length)
+      return candidates[idx] || null
+    }
+
+    const idx = Math.floor(Math.random() * eligible.length)
+    return eligible[idx]
+  },
+
+  submitPKAnswer(questionIndex, answer, timeSpent) {
+    const session = this.globalData.currentPKSession
+    if (!session || session.status !== 'playing') {
+      return { success: false, reason: 'no_session' }
+    }
+
+    const { ANTI_CHEAT_CONFIG } = require('./utils/constants')
+    if (timeSpent < ANTI_CHEAT_CONFIG.minAnswerTime) {
+      console.log('[App] 答题时间异常过短，可能作弊', timeSpent)
+    }
+
+    const question = session.questions[questionIndex]
+    const { isQuestionCorrect } = require('./utils/constants')
+    const isCorrect = isQuestionCorrect(question, answer)
+
+    session.myAnswers.push({
+      questionIndex,
+      answer,
+      isCorrect,
+      timeSpent
+    })
+
+    if (isCorrect) {
+      session.myCorrectCount++
+    }
+    session.myTotalTime += timeSpent
+    session.currentQuestionIndex = questionIndex + 1
+
+    return { success: true, isCorrect }
+  },
+
+  finishPK() {
+    const { PK_CONFIG } = require('./utils/constants')
+    const session = this.globalData.currentPKSession
+    if (!session || session.status !== 'playing') {
+      return { success: false, reason: 'no_session' }
+    }
+
+    const opponentCorrectRate = 0.5 + Math.random() * 0.4
+    const opponentCorrectCount = Math.round(PK_CONFIG.questionCount * opponentCorrectRate)
+    const opponentAvgTime = 3000 + Math.random() * 4000
+    const opponentTotalTime = opponentAvgTime * PK_CONFIG.questionCount
+
+    session.opponentCorrectCount = opponentCorrectCount
+    session.opponentTotalTime = Math.round(opponentTotalTime)
+    session.status = 'finished'
+
+    const myAccuracy = session.myCorrectCount / PK_CONFIG.questionCount
+    const opponentAccuracy = opponentCorrectCount / PK_CONFIG.questionCount
+
+    let result = 'lose'
+    let pointsEarned = PK_CONFIG.losePoints
+
+    if (session.myCorrectCount > opponentCorrectCount) {
+      result = 'win'
+      pointsEarned = PK_CONFIG.winPoints
+    } else if (session.myCorrectCount === opponentCorrectCount) {
+      if (session.myTotalTime < session.opponentTotalTime) {
+        result = 'win'
+        pointsEarned = PK_CONFIG.winPoints
+      } else if (session.myTotalTime === session.opponentTotalTime) {
+        result = 'draw'
+        pointsEarned = PK_CONFIG.drawPoints
+      } else {
+        result = 'lose'
+        pointsEarned = PK_CONFIG.losePoints
+      }
+    }
+
+    if (pointsEarned > 0) {
+      this.updateUserPoints(pointsEarned, {
+        category: 'pk',
+        title: result === 'win' ? 'PK胜利' : result === 'draw' ? 'PK平局' : 'PK失败',
+        desc: `与${session.opponentName}PK，${session.myCorrectCount}/${PK_CONFIG.questionCount}正确`,
+        emoji: result === 'win' ? '🏆' : result === 'draw' ? '🤝' : '💪'
+      })
+    }
+
+    const pkRecord = {
+      id: session.id,
+      opponentId: session.opponentId,
+      opponentName: session.opponentName,
+      opponentAvatarEmoji: session.opponentAvatarEmoji,
+      myCorrectCount: session.myCorrectCount,
+      opponentCorrectCount: session.opponentCorrectCount,
+      myTotalTime: session.myTotalTime,
+      opponentTotalTime: session.opponentTotalTime,
+      totalQuestions: PK_CONFIG.questionCount,
+      result,
+      points: pointsEarned,
+      time: formatDate(new Date(), 'YYYY-MM-DD HH:mm')
+    }
+
+    this.addPKRecord(pkRecord)
+
+    const pkResult = {
+      session,
+      result,
+      pointsEarned,
+      myCorrectCount: session.myCorrectCount,
+      opponentCorrectCount: session.opponentCorrectCount,
+      myTotalTime: session.myTotalTime,
+      opponentTotalTime: session.opponentTotalTime,
+      totalQuestions: PK_CONFIG.questionCount
+    }
+
+    this.globalData.currentPKSession = null
+    console.log('[App] PK结束，结果:', result, '+', pointsEarned, '积分')
+
+    return { success: true, pkResult }
+  },
+
+  initSeasonData() {
+    const { SEASON_CONFIG } = require('./utils/constants')
+    const stored = wx.getStorageSync('seasonData')
+
+    if (stored && stored.seasonId) {
+      this.globalData.seasonData = stored
+    } else {
+      const now = new Date()
+      const month = now.getMonth() + 1
+      const year = now.getFullYear()
+      const seasonId = `${year}-${String(month).padStart(2, '0')}`
+
+      this.globalData.seasonData = {
+        seasonId,
+        seasonName: `${year}年${month}月赛季`,
+        startDate: `${year}-${String(month).padStart(2, '0')}-01`,
+        endDate: `${year}-${String(month).padStart(2, '0')}-${String(new Date(year, month, 0).getDate()).padStart(2, '0')}`,
+        medals: [],
+        vouchers: [],
+        resetDone: false
+      }
+      wx.setStorageSync('seasonData', this.globalData.seasonData)
+    }
+    console.log('[App] 赛季数据已加载', this.globalData.seasonData.seasonId)
+    this.checkSeasonReset()
+  },
+
+  checkSeasonReset() {
+    const { SEASON_CONFIG } = require('./utils/constants')
+    const seasonData = this.globalData.seasonData
+    const now = new Date()
+    const month = now.getMonth() + 1
+    const year = now.getFullYear()
+    const currentSeasonId = `${year}-${String(month).padStart(2, '0')}`
+
+    if (seasonData.seasonId !== currentSeasonId) {
+      this.processSeasonEnd(seasonData)
+      this.initSeasonData()
+    }
+  },
+
+  processSeasonEnd(seasonData) {
+    const { SEASON_CONFIG } = require('./utils/constants')
+    const leaderboard = this.getLeaderboard('month', 'points')
+    const topList = leaderboard.list.slice(0, 3)
+
+    topList.forEach((user, index) => {
+      if (user.isCurrentUser) {
+        const rank = index + 1
+        const reward = SEASON_CONFIG.seasonTopReward[rank]
+        if (reward) {
+          this.updateUserPoints(reward, {
+            category: 'season',
+            title: `${seasonData.seasonName}赛季奖励`,
+            desc: `赛季排名第${rank}名`,
+            emoji: '🏅'
+          })
+        }
+
+        const medal = {
+          id: generateId(),
+          name: `${SEASON_CONFIG.seasonMedalPrefix}·${seasonData.seasonName}`,
+          icon: '🏅',
+          seasonId: seasonData.seasonId,
+          rank,
+          time: formatDate(new Date(), 'YYYY-MM-DD HH:mm')
+        }
+        this.addSeasonMedal(medal)
+
+        if (rank <= 3) {
+          const voucher = {
+            id: generateId(),
+            name: `${seasonData.seasonName}兑换券`,
+            points: SEASON_CONFIG.seasonVoucherPoints,
+            seasonId: seasonData.seasonId,
+            rank,
+            used: false,
+            time: formatDate(new Date(), 'YYYY-MM-DD HH:mm')
+          }
+          this.addSeasonVoucher(voucher)
+        }
+      }
+    })
+
+    console.log('[App] 赛季结算完成', seasonData.seasonId)
+  },
+
+  addSeasonMedal(medal) {
+    if (!this.globalData.seasonData.medals) {
+      this.globalData.seasonData.medals = []
+    }
+    this.globalData.seasonData.medals.push(medal)
+    wx.setStorageSync('seasonData', this.globalData.seasonData)
+  },
+
+  addSeasonVoucher(voucher) {
+    if (!this.globalData.seasonData.vouchers) {
+      this.globalData.seasonData.vouchers = []
+    }
+    this.globalData.seasonData.vouchers.push(voucher)
+    wx.setStorageSync('seasonData', this.globalData.seasonData)
+  },
+
+  getSeasonInfo() {
+    const seasonData = this.globalData.seasonData
+    if (!seasonData) return null
+
+    const now = new Date()
+    const endDate = new Date(seasonData.endDate + 'T23:59:59')
+    const daysRemaining = Math.max(0, Math.ceil((endDate - now) / (1000 * 60 * 60 * 24)))
+
+    return {
+      seasonId: seasonData.seasonId,
+      seasonName: seasonData.seasonName,
+      startDate: seasonData.startDate,
+      endDate: seasonData.endDate,
+      daysRemaining,
+      medals: seasonData.medals || [],
+      vouchers: seasonData.vouchers || []
+    }
+  },
+
+  initAntiCheatData() {
+    const stored = wx.getStorageSync('antiCheatData')
+    const today = formatDate(new Date(), 'YYYY-MM-DD')
+
+    if (stored && stored.date === today) {
+      this.globalData.antiCheatData = stored
+    } else {
+      this.globalData.antiCheatData = {
+        date: today,
+        hourlyScores: {},
+        hourlyPKCount: {},
+        lastMatchOpponent: null,
+        lastMatchTime: 0,
+        flaggedActions: []
+      }
+      wx.setStorageSync('antiCheatData', this.globalData.antiCheatData)
+    }
+    console.log('[App] 防作弊数据已加载')
+  },
+
+  checkAntiCheat() {
+    const { ANTI_CHEAT_CONFIG } = require('./utils/constants')
+    const cheatData = this.globalData.antiCheatData
+    const now = new Date()
+    const hourKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}-${String(now.getHours()).padStart(2, '0')}`
+
+    if (!cheatData || cheatData.date !== formatDate(now, 'YYYY-MM-DD')) {
+      this.initAntiCheatData()
+    }
+
+    const hourlyScore = cheatData.hourlyScores[hourKey] || 0
+    if (hourlyScore > ANTI_CHEAT_CONFIG.maxScorePerHour) {
+      return {
+        passed: false,
+        reason: 'abnormal_score',
+        message: '每小时积分获取异常，请稍后再试'
+      }
+    }
+
+    const hourlyPK = cheatData.hourlyPKCount[hourKey] || 0
+    if (hourlyPK >= ANTI_CHEAT_CONFIG.maxPKPerHour) {
+      return {
+        passed: false,
+        reason: 'abnormal_pk_frequency',
+        message: 'PK频率异常，请稍后再试'
+      }
+    }
+
+    if (cheatData.lastMatchOpponent && cheatData.lastMatchTime) {
+      const timeSinceLastMatch = Date.now() - cheatData.lastMatchTime
+      if (timeSinceLastMatch < ANTI_CHEAT_CONFIG.sameOpponentCooldown) {
+        return {
+          passed: false,
+          reason: 'same_opponent_cooldown',
+          message: '同一对手匹配冷却中'
+        }
+      }
+    }
+
+    return { passed: true }
+  },
+
+  recordAntiCheatScore(points) {
+    const now = new Date()
+    const hourKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}-${String(now.getHours()).padStart(2, '0')}`
+
+    if (!this.globalData.antiCheatData) return
+    if (!this.globalData.antiCheatData.hourlyScores) {
+      this.globalData.antiCheatData.hourlyScores = {}
+    }
+    this.globalData.antiCheatData.hourlyScores[hourKey] = (this.globalData.antiCheatData.hourlyScores[hourKey] || 0) + points
+    wx.setStorageSync('antiCheatData', this.globalData.antiCheatData)
+  },
+
+  recordAntiCheatPK(opponentId) {
+    const now = new Date()
+    const hourKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}-${String(now.getHours()).padStart(2, '0')}`
+
+    if (!this.globalData.antiCheatData) return
+    if (!this.globalData.antiCheatData.hourlyPKCount) {
+      this.globalData.antiCheatData.hourlyPKCount = {}
+    }
+    this.globalData.antiCheatData.hourlyPKCount[hourKey] = (this.globalData.antiCheatData.hourlyPKCount[hourKey] || 0) + 1
+    this.globalData.antiCheatData.lastMatchOpponent = opponentId
+    this.globalData.antiCheatData.lastMatchTime = Date.now()
+    wx.setStorageSync('antiCheatData', this.globalData.antiCheatData)
+  },
+
+  getAntiCheatFlaggedActions() {
+    return (this.globalData.antiCheatData && this.globalData.antiCheatData.flaggedActions) || []
+  },
+
   /**
    * 全局数据
    */
@@ -1923,6 +2449,11 @@ App({
     communityPosts: [],
     communityComments: {},
     communityReports: [],
-    communityDailyPoints: null
+    communityDailyPoints: null,
+    leaderboardData: null,
+    pkRecords: [],
+    currentPKSession: null,
+    seasonData: null,
+    antiCheatData: null
   }
 })

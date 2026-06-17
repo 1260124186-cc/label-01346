@@ -1,0 +1,131 @@
+<view class="page-container">
+  <view class="season-banner" wx:if="{{seasonInfo}}">
+    <view class="season-banner-bg"></view>
+    <view class="season-banner-content">
+      <view class="season-info-row">
+        <text class="season-icon">🏆</text>
+        <text class="season-name">{{seasonInfo.seasonName}}</text>
+        <view class="season-days-badge">
+          <text class="season-days-text">剩余 {{seasonInfo.daysRemaining}} 天</text>
+        </view>
+      </view>
+      <text class="season-date">{{seasonInfo.startDate}} ~ {{seasonInfo.endDate}}</text>
+    </view>
+  </view>
+
+  <view class="tab-section">
+    <view class="period-tabs">
+      <view
+        class="period-tab {{currentPeriod === item.id ? 'period-tab-active' : ''}}"
+        wx:for="{{periods}}"
+        wx:key="id"
+        data-id="{{item.id}}"
+        bindtap="onPeriodTap"
+      >
+        <text class="period-tab-icon">{{item.icon}}</text>
+        <text class="period-tab-name">{{item.name}}</text>
+      </view>
+    </view>
+    <view class="dimension-tabs">
+      <view
+        class="dimension-tab {{currentDimension === item.id ? 'dimension-tab-active' : ''}}"
+        wx:for="{{dimensions}}"
+        wx:key="id"
+        data-id="{{item.id}}"
+        bindtap="onDimensionTap"
+      >
+        <text class="dimension-tab-icon">{{item.icon}}</text>
+        <text class="dimension-tab-name">{{item.name}}</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="podium-section" wx:if="{{leaderboardList.length >= 3}}">
+    <view class="podium-container">
+      <view class="podium-item podium-silver">
+        <view class="podium-avatar-wrap podium-avatar-silver">
+          <text class="podium-avatar-emoji">{{leaderboardList[1].avatarEmoji || '😎'}}</text>
+        </view>
+        <text class="podium-name">{{leaderboardList[1].nickName}}</text>
+        <text class="podium-value">{{leaderboardList[1].displayValue}}</text>
+        <view class="podium-bar podium-bar-silver">
+          <text class="podium-rank-text">2</text>
+        </view>
+      </view>
+      <view class="podium-item podium-gold">
+        <view class="podium-crown">👑</view>
+        <view class="podium-avatar-wrap podium-avatar-gold">
+          <text class="podium-avatar-emoji">{{leaderboardList[0].avatarEmoji || '🥇'}}</text>
+        </view>
+        <text class="podium-name">{{leaderboardList[0].nickName}}</text>
+        <text class="podium-value">{{leaderboardList[0].displayValue}}</text>
+        <view class="podium-bar podium-bar-gold">
+          <text class="podium-rank-text">1</text>
+        </view>
+      </view>
+      <view class="podium-item podium-bronze">
+        <view class="podium-avatar-wrap podium-avatar-bronze">
+          <text class="podium-avatar-emoji">{{leaderboardList[2].avatarEmoji || '😊'}}</text>
+        </view>
+        <text class="podium-name">{{leaderboardList[2].nickName}}</text>
+        <text class="podium-value">{{leaderboardList[2].displayValue}}</text>
+        <view class="podium-bar podium-bar-bronze">
+          <text class="podium-rank-text">3</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view class="rank-list">
+    <view
+      class="rank-item {{item.isCurrentUser ? 'rank-item-self' : ''}}"
+      wx:for="{{leaderboardList}}"
+      wx:key="id"
+      wx:if="{{index >= 3}}"
+    >
+      <view class="rank-number-wrap">
+        <text class="rank-number">{{item.rank}}</text>
+      </view>
+      <view class="rank-avatar-wrap">
+        <text class="rank-avatar-emoji">{{item.avatarEmoji || '🌱'}}</text>
+      </view>
+      <view class="rank-info">
+        <text class="rank-name">{{item.nickName}}</text>
+        <text class="rank-value">{{item.displayValue}}</text>
+      </view>
+      <view class="rank-self-badge" wx:if="{{item.isCurrentUser}}">
+        <text class="rank-self-badge-text">我</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="my-rank-card" wx:if="{{myData}}">
+    <view class="my-rank-left">
+      <view class="my-rank-badge">
+        <text class="my-rank-number">{{myRank}}</text>
+      </view>
+      <view class="my-rank-avatar">
+        <text class="my-rank-avatar-emoji">{{myData.avatarEmoji || '🌱'}}</text>
+      </view>
+      <view class="my-rank-info">
+        <text class="my-rank-name">{{myData.nickName}}</text>
+        <text class="my-rank-value">{{myData.displayValue}}</text>
+      </view>
+    </view>
+    <view class="my-rank-tag">
+      <text class="my-rank-tag-text">我的排名</text>
+    </view>
+  </view>
+
+  <view class="pk-entry" bindtap="onPKTap">
+    <view class="pk-entry-bg"></view>
+    <view class="pk-entry-content">
+      <text class="pk-entry-icon">⚔️</text>
+      <view class="pk-entry-text-wrap">
+        <text class="pk-entry-title">PK挑战</text>
+        <text class="pk-entry-desc">与好友对战赢积分</text>
+      </view>
+      <text class="pk-entry-arrow">›</text>
+    </view>
+  </view>
+</view>

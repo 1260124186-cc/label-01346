@@ -202,7 +202,9 @@ const PROFILE_MENUS = [
     items: [
       { id: 'quiz', icon: 'quiz', emoji: '❓', title: '知识问答', desc: '答题赢取积分奖励', link: '/pages/quiz/quiz' },
       { id: 'daily', icon: 'daily', emoji: '📅', title: '每日一练', desc: '每日打卡答题', link: '/pages/quiz-daily/quiz-daily' },
-      { id: 'signin', icon: 'signin', emoji: '📝', title: '每日签到', desc: '签到获取积分', link: '/pages/signin/signin' }
+      { id: 'signin', icon: 'signin', emoji: '📝', title: '每日签到', desc: '签到获取积分', link: '/pages/signin/signin' },
+      { id: 'leaderboard', icon: 'leaderboard', emoji: '🏆', title: '排行榜', desc: '查看各类排名', link: '/pages/leaderboard/leaderboard' },
+      { id: 'pk', icon: 'pk', emoji: '⚔️', title: '好友PK', desc: '实时对战赢积分', link: '/pages/pk-battle/pk-battle' }
     ]
   },
   {
@@ -2956,6 +2958,72 @@ const COMMUNITY_POINTS_CONFIG = {
   }
 }
 
+const LEADERBOARD_CONFIG = {
+  periods: [
+    { id: 'week', name: '周榜', icon: '📅', days: 7 },
+    { id: 'month', name: '月榜', icon: '🗓️', days: 30 },
+    { id: 'total', name: '总榜', icon: '🏆', days: 0 }
+  ],
+  dimensions: [
+    { id: 'points', name: '积分', icon: '💰', unit: '分' },
+    { id: 'accuracy', name: '正确率', icon: '🎯', unit: '%' },
+    { id: 'classifyCount', name: '分类次数', icon: '♻️', unit: '次' },
+    { id: 'streakDays', name: '连续签到', icon: '📅', unit: '天' }
+  ],
+  topDisplayCount: 3,
+  pageSize: 20
+}
+
+const LEADERBOARD_USERS = [
+  { id: 'lb_u1', nickName: '环保大师', avatarEmoji: '🏆', points: 8500, accuracy: 96, classifyCount: 320, streakDays: 60 },
+  { id: 'lb_u2', nickName: '绿色先锋', avatarEmoji: '🌲', points: 7200, accuracy: 93, classifyCount: 280, streakDays: 45 },
+  { id: 'lb_u3', nickName: '分类达人', avatarEmoji: '🌿', points: 6500, accuracy: 91, classifyCount: 250, streakDays: 38 },
+  { id: 'lb_u4', nickName: '环保小能手', avatarEmoji: '🌱', points: 5800, accuracy: 88, classifyCount: 220, streakDays: 30 },
+  { id: 'lb_u5', nickName: '垃圾克星', avatarEmoji: '⚡', points: 5200, accuracy: 85, classifyCount: 200, streakDays: 28 },
+  { id: 'lb_u6', nickName: '地球卫士', avatarEmoji: '🌍', points: 4600, accuracy: 82, classifyCount: 180, streakDays: 25 },
+  { id: 'lb_u7', nickName: '分类新星', avatarEmoji: '⭐', points: 4000, accuracy: 80, classifyCount: 160, streakDays: 20 },
+  { id: 'lb_u8', nickName: '环保志愿者', avatarEmoji: '🤝', points: 3500, accuracy: 78, classifyCount: 140, streakDays: 18 },
+  { id: 'lb_u9', nickName: '绿色出行者', avatarEmoji: '🚲', points: 3000, accuracy: 75, classifyCount: 120, streakDays: 15 },
+  { id: 'lb_u10', nickName: '分类新手', avatarEmoji: '🍀', points: 2500, accuracy: 72, classifyCount: 100, streakDays: 12 },
+  { id: 'lb_u11', nickName: '环保学徒', avatarEmoji: '📖', points: 2000, accuracy: 70, classifyCount: 80, streakDays: 10 },
+  { id: 'lb_u12', nickName: '小绿叶', avatarEmoji: '🍃', points: 1600, accuracy: 68, classifyCount: 60, streakDays: 8 },
+  { id: 'lb_u13', nickName: '分类小白', avatarEmoji: '🐣', points: 1200, accuracy: 65, classifyCount: 45, streakDays: 6 },
+  { id: 'lb_u14', nickName: '环保起步', avatarEmoji: '🚶', points: 800, accuracy: 60, classifyCount: 30, streakDays: 4 },
+  { id: 'lb_u15', nickName: '初学者', avatarEmoji: '🎒', points: 500, accuracy: 55, classifyCount: 15, streakDays: 2 }
+]
+
+const PK_CONFIG = {
+  questionCount: 5,
+  timePerQuestion: 10,
+  winPoints: 30,
+  losePoints: 5,
+  drawPoints: 15,
+  maxDailyPK: 10,
+  matchTimeout: 30000,
+  rematchCooldown: 60000,
+  sameOpponentMaxPerDay: 2
+}
+
+const SEASON_CONFIG = {
+  seasonDurationDays: 30,
+  resetDimensions: ['points', 'accuracy', 'classifyCount'],
+  keepDimensions: ['streakDays'],
+  seasonMedalPrefix: '赛季勋章',
+  seasonVoucherPoints: 200,
+  seasonTopReward: { 1: 500, 2: 300, 3: 200 },
+  seasonResetDay: 1
+}
+
+const ANTI_CHEAT_CONFIG = {
+  maxScorePerHour: 500,
+  maxPKPerHour: 6,
+  minAnswerTime: 1500,
+  abnormalAccuracyThreshold: 98,
+  abnormalSpeedThreshold: 2000,
+  sameOpponentCooldown: 300000,
+  suspiciousScoreMultiplier: 3
+}
+
 module.exports = {
   TRASH_TYPES,
   QUIZ_SCENES,
@@ -3005,5 +3073,10 @@ module.exports = {
   COMMUNITY_POSTS,
   COMMUNITY_COMMENTS,
   COMMUNITY_REPORT_REASONS,
-  COMMUNITY_POINTS_CONFIG
+  COMMUNITY_POINTS_CONFIG,
+  LEADERBOARD_CONFIG,
+  LEADERBOARD_USERS,
+  PK_CONFIG,
+  SEASON_CONFIG,
+  ANTI_CHEAT_CONFIG
 }

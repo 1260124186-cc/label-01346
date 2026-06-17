@@ -1,0 +1,99 @@
+<view class="pk-battle-container">
+  <view class="matching-phase" wx:if="{{phase === 'matching'}}">
+    <view class="matching-card">
+      <view class="matching-avatars">
+        <view class="matching-avatar my-avatar">
+          <view class="avatar-circle">
+            <text class="avatar-emoji">🌱</text>
+          </view>
+          <text class="avatar-name">我</text>
+        </view>
+        <view class="matching-vs">
+          <view class="pulse-ring ring-1"></view>
+          <view class="pulse-ring ring-2"></view>
+          <view class="pulse-ring ring-3"></view>
+          <text class="vs-text">VS</text>
+        </view>
+        <view class="matching-avatar opponent-avatar">
+          <view class="avatar-circle">
+            <text class="avatar-emoji">❓</text>
+          </view>
+          <text class="avatar-name">???</text>
+        </view>
+      </view>
+      <view class="matching-info">
+        <view class="spinner"></view>
+        <text class="matching-text">正在匹配对手...</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="battle-phase" wx:if="{{phase === 'battle'}}">
+    <view class="vs-header">
+      <view class="player-card my-card">
+        <view class="player-avatar">
+          <text class="player-emoji">🌱</text>
+        </view>
+        <text class="player-name">我</text>
+        <text class="player-score">{{correctCount}}</text>
+      </view>
+      <view class="vs-badge">
+        <text class="vs-badge-text">VS</text>
+      </view>
+      <view class="player-card opponent-card">
+        <view class="player-avatar">
+          <text class="player-emoji">{{opponent.avatarEmoji}}</text>
+        </view>
+        <text class="player-name">{{opponent.nickName}}</text>
+      </view>
+    </view>
+
+    <view class="progress-section">
+      <view class="progress-header">
+        <text class="progress-text">第 {{currentQuestionIndex + 1}} / {{totalQuestions}} 题</text>
+        <text class="progress-correct">✓ {{correctCount}}</text>
+      </view>
+      <view class="progress-bar">
+        <view class="progress-fill" style="width: {{(currentQuestionIndex / totalQuestions) * 100}}%"></view>
+      </view>
+    </view>
+
+    <view class="timer-section">
+      <view class="timer-ring {{timeLeft <= 3 ? 'warning' : ''}}">
+        <view class="timer-inner">
+          <text class="timer-number">{{timeLeft}}</text>
+          <text class="timer-unit">秒</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="question-section" wx:if="{{currentQuestion}}">
+      <view class="question-card">
+        <text class="question-text">{{currentQuestion.question}}</text>
+      </view>
+
+      <view class="options-list">
+        <view
+          class="option-item {{selectedIndex === index ? 'selected' : ''}} {{isAnswered && index === currentQuestion.correctIndex ? 'correct' : ''}} {{isAnswered && selectedIndex === index && !isCorrect ? 'wrong' : ''}} {{isAnswered && selectedIndex !== index && index !== currentQuestion.correctIndex ? 'dim' : ''}}"
+          wx:for="{{currentQuestion.options}}"
+          wx:key="index"
+          data-index="{{index}}"
+          bindtap="onSelectOption"
+        >
+          <view class="option-label {{isAnswered && index === currentQuestion.correctIndex ? 'label-correct' : ''}} {{isAnswered && selectedIndex === index && !isCorrect ? 'label-wrong' : ''}}">
+            {{item}}
+          </view>
+          <view class="option-feedback" wx:if="{{isAnswered}}">
+            <text wx:if="{{index === currentQuestion.correctIndex}}" class="feedback-icon correct-icon">✓</text>
+            <text wx:elif="{{selectedIndex === index && !isCorrect}}" class="feedback-icon wrong-icon">✗</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <view class="feedback-bar {{isCorrect ? 'feedback-correct' : 'feedback-wrong'}}" wx:if="{{isAnswered}}">
+      <text class="feedback-emoji">{{isCorrect ? '✅' : '❌'}}</text>
+      <text class="feedback-text">{{isCorrect ? '回答正确！' : '回答错误'}}</text>
+    </view>
+  </view>
+</view>

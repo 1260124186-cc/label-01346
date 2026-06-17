@@ -30,7 +30,10 @@
     "pages/settings/settings",
     "pages/photo-recognize/photo-recognize",
     "pages/recognize-result/recognize-result",
-    "pages/drop-point/drop-point"
+    "pages/drop-point/drop-point",
+    "pages/leaderboard/leaderboard",
+    "pages/pk-battle/pk-battle",
+    "pages/pk-result/pk-result"
   ],
   "window": {
     "backgroundTextStyle": "dark",
