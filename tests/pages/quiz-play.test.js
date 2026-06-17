@@ -7,7 +7,7 @@ global.Page = jest.fn(obj => obj)
 require('../../frontend-mp/pages/quiz-play/quiz-play.js')
 const pageObj = global.Page.mock.calls[0][0]
 const capturedApp = global.getApp.mock.results[0].value
-const { QUIZ_DIFFICULTIES } = require('../../frontend-mp/utils/constants')
+const { QUIZ_DIFFICULTIES, QUIZ_POINTS_CONFIG } = require('../../frontend-mp/utils/constants')
 
 describe('quiz-play page', () => {
   let page
@@ -15,6 +15,15 @@ describe('quiz-play page', () => {
   beforeEach(() => {
     Object.keys(storage).forEach(key => delete storage[key])
     jest.clearAllMocks()
+    const app = global.getApp()
+    app.globalData.wrongQuestions = []
+    app.globalData.masteredQuestions = []
+    app.globalData.dailyCompletionBonus = { date: '2026-06-16', claimed: false }
+    const pointsByMode = {}
+    Object.keys(QUIZ_POINTS_CONFIG.dailyModeLimits).forEach(mode => {
+      pointsByMode[mode] = 0
+    })
+    app.globalData.dailyPoints = { date: '2026-06-16', pointsByMode }
     page = Object.create(pageObj)
     page.setData = jest.fn(function (data) {
       Object.assign(this.data, data)
@@ -26,18 +35,37 @@ describe('quiz-play page', () => {
       difficulty: '',
       difficultyName: '',
       isWrongReview: false,
+      isTimedMode: false,
+      isBossMode: false,
       questions: [],
       currentIndex: 0,
       currentQuestion: null,
       selectedIndex: -1,
+      selectedIndexes: [],
       isAnswered: false,
       isCorrect: false,
+      isTimeout: false,
+      userAnswer: null,
       correctCount: 0,
       wrongCount: 0,
+      timeoutCount: 0,
       totalPoints: 0,
       showResult: false,
       resultData: null,
-      progressPercent: 0
+      progressPercent: 0,
+      timeLeft: 0,
+      timer: null,
+      QUESTION_TYPE_MAP: {
+        single: { name: '单选题', icon: '○' },
+        multiple: { name: '多选题', icon: '☐' },
+        judge: { name: '判断题', icon: '✓' }
+      },
+      SCENE_MAP: {
+        kitchen: '厨房',
+        office: '办公室',
+        campus: '校园'
+      },
+      TRASH_TYPE_MAP: {}
     }
   })
 
@@ -65,7 +93,8 @@ describe('quiz-play page', () => {
     })
 
     test('isWrongReview=true 从 storage 加载错题', () => {
-      storage.wrongQuestions = [
+      const app = global.getApp()
+      app.globalData.wrongQuestions = [
         { id: 10, chapterId: 1, difficulty: 'easy', question: 'WQ1', options: ['A', 'B'], correctIndex: 0 }
       ]
       page.initQuiz({ isWrongReview: 'true' })
@@ -114,9 +143,10 @@ describe('quiz-play page', () => {
     })
 
     test('答对时从错题中移除', () => {
-      storage.wrongQuestions = [{ id: 1, difficulty: 'easy', options: ['A', 'B', 'C', 'D'], correctIndex: 0 }]
+      const app = global.getApp()
+      app.globalData.wrongQuestions = [{ id: 1, difficulty: 'easy', options: ['A', 'B', 'C', 'D'], correctIndex: 0 }]
       page.onSelectOption({ currentTarget: { dataset: { index: 0 } } })
-      expect(storage.wrongQuestions).toHaveLength(0)
+      expect(app.globalData.wrongQuestions).toHaveLength(0)
     })
 
     test('答错时设置 isCorrect=false 并增加 wrongCount', () => {
@@ -164,27 +194,30 @@ describe('quiz-play page', () => {
 
   describe('addToWrongQuestions', () => {
     test('新题目添加到错题', () => {
+      const app = global.getApp()
       page.addToWrongQuestions({ id: 1, question: 'Q1', options: ['A', 'B'], correctIndex: 0 })
-      expect(storage.wrongQuestions).toHaveLength(1)
-      expect(storage.wrongQuestions[0].id).toBe(1)
+      expect(app.globalData.wrongQuestions).toHaveLength(1)
+      expect(app.globalData.wrongQuestions[0].id).toBe(1)
     })
 
     test('已存在的题目不重复添加', () => {
-      storage.wrongQuestions = [{ id: 1, question: 'Q1', options: ['A', 'B'], correctIndex: 0 }]
+      const app = global.getApp()
+      app.globalData.wrongQuestions = [{ id: 1, question: 'Q1', options: ['A', 'B'], correctIndex: 0 }]
       page.addToWrongQuestions({ id: 1, question: 'Q1', options: ['A', 'B'], correctIndex: 0 })
-      expect(storage.wrongQuestions).toHaveLength(1)
+      expect(app.globalData.wrongQuestions).toHaveLength(1)
     })
   })
 
   describe('removeFromWrongQuestions', () => {
     test('按 id 移除错题', () => {
-      storage.wrongQuestions = [
+      const app = global.getApp()
+      app.globalData.wrongQuestions = [
         { id: 1, question: 'Q1' },
         { id: 2, question: 'Q2' }
       ]
       page.removeFromWrongQuestions(1)
-      expect(storage.wrongQuestions).toHaveLength(1)
-      expect(storage.wrongQuestions[0].id).toBe(2)
+      expect(app.globalData.wrongQuestions).toHaveLength(1)
+      expect(app.globalData.wrongQuestions[0].id).toBe(2)
     })
   })
 
@@ -265,12 +298,15 @@ describe('quiz-play page', () => {
     })
 
     test('发放奖励积分', () => {
+      const app = global.getApp()
+      app.globalData.dailyCompletionBonus = { date: '2026-06-16', claimed: false }
+      app.globalData.dailyPoints.pointsByMode.daily = 0
       page.showQuizResult()
       expect(capturedApp.updateUserPoints).toHaveBeenCalledWith(
-        20,
+        QUIZ_POINTS_CONFIG.dailyCompletionBonus,
         expect.objectContaining({
           category: 'quiz',
-          title: '答题奖励',
+          title: '每日完成奖励',
           emoji: '🎁'
         })
       )
@@ -377,7 +413,7 @@ describe('quiz-play page', () => {
       page.onRestart()
 
       expect(page.data.currentIndex).toBe(0)
-      expect(page.data.currentQuestion.id).toBe(1)
+      expect([1, 2]).toContain(page.data.currentQuestion.id)
       expect(page.data.selectedIndex).toBe(-1)
       expect(page.data.isAnswered).toBe(false)
       expect(page.data.isCorrect).toBe(false)

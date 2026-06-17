@@ -153,7 +153,19 @@ const defaultDailyQuizRecords = [
   '2026-06-07', '2026-06-08', '2026-06-09', '2026-06-10', '2026-06-11'
 ]
 
-const createAppMock = () => ({
+const { QUIZ_POINTS_CONFIG } = require('../frontend-mp/utils/constants')
+
+const createAppMock = () => {
+  const mockToday = '2026-06-16'
+  const mockDailyPoints = {
+    date: mockToday,
+    pointsByMode: {}
+  }
+  Object.keys(QUIZ_POINTS_CONFIG.dailyModeLimits).forEach(mode => {
+    mockDailyPoints.pointsByMode[mode] = 0
+  })
+
+  return {
   globalData: {
     userInfo: {
       avatarUrl: '',
@@ -168,6 +180,10 @@ const createAppMock = () => ({
     quizRecords: [...defaultQuizRecords],
     signInRecords: [...defaultSignInRecords],
     dailyQuizRecords: [...defaultDailyQuizRecords],
+    wrongQuestions: [],
+    dailyPoints: mockDailyPoints,
+    masteredQuestions: [],
+    dailyCompletionBonus: { date: mockToday, claimed: false },
     systemInfo: null,
     statusBarHeight: 44,
     screenHeight: 812,
@@ -350,6 +366,108 @@ const createAppMock = () => ({
       count: countMap[t.id] || 0
     }))
   }),
+  addWrongQuestion: jest.fn((question) => {
+    const app = global.getApp()
+    let wrongQuestions = app.globalData.wrongQuestions || []
+    const existingIndex = wrongQuestions.findIndex(q => q.id === question.id)
+    if (existingIndex > -1) {
+      wrongQuestions[existingIndex] = {
+        ...wrongQuestions[existingIndex],
+        wrongCount: (wrongQuestions[existingIndex].wrongCount || 1) + 1,
+        wrongTime: new Date().toISOString()
+      }
+    } else {
+      wrongQuestions.push({
+        ...question,
+        wrongCount: 1,
+        wrongTime: new Date().toISOString()
+      })
+    }
+    app.globalData.wrongQuestions = wrongQuestions
+    wx.setStorageSync('wrongQuestions', wrongQuestions)
+  }),
+  removeWrongQuestion: jest.fn((questionId) => {
+    const app = global.getApp()
+    let wrongQuestions = app.globalData.wrongQuestions || []
+    wrongQuestions = wrongQuestions.filter(q => q.id !== questionId)
+    app.globalData.wrongQuestions = wrongQuestions
+    wx.setStorageSync('wrongQuestions', wrongQuestions)
+  }),
+  getWrongQuestions: jest.fn(() => {
+    const app = global.getApp()
+    return app.globalData.wrongQuestions || []
+  }),
+  clearWrongQuestions: jest.fn(() => {
+    const app = global.getApp()
+    app.globalData.wrongQuestions = []
+    wx.setStorageSync('wrongQuestions', [])
+  }),
+  initDailyPoints: jest.fn(),
+  getDailyPointsByMode: jest.fn((mode) => {
+    const app = global.getApp()
+    const dailyPoints = app.globalData.dailyPoints
+    if (!dailyPoints) return 0
+    return dailyPoints.pointsByMode[mode] || 0
+  }),
+  addDailyPoints: jest.fn((mode, points) => {
+    const app = global.getApp()
+    const dailyPoints = app.globalData.dailyPoints
+    if (!dailyPoints) return 0
+    const currentPoints = dailyPoints.pointsByMode[mode] || 0
+    const maxPoints = QUIZ_POINTS_CONFIG.dailyModeLimits[mode] || Infinity
+    const actualPoints = Math.min(points, Math.max(0, maxPoints - currentPoints))
+    if (actualPoints > 0) {
+      dailyPoints.pointsByMode[mode] = currentPoints + actualPoints
+      app.globalData.dailyPoints = dailyPoints
+    }
+    return actualPoints
+  }),
+  isDailyLimitReached: jest.fn((mode) => {
+    const app = global.getApp()
+    const dailyPoints = app.globalData.dailyPoints
+    if (!dailyPoints) return false
+    const currentPoints = dailyPoints.pointsByMode[mode] || 0
+    const maxPoints = QUIZ_POINTS_CONFIG.dailyModeLimits[mode] || Infinity
+    return currentPoints >= maxPoints
+  }),
+  getRemainingDailyPoints: jest.fn((mode) => {
+    const app = global.getApp()
+    const dailyPoints = app.globalData.dailyPoints
+    if (!dailyPoints) return 0
+    const currentPoints = dailyPoints.pointsByMode[mode] || 0
+    const maxPoints = QUIZ_POINTS_CONFIG.dailyModeLimits[mode] || Infinity
+    return Math.max(0, maxPoints - currentPoints)
+  }),
+  initMasteredQuestions: jest.fn(),
+  isQuestionMastered: jest.fn((questionId) => {
+    const app = global.getApp()
+    const mastered = app.globalData.masteredQuestions || []
+    return mastered.includes(questionId)
+  }),
+  markQuestionMastered: jest.fn((questionId) => {
+    const app = global.getApp()
+    let mastered = app.globalData.masteredQuestions || []
+    if (!mastered.includes(questionId)) {
+      mastered.push(questionId)
+      app.globalData.masteredQuestions = mastered
+    }
+  }),
+  getMasteredQuestions: jest.fn(() => {
+    const app = global.getApp()
+    return app.globalData.masteredQuestions || []
+  }),
+  initDailyCompletionBonus: jest.fn(),
+  isDailyCompletionBonusClaimed: jest.fn(() => {
+    const app = global.getApp()
+    const bonus = app.globalData.dailyCompletionBonus
+    return bonus ? bonus.claimed : false
+  }),
+  markDailyCompletionBonusClaimed: jest.fn(() => {
+    const app = global.getApp()
+    if (app.globalData.dailyCompletionBonus) {
+      app.globalData.dailyCompletionBonus.claimed = true
+    }
+  }),
   initUserInfo: jest.fn(),
   initOrders: jest.fn(),
   initPointsRecords: jest.fn(),
@@ -363,7 +481,8 @@ const createAppMock = () => ({
     const day = String(date.getDate()).padStart(2, '0')
     return `${year}-${month}-${day}`
   })
-})
+  }
+}
 
 const appMock = createAppMock()
 

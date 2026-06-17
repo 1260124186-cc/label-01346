@@ -12,6 +12,8 @@ describe('quiz-wrong', () => {
   beforeEach(() => {
     jest.clearAllMocks()
     Object.keys(storage).forEach(key => delete storage[key])
+    const app = global.getApp()
+    app.globalData.wrongQuestions = []
     instance = { data: JSON.parse(JSON.stringify(page.data)), setData: jest.fn(function(updates) { Object.assign(this.data, updates) }) }
     Object.keys(page).forEach(key => {
       if (typeof page[key] === 'function') {
@@ -27,8 +29,9 @@ describe('quiz-wrong', () => {
     expect(page.data.userPoints).toBe(0)
   })
 
-  test('loadWrongQuestions 从 storage 读取并处理 optionsWithLabel 和 correctAnswerLabel', () => {
-    storage.wrongQuestions = [
+  test('loadWrongQuestions 从 app 读取并处理 optionsWithLabel 和 correctAnswerLabel', () => {
+    const app = global.getApp()
+    app.globalData.wrongQuestions = [
       { id: 1, question: 'test', options: ['A', 'B', 'C', 'D'], correctIndex: 1 }
     ]
     instance.loadWrongQuestions()

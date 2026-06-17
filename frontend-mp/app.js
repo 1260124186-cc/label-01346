@@ -19,6 +19,9 @@ App({
     this.initSignInRecords()
     this.initDailyQuizRecords()
     this.initWrongQuestions()
+    this.initDailyPoints()
+    this.initMasteredQuestions()
+    this.initDailyCompletionBonus()
     this.getSystemInfo()
   },
 
@@ -411,6 +414,138 @@ App({
     console.log('[App] 错题本已清空')
   },
 
+  initDailyPoints() {
+    const { QUIZ_POINTS_CONFIG } = require('./utils/constants')
+    const today = formatDate(new Date(), 'YYYY-MM-DD')
+    const stored = wx.getStorageSync('dailyPoints')
+
+    if (stored && stored.date === today) {
+      this.globalData.dailyPoints = stored
+    } else {
+      const modeLimits = QUIZ_POINTS_CONFIG.dailyModeLimits
+      const pointsByMode = {}
+      Object.keys(modeLimits).forEach(mode => {
+        pointsByMode[mode] = 0
+      })
+      this.globalData.dailyPoints = {
+        date: today,
+        pointsByMode
+      }
+      wx.setStorageSync('dailyPoints', this.globalData.dailyPoints)
+    }
+    console.log('[App] 每日积分统计已加载', this.globalData.dailyPoints)
+  },
+
+  getDailyPointsByMode(mode) {
+    const today = formatDate(new Date(), 'YYYY-MM-DD')
+    const dailyPoints = this.globalData.dailyPoints
+
+    if (!dailyPoints || dailyPoints.date !== today) {
+      this.initDailyPoints()
+    }
+
+    return this.globalData.dailyPoints.pointsByMode[mode] || 0
+  },
+
+  addDailyPoints(mode, points) {
+    const { QUIZ_POINTS_CONFIG } = require('./utils/constants')
+    const today = formatDate(new Date(), 'YYYY-MM-DD')
+    const dailyPoints = this.globalData.dailyPoints
+
+    if (!dailyPoints || dailyPoints.date !== today) {
+      this.initDailyPoints()
+    }
+
+    const currentPoints = this.globalData.dailyPoints.pointsByMode[mode] || 0
+    const maxPoints = QUIZ_POINTS_CONFIG.dailyModeLimits[mode] || Infinity
+
+    const actualPoints = Math.min(points, Math.max(0, maxPoints - currentPoints))
+
+    if (actualPoints > 0) {
+      this.globalData.dailyPoints.pointsByMode[mode] = currentPoints + actualPoints
+      wx.setStorageSync('dailyPoints', this.globalData.dailyPoints)
+      console.log(`[App] 每日积分已更新 [${mode}]: +${actualPoints}分, 总计 ${this.globalData.dailyPoints.pointsByMode[mode]}分`)
+    }
+
+    return actualPoints
+  },
+
+  isDailyLimitReached(mode) {
+    const { QUIZ_POINTS_CONFIG } = require('./utils/constants')
+    const currentPoints = this.getDailyPointsByMode(mode)
+    const maxPoints = QUIZ_POINTS_CONFIG.dailyModeLimits[mode] || Infinity
+    return currentPoints >= maxPoints
+  },
+
+  getRemainingDailyPoints(mode) {
+    const { QUIZ_POINTS_CONFIG } = require('./utils/constants')
+    const currentPoints = this.getDailyPointsByMode(mode)
+    const maxPoints = QUIZ_POINTS_CONFIG.dailyModeLimits[mode] || Infinity
+    return Math.max(0, maxPoints - currentPoints)
+  },
+
+  initMasteredQuestions() {
+    const mastered = wx.getStorageSync('masteredQuestions')
+    this.globalData.masteredQuestions = mastered || []
+    console.log('[App] 已掌握题目已加载', this.globalData.masteredQuestions.length, '道')
+  },
+
+  isQuestionMastered(questionId) {
+    const mastered = this.globalData.masteredQuestions || []
+    return mastered.includes(questionId)
+  },
+
+  markQuestionMastered(questionId) {
+    let mastered = this.globalData.masteredQuestions || []
+    if (!mastered.includes(questionId)) {
+      mastered.push(questionId)
+      this.globalData.masteredQuestions = mastered
+      wx.setStorageSync('masteredQuestions', mastered)
+      console.log('[App] 题目已标记为掌握', questionId)
+    }
+  },
+
+  getMasteredQuestions() {
+    return this.globalData.masteredQuestions || []
+  },
+
+  initDailyCompletionBonus() {
+    const today = formatDate(new Date(), 'YYYY-MM-DD')
+    const stored = wx.getStorageSync('dailyCompletionBonus')
+
+    if (stored && stored.date === today) {
+      this.globalData.dailyCompletionBonus = stored
+    } else {
+      this.globalData.dailyCompletionBonus = {
+        date: today,
+        claimed: false
+      }
+      wx.setStorageSync('dailyCompletionBonus', this.globalData.dailyCompletionBonus)
+    }
+    console.log('[App] 每日完成奖励状态已加载', this.globalData.dailyCompletionBonus.claimed ? '已领取' : '未领取')
+  },
+
+  isDailyCompletionBonusClaimed() {
+    const today = formatDate(new Date(), 'YYYY-MM-DD')
+    const bonus = this.globalData.dailyCompletionBonus
+
+    if (!bonus || bonus.date !== today) {
+      this.initDailyCompletionBonus()
+    }
+
+    return this.globalData.dailyCompletionBonus.claimed
+  },
+
+  markDailyCompletionBonusClaimed() {
+    const today = formatDate(new Date(), 'YYYY-MM-DD')
+    this.globalData.dailyCompletionBonus = {
+      date: today,
+      claimed: true
+    }
+    wx.setStorageSync('dailyCompletionBonus', this.globalData.dailyCompletionBonus)
+    console.log('[App] 每日完成奖励已标记为已领取')
+  },
+
   /**
    * 检查今日是否已完成每日一练
    * @returns {boolean} 是否已完成
@@ -653,6 +788,9 @@ App({
     quizRecords: [],
     signInRecords: [],
     wrongQuestions: [],
+    dailyPoints: null,
+    masteredQuestions: [],
+    dailyCompletionBonus: null,
     systemInfo: null,
     statusBarHeight: 0,
     screenHeight: 0,

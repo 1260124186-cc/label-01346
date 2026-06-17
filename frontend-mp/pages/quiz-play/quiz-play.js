@@ -14,6 +14,7 @@ const {
   TRASH_TYPES,
   QUIZ_TIMED_CONFIG,
   QUIZ_BOSS_CONFIG,
+  QUIZ_POINTS_CONFIG,
   isQuestionCorrect
 } = require('../../utils/constants')
 const {
@@ -348,6 +349,13 @@ Page({
     this.handleAnswerResult(correct, question)
   },
 
+  getPointsMode() {
+    if (this.data.isBossMode) return 'boss'
+    if (this.data.isTimedMode) return 'timed'
+    if (this.data.isWrongReview) return 'wrong'
+    return this.data.quizType || 'chapter'
+  },
+
   handleAnswerResult(isCorrect, question) {
     const questions = [...this.data.questions]
     const currentIndex = this.data.currentIndex
@@ -358,7 +366,27 @@ Page({
     }
 
     if (isCorrect) {
-      const pointsEarned = this.calculatePoints()
+      const basePoints = this.calculatePoints()
+      const pointsMode = this.getPointsMode()
+      let pointsEarned = basePoints
+      let showPointsMessage = true
+
+      if (this.data.isWrongReview && QUIZ_POINTS_CONFIG.wrongReviewFirstCorrectOnly) {
+        if (app.isQuestionMastered(question.id)) {
+          pointsEarned = 0
+          showPointsMessage = false
+        } else {
+          app.markQuestionMastered(question.id)
+        }
+      }
+
+      if (pointsEarned > 0) {
+        pointsEarned = app.addDailyPoints(pointsMode, pointsEarned)
+        if (pointsEarned === 0) {
+          showPointsMessage = false
+        }
+      }
+
       const newCorrectCount = this.data.correctCount + 1
       const newTotalPoints = this.data.totalPoints + pointsEarned
 
@@ -368,13 +396,20 @@ Page({
         questions
       })
 
-      app.updateUserPoints(pointsEarned, {
-        category: 'quiz',
-        title: '知识问答',
-        desc: `答题正确：${question.question.length > 15 ? question.question.slice(0, 15) + '...' : question.question}`,
-        emoji: '❓'
-      })
-      showSuccess(`答对了！+${pointsEarned}积分`)
+      if (pointsEarned > 0) {
+        app.updateUserPoints(pointsEarned, {
+          category: 'quiz',
+          title: this.data.isWrongReview ? '错题复习' : '知识问答',
+          desc: `答题正确：${question.question.length > 15 ? question.question.slice(0, 15) + '...' : question.question}`,
+          emoji: '❓'
+        })
+      }
+
+      if (showPointsMessage) {
+        showSuccess(`答对了！+${pointsEarned}积分`)
+      } else {
+        showToast('答对了！', 'success')
+      }
 
       this.removeFromWrongQuestions(question.id)
     } else {
@@ -456,13 +491,22 @@ Page({
     const timeout = this.data.timeoutCount
     const basePoints = this.data.totalPoints
     const accuracy = total > 0 ? Math.round((correct / total) * 100) : 0
+    const pointsMode = this.getPointsMode()
 
     let bonusPoints = 20
     let bonusTitle = '完成奖励'
     let resultTitle = '继续加油！'
     let resultEmoji = '💪'
 
-    if (this.data.isTimedMode) {
+    if (this.data.quizType === 'daily') {
+      if (app.isDailyCompletionBonusClaimed()) {
+        bonusPoints = 0
+        bonusTitle = '完成奖励（今日已领）'
+      } else {
+        bonusPoints = QUIZ_POINTS_CONFIG.dailyCompletionBonus
+        bonusTitle = '每日完成奖励'
+      }
+    } else if (this.data.isTimedMode) {
       const bonusConfig = QUIZ_TIMED_CONFIG.accuracyBonus.find(b => accuracy >= b.minAccuracy)
       bonusPoints = bonusConfig ? bonusConfig.bonus : 0
       bonusTitle = `${bonusConfig ? bonusConfig.name : '加油'}奖励`
@@ -471,7 +515,15 @@ Page({
       bonusTitle = 'Boss奖励'
     }
 
-    const totalPoints = basePoints + bonusPoints
+    let actualBonusPoints = 0
+    if (bonusPoints > 0) {
+      actualBonusPoints = app.addDailyPoints(pointsMode, bonusPoints)
+      if (actualBonusPoints < bonusPoints) {
+        bonusTitle = bonusTitle + '（已达今日上限）'
+      }
+    }
+
+    const totalPoints = basePoints + actualBonusPoints
 
     if (accuracy >= 90) {
       resultTitle = '完美！'
@@ -484,12 +536,18 @@ Page({
       resultEmoji = '👍'
     }
 
-    app.updateUserPoints(bonusPoints, {
-      category: 'quiz',
-      title: bonusTitle,
-      desc: `${this.data.isTimedMode ? '限时挑战' : this.data.isBossMode ? 'Boss关' : '答题'}正确率${accuracy}%`,
-      emoji: '🎁'
-    })
+    if (actualBonusPoints > 0) {
+      app.updateUserPoints(actualBonusPoints, {
+        category: 'quiz',
+        title: bonusTitle,
+        desc: `${this.data.isTimedMode ? '限时挑战' : this.data.isBossMode ? 'Boss关' : this.data.quizType === 'daily' ? '每日一练' : '答题'}正确率${accuracy}%`,
+        emoji: '🎁'
+      })
+    }
+
+    if (this.data.quizType === 'daily' && bonusPoints > 0) {
+      app.markDailyCompletionBonusClaimed()
+    }
 
     this.setData({
       showResult: true,
@@ -502,7 +560,7 @@ Page({
         timeout,
         points: totalPoints,
         basePoints,
-        bonusPoints,
+        bonusPoints: actualBonusPoints,
         bonusTitle,
         accuracy,
         isTimedMode: this.data.isTimedMode,

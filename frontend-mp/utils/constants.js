@@ -274,6 +274,19 @@ const QUIZ_WRONG_SORT_CONFIG = {
   sortOrder: ['desc', 'desc']
 }
 
+const QUIZ_POINTS_CONFIG = {
+  dailyCompletionBonus: 30,
+  dailyModeLimits: {
+    daily: 100,
+    chapter: 200,
+    difficulty: 200,
+    timed: 150,
+    boss: 100,
+    wrong: 50
+  },
+  wrongReviewFirstCorrectOnly: true
+}
+
 /**
  * 知识问答题库（170+题）
  * 题目结构扩展：
@@ -2324,6 +2337,7 @@ module.exports = {
   QUIZ_TIMED_CONFIG,
   QUIZ_BOSS_CONFIG,
   QUIZ_WRONG_SORT_CONFIG,
+  QUIZ_POINTS_CONFIG,
   getQuestionsByChapter,
   getQuestionsByDifficulty,
   getQuestionsByScene,
