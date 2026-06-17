@@ -1,0 +1,355 @@
+<view class="page-container">
+  <!-- 顶部筛选栏 -->
+  <view class="filter-bar">
+    <view class="filter-tabs">
+      <view
+        class="filter-tab {{activeFilter === 'all' ? 'active' : ''}}"
+        bindtap="onFilterChange"
+        data-type="all"
+      >
+        <text class="filter-tab-text">全部</text>
+      </view>
+      <view
+        class="filter-tab {{activeFilter === 'garbage_station' ? 'active' : ''}}"
+        bindtap="onFilterChange"
+        data-type="garbage_station"
+      >
+        <text class="filter-tab-emoji">🏠</text>
+        <text class="filter-tab-text">分类站</text>
+      </view>
+      <view
+        class="filter-tab {{activeFilter === 'recyclable' ? 'active' : ''}}"
+        bindtap="onFilterChange"
+        data-type="recyclable"
+      >
+        <text class="filter-tab-emoji">♻️</text>
+        <text class="filter-tab-text">可回收</text>
+      </view>
+      <view
+        class="filter-tab {{activeFilter === 'harmful' ? 'active' : ''}}"
+        bindtap="onFilterChange"
+        data-type="harmful"
+      >
+        <text class="filter-tab-emoji">☣️</text>
+        <text class="filter-tab-text">有害</text>
+      </view>
+      <view
+        class="filter-tab {{activeFilter === 'favorite' ? 'active' : ''}}"
+        bindtap="onFilterChange"
+        data-type="favorite"
+      >
+        <text class="filter-tab-emoji">⭐</text>
+        <text class="filter-tab-text">收藏</text>
+      </view>
+    </view>
+
+    <!-- 视图切换 -->
+    <view class="view-toggle">
+      <view
+        class="toggle-btn {{viewMode === 'map' ? 'active' : ''}}"
+        bindtap="onViewModeChange"
+        data-mode="map"
+      >
+        <text class="toggle-icon">🗺️</text>
+      </view>
+      <view
+        class="toggle-btn {{viewMode === 'list' ? 'active' : ''}}"
+        bindtap="onViewModeChange"
+        data-mode="list"
+      >
+        <text class="toggle-icon">📋</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 地图视图 -->
+  <view class="map-view" wx:if="{{viewMode === 'map'}}">
+    <map
+      id="dropPointMap"
+      class="map-container"
+      latitude="{{userLocation.latitude}}"
+      longitude="{{userLocation.longitude}}"
+      scale="{{mapScale}}"
+      markers="{{markers}}"
+      show-location="{{true}}"
+      bindmarkertap="onMarkerTap"
+      bindregionchange="onRegionChange"
+      enable-3D="{{false}}"
+      show-compass="{{true}}"
+      enable-zoom="{{true}}"
+      enable-scroll="{{true}}"
+      enable-rotate="{{false}}"
+    ></map>
+
+    <!-- 地图控制按钮 -->
+    <view class="map-controls">
+      <view class="map-control-btn" bindtap="onLocateUser">
+        <text class="control-icon">📍</text>
+      </view>
+      <view class="map-control-btn" bindtap="onZoomIn">
+        <text class="control-icon">+</text>
+      </view>
+      <view class="map-control-btn" bindtap="onZoomOut">
+        <text class="control-icon">−</text>
+      </view>
+    </view>
+
+    <!-- 底部浮动信息卡片 -->
+    <view class="floating-card" wx:if="{{selectedPoint}}">
+      <view class="floating-card-content">
+        <view class="point-type-badge" style="background: {{getPointType(selectedPoint.type).bgColor}};">
+          <text class="type-emoji">{{getPointType(selectedPoint.type).emoji}}</text>
+        </view>
+        <view class="point-info">
+          <view class="point-name-row">
+            <text class="point-name">{{selectedPoint.name}}</text>
+            <view class="favorite-btn {{isFavorite(selectedPoint.id) ? 'favorited' : ''}}" bindtap="onToggleFavorite" data-id="{{selectedPoint.id}}" catchtap="onToggleFavorite">
+              <text class="favorite-icon">{{isFavorite(selectedPoint.id) ? '⭐' : '☆'}}</text>
+            </view>
+          </view>
+          <view class="point-address">
+            <text class="address-icon">📍</text>
+            <text class="address-text">{{selectedPoint.address}}</text>
+          </view>
+          <view class="point-meta">
+            <view class="meta-item">
+              <text class="meta-icon">{{selectedPoint.isOpenNow ? '🟢' : '🔴'}}</text>
+              <text class="meta-text {{selectedPoint.isOpenNow ? 'open' : 'closed'}}">{{selectedPoint.isOpenNow ? '营业中' : '已休息'}}</text>
+            </view>
+            <view class="meta-item">
+              <text class="meta-icon">📏</text>
+              <text class="meta-text">{{formatDistance(selectedPoint.distance)}}</text>
+            </view>
+            <view class="meta-item">
+              <text class="meta-icon">⭐</text>
+              <text class="meta-text">{{selectedPoint.rating}}</text>
+            </view>
+          </view>
+        </view>
+      </view>
+      <view class="floating-card-actions">
+        <view class="action-btn secondary" bindtap="onCheckIn" data-id="{{selectedPoint.id}}">
+          <text class="action-icon">✓</text>
+          <text class="action-text">{{hasCheckedIn(selectedPoint.id) ? '已打卡' : '打卡'}}</text>
+        </view>
+        <view class="action-btn primary" bindtap="onNavigate" data-point="{{selectedPoint}}">
+          <text class="action-icon">🧭</text>
+          <text class="action-text">导航</text>
+        </view>
+        <view class="action-btn tertiary" bindtap="onShowDetail" data-point="{{selectedPoint}}">
+          <text class="action-icon">ℹ️</text>
+          <text class="action-text">详情</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 列表视图 -->
+  <scroll-view class="list-view" wx:if="{{viewMode === 'list'}}" scroll-y="{{true}}" enable-back-to-top="{{true}}">
+    <view class="sort-bar">
+      <view class="sort-info">
+        <text class="sort-text">共 {{filteredPoints.length}} 个投放点</text>
+      </view>
+      <view class="sort-actions">
+        <view class="sort-btn {{sortBy === 'distance' ? 'active' : ''}}" bindtap="onSortChange" data-sort="distance">
+          <text class="sort-icon">📏</text>
+          <text class="sort-text">距离最近</text>
+        </view>
+        <view class="sort-btn {{sortBy === 'rating' ? 'active' : ''}}" bindtap="onSortChange" data-sort="rating">
+          <text class="sort-icon">⭐</text>
+          <text class="sort-text">评分最高</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="point-list">
+      <view
+        class="point-card"
+        wx:for="{{filteredPoints}}"
+        wx:key="id"
+        bindtap="onPointTap"
+        data-point="{{item}}"
+      >
+        <view class="point-card-left">
+          <view class="point-type-icon" style="background: {{getPointType(item.type).bgColor}};">
+            <text class="type-emoji">{{getPointType(item.type).emoji}}</text>
+          </view>
+        </view>
+        <view class="point-card-content">
+          <view class="point-card-header">
+            <text class="point-card-name">{{item.name}}</text>
+            <view class="favorite-btn {{isFavorite(item.id) ? 'favorited' : ''}}" bindtap="onToggleFavorite" data-id="{{item.id}}" catchtap="onToggleFavorite">
+              <text class="favorite-icon">{{isFavorite(item.id) ? '⭐' : '☆'}}</text>
+            </view>
+          </view>
+          <view class="point-card-address">
+            <text class="address-icon">📍</text>
+            <text class="address-text">{{item.address}}</text>
+          </view>
+          <view class="point-card-tags">
+            <view
+              class="category-tag"
+              wx:for="{{item.supportedCategories}}"
+              wx:for-item="cat"
+              wx:key="id"
+              style="background: {{getCategory(cat).color}}15; color: {{getCategory(cat).color}};"
+            >
+              <text class="tag-emoji">{{getCategory(cat).emoji}}</text>
+              <text class="tag-text">{{getCategory(cat).name}}</text>
+            </view>
+          </view>
+          <view class="point-card-footer">
+            <view class="footer-left">
+              <view class="status-badge {{item.isOpenNow ? 'open' : 'closed'}}">
+                <text class="status-dot"></text>
+                <text class="status-text">{{item.isOpenNow ? '营业中' : '已休息'}}</text>
+              </view>
+              <view class="rating-badge">
+                <text class="rating-icon">⭐</text>
+                <text class="rating-text">{{item.rating}}</text>
+              </view>
+            </view>
+            <view class="footer-right">
+              <view class="distance-badge">
+                <text class="distance-text">{{formatDistance(item.distance)}}</text>
+              </view>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <view class="list-footer" wx:if="{{filteredPoints.length === 0}}">
+      <text class="empty-icon">🔍</text>
+      <text class="empty-text">暂无符合条件的投放点</text>
+    </view>
+  </scroll-view>
+
+  <!-- 详情弹窗 -->
+  <view class="detail-modal {{showDetail ? 'show' : ''}}" wx:if="{{showDetail}}" catchtap="onCloseDetail">
+    <view class="modal-mask" catchtap="onCloseDetail"></view>
+    <view class="modal-content" catchtap="">
+      <view class="modal-header">
+        <view class="modal-title-row">
+          <view class="point-type-badge large" style="background: {{getPointType(detailPoint.type).bgColor}};">
+            <text class="type-emoji">{{getPointType(detailPoint.type).emoji}}</text>
+          </view>
+          <view class="modal-title-info">
+            <text class="modal-title">{{detailPoint.name}}</text>
+            <text class="modal-subtitle">{{getPointType(detailPoint.type).name}}</text>
+          </view>
+          <view class="modal-close" catchtap="onCloseDetail">
+            <text class="close-icon">✕</text>
+          </view>
+        </view>
+      </view>
+
+      <scroll-view class="modal-body" scroll-y="{{true}}">
+        <view class="detail-section">
+          <view class="section-label">
+            <text class="label-icon">📍</text>
+            <text class="label-text">地址</text>
+          </view>
+          <text class="section-value">{{detailPoint.address}}</text>
+        </view>
+
+        <view class="detail-section">
+          <view class="section-label">
+            <text class="label-icon">⏰</text>
+            <text class="label-text">营业时间</text>
+          </view>
+          <view class="hours-list">
+            <view class="hours-item">
+              <text class="hours-day">工作日</text>
+              <text class="hours-time">{{detailPoint.businessHours.weekdays}}</text>
+            </view>
+            <view class="hours-item">
+              <text class="hours-day">周末</text>
+              <text class="hours-time">{{detailPoint.businessHours.weekends}}</text>
+            </view>
+          </view>
+        </view>
+
+        <view class="detail-section">
+          <view class="section-label">
+            <text class="label-icon">📏</text>
+            <text class="label-text">距离</text>
+          </view>
+          <text class="section-value">{{formatDistance(detailPoint.distance)}}</text>
+        </view>
+
+        <view class="detail-section">
+          <view class="section-label">
+            <text class="label-icon">🗑️</text>
+            <text class="label-text">支持类别</text>
+          </view>
+          <view class="category-tags">
+            <view
+              class="category-tag large"
+              wx:for="{{detailPoint.supportedCategories}}"
+              wx:for-item="cat"
+              wx:key="id"
+              style="background: {{getCategory(cat).color}}15; color: {{getCategory(cat).color}};"
+            >
+              <text class="tag-emoji">{{getCategory(cat).emoji}}</text>
+              <text class="tag-text">{{getCategory(cat).name}}</text>
+            </view>
+          </view>
+        </view>
+
+        <view class="detail-section">
+          <view class="section-label">
+            <text class="label-icon">🛠️</text>
+            <text class="label-text">设施服务</text>
+          </view>
+          <view class="facilities-list">
+            <view class="facility-item" wx:for="{{detailPoint.facilities}}" wx:key="*this">
+              <text class="facility-icon">✓</text>
+              <text class="facility-text">{{item}}</text>
+            </view>
+          </view>
+        </view>
+
+        <view class="detail-section">
+          <view class="section-label">
+            <text class="label-icon">📝</text>
+            <text class="label-text">站点介绍</text>
+          </view>
+          <text class="section-desc">{{detailPoint.description}}</text>
+        </view>
+
+        <view class="detail-stats">
+          <view class="stat-item">
+            <text class="stat-value">{{detailPoint.rating}}</text>
+            <text class="stat-label">评分</text>
+          </view>
+          <view class="stat-divider"></view>
+          <view class="stat-item">
+            <text class="stat-value">{{detailPoint.checkinCount}}</text>
+            <text class="stat-label">打卡人次</text>
+          </view>
+          <view class="stat-divider"></view>
+          <view class="stat-item">
+            <text class="stat-value">{{isFavorite(detailPoint.id) ? '已收藏' : '未收藏'}}</text>
+            <text class="stat-label">收藏状态</text>
+          </view>
+        </view>
+      </scroll-view>
+
+      <view class="modal-footer">
+        <view class="footer-btn secondary" bindtap="onToggleFavorite" data-id="{{detailPoint.id}}">
+          <text class="btn-icon">{{isFavorite(detailPoint.id) ? '⭐' : '☆'}}</text>
+          <text class="btn-text">{{isFavorite(detailPoint.id) ? '取消收藏' : '收藏'}}</text>
+        </view>
+        <view class="footer-btn secondary" bindtap="onCheckIn" data-id="{{detailPoint.id}}">
+          <text class="btn-icon">✓</text>
+          <text class="btn-text">{{hasCheckedIn(detailPoint.id) ? '已打卡' : '打卡'}}</text>
+        </view>
+        <view class="footer-btn primary" bindtap="onNavigate" data-point="{{detailPoint}}">
+          <text class="btn-icon">🧭</text>
+          <text class="btn-text">导航前往</text>
+        </view>
+      </view>
+    </view>
+  </view>
+</view>

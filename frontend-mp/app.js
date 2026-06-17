@@ -1068,6 +1068,36 @@ App({
    * @param {number} points 积分变化值（正数增加，负数减少）
    * @param {Object} recordInfo 积分记录信息 { title, desc, emoji, category }
    */
+  addPoints(points, category = 'other') {
+    const { QUIZ_POINTS_CONFIG } = require('./utils/constants')
+    const categoryMap = {
+      'drop_point_checkin': { mode: 'daily', title: '投放打卡', desc: '投放点正确打卡', emoji: '✓' },
+      'classify': { mode: 'daily', title: '垃圾分类', desc: '正确分类垃圾', emoji: '♻️' }
+    }
+
+    const config = categoryMap[category] || { mode: 'daily', title: '积分获取', desc: '获取积分', emoji: '💰' }
+    const mode = config.mode || 'daily'
+
+    let actualPoints = points
+    if (QUIZ_POINTS_CONFIG && QUIZ_POINTS_CONFIG.dailyModeLimits) {
+      actualPoints = this.addDailyPoints(mode, points)
+    }
+
+    if (actualPoints > 0) {
+      this.updateUserPoints(actualPoints, {
+        category,
+        title: config.title,
+        desc: config.desc,
+        emoji: config.emoji
+      })
+    }
+
+    return {
+      success: actualPoints > 0,
+      points: actualPoints
+    }
+  },
+
   updateUserPoints(points, recordInfo = null) {
     const userInfo = this.globalData.userInfo
     userInfo.points = Math.max(0, userInfo.points + points)
