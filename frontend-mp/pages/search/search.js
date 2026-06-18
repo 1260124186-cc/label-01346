@@ -1,7 +1,10 @@
+const app = getApp()
 const {
   HOT_SEARCH_WORDS,
-  fuzzySearchTrash,
-  TRASH_ENCYCLOPEDIA
+  fuzzySearchTrashForCity,
+  getTrashEncyclopediaForCity,
+  getTypeNameForCity,
+  getCurrentCity
 } = require('../../utils/constants')
 const {
   navigateTo,
@@ -24,11 +27,16 @@ Page({
     hotSearchWords: HOT_SEARCH_WORDS,
     hasSearched: false,
     showDetail: false,
-    currentDetail: null
+    currentDetail: null,
+    currentCity: 'shanghai',
+    currentCityInfo: null
   },
 
   onLoad(options) {
     console.log('[Search] 页面加载')
+    const currentCity = app.getCurrentCity()
+    const currentCityInfo = app.getCurrentCityInfo()
+    this.setData({ currentCity, currentCityInfo })
     this.loadSearchHistory()
 
     if (options.keyword) {
@@ -40,6 +48,9 @@ Page({
 
   onShow() {
     console.log('[Search] 页面显示')
+    const currentCity = app.getCurrentCity()
+    const currentCityInfo = app.getCurrentCityInfo()
+    this.setData({ currentCity, currentCityInfo })
     this.loadSearchHistory()
   },
 
@@ -79,7 +90,8 @@ Page({
       return
     }
 
-    const results = fuzzySearchTrash(trimmedKeyword)
+    const currentCity = this.data.currentCity
+    const results = fuzzySearchTrashForCity(trimmedKeyword, currentCity)
     
     this.setData({
       searchResults: results,
@@ -91,7 +103,7 @@ Page({
       this.loadSearchHistory()
     }
 
-    console.log('[Search] 搜索结果:', results.length, '条')
+    console.log('[Search] 搜索结果:', results.length, '条，城市:', currentCity)
   },
 
   onClearInput() {
@@ -107,7 +119,9 @@ Page({
     const { item } = e.currentTarget.dataset
     console.log('[Search] 点击搜索结果:', item.name)
     
-    const fullItem = TRASH_ENCYCLOPEDIA.find(t => t.id === item.id) || item
+    const currentCity = this.data.currentCity
+    const encyclopedia = getTrashEncyclopediaForCity(currentCity)
+    const fullItem = encyclopedia.find(t => t.id === item.id) || item
     
     addSearchHistory(item.name)
     this.loadSearchHistory()
@@ -129,7 +143,9 @@ Page({
     const { item } = e.currentTarget.dataset
     console.log('[Search] 点击相关项:', item.name)
     
-    const fullItem = TRASH_ENCYCLOPEDIA.find(t => t.id === item.id)
+    const currentCity = this.data.currentCity
+    const encyclopedia = getTrashEncyclopediaForCity(currentCity)
+    const fullItem = encyclopedia.find(t => t.id === item.id)
     if (fullItem) {
       this.setData({
         currentDetail: fullItem,

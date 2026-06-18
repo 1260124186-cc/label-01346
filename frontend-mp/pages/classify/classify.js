@@ -2,7 +2,16 @@
  * 垃圾分类常识页面
  * @description 展示各类垃圾的详细分类知识，根据首页传递的参数显示对应内容
  */
-const { TRASH_TYPES, CITY_STANDARDS, QUIZ_QUESTIONS } = require('../../utils/constants')
+const app = getApp()
+const {
+  TRASH_TYPES,
+  CITY_STANDARDS,
+  QUIZ_QUESTIONS,
+  getTrashTypesForCity,
+  getQuestionsForCity,
+  getTypeDescriptionForCity,
+  getTypeNameForCity
+} = require('../../utils/constants')
 const { showToast, navigateBack, navigateTo } = require('../../utils/util')
 
 Page({
@@ -17,7 +26,8 @@ Page({
     cityStandards: CITY_STANDARDS,
     selectedCityId: 'shanghai',
     selectedCity: CITY_STANDARDS[0],
-    relatedQuizQuestions: []
+    relatedQuizQuestions: [],
+    currentCity: 'shanghai'
   },
 
   /**
@@ -27,8 +37,19 @@ Page({
   onLoad(options) {
     console.log('[Classify] 页面加载，接收参数：', options)
 
+    const currentCity = app.getCurrentCity()
+    const currentCityInfo = app.getCurrentCityInfo()
+    const allTypes = getTrashTypesForCity(currentCity)
+
     // 接收页面传递的参数
     const { id, name } = options
+
+    this.setData({
+      currentCity: currentCity,
+      selectedCityId: currentCity,
+      selectedCity: currentCityInfo,
+      allTypes: allTypes
+    })
 
     if (id) {
       this.initClassifyData(parseInt(id))
@@ -45,6 +66,22 @@ Page({
     }
   },
 
+  onShow() {
+    console.log('[Classify] 页面显示')
+    const currentCity = app.getCurrentCity()
+    if (currentCity !== this.data.currentCity) {
+      const currentCityInfo = app.getCurrentCityInfo()
+      const allTypes = getTrashTypesForCity(currentCity)
+      this.setData({
+        currentCity: currentCity,
+        selectedCityId: currentCity,
+        selectedCity: currentCityInfo,
+        allTypes: allTypes
+      })
+      this.initClassifyData(this.data.classifyId)
+    }
+  },
+
   /**
    * 初始化分类数据
    * @param {number} id 分类ID
@@ -52,7 +89,20 @@ Page({
   initClassifyData(id) {
     console.log('[Classify] 初始化分类数据，ID：', id)
 
-    const classifyData = TRASH_TYPES.find(item => item.id === id)
+    const currentCity = this.data.currentCity
+    const allTypes = getTrashTypesForCity(currentCity)
+    let classifyData = allTypes.find(item => item.id === id)
+
+    // 如果找到了基础类型数据，补充城市特定的描述
+    if (classifyData) {
+      const cityDescription = getTypeDescriptionForCity(id, currentCity)
+      if (cityDescription) {
+        classifyData = {
+          ...classifyData,
+          description: cityDescription
+        }
+      }
+    }
 
     if (classifyData) {
       const relatedQuestions = this.getRelatedQuestions(id)
@@ -169,9 +219,11 @@ Page({
   },
 
   getRelatedQuestions(typeId) {
+    const currentCity = this.data.currentCity
     const typeNameMap = { single: '单选', multiple: '多选', judge: '判断' }
     const diffNameMap = { easy: '简单', medium: '中等', hard: '困难' }
-    const questions = QUIZ_QUESTIONS.filter(q => q.chapterId === typeId)
+    const allQuestions = getQuestionsForCity(null, currentCity)
+    const questions = allQuestions.filter(q => q.chapterId === typeId)
     const processed = questions.map(q => ({
       ...q,
       typeName: typeNameMap[q.type] || '单选',
@@ -185,12 +237,21 @@ Page({
     const { id } = e.currentTarget.dataset
     console.log('[Classify] 切换城市', id)
 
+    if (id === this.data.currentCity) {
+      return
+    }
+
     const selectedCity = CITY_STANDARDS.find(c => c.id === id)
     if (selectedCity) {
+      app.setCurrentCity(id)
+      const allTypes = getTrashTypesForCity(id)
       this.setData({
+        currentCity: id,
         selectedCityId: id,
-        selectedCity: selectedCity
+        selectedCity: selectedCity,
+        allTypes: allTypes
       })
+      this.initClassifyData(this.data.classifyId)
     }
   },
 

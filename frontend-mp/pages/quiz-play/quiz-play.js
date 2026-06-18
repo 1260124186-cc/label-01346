@@ -8,6 +8,8 @@ const {
   getQuestionsByDifficulty,
   getDailyQuestions,
   getRandomQuestions,
+  getQuestionsForCity,
+  getTrashTypesForCity,
   QUIZ_DIFFICULTIES,
   QUIZ_QUESTION_TYPES,
   QUIZ_SCENES,
@@ -38,6 +40,7 @@ Page({
     isWrongReview: false,
     isTimedMode: false,
     isBossMode: false,
+    currentCity: 'shanghai',
 
     questions: [],
     currentIndex: 0,
@@ -83,9 +86,11 @@ Page({
     this.initQuiz(options)
   },
 
-  initTrashTypeMap() {
+  initTrashTypeMap(cityId) {
+    const city = cityId || app.getCurrentCity()
+    const cityTypes = getTrashTypesForCity(city)
     const map = {}
-    TRASH_TYPES.forEach(t => {
+    cityTypes.forEach(t => {
       map[t.id] = t
     })
     this.setData({ TRASH_TYPE_MAP: map })
@@ -93,6 +98,7 @@ Page({
 
   initQuiz(options) {
     const { type, chapterId, chapterName, difficulty, difficultyName, isWrongReview, isTimed, isBoss } = options
+    const currentCity = app.getCurrentCity()
 
     let questions = []
     let quizType = type || 'chapter'
@@ -102,23 +108,31 @@ Page({
     if (isWrongReview === 'true') {
       quizType = 'wrong'
       const wrongQuestions = app.getWrongQuestions()
-      questions = wrongQuestions.map(q => ({
-        ...q,
-        isWrongReview: true
-      }))
+      const processed = wrongQuestions.map(q => {
+        const cityQ = this.localizeQuestion(q, currentCity)
+        return {
+          ...cityQ,
+          isWrongReview: true
+        }
+      })
+      questions = processed
     } else if (type === 'daily') {
-      questions = getDailyQuestions()
+      questions = getQuestionsForCity(null, currentCity)
+        .filter(q => q.isDaily)
     } else if (type === 'chapter' && chapterId) {
       if (isBossMode) {
-        questions = this.getBossQuestions(parseInt(chapterId, 10))
+        const chapterQs = getQuestionsForCity(parseInt(chapterId, 10), currentCity)
+        questions = chapterQs.slice(0, QUIZ_BOSS_CONFIG.questionCount)
       } else {
-        questions = getQuestionsByChapter(parseInt(chapterId, 10))
+        questions = getQuestionsForCity(parseInt(chapterId, 10), currentCity)
       }
     } else if (type === 'difficulty' && difficulty) {
-      questions = getQuestionsByDifficulty(difficulty)
+      const allQs = getQuestionsForCity(null, currentCity)
+      questions = allQs.filter(q => q.difficulty === difficulty)
     } else if (isTimedMode) {
       quizType = 'timed'
-      questions = getRandomQuestions(QUIZ_TIMED_CONFIG.totalQuestions)
+      const allQs = getQuestionsForCity(null, currentCity)
+      questions = allQs.sort(() => 0.5 - Math.random()).slice(0, QUIZ_TIMED_CONFIG.totalQuestions)
     }
 
     if (questions.length === 0) {
@@ -142,6 +156,7 @@ Page({
       isWrongReview: isWrongReview === 'true',
       isTimedMode,
       isBossMode,
+      currentCity: currentCity,
       questions: shuffled,
       currentIndex: 0,
       currentQuestion: shuffled[0],
@@ -165,6 +180,11 @@ Page({
     if (isTimedMode) {
       this.startTimer()
     }
+  },
+
+  localizeQuestion(question, cityId) {
+    const city = cityId || app.getCurrentCity()
+    return getQuestionsForCity(null, city).find(q => q.id === question.id) || question
   },
 
   processQuestion(q) {

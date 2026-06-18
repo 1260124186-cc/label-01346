@@ -6,7 +6,10 @@
 const app = getApp()
 const {
   TRASH_TYPES,
-  getRandomSortItems
+  getRandomSortItemsForCity,
+  getTrashTypesForCity,
+  getItemForCity,
+  getCurrentCity
 } = require('../../utils/constants')
 const {
   navigateTo,
@@ -27,6 +30,7 @@ Page({
     practiceMode: 'random',
     typeId: 0,
     typeName: '',
+    currentCity: 'shanghai',
 
     questions: [],
     currentIndex: 0,
@@ -62,6 +66,9 @@ Page({
 
   initPractice(options) {
     const { mode, typeId, typeName } = options
+    const currentCity = app.getCurrentCity()
+    const cityTypes = getTrashTypesForCity(currentCity)
+
     let questions = []
     let practiceMode = mode || 'random'
     let targetTypeId = typeId ? parseInt(typeId) : 0
@@ -75,18 +82,21 @@ Page({
         }, 1500)
         return
       }
-      questions = wrongItems.map(item => ({
-        id: item.id,
-        name: item.name,
-        typeId: item.typeId,
-        emoji: item.emoji,
-        desc: item.desc,
-        isWrongReview: true
-      }))
+      questions = wrongItems.map(item => {
+        const cityItem = getItemForCity(item, currentCity)
+        return {
+          id: cityItem.id,
+          name: cityItem.name,
+          typeId: cityItem.typeId,
+          emoji: cityItem.emoji,
+          desc: cityItem.desc,
+          isWrongReview: true
+        }
+      })
     } else if (practiceMode === 'category' && targetTypeId > 0) {
-      questions = getRandomSortItems(QUESTION_COUNT, targetTypeId)
+      questions = getRandomSortItemsForCity(QUESTION_COUNT, targetTypeId, currentCity)
     } else {
-      questions = getRandomSortItems(QUESTION_COUNT)
+      questions = getRandomSortItemsForCity(QUESTION_COUNT, null, currentCity)
       practiceMode = 'random'
     }
 
@@ -99,7 +109,7 @@ Page({
     }
 
     const processedQuestions = questions.map(q => {
-      const t = TRASH_TYPES.find(tt => tt.id === q.typeId)
+      const t = cityTypes.find(tt => tt.id === q.typeId)
       return {
         id: q.id,
         name: q.name,
@@ -116,12 +126,13 @@ Page({
 
     const shuffled = processedQuestions.sort(() => 0.5 - Math.random())
 
-    const optionTypes = this.buildOptionTypes()
+    const optionTypes = this.buildOptionTypes(currentCity)
 
     this.setData({
       practiceMode: practiceMode,
       typeId: targetTypeId,
       typeName: typeName || '',
+      currentCity: currentCity,
       questions: shuffled,
       currentIndex: 0,
       currentQuestion: shuffled[0],
@@ -139,15 +150,17 @@ Page({
     this.updateNavigationTitle()
   },
 
-  buildOptionTypes() {
-    const types = TRASH_TYPES.map(t => ({
+  buildOptionTypes(cityId) {
+    const city = cityId || app.getCurrentCity()
+    const types = getTrashTypesForCity(city)
+    const result = types.map(t => ({
       optTypeId: t.id,
       optTypeName: t.name,
       optTypeEmoji: t.emoji,
       optTypeColor: t.color,
       optTypeBgColor: t.bgColor
     }))
-    return types.sort(() => 0.5 - Math.random())
+    return result.sort(() => 0.5 - Math.random())
   },
 
   updateNavigationTitle() {

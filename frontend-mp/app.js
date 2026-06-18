@@ -3,7 +3,17 @@
  * @description 小程序全局逻辑
  */
 const { generateId, formatDate } = require('./utils/util')
-const { getUserLevel, ACHIEVEMENTS } = require('./utils/constants')
+const {
+  getUserLevel,
+  ACHIEVEMENTS,
+  getCurrentCity,
+  setCurrentCity,
+  getCityInfo,
+  getTypeNameForCity,
+  getTrashTypesForCity,
+  hasUpcomingStandard,
+  getUpcomingStandards
+} = require('./utils/constants')
 const {
   MESSAGE_TYPES,
   messageManager
@@ -15,7 +25,10 @@ App({
     userRole: 'user',
     systemInfo: null,
     pointsRecords: null,
-    expireCheckTimer: null
+    expireCheckTimer: null,
+    currentCity: 'shanghai',
+    currentCityInfo: null,
+    hasUpcomingStandard: false
   },
 
   /**
@@ -24,6 +37,7 @@ App({
   onLaunch(options = {}) {
     console.log('[App] 小程序启动')
 
+    this.initCity()
     this.initUserInfo()
     this.initGoodsStock()
     this.initAddresses()
@@ -65,6 +79,53 @@ App({
     this.checkPushStrategies()
 
     this.startExpireCheckInterval()
+  },
+
+  initCity() {
+    const city = getCurrentCity()
+    const cityInfo = getCityInfo(city)
+    const hasUpcoming = hasUpcomingStandard(city)
+    this.globalData.currentCity = city
+    this.globalData.currentCityInfo = cityInfo
+    this.globalData.hasUpcomingStandard = hasUpcoming
+    console.log('[App] 城市已初始化:', cityInfo.name, '即将实施新标准:', hasUpcoming)
+  },
+
+  setCurrentCity(cityId) {
+    const success = setCurrentCity(cityId)
+    if (success) {
+      const cityInfo = getCityInfo(cityId)
+      const hasUpcoming = hasUpcomingStandard(cityId)
+      this.globalData.currentCity = cityId
+      this.globalData.currentCityInfo = cityInfo
+      this.globalData.hasUpcomingStandard = hasUpcoming
+      console.log('[App] 城市已切换为:', cityInfo.name)
+    }
+    return success
+  },
+
+  getCurrentCity() {
+    return this.globalData.currentCity || getCurrentCity()
+  },
+
+  getCurrentCityInfo() {
+    return this.globalData.currentCityInfo || getCityInfo(this.getCurrentCity())
+  },
+
+  getTypeNameForCity(typeId) {
+    return getTypeNameForCity(typeId, this.getCurrentCity())
+  },
+
+  getTrashTypesForCity() {
+    return getTrashTypesForCity(this.getCurrentCity())
+  },
+
+  getCityUpcomingStandards() {
+    return getUpcomingStandards(this.getCurrentCity())
+  },
+
+  hasCityUpcomingStandard() {
+    return this.globalData.hasUpcomingStandard || hasUpcomingStandard(this.getCurrentCity())
   },
 
   startExpireCheckInterval() {

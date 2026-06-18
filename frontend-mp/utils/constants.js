@@ -2524,8 +2524,401 @@ const CITY_STANDARDS = [
       '使用智慧垃圾分类管理系统',
       '违规投放个人最高罚200元'
     ]
+  },
+  {
+    id: 'guangzhou',
+    name: '广州',
+    emoji: '🌴',
+    color: '#9B59B6',
+    standards: {
+      recyclable: '废纸张、废塑料、废玻璃制品、废金属、废织物等',
+      harmful: '废电池、废灯管、废药品、废油漆及其容器等',
+      kitchen: '家庭厨余、餐厨垃圾、其他厨余等',
+      other: '除以上三类之外的其他生活废弃物'
+    },
+    specialRules: [
+      '广州将厨余垃圾细分为家庭厨余、餐厨垃圾、其他厨余',
+      '死老鼠等动物尸体需单独投放',
+      '推行"定时定点+误时投放"模式'
+    ]
+  },
+  {
+    id: 'hangzhou',
+    name: '杭州',
+    emoji: '🏔️',
+    color: '#1ABC9C',
+    standards: {
+      recyclable: '废纸张、废塑料、废玻璃制品、废金属、废织物等',
+      harmful: '废电池、废灯管、废药品、废油漆及其容器等',
+      kitchen: '易腐烂的生物质生活废弃物',
+      other: '除以上三类之外的其他生活废弃物'
+    },
+    specialRules: [
+      '杭州称其他垃圾为"其他垃圾"',
+      '粽子叶、玉米皮归其他垃圾',
+      '贝壳类归其他垃圾'
+    ]
   }
 ]
+
+const REGION_STANDARDS = {
+  typeNames: {
+    1: {
+      shanghai: { localName: '可回收物',投放口径: '可回收垃圾是指适宜回收利用和资源化利用的生活废弃物', color: '#4A90D9' },
+      beijing: { localName: '可回收物', 投放口径: '可回收垃圾是指适宜回收利用和资源化利用的生活废弃物', color: '#4A90D9' },
+      shenzhen: { localName: '可回收物', 投放口径: '可回收垃圾是指适宜回收利用和资源化利用的生活废弃物', color: '#4A90D9' },
+      guangzhou: { localName: '可回收物', 投放口径: '可回收垃圾是指适宜回收利用和资源化利用的生活废弃物', color: '#4A90D9' },
+      hangzhou: { localName: '可回收物', 投放口径: '可回收垃圾是指适宜回收利用和资源化利用的生活废弃物', color: '#4A90D9' }
+    },
+    2: {
+      shanghai: { localName: '有害垃圾', 投放口径: '对人体健康或者自然环境造成直接或者潜在危害的生活废弃物', color: '#E85D5D' },
+      beijing: { localName: '有害垃圾', 投放口径: '对人体健康或者自然环境造成直接或者潜在危害的生活废弃物', color: '#E85D5D' },
+      shenzhen: { localName: '有害垃圾', 投放口径: '对人体健康或者自然环境造成直接或者潜在危害的生活废弃物', color: '#E85D5D' },
+      guangzhou: { localName: '有害垃圾', 投放口径: '对人体健康或者自然环境造成直接或者潜在危害的生活废弃物', color: '#E85D5D' },
+      hangzhou: { localName: '有害垃圾', 投放口径: '对人体健康或者自然环境造成直接或者潜在危害的生活废弃物', color: '#E85D5D' }
+    },
+    3: {
+      shanghai: { localName: '湿垃圾', 投放口径: '易腐垃圾，是指食材废料、剩菜剩饭、过期食品、瓜皮果核、花卉绿植、中药药渣等易腐的生物质生活废弃物', color: '#5BBD72' },
+      beijing: { localName: '厨余垃圾', 投放口径: '居民日常生活及食品加工、饮食服务、单位供餐等活动中产生的垃圾', color: '#5BBD72' },
+      shenzhen: { localName: '厨余垃圾', 投放口径: '居民日常生活及食品加工、饮食服务、单位供餐等活动中产生的垃圾', color: '#5BBD72' },
+      guangzhou: { localName: '厨余垃圾', 投放口径: '包括家庭厨余垃圾、餐厨垃圾和其他厨余垃圾等', color: '#5BBD72' },
+      hangzhou: { localName: '易腐垃圾', 投放口径: '易腐烂的生物质生活废弃物', color: '#5BBD72' }
+    },
+    4: {
+      shanghai: { localName: '干垃圾', 投放口径: '除可回收物、有害垃圾、湿垃圾以外的其他生活废弃物', color: '#8E8E93' },
+      beijing: { localName: '其他垃圾', 投放口径: '除可回收物、有害垃圾、厨余垃圾以外的其他生活废弃物', color: '#8E8E93' },
+      shenzhen: { localName: '其他垃圾', 投放口径: '除可回收物、有害垃圾、厨余垃圾以外的其他生活废弃物', color: '#8E8E93' },
+      guangzhou: { localName: '其他垃圾', 投放口径: '除可回收物、有害垃圾、厨余垃圾以外的其他生活废弃物', color: '#8E8E93' },
+      hangzhou: { localName: '其他垃圾', 投放口径: '除可回收物、有害垃圾、易腐垃圾以外的其他生活废弃物', color: '#8E8E93' }
+    }
+  },
+  specialTypeMappings: {
+    shanghai: {
+      type3: '湿垃圾', type4: '干垃圾'
+    },
+    beijing: {
+      type3: '厨余垃圾', type4: '其他垃圾'
+    },
+    shenzhen: {
+      type3: '厨余垃圾', type4: '其他垃圾'
+    },
+    guangzhou: {
+      type3: '厨余垃圾', type4: '其他垃圾'
+    },
+    hangzhou: {
+      type3: '易腐垃圾', type4: '其他垃圾'
+    }
+  },
+  itemOverrides: {
+    52: {
+      shanghai: { typeId: 4, localName: '小排骨', note: '上海：小排骨属于湿垃圾' },
+      beijing: { typeId: 3, localName: '小排骨', note: '北京：小排骨属于厨余垃圾' },
+      shenzhen: { typeId: 3, localName: '小排骨', note: '深圳：小排骨属于厨余垃圾' },
+      guangzhou: { typeId: 3, localName: '小排骨', note: '广州：小排骨属于厨余垃圾' },
+      hangzhou: { typeId: 3, localName: '小排骨', note: '杭州：小排骨属于易腐垃圾' }
+    },
+    50: {
+      shanghai: { typeId: 4, localName: '鸡骨', note: '上海：鸡骨属于湿垃圾' },
+      beijing: { typeId: 3, localName: '鸡骨', note: '北京：鸡骨属于厨余垃圾' },
+      shenzhen: { typeId: 3, localName: '鸡骨', note: '深圳：鸡骨属于厨余垃圾' },
+      guangzhou: { typeId: 3, localName: '鸡骨', note: '广州：鸡骨属于厨余垃圾' },
+      hangzhou: { typeId: 3, localName: '鸡骨', note: '杭州：鸡骨属于易腐垃圾' }
+    },
+    51: {
+      shanghai: { typeId: 4, localName: '鱼骨', note: '上海：鱼骨属于湿垃圾' },
+      beijing: { typeId: 3, localName: '鱼骨', note: '北京：鱼骨属于厨余垃圾' },
+      shenzhen: { typeId: 3, localName: '鱼骨', note: '深圳：鱼骨属于厨余垃圾' },
+      guangzhou: { typeId: 3, localName: '鱼骨', note: '广州：鱼骨属于厨余垃圾' },
+      hangzhou: { typeId: 3, localName: '鱼骨', note: '杭州：鱼骨属于易腐垃圾' }
+    },
+    70: {
+      shanghai: { typeId: 4, localName: '大骨头', note: '上海：大骨头属于干垃圾，因为难腐蚀难分解' },
+      beijing: { typeId: 4, localName: '大骨头', note: '北京：大骨头属于其他垃圾' },
+      shenzhen: { typeId: 4, localName: '大骨头', note: '深圳：大骨头属于其他垃圾' },
+      guangzhou: { typeId: 4, localName: '大骨头', note: '广州：大骨头属于其他垃圾' },
+      hangzhou: { typeId: 4, localName: '大骨头', note: '杭州：大骨头属于其他垃圾' }
+    },
+    71: {
+      shanghai: { typeId: 4, localName: '蛤蜊壳', note: '上海：蛤蜊壳属于干垃圾，因为难腐蚀' },
+      beijing: { typeId: 4, localName: '蛤蜊壳', note: '北京：蛤蜊壳属于其他垃圾' },
+      shenzhen: { typeId: 4, localName: '蛤蜊壳', note: '深圳：蛤蜊壳属于其他垃圾' },
+      guangzhou: { typeId: 4, localName: '蛤蜊壳', note: '广州：蛤蜊壳属于其他垃圾' },
+      hangzhou: { typeId: 4, localName: '蛤蜊壳', note: '杭州：蛤蜊壳属于其他垃圾' }
+    },
+    72: {
+      shanghai: { typeId: 4, localName: '蟹壳', note: '上海：蟹壳属于干垃圾' },
+      beijing: { typeId: 4, localName: '蟹壳', note: '北京：蟹壳属于其他垃圾' },
+      shenzhen: { typeId: 4, localName: '蟹壳', note: '深圳：蟹壳属于其他垃圾' },
+      guangzhou: { typeId: 4, localName: '蟹壳', note: '广州：蟹壳属于其他垃圾' },
+      hangzhou: { typeId: 4, localName: '蟹壳', note: '杭州：蟹壳属于其他垃圾' }
+    },
+    73: {
+      shanghai: { typeId: 4, localName: '椰子壳', note: '上海：椰子壳属于干垃圾' },
+      beijing: { typeId: 4, localName: '椰子壳', note: '北京：椰子壳属于其他垃圾' },
+      shenzhen: { typeId: 4, localName: '椰子壳', note: '深圳：椰子壳属于其他垃圾' },
+      guangzhou: { typeId: 4, localName: '椰子壳', note: '广州：椰子壳属于其他垃圾' },
+      hangzhou: { typeId: 4, localName: '椰子壳', note: '杭州：椰子壳属于其他垃圾' }
+    },
+    74: {
+      shanghai: { typeId: 4, localName: '榴莲壳', note: '上海：榴莲壳属于干垃圾' },
+      beijing: { typeId: 4, localName: '榴莲壳', note: '北京：榴莲壳属于其他垃圾' },
+      shenzhen: { typeId: 4, localName: '榴莲壳', note: '深圳：榴莲壳属于其他垃圾' },
+      guangzhou: { typeId: 4, localName: '榴莲壳', note: '广州：榴莲壳属于其他垃圾' },
+      hangzhou: { typeId: 4, localName: '榴莲壳', note: '杭州：榴莲壳属于其他垃圾' }
+    },
+    75: {
+      shanghai: { typeId: 4, localName: '粽子叶', note: '上海：粽子叶属于干垃圾' },
+      beijing: { typeId: 4, localName: '粽子叶', note: '北京：粽子叶属于其他垃圾' },
+      shenzhen: { typeId: 4, localName: '粽子叶', note: '深圳：粽子叶属于其他垃圾' },
+      guangzhou: { typeId: 4, localName: '粽子叶', note: '广州：粽子叶属于其他垃圾' },
+      hangzhou: { typeId: 4, localName: '粽子叶', note: '杭州：粽子叶属于其他垃圾，因为难腐蚀' }
+    },
+    76: {
+      shanghai: { typeId: 4, localName: '玉米皮', note: '上海：玉米皮属于干垃圾' },
+      beijing: { typeId: 4, localName: '玉米皮', note: '北京：玉米皮属于其他垃圾' },
+      shenzhen: { typeId: 4, localName: '玉米皮', note: '深圳：玉米皮属于其他垃圾' },
+      guangzhou: { typeId: 4, localName: '玉米皮', note: '广州：玉米皮属于其他垃圾' },
+      hangzhou: { typeId: 4, localName: '玉米皮', note: '杭州：玉米皮属于其他垃圾' }
+    },
+    77: {
+      shanghai: { typeId: 4, localName: '核桃壳', note: '上海：核桃壳属于干垃圾' },
+      beijing: { typeId: 4, localName: '核桃壳', note: '北京：核桃壳属于其他垃圾' },
+      shenzhen: { typeId: 4, localName: '核桃壳', note: '深圳：核桃壳属于其他垃圾' },
+      guangzhou: { typeId: 4, localName: '核桃壳', note: '广州：核桃壳属于其他垃圾' },
+      hangzhou: { typeId: 4, localName: '核桃壳', note: '杭州：核桃壳属于其他垃圾' }
+    }
+  }
+}
+
+const UPCOMING_STANDARDS = [
+  {
+    id: 'shanghai_2026',
+    cityId: 'shanghai',
+    title: '上海市2026新版分类标准',
+    effectiveDate: '2026-07-01',
+    description: '上海市将于2026年7月1日起实施新版垃圾分类标准，主要调整包括：',
+    changes: [
+      { type: '新增', content: '新增"大件垃圾"分类类别' },
+      { type: '调整', content: '部分"干垃圾将重新归类为湿垃圾' },
+      { type: '优化', content: '可回收物细分为"可回收物"和"低价值可回收物"两类' },
+      { type: '加强', content: '违规投放处罚金额提升至最高500元' }
+    ],
+    preparationTips: [
+      '及时关注官方公告',
+      '学习新的分类知识',
+      '准备新的分类容器'
+    ],
+    isActive: true
+  },
+  {
+    id: 'beijing_2026',
+    cityId: 'beijing',
+    title: '北京市2026新版分类标准',
+    effectiveDate: '2026-09-01',
+    description: '北京市将于2026年9月1日起实施新版垃圾分类标准，主要调整包括：',
+    changes: [
+      { type: '调整', content: '厨余垃圾分类标准细化' },
+      { type: '新增', content: '新增电子废弃物专门回收点' },
+      { type: '优化', content: '可回收物智能投放点覆盖率提升至80%' }
+    ],
+    preparationTips: [
+      '下载官方"北京垃圾分类"APP',
+      '参加社区组织的培训活动'
+    ],
+    isActive: false
+  }
+]
+
+const getCurrentCity = () => {
+  try {
+    return wx.getStorageSync('currentCity') || 'shanghai'
+  } catch (e) {
+    return 'shanghai'
+  }
+}
+
+const setCurrentCity = (cityId) => {
+  try {
+    wx.setStorageSync('currentCity', cityId)
+    return true
+  } catch (e) {
+    return false
+  }
+}
+
+const getCityInfo = (cityId) => {
+  return CITY_STANDARDS.find(c => c.id === cityId) || CITY_STANDARDS[0]
+}
+
+const getTypeNameForCity = (typeId, cityId) => {
+  const city = cityId || getCurrentCity()
+  const typeStandards = REGION_STANDARDS.typeNames[typeId]
+  if (typeStandards && typeStandards[city]) {
+    return typeStandards[city].localName
+  }
+  const defaultType = TRASH_TYPES.find(t => t.id === typeId)
+  return defaultType ? defaultType.name : '未知'
+}
+
+const getTypeDescriptionForCity = (typeId, cityId) => {
+  const city = cityId || getCurrentCity()
+  const typeStandards = REGION_STANDARDS.typeNames[typeId]
+  if (typeStandards && typeStandards[city]) {
+    return typeStandards[city].投放口径
+  }
+  const defaultType = TRASH_TYPES.find(t => t.id === typeId)
+  return defaultType ? defaultType.description : ''
+}
+
+const getItemForCity = (item, cityId) => {
+  const city = cityId || getCurrentCity()
+  const override = REGION_STANDARDS.itemOverrides[item.id]
+  if (override && override[city]) {
+    return {
+      ...item,
+      typeId: override[city].typeId,
+      name: override[city].localName,
+      cityNote: override[city].note,
+      citySpecific: true
+    }
+  }
+  return { ...item, citySpecific: false }
+}
+
+const getTrashTypesForCity = (cityId) => {
+  const city = cityId || getCurrentCity()
+  return TRASH_TYPES.map(type => {
+    const typeStandard = REGION_STANDARDS.typeNames[type.id]
+    if (typeStandard && typeStandard[city]) {
+      return {
+        ...type,
+        name: typeStandard[city].localName,
+        description: typeStandard[city].投放口径,
+        color: typeStandard[city].color,
+        cityLocalName: typeStandard[city].localName
+      }
+    }
+    return type
+  })
+}
+
+const getTrashEncyclopediaForCity = (cityId) => {
+  const city = cityId || getCurrentCity()
+  return TRASH_ENCYCLOPEDIA.map(item => {
+    const cityItem = getItemForCity(item, city)
+    const typeName = getTypeNameForCity(cityItem.typeId, city)
+    const typeInfo = TRASH_TYPES.find(t => t.id === cityItem.typeId)
+    return {
+      ...cityItem,
+      typeName,
+      typeColor: typeInfo ? typeInfo.color : cityItem.typeColor,
+      typeBgColor: typeInfo ? typeInfo.bgColor : cityItem.typeBgColor
+    }
+  })
+}
+
+const fuzzySearchTrashForCity = (keyword, cityId) => {
+  if (!keyword || keyword.trim() === '') return []
+  const city = cityId || getCurrentCity()
+  const encyclopedia = getTrashEncyclopediaForCity(city)
+  const lowerKeyword = keyword.trim().toLowerCase()
+  return encyclopedia.filter(item => {
+    const nameMatch = item.name.toLowerCase().includes(lowerKeyword)
+    const descMatch = item.description.toLowerCase().includes(lowerKeyword)
+    const typeMatch = item.typeName.toLowerCase().includes(lowerKeyword)
+    return nameMatch || descMatch || typeMatch
+  })
+}
+
+const getSortItemsForCity = (count, typeId = null, cityId) => {
+  const city = cityId || getCurrentCity()
+  let items = SORT_PRACTICE_ITEMS.map(item => getItemForCity(item, city))
+  if (typeId) {
+    items = items.filter(item => item.typeId === typeId)
+  }
+  const shuffled = items.sort(() => 0.5 - Math.random())
+  return shuffled.slice(0, Math.min(count, shuffled.length))
+}
+
+const getRandomSortItemsForCity = (count, typeId = null, cityId) => {
+  return getSortItemsForCity(count, typeId, cityId)
+}
+
+const getQuestionsForCity = (chapterId, cityId) => {
+  const city = cityId || getCurrentCity()
+  let questions = QUIZ_QUESTIONS.filter(q => q.chapterId === chapterId)
+  questions = questions.map(q => {
+    const options = q.options.map(opt => {
+      if (opt.includes('厨余垃圾')) {
+        const type3Name = getTypeNameForCity(3, city)
+        return opt.replace('厨余垃圾', type3Name)
+      }
+      if (opt.includes('其他垃圾')) {
+        const type4Name = getTypeNameForCity(4, city)
+        return opt.replace('其他垃圾', type4Name)
+      }
+      return opt
+    })
+    let questionText = q.question
+    if (questionText.includes('厨余垃圾')) {
+      const type3Name = getTypeNameForCity(3, city)
+      questionText = questionText.replace(/厨余垃圾/g, type3Name)
+    }
+    if (questionText.includes('其他垃圾')) {
+      const type4Name = getTypeNameForCity(4, city)
+      questionText = questionText.replace(/其他垃圾/g, type4Name)
+    }
+    let explanation = q.explanation
+    if (explanation.includes('厨余垃圾')) {
+      const type3Name = getTypeNameForCity(3, city)
+      explanation = explanation.replace(/厨余垃圾/g, type3Name)
+    }
+    if (explanation.includes('其他垃圾')) {
+      const type4Name = getTypeNameForCity(4, city)
+      explanation = explanation.replace(/其他垃圾/g, type4Name)
+    }
+    let errorTip = q.errorTip
+    if (errorTip && errorTip.includes('厨余垃圾')) {
+      const type3Name = getTypeNameForCity(3, city)
+      errorTip = errorTip.replace(/厨余垃圾/g, type3Name)
+    }
+    if (errorTip && errorTip.includes('其他垃圾')) {
+      const type4Name = getTypeNameForCity(4, city)
+      errorTip = errorTip.replace(/其他垃圾/g, type4Name)
+    }
+    const relatedTrash = q.relatedTrash ? q.relatedTrash.map(rt => {
+      const cityRt = getItemForCity(rt, city)
+      return {
+        ...cityRt,
+        typeName: getTypeNameForCity(cityRt.typeId, city)
+      }
+    }) : []
+    return {
+      ...q,
+      question: questionText,
+      options,
+      explanation,
+      errorTip,
+      relatedTrash,
+      cityLocalized: true
+    }
+  })
+  return questions
+}
+
+const getCitySpecificTip = (cityId) => {
+  const city = getCityInfo(cityId)
+  return city ? city.specialRules || [] : []
+}
+
+const getUpcomingStandards = (cityId) => {
+  const city = cityId || getCurrentCity()
+  return UPCOMING_STANDARDS.filter(s => s.cityId === city && s.isActive)
+}
+
+const hasUpcomingStandard = (cityId) => {
+  return getUpcomingStandards(cityId).length > 0
+}
 
 const DROP_POINT_TYPES = {
   GARBAGE_STATION: {
@@ -3373,6 +3766,23 @@ module.exports = {
   ECO_TIPS,
   HOT_WASTE_NEWS,
   CITY_STANDARDS,
+  REGION_STANDARDS,
+  UPCOMING_STANDARDS,
+  getCurrentCity,
+  setCurrentCity,
+  getCityInfo,
+  getTypeNameForCity,
+  getTypeDescriptionForCity,
+  getItemForCity,
+  getTrashTypesForCity,
+  getTrashEncyclopediaForCity,
+  fuzzySearchTrashForCity,
+  getSortItemsForCity,
+  getRandomSortItemsForCity,
+  getQuestionsForCity,
+  getCitySpecificTip,
+  getUpcomingStandards,
+  hasUpcomingStandard,
   DROP_POINT_TYPES,
   SUPPORTED_CATEGORIES,
   DROP_POINTS,

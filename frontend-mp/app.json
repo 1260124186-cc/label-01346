@@ -28,6 +28,7 @@
     "pages/activity/activity",
     "pages/invite/invite",
     "pages/settings/settings",
+    "pages/region-notice/region-notice",
     "pages/photo-recognize/photo-recognize",
     "pages/recognize-result/recognize-result",
     "pages/drop-point/drop-point",

@@ -3,7 +3,8 @@
  * @description 消息通知开关、清除缓存、隐私政策、用户协议、意见反馈
  */
 const app = getApp()
-const { showToast, showSuccess, showModal, showLoading, hideLoading } = require('../../utils/util')
+const { showToast, showSuccess, showModal, showLoading, hideLoading, navigateTo } = require('../../utils/util')
+const { CITY_STANDARDS, getCityInfo, hasUpcomingStandard } = require('../../utils/constants')
 
 Page({
   data: {
@@ -12,6 +13,10 @@ Page({
     version: '1.0.0',
     childModeEnabled: false,
     userRole: 'member',
+    currentCity: 'shanghai',
+    currentCityInfo: null,
+    hasUpcomingStandard: false,
+    cityOptions: CITY_STANDARDS,
     roleOptions: [
       { id: 'owner', name: '创建者' },
       { id: 'parent', name: '家长' },
@@ -37,8 +42,19 @@ Page({
     this.calculateCacheSize()
     const childModeEnabled = wx.getStorageSync('childModeEnabled') || false
     const userRole = wx.getStorageSync('userRole') || 'member'
-    this.setData({ childModeEnabled, userRole })
+    const currentCity = app.getCurrentCity()
+    const currentCityInfo = app.getCurrentCityInfo()
+    const hasUpcoming = app.hasCityUpcomingStandard()
+    this.setData({ childModeEnabled, userRole, currentCity, currentCityInfo, hasUpcomingStandard: hasUpcoming })
     this.updateRoleDisplay(userRole)
+  },
+
+  onShow() {
+    console.log('[Settings] 页面显示')
+    const currentCity = app.getCurrentCity()
+    const currentCityInfo = app.getCurrentCityInfo()
+    const hasUpcoming = app.hasCityUpcomingStandard()
+    this.setData({ currentCity, currentCityInfo, hasUpcomingStandard: hasUpcoming })
   },
 
   updateRoleDisplay(roleId) {
@@ -253,5 +269,90 @@ Page({
         console.log('[Settings] 取消选择角色')
       }
     })
+  },
+
+  onCitySelect() {
+    console.log('[Settings] 点击选择城市')
+    const cityOptions = this.data.cityOptions
+    const itemList = cityOptions.map(city => `${city.emoji} ${city.name}`)
+
+    wx.showActionSheet({
+      itemList: itemList,
+      success: (res) => {
+        const selectedCity = cityOptions[res.tapIndex]
+        const cityId = selectedCity.id
+        const cityName = selectedCity.name
+        const oldCityId = this.data.currentCity
+        if (cityId === oldCityId) {
+          showToast('当前已是该城市标准')
+          return
+        }
+        this.showCityChangeConfirm(cityId, cityName, oldCityId)
+      },
+      fail: () => {
+        console.log('[Settings] 取消选择城市')
+      }
+    })
+  },
+
+  showCityChangeConfirm(newCityId, newCityName, oldCityId) {
+    const oldCityInfo = getCityInfo(oldCityId)
+    showModal({
+      title: '切换城市标准',
+      content: `确定要从「${oldCityInfo.name}」切换到「${newCityName}」吗？\n\n切换后，搜索百科、分类练习、问答解析等将按照「${newCityName}」的本地分类标准显示。\n\n⚠️ 提示：部分历史记录中的分类标签将按照新城市标准重新展示，可能与之前显示不一致。`,
+      confirmText: '确认切换',
+      cancelText: '再想想',
+      confirmColor: '#5BBD72'
+    }).then(confirmed => {
+      if (confirmed) {
+        this.changeCity(newCityId, newCityName)
+      }
+    })
+  },
+
+  changeCity(cityId, cityName) {
+    showLoading('切换中...')
+    const success = app.setCurrentCity(cityId)
+    if (success) {
+      const cityInfo = getCityInfo(cityId)
+      const hasUpcoming = hasUpcomingStandard(cityId)
+      this.setData({
+        currentCity: cityId,
+        currentCityInfo: cityInfo,
+        hasUpcomingStandard: hasUpcoming
+      })
+      setTimeout(() => {
+        hideLoading()
+        showSuccess(`已切换为「${cityName}」标准`)
+        this.showCityChangedTips(cityName)
+      }, 500)
+    } else {
+      hideLoading()
+      showToast('切换失败，请重试')
+    }
+  },
+
+  showCityChangedTips(cityName) {
+    const tips = [
+      '✅ 搜索百科已更新为当地标准',
+      '✅ 分类练习已更新为当地标准',
+      '✅ 问答解析已更新为当地标准',
+      'ℹ️ 历史记录标签将按新标准展示'
+    ]
+    const content = tips.join('\n')
+    setTimeout(() => {
+      showModal({
+        title: `已切换到${cityName}标准`,
+        content: content,
+        showCancel: false,
+        confirmText: '知道了',
+        confirmColor: '#5BBD72'
+      })
+    }, 300)
+  },
+
+  onUpcomingStandard() {
+    console.log('[Settings] 点击查看新标准预告')
+    navigateTo('/pages/region-notice/region-notice')
   }
 })
