@@ -14,7 +14,9 @@ Page({
     isLastChapter: false,
     isCompleted: false,
     completedCount: 0,
-    themeColor: '#5BBD72'
+    themeColor: '#5BBD72',
+    nextBtnIcon: '→',
+    nextBtnText: '标记完成并下一章'
   },
 
   onLoad(options) {
@@ -75,6 +77,22 @@ Page({
     this.refreshProgress()
   },
 
+  updateNextButtonState() {
+    const { isLastChapter, isCompleted } = this.data
+    let nextBtnIcon = '→'
+    let nextBtnText = '标记完成并下一章'
+
+    if (isLastChapter) {
+      nextBtnIcon = '🎉'
+      nextBtnText = '完成课程，返回详情'
+    } else if (isCompleted) {
+      nextBtnIcon = '✓'
+      nextBtnText = '已完成，下一章'
+    }
+
+    this.setData({ nextBtnIcon, nextBtnText })
+  },
+
   refreshProgress() {
     const { courseId, chapterId, totalChapters } = this.data
     const learningProgress = getStorage('learningProgress', {})
@@ -85,6 +103,8 @@ Page({
     this.setData({
       isCompleted,
       completedCount: completedChapters.length
+    }, () => {
+      this.updateNextButtonState()
     })
 
     if (!app.globalData.learningProgress) {
@@ -104,6 +124,8 @@ Page({
       chapterIndex: chapterIndex - 1,
       isFirstChapter: chapterIndex - 1 === 0,
       isLastChapter: false
+    }, () => {
+      this.updateNextButtonState()
     })
 
     wx.pageScrollTo({ scrollTop: 0, duration: 300 })
@@ -162,6 +184,8 @@ Page({
           isLastChapter: nextIndex === course.chapters.length - 1,
           isCompleted: false,
           completedCount: completedChapters.length
+        }, () => {
+          this.updateNextButtonState()
         })
         wx.pageScrollTo({ scrollTop: 0, duration: 300 })
         wx.setNavigationBarTitle({ title: nextChapter.title || '章节详情' })

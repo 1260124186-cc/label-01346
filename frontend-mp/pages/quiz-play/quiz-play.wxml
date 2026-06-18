@@ -33,7 +33,7 @@
           <text>{{QUESTION_TYPE_MAP[currentQuestion.type].name}}</text>
         </view>
         <view class="diff-tag diff-{{currentQuestion.difficulty}}">
-          {{currentQuestion.difficulty === 'easy' ? '简单' : currentQuestion.difficulty === 'medium' ? '中等' : '困难'}}
+          {{currentQuestion.difficultyName}}
         </view>
         <view class="scene-tag" wx:for="{{currentQuestion.sceneLabels}}" wx:key="*this">
           {{item}}

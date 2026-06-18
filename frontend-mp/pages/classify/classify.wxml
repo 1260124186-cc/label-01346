@@ -131,8 +131,8 @@
           data-item="{{item}}"
         >
           <view class="quiz-question-header">
-            <text class="quiz-question-type">{{item.type === 'single' ? '单选' : item.type === 'multiple' ? '多选' : '判断'}}</text>
-            <text class="quiz-question-difficulty {{item.difficulty}}">{{item.difficulty === 'easy' ? '简单' : item.difficulty === 'medium' ? '中等' : '困难'}}</text>
+            <text class="quiz-question-type">{{item.typeName}}</text>
+            <text class="quiz-question-difficulty {{item.difficulty}}">{{item.difficultyName}}</text>
           </view>
           <text class="quiz-question-text">{{item.question}}</text>
         </view>

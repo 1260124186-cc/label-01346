@@ -169,8 +169,15 @@ Page({
   },
 
   getRelatedQuestions(typeId) {
+    const typeNameMap = { single: '单选', multiple: '多选', judge: '判断' }
+    const diffNameMap = { easy: '简单', medium: '中等', hard: '困难' }
     const questions = QUIZ_QUESTIONS.filter(q => q.chapterId === typeId)
-    const shuffled = questions.sort(() => 0.5 - Math.random())
+    const processed = questions.map(q => ({
+      ...q,
+      typeName: typeNameMap[q.type] || '单选',
+      difficultyName: diffNameMap[q.difficulty] || '简单'
+    }))
+    const shuffled = processed.sort(() => 0.5 - Math.random())
     return shuffled.slice(0, 3)
   },
 

@@ -79,7 +79,7 @@
                 <text>{{QUESTION_TYPE_MAP[item.type].name}}</text>
               </view>
               <view class="question-diff diff-{{item.difficulty}}">
-                {{item.difficulty === 'easy' ? '简单' : item.difficulty === 'medium' ? '中等' : '困难'}}
+                {{item.difficultyName}}
               </view>
             </view>
             <view class="scene-row" wx:if="{{item.sceneLabels.length > 0}}">

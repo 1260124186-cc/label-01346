@@ -30,6 +30,9 @@ Page({
   loadOrderDetail() {
     const order = app.getRecycleOrderById(this.data.orderId)
     if (order) {
+      const statusSteps = this.data.statusSteps
+      const statusStep = statusSteps.find(s => s.key === order.status)
+      order.statusIcon = statusStep ? statusStep.icon : '📋'
       this.setData({ order })
       wx.setNavigationBarTitle({ title: '回收订单详情' })
     }

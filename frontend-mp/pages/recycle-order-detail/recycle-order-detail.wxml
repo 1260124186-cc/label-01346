@@ -1,9 +1,7 @@
 <view class="page-container" wx:if="{{order}}">
   <view class="status-section status-{{order.status}}">
     <view class="status-icon">
-      <text class="icon-emoji">
-        {{order.status === 'pending' ? '⏳' : order.status === 'appointed' ? '✅' : order.status === 'visiting' ? '🚚' : '🎉'}}
-      </text>
+      <text class="icon-emoji">{{order.statusIcon}}</text>
     </view>
     <view class="status-info">
       <text class="status-title">{{order.statusText}}</text>

@@ -43,7 +43,7 @@
         <view class="preview-number">{{index + 1}}</view>
         <view class="preview-text">{{question.question}}</view>
         <view class="preview-diff diff-{{question.difficulty}}">
-          {{question.difficulty === 'easy' ? '简单' : question.difficulty === 'medium' ? '中等' : '困难'}}
+          {{question.difficultyName}}
         </view>
       </view>
     </view>

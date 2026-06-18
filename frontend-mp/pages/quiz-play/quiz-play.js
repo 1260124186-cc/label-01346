@@ -196,6 +196,9 @@ Page({
 
     const sceneLabels = (q.scenes || []).map(s => this.data.SCENE_MAP[s] || s)
 
+    const difficultyNameMap = { easy: '简单', medium: '中等', hard: '困难' }
+    const difficultyName = difficultyNameMap[q.difficulty] || '简单'
+
     return {
       ...q,
       type,
@@ -204,7 +207,8 @@ Page({
       correctIndex,
       correctIndexes,
       correctAnswerLabel,
-      sceneLabels
+      sceneLabels,
+      difficultyName
     }
   },
 

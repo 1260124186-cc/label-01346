@@ -28,9 +28,9 @@
     <view class="section-title">选择话题标签（可选，最多3个）</view>
     <view class="topics-grid">
       <view
-        wx:for="{{topics}}"
+        wx:for="{{topicsWithSelected}}"
         wx:key="id"
-        class="topic-item {{selectedTopics.some(t => t.id === item.id) ? 'selected' : ''}} {{item.hot ? 'hot' : ''}}"
+        class="topic-item {{item.isSelected ? 'selected' : ''}} {{item.hot ? 'hot' : ''}}"
         bindtap="onTopicTap"
         data-topic="{{item}}"
       >

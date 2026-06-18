@@ -11,6 +11,7 @@ Page({
    * 页面的初始数据
    */
   data: {
+    // 用户信息
     userInfo: {
       avatarUrl: '',
       nickName: '环保达人',
@@ -18,30 +19,30 @@ Page({
       level: 1,
       joinDate: ''
     },
+    // 用户等级信息
     levelInfo: {
       level: 1,
       name: '环保新手',
       icon: '🌱',
       progress: 0
     },
-    noticeMenus: [],
+    // 功能菜单（按分组拆分）
     learnMenus: PROFILE_MENUS.find(g => g.groupId === 'learn').items,
     recordMenus: PROFILE_MENUS.find(g => g.groupId === 'record').items,
     serviceMenus: PROFILE_MENUS.find(g => g.groupId === 'service').items,
     otherMenus: PROFILE_MENUS.find(g => g.groupId === 'other').items,
+    // 兼容旧的 menuList（测试用）
     menuList: PROFILE_MENUS,
-    unreadMessageCount: 0,
+    // 统计数据
     statistics: [
       { id: 'classify', label: '分类次数', value: 0 },
       { id: 'points', label: '累计积分', value: 0 },
-      { id: 'days', label: '连续打卡', value: 0 },
-      { id: 'courses', label: '已学课程', value: 0 },
-      { id: 'certs', label: '获得证书', value: 0 }
+      { id: 'days', label: '连续打卡', value: 0 }
     ],
+    // 是否正在上传头像
     isUploading: false,
-    isSignedToday: false,
-    achievements: [],
-    unlockedAchievementCount: 0
+    // 签到状态
+    isSignedToday: false
   },
 
   /**
@@ -76,24 +77,6 @@ Page({
       const levelInfo = getUserLevel(userInfo.points || 0)
       const stats = app.getStatistics()
 
-      let achievements = this.data.achievements || []
-      let unlockedAchievementCount = this.data.unlockedAchievementCount || 0
-
-      if (typeof app.getAchievements === 'function') {
-        achievements = app.getAchievements()
-        unlockedAchievementCount = achievements.filter(a => a.unlocked).length
-      }
-
-      const noticeMenusRaw = PROFILE_MENUS.find(g => g.groupId === 'notice')?.items || []
-      const unreadMessageCount = app.getUnreadMessageCount ? app.getUnreadMessageCount() : 0
-
-      const noticeMenus = noticeMenusRaw.map(menu => ({
-        ...menu,
-        badgeCount: menu.id === 'messages' ? unreadMessageCount : 0
-      }))
-
-      const learningStats = typeof app.getLearningStats === 'function' ? app.getLearningStats() : { completedCourses: 0, certificates: 0 }
-
       this.setData({
         userInfo: {
           ...userInfo,
@@ -103,18 +86,12 @@ Page({
         statistics: [
           { id: 'classify', label: '分类次数', value: stats.classifyCount },
           { id: 'points', label: '累计积分', value: stats.totalEarnedPoints },
-          { id: 'days', label: '连续打卡', value: stats.continuousDays },
-          { id: 'courses', label: '已学课程', value: learningStats.completedCourses },
-          { id: 'certs', label: '获得证书', value: learningStats.certificates }
+          { id: 'days', label: '连续打卡', value: stats.continuousDays }
         ],
-        isSignedToday: app.isTodaySignedIn(),
-        achievements,
-        unlockedAchievementCount,
-        noticeMenus,
-        unreadMessageCount
+        isSignedToday: app.isTodaySignedIn()
       })
 
-      console.log('[Profile] 用户信息已刷新', userInfo, stats, '未读消息:', unreadMessageCount)
+      console.log('[Profile] 用户信息已刷新', userInfo, stats)
     }
   },
 
@@ -254,42 +231,13 @@ Page({
   },
 
   /**
-   * 点击成就勋章
-   * @param {Object} e 事件对象
-   */
-  onAchievementTap(e) {
-    const { item } = e.currentTarget.dataset
-    console.log('[Profile] 点击成就', item.name)
-
-    if (item.unlocked) {
-      showToast(`已解锁：${item.name}`)
-    } else {
-      showToast(`${item.name}：${item.current}/${item.target}`)
-    }
-  },
-
-  /**
    * 点击统计项
    * @param {Object} e 事件对象
    */
   onStatTap(e) {
     const { item } = e.currentTarget.dataset
     console.log('[Profile] 点击统计', item.label)
-
-    switch (item.id) {
-      case 'classify':
-        navigateTo('/pages/records/records')
-        break
-      case 'points':
-        navigateTo('/pages/points/points')
-        break
-      case 'days':
-        navigateTo('/pages/signin/signin')
-        break
-      default:
-        showToast(`${item.label}：${item.value}`)
-        break
-    }
+    showToast(`${item.label}：${item.value}`)
   },
 
   /**

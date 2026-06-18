@@ -72,6 +72,8 @@ Page({
     if (userInfo) {
       this.setData({
         userPoints: userInfo.points || 0
+      }, () => {
+        this.filterGoods(this.data.currentCategory)
       })
     }
   },
@@ -112,6 +114,7 @@ Page({
 
   filterGoods(categoryId) {
     const allGoods = app.getGoodsList()
+    const { userPoints } = this.data
     let filteredGoods = [...allGoods]
     
     switch (categoryId) {
@@ -127,9 +130,19 @@ Page({
       default:
         filteredGoods = allGoods
     }
+
+    const processedGoods = filteredGoods.map(item => {
+      let btnText = '立即兑换'
+      if (item.stock <= 0) {
+        btnText = '已售罄'
+      } else if (userPoints < item.points) {
+        btnText = '积分不足'
+      }
+      return { ...item, btnText }
+    })
     
     this.setData({
-      goodsList: filteredGoods
+      goodsList: processedGoods
     })
   },
 

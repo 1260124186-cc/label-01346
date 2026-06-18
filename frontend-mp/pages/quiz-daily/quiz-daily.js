@@ -60,7 +60,11 @@ Page({
   },
 
   loadTodayQuestions() {
-    const questions = getDailyQuestions()
+    const difficultyNameMap = { easy: '简单', medium: '中等', hard: '困难' }
+    const questions = getDailyQuestions().map(q => ({
+      ...q,
+      difficultyName: difficultyNameMap[q.difficulty] || '简单'
+    }))
     this.setData({
       todayQuestions: questions
     })

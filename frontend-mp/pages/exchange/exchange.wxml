@@ -138,9 +138,7 @@
             <view 
               class="exchange-btn {{userPoints < item.points || item.stock <= 0 ? 'disabled' : ''}} {{exchangingId === item.id ? 'loading' : ''}}"
             >
-              <view class="btn-text" wx:if="{{exchangingId !== item.id}}">
-                {{item.stock <= 0 ? '已售罄' : (userPoints < item.points ? '积分不足' : '立即兑换')}}
-              </view>
+              <view class="btn-text" wx:if="{{exchangingId !== item.id}}">{{item.btnText}}</view>
               <view class="btn-loading" wx:else></view>
             </view>
           </view>

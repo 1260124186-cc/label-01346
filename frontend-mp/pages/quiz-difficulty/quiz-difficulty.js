@@ -38,6 +38,7 @@ Page({
   },
 
   loadDifficulties() {
+    const tagTextMap = { easy: '入门推荐', medium: '进阶挑战', hard: '高手专属' }
     const difficulties = QUIZ_DIFFICULTIES.map(diff => {
       const questions = getQuestionsByDifficulty(diff.id)
       const questionCount = questions.length
@@ -49,7 +50,8 @@ Page({
         ...diff,
         questionCount,
         bestScore,
-        totalAttempts
+        totalAttempts,
+        tagText: tagTextMap[diff.id] || '入门推荐'
       }
     })
 

@@ -10,6 +10,7 @@ Page({
     showAddressPicker: false,
     selectedAddress: null,
     exchanging: false,
+    exchangeBtnText: '立即兑换',
     specs: [
       { name: '规格', value: '标准版' },
       { name: '材质', value: '环保材质' },
@@ -73,9 +74,22 @@ Page({
         ...goods,
         images: [goods.image, goods.image, goods.image]
       }
-      this.setData({ goods: goodsWithImages })
+      this.setData({ goods: goodsWithImages }, () => {
+        this.updateExchangeBtnText()
+      })
       wx.setNavigationBarTitle({ title: goods.name })
     }
+  },
+
+  updateExchangeBtnText() {
+    const { goods, userPoints } = this.data
+    let text = '立即兑换'
+    if (goods && goods.stock <= 0) {
+      text = '已售罄'
+    } else if (userPoints < (goods ? goods.points : 0)) {
+      text = '积分不足'
+    }
+    this.setData({ exchangeBtnText: text })
   },
 
   refreshUserPoints() {
@@ -83,6 +97,8 @@ Page({
     if (userInfo) {
       this.setData({
         userPoints: userInfo.points || 0
+      }, () => {
+        this.updateExchangeBtnText()
       })
     }
   },

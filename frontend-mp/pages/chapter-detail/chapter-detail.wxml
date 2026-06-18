@@ -117,10 +117,8 @@
         style="background: {{isCompleted ? '#B2BEC3' : themeColor}}"
         bindtap="onMarkCompleteAndNext"
       >
-        <text class="btn-icon">{{isLastChapter ? '🎉' : (isCompleted ? '✓' : '→')}}</text>
-        <text class="btn-text">
-          {{isLastChapter ? '完成课程，返回详情' : (isCompleted ? '已完成，下一章' : '标记完成并下一章')}}
-        </text>
+        <text class="btn-icon">{{nextBtnIcon}}</text>
+        <text class="btn-text">{{nextBtnText}}</text>
       </view>
     </view>
   </view>

@@ -57,7 +57,7 @@
         </view>
 
         <view class="difficulty-tag" style="background: {{item.color}}; color: #fff">
-          {{item.id === 'easy' ? '入门推荐' : item.id === 'medium' ? '进阶挑战' : '高手专属'}}
+          {{item.tagText}}
         </view>
       </view>
     </view>

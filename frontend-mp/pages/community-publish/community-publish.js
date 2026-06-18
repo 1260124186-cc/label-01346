@@ -7,12 +7,27 @@ Page({
     postTypes: COMMUNITY_POST_TYPES,
     currentType: 'experience',
     topics: COMMUNITY_TOPICS,
+    topicsWithSelected: [],
     selectedTopics: [],
     content: '',
     images: [],
     maxImages: 9,
     contentMaxLength: 500,
     publishPoints: COMMUNITY_POINTS_CONFIG.publishPost
+  },
+
+  onLoad() {
+    this.refreshTopicsWithSelected()
+  },
+
+  refreshTopicsWithSelected() {
+    const { topics, selectedTopics } = this.data
+    const selectedIds = selectedTopics.map(t => t.id)
+    const topicsWithSelected = topics.map(t => ({
+      ...t,
+      isSelected: selectedIds.indexOf(t.id) > -1
+    }))
+    this.setData({ topicsWithSelected })
   },
 
   onTypeTap(e) {
@@ -33,7 +48,9 @@ Page({
       }
       selected.push(topic)
     }
-    this.setData({ selectedTopics: selected })
+    this.setData({ selectedTopics: selected }, () => {
+      this.refreshTopicsWithSelected()
+    })
   },
 
   onContentInput(e) {

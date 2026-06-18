@@ -140,9 +140,7 @@
       class="exchange-btn {{userPoints < goods.points || goods.stock <= 0 ? 'disabled' : ''}} {{exchanging ? 'loading' : ''}}"
       bindtap="onExchange"
     >
-      <text wx:if="{{!exchanging}}">
-        {{goods.stock <= 0 ? '已售罄' : (userPoints < goods.points ? '积分不足' : '立即兑换')}}
-      </text>
+      <text wx:if="{{!exchanging}}">{{exchangeBtnText}}</text>
       <text wx:else>兑换中...</text>
     </view>
   </view>

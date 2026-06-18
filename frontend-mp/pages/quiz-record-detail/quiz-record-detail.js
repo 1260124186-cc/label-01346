@@ -130,6 +130,9 @@ Page({
         }
       }
 
+      const difficultyNameMap = { easy: '简单', medium: '中等', hard: '困难' }
+      const difficulty = fullQuestion.difficulty || 'medium'
+
       return {
         index: index + 1,
         question: fullQuestion.question || q.question,
@@ -142,7 +145,8 @@ Page({
         userAnswer: q.userAnswer,
         userAnswerLabel,
         isCorrect: q.isCorrect,
-        difficulty: fullQuestion.difficulty || 'medium',
+        difficulty,
+        difficultyName: difficultyNameMap[difficulty] || '简单',
         explanation: fullQuestion.explanation || ''
       }
     })

@@ -159,7 +159,7 @@
         bindtap="onMenuTap"
         data-item="{{item}}"
       >
-        <view slot="icon" class="menu-icon-wrapper" style="background: {{item.id === 'quiz' ? 'rgba(91, 189, 114, 0.1)' : item.id === 'daily' ? 'rgba(74, 144, 217, 0.1)' : 'rgba(243, 156, 18, 0.1)'}};">
+        <view slot="icon" class="menu-icon-wrapper" style="background: {{item.iconBgColor}};">
           <text class="menu-icon-emoji">{{item.emoji}}</text>
         </view>
         <view class="menu-content">
@@ -184,7 +184,7 @@
         bindtap="onMenuTap"
         data-item="{{item}}"
       >
-        <view slot="icon" class="menu-icon-wrapper" style="background: {{item.id === 'records' ? 'rgba(91, 189, 114, 0.1)' : item.id === 'points' ? 'rgba(243, 156, 18, 0.1)' : 'rgba(74, 144, 217, 0.1)'}};">
+        <view slot="icon" class="menu-icon-wrapper" style="background: {{item.iconBgColor}};">
           <text class="menu-icon-emoji">{{item.emoji}}</text>
         </view>
         <view class="menu-content">
