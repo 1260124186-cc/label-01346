@@ -51,7 +51,15 @@ App({
     this.simulateAutoShipping()
     this.processInviterOnLaunch(options)
     this.initMessageSystem()
+    this.initChildMode()
+    this.initUserGroups()
     this.checkPushStrategies()
+  },
+
+  setUserRole(role) {
+    this.globalData.userRole = role
+    wx.setStorageSync('userRole', role)
+    console.log('[App] 用户角色已设置为', role)
   },
 
   onShow() {
@@ -3123,6 +3131,724 @@ App({
     recycleOrders: [],
     learningProgress: {},
     certificates: [],
-    messageManager: null
+    messageManager: null,
+    childModeEnabled: false,
+    unlockedBadges: [],
+    userRole: 'member',
+    userGroups: [],
+    currentGroupId: null,
+    groupInviteCodes: {},
+    groupPointsPool: {},
+    groupTasksProgress: {}
+  },
+
+  initChildMode() {
+    const childModeEnabled = wx.getStorageSync('childModeEnabled') || false
+    const userRole = wx.getStorageSync('userRole') || 'member'
+    this.globalData.childModeEnabled = childModeEnabled
+    this.globalData.userRole = userRole
+    console.log('[App] 儿童模式已加载:', { childModeEnabled, userRole })
+  },
+
+  isChildModeEnabled() {
+    return this.globalData.childModeEnabled === true
+  },
+
+  setChildModeEnabled(enabled) {
+    this.globalData.childModeEnabled = enabled === true
+    wx.setStorageSync('childModeEnabled', this.globalData.childModeEnabled)
+    console.log('[App] 儿童模式已设置:', this.globalData.childModeEnabled ? '开启' : '关闭')
+  },
+
+  getMyVirtualBadges() {
+    const { VIRTUAL_BADGES, ACHIEVEMENTS } = require('./utils/constants')
+    const unlockedBadgeIds = wx.getStorageSync('unlockedBadges') || []
+    this.globalData.unlockedBadges = unlockedBadgeIds
+
+    const allBadges = []
+
+    Object.values(VIRTUAL_BADGES).forEach(badge => {
+      allBadges.push({
+        id: badge.id,
+        name: badge.name,
+        icon: badge.icon,
+        color: badge.color,
+        desc: badge.desc,
+        condition: badge.desc,
+        unlocked: unlockedBadgeIds.includes(badge.id),
+        progress: unlockedBadgeIds.includes(badge.id) ? 100 : 0,
+        current: unlockedBadgeIds.includes(badge.id) ? 1 : 0,
+        target: 1,
+        obtainedTime: unlockedBadgeIds.includes(badge.id) ? this.getBadgeObtainedTime(badge.id) : null,
+        progressText: unlockedBadgeIds.includes(badge.id) ? '已获得' : '未获得'
+      })
+    })
+
+    const achievements = this.getAchievements()
+    achievements.forEach(ach => {
+      allBadges.push({
+        id: ach.id,
+        name: ach.name,
+        icon: ach.emoji,
+        color: ach.color || '#5BBD72',
+        desc: ach.description,
+        condition: ach.description,
+        unlocked: ach.unlocked,
+        progress: ach.progress,
+        current: ach.current,
+        target: ach.target,
+        obtainedTime: ach.unlocked ? this.getBadgeObtainedTime(ach.id) : null,
+        progressText: ach.unlocked ? '已获得' : `${ach.type === 'classifyCount' ? '分类' : ach.type === 'correctQuizCount' ? '答题' : ach.type === 'continuousSignIn' ? '签到' : ach.type === 'totalPoints' ? '积分' : '邀请'} ${ach.current}/${ach.target} 次`
+      })
+    })
+
+    return allBadges
+  },
+
+  getBadgeObtainedTime(badgeId) {
+    const badgeTimes = wx.getStorageSync('badgeObtainedTimes') || {}
+    return badgeTimes[badgeId] || null
+  },
+
+  unlockBadge(badgeId) {
+    const unlockedBadgeIds = wx.getStorageSync('unlockedBadges') || []
+    if (!unlockedBadgeIds.includes(badgeId)) {
+      unlockedBadgeIds.push(badgeId)
+      wx.setStorageSync('unlockedBadges', unlockedBadgeIds)
+      this.globalData.unlockedBadges = unlockedBadgeIds
+
+      const badgeTimes = wx.getStorageSync('badgeObtainedTimes') || {}
+      badgeTimes[badgeId] = formatDate(new Date(), 'YYYY-MM-DD')
+      wx.setStorageSync('badgeObtainedTimes', badgeTimes)
+
+      console.log('[App] 获得新勋章:', badgeId)
+      return true
+    }
+    return false
+  },
+
+  /**
+   * ============ 家庭/班级组系统 ============
+   */
+
+  initUserGroups() {
+    const storedGroups = wx.getStorageSync('userGroups')
+    const currentGroupId = wx.getStorageSync('currentGroupId')
+    const groupInviteCodes = wx.getStorageSync('groupInviteCodes') || {}
+    const groupPointsPool = wx.getStorageSync('groupPointsPool') || {}
+    const groupTasksProgress = wx.getStorageSync('groupTasksProgress') || {}
+
+    let groups = storedGroups
+    if (!groups || groups.length === 0) {
+      groups = this._createMockGroups()
+      wx.setStorageSync('userGroups', groups)
+    }
+
+    this.globalData.userGroups = groups
+    this.globalData.currentGroupId = currentGroupId || (groups.length > 0 ? groups[0].id : null)
+    this.globalData.groupInviteCodes = groupInviteCodes
+    this.globalData.groupPointsPool = groupPointsPool
+    this.globalData.groupTasksProgress = groupTasksProgress
+
+    if (!currentGroupId && groups.length > 0) {
+      wx.setStorageSync('currentGroupId', groups[0].id)
+    }
+
+    this._checkWeeklyGroupTask()
+    console.log('[App] 用户组系统已初始化', groups.length, '个组')
+  },
+
+  _createMockGroups() {
+    const now = new Date()
+    const today = formatDate(now, 'YYYY-MM-DD')
+    const userId = this.getUserId()
+    const userInfo = this.globalData.userInfo || {}
+
+    const mockMembers = [
+      { id: userId, nickName: userInfo.nickName || '我', avatarUrl: userInfo.avatarUrl || '', role: 'owner', joinTime: today }
+    ]
+
+    if (Math.random() > 0.3) {
+      const familyMembers = [
+        { id: 'mem_' + generateId(), nickName: '爸爸', avatarUrl: '', role: 'parent', joinTime: today },
+        { id: 'mem_' + generateId(), nickName: '妈妈', avatarUrl: '', role: 'parent', joinTime: today },
+        { id: 'mem_' + generateId(), nickName: '小明', avatarUrl: '', role: 'child', joinTime: today }
+      ]
+      return [{
+        id: 'grp_' + generateId(),
+        name: '幸福一家',
+        type: 'family',
+        ownerId: userId,
+        members: [...mockMembers, ...familyMembers],
+        createTime: today,
+        memberCount: 4,
+        totalPoints: 3280,
+        weeklyNewPoints: 420
+      }]
+    }
+    return []
+  },
+
+  _saveUserGroups() {
+    wx.setStorageSync('userGroups', this.globalData.userGroups)
+  },
+
+  _saveCurrentGroupId() {
+    wx.setStorageSync('currentGroupId', this.globalData.currentGroupId)
+  },
+
+  getMyGroups() {
+    return this.globalData.userGroups || []
+  },
+
+  getCurrentGroup() {
+    const groups = this.getMyGroups()
+    const id = this.globalData.currentGroupId
+    if (!id) return groups[0] || null
+    return groups.find(g => g.id === id) || groups[0] || null
+  },
+
+  setCurrentGroup(groupId) {
+    this.globalData.currentGroupId = groupId
+    this._saveCurrentGroupId()
+    console.log('[App] 切换到组:', groupId)
+    return true
+  },
+
+  createGroup({ name, type }) {
+    const { GROUP_TYPES } = require('./utils/constants')
+    const typeInfo = GROUP_TYPES[type] || GROUP_TYPES.family
+    const userInfo = this.globalData.userInfo || {}
+    const userId = this.getUserId()
+    const today = formatDate(new Date(), 'YYYY-MM-DD')
+
+    const newGroup = {
+      id: 'grp_' + generateId(),
+      name: name || '我的' + typeInfo.name,
+      type: type,
+      ownerId: userId,
+      members: [
+        { id: userId, nickName: userInfo.nickName || '我', avatarUrl: userInfo.avatarUrl || '', role: 'owner', joinTime: today }
+      ],
+      createTime: today,
+      memberCount: 1,
+      totalPoints: 0,
+      weeklyNewPoints: 0
+    }
+
+    const groups = this.getMyGroups()
+    groups.unshift(newGroup)
+    this.globalData.userGroups = groups
+    this._saveUserGroups()
+
+    this.globalData.currentGroupId = newGroup.id
+    this._saveCurrentGroupId()
+
+    this.globalData.groupPointsPool[newGroup.id] = {
+      totalPoints: 0,
+      weeklyPoints: 0,
+      history: []
+    }
+    wx.setStorageSync('groupPointsPool', this.globalData.groupPointsPool)
+
+    console.log('[App] 组创建成功:', newGroup.name)
+    return newGroup
+  },
+
+  dismissGroup(groupId) {
+    const group = this._findGroup(groupId)
+    if (!group) return { success: false, message: '组不存在' }
+    if (group.ownerId !== this.getUserId()) return { success: false, message: '只有创建者可以解散组' }
+
+    const groups = this.getMyGroups().filter(g => g.id !== groupId)
+    this.globalData.userGroups = groups
+    this._saveUserGroups()
+
+    if (this.globalData.currentGroupId === groupId) {
+      this.globalData.currentGroupId = groups.length > 0 ? groups[0].id : null
+      this._saveCurrentGroupId()
+    }
+
+    delete this.globalData.groupPointsPool[groupId]
+    wx.setStorageSync('groupPointsPool', this.globalData.groupPointsPool)
+
+    console.log('[App] 组已解散:', group.name)
+    return { success: true }
+  },
+
+  leaveGroup(groupId) {
+    const group = this._findGroup(groupId)
+    if (!group) return { success: false, message: '组不存在' }
+    if (group.ownerId === this.getUserId()) return { success: false, message: '创建者不能退出组，请解散' }
+
+    const userId = this.getUserId()
+    group.members = group.members.filter(m => m.id !== userId)
+    group.memberCount = group.members.length
+    this._saveUserGroups()
+
+    const groups = this.getMyGroups().filter(g => g.id !== groupId)
+    this.globalData.userGroups = groups
+    this._saveUserGroups()
+
+    if (this.globalData.currentGroupId === groupId) {
+      this.globalData.currentGroupId = groups.length > 0 ? groups[0].id : null
+      this._saveCurrentGroupId()
+    }
+
+    console.log('[App] 退出组成功:', group.name)
+    return { success: true }
+  },
+
+  generateInviteCode(groupId) {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+    let code = ''
+    for (let i = 0; i < 6; i++) {
+      code += chars.charAt(Math.floor(Math.random() * chars.length))
+    }
+
+    const codes = this.globalData.groupInviteCodes
+    codes[code] = { groupId, expireAt: Date.now() + 7 * 24 * 3600 * 1000 }
+    this.globalData.groupInviteCodes = codes
+    wx.setStorageSync('groupInviteCodes', codes)
+
+    console.log('[App] 生成邀请码:', code, '组ID:', groupId)
+    return code
+  },
+
+  joinGroupByCode(inviteCode) {
+    const code = (inviteCode || '').toUpperCase()
+    const codes = this.globalData.groupInviteCodes
+    const info = codes[code]
+
+    if (!info) return { success: false, message: '邀请码无效' }
+    if (info.expireAt < Date.now()) return { success: false, message: '邀请码已过期' }
+
+    const group = this._findGroup(info.groupId)
+    if (!group) return { success: false, message: '组不存在' }
+
+    const userId = this.getUserId()
+    if (group.members.find(m => m.id === userId)) return { success: false, message: '您已在该组中' }
+
+    const userInfo = this.globalData.userInfo || {}
+    group.members.push({
+      id: userId,
+      nickName: userInfo.nickName || '新成员',
+      avatarUrl: userInfo.avatarUrl || '',
+      role: 'member',
+      joinTime: formatDate(new Date(), 'YYYY-MM-DD')
+    })
+    group.memberCount = group.members.length
+    this._saveUserGroups()
+
+    const groups = this.getMyGroups()
+    if (!groups.find(g => g.id === group.id)) {
+      groups.push(group)
+      this.globalData.userGroups = groups
+      this._saveUserGroups()
+    }
+
+    this.globalData.currentGroupId = group.id
+    this._saveCurrentGroupId()
+
+    console.log('[App] 通过邀请码加入组:', group.name)
+    return { success: true, group }
+  },
+
+  getGroupMembers(groupId) {
+    const group = this._findGroup(groupId)
+    if (!group) return []
+
+    const { GROUP_ROLES } = require('./utils/constants')
+
+    return group.members.map(member => {
+      const roleInfo = GROUP_ROLES[member.role] || GROUP_ROLES.member
+      const stats = this._getMemberStats(group, member.id)
+      return {
+        ...member,
+        roleInfo,
+        roleName: roleInfo.name,
+        roleIcon: roleInfo.icon,
+        points: stats.points,
+        classifyCount: stats.classifyCount,
+        correctRate: stats.correctRate
+      }
+    }).sort((a, b) => {
+      const roleOrder = { owner: 0, teacher: 1, parent: 2, member: 3, child: 4, student: 5 }
+      return (roleOrder[a.role] ?? 9) - (roleOrder[b.role] ?? 9)
+    })
+  },
+
+  removeMember(groupId, memberId) {
+    if (!this.hasPermission('remove', groupId)) return { success: false, message: '无权限' }
+
+    const group = this._findGroup(groupId)
+    if (!group) return { success: false, message: '组不存在' }
+
+    group.members = group.members.filter(m => m.id !== memberId)
+    group.memberCount = group.members.length
+    this._saveUserGroups()
+
+    console.log('[App] 移除成员:', memberId)
+    return { success: true }
+  },
+
+  updateMemberRole(groupId, memberId, roleId) {
+    if (!this.hasPermission('manage', groupId)) return { success: false, message: '无权限' }
+
+    const group = this._findGroup(groupId)
+    if (!group) return { success: false, message: '组不存在' }
+
+    const member = group.members.find(m => m.id === memberId)
+    if (!member) return { success: false, message: '成员不存在' }
+
+    member.role = roleId
+    this._saveUserGroups()
+
+    console.log('[App] 更新成员角色:', memberId, roleId)
+    return { success: true }
+  },
+
+  _findGroup(groupId) {
+    return this.getMyGroups().find(g => g.id === groupId)
+  },
+
+  _getMemberStats(group, memberId) {
+    const classifyRecords = this.getClassifyRecords()
+    const quizRecords = this.getQuizRecords()
+
+    const totalQ = quizRecords.reduce((s, r) => s + (r.totalQuestions || 0), 0)
+    const correctQ = quizRecords.reduce((s, r) => s + (r.correctCount || 0), 0)
+
+    return {
+      points: 100 + Math.floor(Math.random() * 2000),
+      classifyCount: classifyRecords.length + Math.floor(Math.random() * 50),
+      correctRate: totalQ > 0 ? Math.round((correctQ / totalQ) * 100) : 85
+    }
+  },
+
+  /**
+   * ============ 组积分池 ============
+   */
+
+  getGroupPointsPool(groupId) {
+    const pools = this.globalData.groupPointsPool || {}
+    const group = this._findGroup(groupId)
+
+    if (!pools[groupId]) {
+      pools[groupId] = {
+        totalPoints: group ? group.totalPoints : 0,
+        weeklyPoints: group ? group.weeklyNewPoints : 0,
+        history: group ? [
+          { id: generateId(), type: 'earn', title: '成员完成组任务', points: 500, time: formatDate(new Date(), 'YYYY-MM-DD') },
+          { id: generateId(), type: 'earn', title: '成员分类贡献', points: 320, time: formatDate(new Date(Date.now() - 86400000), 'YYYY-MM-DD') }
+        ] : []
+      }
+      this.globalData.groupPointsPool = pools
+      wx.setStorageSync('groupPointsPool', pools)
+    }
+    return pools[groupId]
+  },
+
+  getGroupPointsHistory(groupId) {
+    const pool = this.getGroupPointsPool(groupId)
+    return pool.history || []
+  },
+
+  _addGroupPoints(groupId, points, title) {
+    const pool = this.getGroupPointsPool(groupId)
+    pool.totalPoints += points
+    pool.weeklyPoints += points
+    pool.history.unshift({
+      id: generateId(),
+      type: points >= 0 ? 'earn' : 'spend',
+      title: title || (points >= 0 ? '组积分获取' : '组积分消费'),
+      points: Math.abs(points),
+      time: formatDate(new Date(), 'YYYY-MM-DD HH:mm')
+    })
+
+    wx.setStorageSync('groupPointsPool', this.globalData.groupPointsPool)
+
+    const group = this._findGroup(groupId)
+    if (group) {
+      group.totalPoints = pool.totalPoints
+      group.weeklyNewPoints = pool.weeklyPoints
+      this._saveUserGroups()
+    }
+  },
+
+  /**
+   * ============ 组任务 ============
+   */
+
+  getGroupTasks(groupId) {
+    const { GROUP_TASKS } = require('./utils/constants')
+    const progresses = this.globalData.groupTasksProgress || {}
+
+    return Object.values(GROUP_TASKS).map(task => {
+      const progress = this.getGroupTaskProgress(groupId, task.id)
+      return {
+        ...task,
+        progress: progress.progress,
+        current: progress.current,
+        target: task.target,
+        completed: progress.completed,
+        rewardClaimed: progresses[`${groupId}_${task.id}`]?.claimed || false
+      }
+    })
+  },
+
+  getGroupTaskProgress(groupId, taskId) {
+    const { GROUP_TASKS } = require('./utils/constants')
+    const task = GROUP_TASKS[taskId]
+    if (!task) return { progress: 0, current: 0, completed: false, contributions: [] }
+
+    let current = 0
+    const contributions = []
+
+    if (task.type === 'classify') {
+      const group = this._findGroup(groupId)
+      if (group) {
+        group.members.forEach(member => {
+          const cnt = this._getWeeklyClassifyCount(member.id)
+          current += cnt
+          contributions.push({
+            memberId: member.id,
+            nickName: member.nickName,
+            avatarUrl: member.avatarUrl,
+            role: member.role,
+            count: cnt
+          })
+        })
+      }
+    }
+
+    const progress = Math.min(100, Math.round((current / task.target) * 100))
+    const completed = current >= task.target
+
+    return { progress, current, target: task.target, completed, contributions: contributions.sort((a, b) => b.count - a.count) }
+  },
+
+  _getWeeklyClassifyCount(memberId) {
+    const records = this.getClassifyRecords()
+    const now = new Date()
+    const weekStart = new Date(now.getTime() - now.getDay() * 86400000)
+    weekStart.setHours(0, 0, 0, 0)
+    const weekStartStr = formatDate(weekStart, 'YYYY-MM-DD')
+
+    return records.filter(r => {
+      const dateStr = (r.time || '').split(' ')[0]
+      return dateStr >= weekStartStr
+    }).length + Math.floor(Math.random() * 20)
+  },
+
+  _checkWeeklyGroupTask() {
+    const { GROUP_TASKS } = require('./utils/constants')
+    const groups = this.getMyGroups()
+
+    groups.forEach(group => {
+      const task = GROUP_TASKS.weekly_classify
+      if (!task) return
+
+      const progress = this.getGroupTaskProgress(group.id, task.id)
+      if (progress.completed) {
+        const key = `${group.id}_${task.id}`
+        const progresses = this.globalData.groupTasksProgress || {}
+        if (!progresses[key]) {
+          progresses[key] = { completed: true, claimed: false, completedAt: formatDate(new Date(), 'YYYY-MM-DD') }
+          this.globalData.groupTasksProgress = progresses
+          wx.setStorageSync('groupTasksProgress', progresses)
+
+          this._addGroupPoints(group.id, task.rewardPoints, '完成本周组任务奖励')
+          this.unlockBadge(task.rewardBadge)
+          console.log('[App] 组任务完成，奖励已发放:', group.name)
+        }
+      }
+    })
+  },
+
+  claimGroupTaskReward(groupId, taskId) {
+    const progresses = this.globalData.groupTasksProgress || {}
+    const key = `${groupId}_${taskId}`
+
+    if (!progresses[key] || !progresses[key].completed) return { success: false, message: '任务未完成' }
+    if (progresses[key].claimed) return { success: false, message: '奖励已领取' }
+
+    progresses[key].claimed = true
+    progresses[key].claimedAt = formatDate(new Date(), 'YYYY-MM-DD HH:mm')
+    this.globalData.groupTasksProgress = progresses
+    wx.setStorageSync('groupTasksProgress', progresses)
+
+    return { success: true }
+  },
+
+  /**
+   * ============ 组内排行榜 ============
+   */
+
+  getGroupLeaderboard(groupId, period = 'week', dimension = 'points') {
+    const members = this.getGroupMembers(groupId)
+    if (members.length === 0) return { list: [], myRank: 0, myData: null }
+
+    const periodMultiplier = { week: 1, month: 4, all: 12 }[period] || 1
+
+    const list = members.map((m, idx) => {
+      const base = { points: m.points, classifyCount: m.classifyCount, accuracy: m.correctRate }
+      return {
+        userId: m.id,
+        nickName: m.nickName,
+        avatarUrl: m.avatarUrl,
+        roleIcon: m.roleIcon,
+        points: Math.round(base.points * periodMultiplier * (0.8 + Math.random() * 0.4)),
+        classifyCount: Math.round(base.classifyCount * periodMultiplier * (0.8 + Math.random() * 0.4)),
+        accuracy: Math.min(100, Math.max(50, Math.round(base.accuracy + (Math.random() - 0.5) * 15)))
+      }
+    }).sort((a, b) => b[dimension] - a[dimension])
+
+    const userId = this.getUserId()
+    const myRank = list.findIndex(u => u.userId === userId) + 1
+    const myData = list.find(u => u.userId === userId) || null
+
+    return { list, myRank, myData }
+  },
+
+  /**
+   * ============ 权限系统 ============
+   */
+
+  hasPermission(permission, groupId = null) {
+    const { GROUP_ROLES } = require('./utils/constants')
+    const roleId = this.globalData.userRole || 'member'
+    const role = GROUP_ROLES[roleId] || GROUP_ROLES.member
+
+    if (role.permissions.includes(permission)) return true
+
+    if (groupId) {
+      const group = this._findGroup(groupId)
+      const userId = this.getUserId()
+      if (group) {
+        const member = group.members.find(m => m.id === userId)
+        if (member) {
+          const memberRole = GROUP_ROLES[member.role]
+          if (memberRole && memberRole.permissions.includes(permission)) return true
+        }
+      }
+    }
+
+    return false
+  },
+
+  /**
+   * ============ 学习报告 ============
+   */
+
+  getGroupMembersWithPermission() {
+    if (!this.hasPermission('report')) {
+      const group = this.getCurrentGroup()
+      if (!group || !this.hasPermission('report', group.id)) {
+        return []
+      }
+    }
+
+    const group = this.getCurrentGroup()
+    if (!group) return []
+    return this.getGroupMembers(group.id)
+  },
+
+  getMemberLearningReport(memberId) {
+    const classifyRecords = this.getClassifyRecords()
+    const quizRecords = this.getQuizRecords()
+
+    const totalClassify = classifyRecords.length + Math.floor(Math.random() * 100)
+    const totalQuiz = quizRecords.reduce((s, r) => s + (r.totalQuestions || 0), 0) + Math.floor(Math.random() * 80)
+    const correctQuiz = quizRecords.reduce((s, r) => s + (r.correctCount || 0), 0) + Math.floor(Math.random() * 60)
+    const totalPoints = (this.globalData.userInfo?.points || 0) + Math.floor(Math.random() * 2000)
+    const streakDays = this.getStreakDays() + Math.floor(Math.random() * 10)
+
+    return {
+      totalStudyDays: 30 + Math.floor(Math.random() * 100),
+      totalClassify,
+      totalQuiz,
+      correctQuiz,
+      totalPoints,
+      streakDays,
+      overallAccuracy: totalQuiz > 0 ? Math.round((correctQuiz / totalQuiz) * 100) : 85
+    }
+  },
+
+  getMemberWeakCategories(memberId) {
+    const { TRASH_TYPES } = require('./utils/constants')
+    const records = this.getWrongQuestions()
+
+    return TRASH_TYPES.map(type => {
+      const wrongCount = records.filter(r => r.chapterId === type.id).length + Math.floor(Math.random() * 8)
+      const accuracy = Math.max(25, 90 - wrongCount * 6)
+      return {
+        id: type.id,
+        name: type.name,
+        emoji: type.emoji,
+        color: type.color,
+        accuracy,
+        wrongCount,
+        isWeak: accuracy < 60,
+        recentWrongQuestions: records.filter(r => r.chapterId === type.id).slice(0, 5).map(q => ({
+          id: q.id,
+          question: q.question,
+          wrongTime: q.wrongTime
+        }))
+      }
+    }).filter(c => c.isWeak).sort((a, b) => a.accuracy - b.accuracy)
+  },
+
+  getMemberBadges(memberId) {
+    return this.getMyVirtualBadges()
+  },
+
+  getMemberWeeklyStats(memberId) {
+    const now = new Date()
+    const days = []
+
+    for (let i = 6; i >= 0; i--) {
+      const date = new Date(now.getTime() - i * 86400000)
+      days.push({
+        date: formatDate(date, 'MM-DD'),
+        weekday: ['日', '一', '二', '三', '四', '五', '六'][date.getDay()],
+        classifyCount: 3 + Math.floor(Math.random() * 20),
+        quizCount: 2 + Math.floor(Math.random() * 15)
+      })
+    }
+
+    const classifys = days.map(d => d.classifyCount)
+    const quizs = days.map(d => d.quizCount)
+
+    return {
+      days,
+      totalClassify: classifys.reduce((a, b) => a + b, 0),
+      totalQuiz: quizs.reduce((a, b) => a + b, 0),
+      avgClassify: Math.round(classifys.reduce((a, b) => a + b, 0) / 7),
+      avgQuiz: Math.round(quizs.reduce((a, b) => a + b, 0) / 7),
+      maxClassify: Math.max(...classifys),
+      maxQuiz: Math.max(...quizs)
+    }
+  },
+
+  /**
+   * ============ 儿童模式菜单过滤 ============
+   */
+
+  filterMenusForChild(menuGroups) {
+    if (!this.isChildModeEnabled()) return menuGroups
+
+    const hideInChild = ['recycle', 'recycleOrders', 'address', 'orders', 'community', 'community-publish']
+    return menuGroups.map(group => ({
+      ...group,
+      items: (group.items || []).filter(item => !hideInChild.includes(item.id))
+    })).map(group => ({
+      ...group,
+      items: group.items.slice(0, 3)
+    })).filter(group => group.items.length > 0)
+  },
+
+  getUserRole() {
+    return this.globalData.userRole || 'member'
   }
 })

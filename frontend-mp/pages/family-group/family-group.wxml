@@ -1,0 +1,319 @@
+<view class="page-container">
+  <!-- 无组状态 - 创建/加入入口 -->
+  <view class="empty-group-section" wx:if="{{!currentGroup}}">
+    <view class="empty-group-card">
+      <view class="empty-group-icon">👨‍👩‍👧‍👦</view>
+      <text class="empty-group-title">还没有加入任何组</text>
+      <text class="empty-group-desc">创建或加入一个组，和家人/同学一起进步</text>
+      
+      <view class="empty-buttons">
+        <view class="empty-btn empty-btn-primary" bindtap="showCreateModal">
+          <text class="empty-btn-icon">➕</text>
+          <text class="empty-btn-text">创建组</text>
+        </view>
+        <view class="empty-btn empty-btn-outline" bindtap="showJoinModal">
+          <text class="empty-btn-icon">🔑</text>
+          <text class="empty-btn-text">输入邀请码</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 有多组时显示组切换 -->
+  <view class="group-switch-section" wx:if="{{myGroups.length > 1}}">
+    <scroll-view class="group-switch-scroll" scroll-x="true" enhanced="true" show-scrollbar="false">
+      <view
+        class="group-switch-item {{currentGroup.id === item.id ? 'group-switch-item-active' : ''}}"
+        wx:for="{{myGroups}}"
+        wx:key="id"
+        data-id="{{item.id}}"
+        bindtap="onSwitchGroup"
+      >
+        <text class="group-switch-icon">{{item.type === 'family' ? '🏠' : '🎓'}}</text>
+        <text class="group-switch-name">{{item.name}}</text>
+      </view>
+    </scroll-view>
+  </view>
+
+  <!-- 有组时显示组详情 -->
+  <block wx:if="{{currentGroup}}">
+    <!-- 组信息卡片 -->
+    <view class="group-info-card">
+      <view class="group-card-bg"></view>
+      <view class="group-card-content">
+        <view class="group-header">
+          <view class="group-type-icon">
+            <text class="group-type-emoji">{{currentGroup.type === 'family' ? '🏠' : '🎓'}}</text>
+          </view>
+          <view class="group-header-info">
+            <view class="group-name-row">
+              <text class="group-name">{{currentGroup.name}}</text>
+              <view class="group-type-tag {{currentGroup.type === 'family' ? 'tag-family' : 'tag-class'}}">
+                <text class="type-tag-text">{{currentGroup.type === 'family' ? '家庭组' : '班级组'}}</text>
+              </view>
+            </view>
+            <text class="group-creator">创建者：{{currentGroup.creatorName || '管理员'}}</text>
+          </view>
+        </view>
+        <view class="group-stats">
+          <view class="group-stat-item">
+            <text class="group-stat-value">{{memberCount}}</text>
+            <text class="group-stat-label">成员数</text>
+          </view>
+          <view class="group-stat-divider"></view>
+          <view class="group-stat-item">
+            <text class="group-stat-value">{{pointsPool.total || 0}}</text>
+            <text class="group-stat-label">累计积分</text>
+          </view>
+          <view class="group-stat-divider"></view>
+          <view class="group-stat-item">
+            <text class="group-stat-value">{{pointsPool.weekAdded || 0}}</text>
+            <text class="group-stat-label">本周新增</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 邀请成员区域 -->
+    <view class="invite-section card">
+      <view class="section-header">
+        <view class="section-header-left">
+          <text class="section-header-icon">📨</text>
+          <text class="section-header-title">邀请成员</text>
+        </view>
+        <view class="invite-btn {{inviteCode ? 'invite-btn-shown' : ''}}" bindtap="onGenerateInviteCode">
+          <text class="invite-btn-text">{{inviteCode ? '重新生成' : '生成邀请码'}}</text>
+        </view>
+      </view>
+      
+      <view class="invite-content" wx:if="{{inviteCode}}">
+        <view class="qr-code-area">
+          <view class="qr-code-placeholder">
+            <text class="qr-code-icon">📱</text>
+            <text class="qr-code-text">二维码区域</text>
+          </view>
+        </view>
+        <view class="invite-code-row">
+          <text class="invite-code-label">邀请码</text>
+          <view class="invite-code-wrapper">
+            <text class="invite-code-text">{{inviteCode}}</text>
+          </view>
+          <view class="copy-btn" bindtap="onCopyInviteCode">
+            <text class="copy-icon">📋</text>
+            <text class="copy-text">复制</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 组积分池 -->
+    <view class="points-section card">
+      <view class="section-header">
+        <view class="section-header-left">
+          <text class="section-header-icon">💎</text>
+          <text class="section-header-title">组积分池</text>
+        </view>
+      </view>
+      <view class="points-pool-content">
+        <view class="points-pool-item points-pool-total">
+          <text class="points-pool-label">累计积分</text>
+          <text class="points-pool-value">{{pointsPool.total || 0}}</text>
+        </view>
+        <view class="points-pool-item points-pool-week">
+          <text class="points-pool-label">本周新增</text>
+          <view class="week-added-badge">
+            <text class="week-added-value">+{{pointsPool.weekAdded || 0}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 成员列表 -->
+    <view class="member-section card">
+      <view class="section-header">
+        <view class="section-header-left">
+          <text class="section-header-icon">👥</text>
+          <text class="section-header-title">成员列表</text>
+        </view>
+        <text class="member-count">{{members.length}}人</text>
+      </view>
+      <view class="member-list">
+        <view
+          class="member-item"
+          wx:for="{{members}}"
+          wx:key="id"
+        >
+          <view class="member-avatar">
+            <text class="member-avatar-emoji">{{item.avatarEmoji || '🌱'}}</text>
+          </view>
+          <view class="member-info">
+            <view class="member-name-row">
+              <text class="member-name">{{item.nickName}}</text>
+              <view class="member-role-tag {{item.role === 'owner' ? 'role-owner' : (item.role === 'admin' ? 'role-admin' : 'role-member')}}">
+                <text class="role-tag-text">{{item.role === 'owner' ? '创建者' : (item.role === 'admin' ? '管理员' : '成员')}}</text>
+              </view>
+            </view>
+            <text class="member-join-time">加入时间：{{item.joinTimeText}}</text>
+          </view>
+          <view class="member-actions" wx:if="{{isCurrentUserAdmin && item.id !== currentUserId}}">
+            <view class="member-action-btn action-role" bindtap="onShowRoleMenu" data-id="{{item.id}}" data-role="{{item.role}}">
+              <text class="action-icon">⚙️</text>
+            </view>
+            <view class="member-action-btn action-remove" bindtap="onRemoveMember" data-id="{{item.id}}" data-name="{{item.nickName}}">
+              <text class="action-icon">🗑️</text>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 底部操作区 -->
+    <view class="footer-actions">
+      <view class="footer-btn footer-btn-join" bindtap="showJoinModal">
+        <text class="footer-btn-icon">🔑</text>
+        <text class="footer-btn-text">通过邀请码加入</text>
+      </view>
+      <view class="footer-btn {{isCurrentUserOwner ? 'footer-btn-dismiss' : 'footer-btn-leave'}}" bindtap="onLeaveOrDismiss">
+        <text class="footer-btn-icon">{{isCurrentUserOwner ? '💥' : '🚪'}}</text>
+        <text class="footer-btn-text">{{isCurrentUserOwner ? '解散组' : '退出组'}}</text>
+      </view>
+    </view>
+
+    <!-- 安全区域 -->
+    <view class="safe-area-bottom"></view>
+  </block>
+
+  <!-- 创建组弹窗 -->
+  <view class="modal-mask" wx:if="{{showCreateModal}}" bindtap="hideCreateModal">
+    <view class="modal-content modal-create" catchtap="stopPropagation">
+      <view class="modal-header">
+        <text class="modal-title">创建组</text>
+        <view class="modal-close" bindtap="hideCreateModal">
+          <text class="close-icon">✕</text>
+        </view>
+      </view>
+      <view class="modal-body">
+        <view class="form-item">
+          <text class="form-label">组类型</text>
+          <view class="type-selector">
+            <view
+              class="type-option {{createForm.type === 'family' ? 'type-option-active type-option-family' : ''}}"
+              bindtap="onSelectType"
+              data-type="family"
+            >
+              <text class="type-option-icon">🏠</text>
+              <text class="type-option-name">家庭组</text>
+            </view>
+            <view
+              class="type-option {{createForm.type === 'class' ? 'type-option-active type-option-class' : ''}}"
+              bindtap="onSelectType"
+              data-type="class"
+            >
+              <text class="type-option-icon">🎓</text>
+              <text class="type-option-name">班级组</text>
+            </view>
+          </view>
+        </view>
+        <view class="form-item">
+          <text class="form-label">组名称</text>
+          <input
+            class="form-input"
+            placeholder="请输入组名称（2-20字）"
+            placeholder-class="input-placeholder"
+            maxlength="20"
+            value="{{createForm.name}}"
+            bindinput="onInputGroupName"
+          />
+        </view>
+      </view>
+      <view class="modal-footer">
+        <view class="modal-btn modal-btn-cancel" bindtap="hideCreateModal">
+          <text class="modal-btn-text">取消</text>
+        </view>
+        <view class="modal-btn modal-btn-confirm" bindtap="onConfirmCreate">
+          <text class="modal-btn-text-white">创建</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 加入组弹窗 -->
+  <view class="modal-mask" wx:if="{{showJoinModal}}" bindtap="hideJoinModal">
+    <view class="modal-content modal-join" catchtap="stopPropagation">
+      <view class="modal-header">
+        <text class="modal-title">通过邀请码加入</text>
+        <view class="modal-close" bindtap="hideJoinModal">
+          <text class="close-icon">✕</text>
+        </view>
+      </view>
+      <view class="modal-body">
+        <view class="form-item">
+          <text class="form-label">邀请码</text>
+          <input
+            class="form-input form-input-code"
+            placeholder="请输入6位邀请码"
+            placeholder-class="input-placeholder"
+            maxlength="6"
+            value="{{joinForm.inviteCode}}"
+            bindinput="onInputInviteCode"
+          />
+        </view>
+        <text class="join-hint">向组管理员获取6位数字+字母邀请码</text>
+      </view>
+      <view class="modal-footer">
+        <view class="modal-btn modal-btn-cancel" bindtap="hideJoinModal">
+          <text class="modal-btn-text">取消</text>
+        </view>
+        <view class="modal-btn modal-btn-confirm" bindtap="onConfirmJoin">
+          <text class="modal-btn-text-white">加入</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 设置角色弹窗 -->
+  <view class="modal-mask" wx:if="{{showRoleModal}}" bindtap="hideRoleModal">
+    <view class="modal-content modal-role" catchtap="stopPropagation">
+      <view class="modal-header">
+        <text class="modal-title">设置角色</text>
+        <view class="modal-close" bindtap="hideRoleModal">
+          <text class="close-icon">✕</text>
+        </view>
+      </view>
+      <view class="modal-body">
+        <view class="role-option" bindtap="onSelectRole" data-role="admin">
+          <view class="role-option-left">
+            <text class="role-option-icon">🛡️</text>
+            <view class="role-option-info">
+              <text class="role-option-name">管理员</text>
+              <text class="role-option-desc">可邀请、移除成员，管理组设置</text>
+            </view>
+          </view>
+          <view class="role-option-check {{roleForm.targetRole === 'admin' ? 'checked' : ''}}">
+            <text class="check-icon" wx:if="{{roleForm.targetRole === 'admin'}}">✓</text>
+          </view>
+        </view>
+        <view class="role-option" bindtap="onSelectRole" data-role="member">
+          <view class="role-option-left">
+            <text class="role-option-icon">👤</text>
+            <view class="role-option-info">
+              <text class="role-option-name">普通成员</text>
+              <text class="role-option-desc">可参与组内活动，查看成员</text>
+            </view>
+          </view>
+          <view class="role-option-check {{roleForm.targetRole === 'member' ? 'checked' : ''}}">
+            <text class="check-icon" wx:if="{{roleForm.targetRole === 'member'}}">✓</text>
+          </view>
+        </view>
+      </view>
+      <view class="modal-footer">
+        <view class="modal-btn modal-btn-cancel" bindtap="hideRoleModal">
+          <text class="modal-btn-text">取消</text>
+        </view>
+        <view class="modal-btn modal-btn-confirm" bindtap="onConfirmRole">
+          <text class="modal-btn-text-white">确定</text>
+        </view>
+      </view>
+    </view>
+  </view>
+</view>

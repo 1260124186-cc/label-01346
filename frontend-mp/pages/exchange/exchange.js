@@ -42,18 +42,37 @@ Page({
         '恶意刷积分将被取消资格并清空积分',
         '最终解释权归垃圾分类助手所有'
       ]
-    }
+    },
+    childModeEnabled: false,
+    virtualBadges: [],
+    currentBadgeTab: 'goods',
+    showBadgeModal: false,
+    selectedBadge: null
   },
 
   onLoad() {
     console.log('[Exchange] 页面加载')
+    const childModeEnabled = app.isChildModeEnabled()
+    this.setData({
+      childModeEnabled,
+      currentBadgeTab: childModeEnabled ? 'badges' : 'goods'
+    })
     this.initPageData()
   },
 
   onShow() {
     console.log('[Exchange] 页面显示')
+    const childModeEnabled = app.isChildModeEnabled()
+    this.setData({
+      childModeEnabled,
+      currentBadgeTab: childModeEnabled ? 'badges' : 'goods'
+    })
     this.refreshUserPoints()
     this.loadGoodsList()
+    if (childModeEnabled) {
+      const virtualBadges = app.getMyVirtualBadges()
+      this.setData({ virtualBadges })
+    }
   },
 
   initPageData() {
@@ -113,6 +132,10 @@ Page({
   },
 
   filterGoods(categoryId) {
+    if (this.data.childModeEnabled) {
+      this.setData({ goodsList: [] })
+      return
+    }
     const allGoods = app.getGoodsList()
     const { userPoints } = this.data
     let filteredGoods = [...allGoods]
@@ -162,9 +185,34 @@ Page({
   },
 
   onGoodsTap(e) {
+    if (this.data.childModeEnabled) {
+      return
+    }
     const { item } = e.currentTarget.dataset
     console.log('[Exchange] 点击商品', item.name)
     navigateTo('/pages/goods-detail/goods-detail', { id: item.id })
+  },
+
+  switchBadgeTab(e) {
+    const { tab } = e.currentTarget.dataset
+    console.log('[Exchange] 切换tab:', tab)
+    this.setData({ currentBadgeTab: tab })
+  },
+
+  onBadgeTap(e) {
+    const { item } = e.currentTarget.dataset
+    console.log('[Exchange] 点击勋章:', item.name)
+    this.setData({
+      selectedBadge: item,
+      showBadgeModal: true
+    })
+  },
+
+  hideBadgeModal() {
+    this.setData({
+      showBadgeModal: false,
+      selectedBadge: null
+    })
   },
 
   onShareAppMessage() {

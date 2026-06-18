@@ -27,6 +27,44 @@
         </view>
       </view>
 
+      <view class="setting-item">
+        <view class="setting-left">
+          <view class="setting-icon" style="background: rgba(243, 156, 18, 0.1);">
+            <text class="setting-emoji">🔒</text>
+          </view>
+          <view class="setting-info">
+            <view class="setting-title-row">
+              <text class="setting-title">儿童模式</text>
+              <text class="setting-lock-icon">🔒</text>
+            </view>
+            <text class="setting-desc">简化UI、仅虚拟勋章、无实物兑换</text>
+          </view>
+        </view>
+        <view class="setting-right">
+          <switch 
+            checked="{{childModeEnabled}}" 
+            bindchange="onChildModeChange"
+            color="#5BBD72"
+          />
+        </view>
+      </view>
+
+      <view class="setting-item" bindtap="onRoleSelect">
+        <view class="setting-left">
+          <view class="setting-icon" style="background: rgba(155, 89, 182, 0.1);">
+            <text class="setting-emoji">{{roleEmojiMap[userRole] || '👤'}}</text>
+          </view>
+          <view class="setting-info">
+            <text class="setting-title">我的角色</text>
+            <text class="setting-desc">选择您在家庭中的角色</text>
+          </view>
+        </view>
+        <view class="setting-right">
+          <text class="setting-value">{{currentRoleDisplay}}</text>
+          <text class="setting-arrow">›</text>
+        </view>
+      </view>
+
       <view class="setting-item" bindtap="onClearCache">
         <view class="setting-left">
           <view class="setting-icon" style="background: rgba(243, 156, 18, 0.1);">

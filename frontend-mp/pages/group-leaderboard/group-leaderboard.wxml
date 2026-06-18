@@ -1,0 +1,312 @@
+<view class="page-container">
+  <view class="main-tabs">
+    <view
+      class="main-tab {{currentMainTab === 'leaderboard' ? 'main-tab-active' : ''}}"
+      data-tab="leaderboard"
+      bindtap="onMainTabTap"
+    >
+      <text class="main-tab-icon">🏆</text>
+      <text class="main-tab-name">组内排行</text>
+    </view>
+    <view
+      class="main-tab {{currentMainTab === 'tasks' ? 'main-tab-active' : ''}}"
+      data-tab="tasks"
+      bindtap="onMainTabTap"
+    >
+      <text class="main-tab-icon">📋</text>
+      <text class="main-tab-name">组任务</text>
+    </view>
+    <view
+      class="main-tab {{currentMainTab === 'points' ? 'main-tab-active' : ''}}"
+      data-tab="points"
+      bindtap="onMainTabTap"
+    >
+      <text class="main-tab-icon">💰</text>
+      <text class="main-tab-name">组积分池</text>
+    </view>
+  </view>
+
+  <block wx:if="{{currentMainTab === 'leaderboard'}}">
+    <view class="tab-section">
+      <view class="period-tabs">
+        <view
+          class="period-tab {{currentPeriod === item.id ? 'period-tab-active' : ''}}"
+          wx:for="{{periods}}"
+          wx:key="id"
+          data-id="{{item.id}}"
+          bindtap="onPeriodTap"
+        >
+          <text class="period-tab-icon">{{item.icon}}</text>
+          <text class="period-tab-name">{{item.name}}</text>
+        </view>
+      </view>
+      <view class="dimension-tabs">
+        <view
+          class="dimension-tab {{currentDimension === item.id ? 'dimension-tab-active' : ''}}"
+          wx:for="{{dimensions}}"
+          wx:key="id"
+          data-id="{{item.id}}"
+          bindtap="onDimensionTap"
+        >
+          <text class="dimension-tab-icon">{{item.icon}}</text>
+          <text class="dimension-tab-name">{{item.name}}</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="podium-section" wx:if="{{leaderboardList.length >= 3}}">
+      <view class="podium-container">
+        <view class="podium-item podium-silver">
+          <view class="podium-avatar-wrap podium-avatar-silver">
+            <text class="podium-avatar-emoji">{{leaderboardList[1].avatarEmoji || '😎'}}</text>
+          </view>
+          <text class="podium-name">{{leaderboardList[1].nickName}}</text>
+          <text class="podium-value">{{leaderboardList[1].displayValue}}</text>
+          <view class="podium-bar podium-bar-silver">
+            <text class="podium-rank-text">2</text>
+          </view>
+        </view>
+        <view class="podium-item podium-gold">
+          <view class="podium-crown">👑</view>
+          <view class="podium-avatar-wrap podium-avatar-gold">
+            <text class="podium-avatar-emoji">{{leaderboardList[0].avatarEmoji || '🥇'}}</text>
+          </view>
+          <text class="podium-name">{{leaderboardList[0].nickName}}</text>
+          <text class="podium-value">{{leaderboardList[0].displayValue}}</text>
+          <view class="podium-bar podium-bar-gold">
+            <text class="podium-rank-text">1</text>
+          </view>
+        </view>
+        <view class="podium-item podium-bronze">
+          <view class="podium-avatar-wrap podium-avatar-bronze">
+            <text class="podium-avatar-emoji">{{leaderboardList[2].avatarEmoji || '😊'}}</text>
+          </view>
+          <text class="podium-name">{{leaderboardList[2].nickName}}</text>
+          <text class="podium-value">{{leaderboardList[2].displayValue}}</text>
+          <view class="podium-bar podium-bar-bronze">
+            <text class="podium-rank-text">3</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <view class="rank-list" wx:if="{{leaderboardList.length > 3}}">
+      <view
+        class="rank-item"
+        wx:for="{{leaderboardList}}"
+        wx:key="id"
+        wx:if="{{index >= 3 && !item.isCurrentUser}}"
+      >
+        <view class="rank-number-wrap">
+          <text class="rank-number">{{item.rank}}</text>
+        </view>
+        <view class="rank-avatar-wrap">
+          <text class="rank-avatar-emoji">{{item.avatarEmoji || '🌱'}}</text>
+        </view>
+        <view class="rank-info">
+          <text class="rank-name">{{item.nickName}}</text>
+          <text class="rank-value">{{item.displayValue}}</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="my-rank-card" wx:if="{{myData}}">
+      <view class="my-rank-left">
+        <view class="my-rank-badge">
+          <text class="my-rank-number">{{myRank}}</text>
+        </view>
+        <view class="my-rank-avatar">
+          <text class="my-rank-avatar-emoji">{{myData.avatarEmoji || '🌱'}}</text>
+        </view>
+        <view class="my-rank-info">
+          <text class="my-rank-name">{{myData.nickName}}</text>
+          <text class="my-rank-value">{{myData.displayValue}}</text>
+        </view>
+      </view>
+      <view class="my-rank-tag">
+        <text class="my-rank-tag-text">我的排名</text>
+      </view>
+    </view>
+  </block>
+
+  <block wx:if="{{currentMainTab === 'tasks'}}">
+    <view class="task-card" wx:for="{{groupTasks}}" wx:key="id">
+      <view class="task-header">
+        <view class="task-title-wrap">
+          <text class="task-icon">{{item.icon || '🎯'}}</text>
+          <text class="task-title">{{item.title}}</text>
+        </view>
+        <view class="task-status {{item.isCompleted ? 'task-status-completed' : 'task-status-progress'}}">
+          <text class="task-status-text">{{item.isCompleted ? '已完成' : '进行中'}}</text>
+        </view>
+      </view>
+
+      <view class="task-goal-text">
+        <text class="task-goal-label">任务目标：</text>
+        <text class="task-goal-value">{{item.description}}</text>
+      </view>
+
+      <view class="progress-section">
+        <view class="progress-info">
+          <text class="progress-text">
+            <text class="progress-current">{{item.progress.currentCount || 0}}</text>
+            <text class="progress-divider">/</text>
+            <text class="progress-total">{{item.progress.targetCount || 100}}</text>
+          </text>
+          <text class="progress-percent">{{item.progress.percent || 0}}%</text>
+        </view>
+        <view class="progress-bar-wrap">
+          <view class="progress-bar" style="width: {{item.progress.percent || 0}}%"></view>
+        </view>
+      </view>
+
+      <view class="reward-section">
+        <view class="reward-title-row">
+          <text class="reward-title-icon">🎁</text>
+          <text class="reward-title">任务奖励</text>
+        </view>
+        <view class="reward-items">
+          <view class="reward-item">
+            <text class="reward-item-icon">💰</text>
+            <text class="reward-item-text">{{item.reward.points || 0}} 组积分</text>
+          </view>
+          <view class="reward-item" wx:if="{{item.reward.badge}}">
+            <text class="reward-item-icon">🏅</text>
+            <text class="reward-item-text">{{item.reward.badge}}</text>
+          </view>
+        </view>
+        <view class="reward-distributed" wx:if="{{item.isCompleted}}">
+          <text class="reward-distributed-icon">✓</text>
+          <text class="reward-distributed-text">奖励已发放</text>
+        </view>
+      </view>
+
+      <view class="contribution-section" wx:if="{{item.contributions && item.contributions.length > 0}}">
+        <view class="contribution-header">
+          <text class="contribution-header-icon">👥</text>
+          <text class="contribution-header-title">贡献排行榜</text>
+        </view>
+        <view class="contribution-list">
+          <view
+            class="contribution-item"
+            wx:for="{{item.contributions}}"
+            wx:for-item="member"
+            wx:key="id"
+          >
+            <view class="contribution-rank-wrap">
+              <view class="contribution-rank-badge" wx:if="{{member.rank <= 3}}">
+                <text class="contribution-rank-emoji">{{member.rank === 1 ? '🥇' : (member.rank === 2 ? '🥈' : '🥉')}}</text>
+              </view>
+              <text class="contribution-rank-number" wx:else>{{member.rank}}</text>
+            </view>
+            <view class="contribution-avatar">
+              <text class="contribution-avatar-emoji">{{member.avatarEmoji || '🌱'}}</text>
+            </view>
+            <text class="contribution-name">{{member.nickName}}</text>
+            <text class="contribution-count">{{member.count || 0}} 次</text>
+          </view>
+        </view>
+      </view>
+    </view>
+  </block>
+
+  <block wx:if="{{currentMainTab === 'points'}}">
+    <view class="pool-card">
+      <view class="pool-card-bg"></view>
+      <view class="pool-card-content">
+        <view class="pool-header">
+          <text class="pool-icon">💰</text>
+          <text class="pool-title">组积分池总量</text>
+        </view>
+        <text class="pool-total">{{pointsPool.totalPoints || 0}}</text>
+        <view class="pool-stats">
+          <view class="pool-stat-item">
+            <text class="pool-stat-value">{{pointsPool.earnedPoints || 0}}</text>
+            <text class="pool-stat-label">累计获得</text>
+          </view>
+          <view class="pool-stat-divider"></view>
+          <view class="pool-stat-item">
+            <text class="pool-stat-value">{{pointsPool.usedPoints || 0}}</text>
+            <text class="pool-stat-label">已兑换</text>
+          </view>
+          <view class="pool-stat-divider"></view>
+          <view class="pool-stat-item">
+            <text class="pool-stat-value">{{pointsPool.memberCount || 0}}</text>
+            <text class="pool-stat-label">成员数</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <view class="history-tabs">
+      <view
+        class="history-tab {{pointsHistoryTab === 'earn' ? 'history-tab-active' : ''}}"
+        data-tab="earn"
+        bindtap="onPointsHistoryTabTap"
+      >
+        <text class="history-tab-icon">📈</text>
+        <text class="history-tab-name">获取记录</text>
+      </view>
+      <view
+        class="history-tab {{pointsHistoryTab === 'exchange' ? 'history-tab-active' : ''}}"
+        data-tab="exchange"
+        bindtap="onPointsHistoryTabTap"
+      >
+        <text class="history-tab-icon">🎁</text>
+        <text class="history-tab-name">兑换记录</text>
+      </view>
+    </view>
+
+    <view class="history-list" wx:if="{{pointsHistoryTab === 'earn'}}">
+      <view class="history-empty" wx:if="{{pointsHistory.earn.length === 0}}">
+        <text class="empty-icon">📭</text>
+        <text class="empty-text">暂无获取记录</text>
+      </view>
+      <view
+        class="history-item"
+        wx:for="{{pointsHistory.earn}}"
+        wx:for-item="record"
+        wx:key="id"
+      >
+        <view class="history-item-left">
+          <view class="history-item-icon-wrap earn-icon">
+            <text class="history-item-icon">{{record.icon || '✨'}}</text>
+          </view>
+          <view class="history-item-info">
+            <text class="history-item-title">{{record.event}}</text>
+            <text class="history-item-time">{{record.time}}</text>
+          </view>
+        </view>
+        <view class="history-item-right earn">
+          <text class="history-item-points">+{{record.points}}</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="history-list" wx:if="{{pointsHistoryTab === 'exchange'}}">
+      <view class="history-empty" wx:if="{{pointsHistory.exchange.length === 0}}">
+        <text class="empty-icon">🎁</text>
+        <text class="empty-text">暂无兑换记录</text>
+      </view>
+      <view
+        class="history-item"
+        wx:for="{{pointsHistory.exchange}}"
+        wx:for-item="record"
+        wx:key="id"
+      >
+        <view class="history-item-left">
+          <view class="history-item-icon-wrap exchange-icon">
+            <text class="history-item-icon">{{record.icon || '🎁'}}</text>
+          </view>
+          <view class="history-item-info">
+            <text class="history-item-title">{{record.event}}</text>
+            <text class="history-item-time">{{record.time}}</text>
+          </view>
+        </view>
+        <view class="history-item-right exchange">
+          <text class="history-item-points">-{{record.points}}</text>
+        </view>
+      </view>
+    </view>
+  </block>
+</view>

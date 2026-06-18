@@ -1,0 +1,304 @@
+<view class="page-container">
+  <view class="header-decoration"></view>
+
+  <view wx:if="{{!hasPermission}}" class="no-permission">
+    <view class="no-permission-icon">🔒</view>
+    <view class="no-permission-title">暂无权限</view>
+    <view class="no-permission-desc">仅家长、老师、创建者可查看学习报告</view>
+  </view>
+
+  <block wx:if="{{hasPermission}}">
+    <view class="member-selector-section">
+      <scroll-view class="member-scroll" scroll-x="{{true}}" enhanced="{{true}}" show-scrollbar="{{false}}">
+        <view class="member-list">
+          <view
+            wx:for="{{members}}"
+            wx:key="id"
+            class="member-item {{currentMemberId === item.id ? 'active' : ''}}"
+            bindtap="onMemberSelect"
+            data-member="{{item}}"
+          >
+            <view class="member-avatar-wrapper">
+              <image
+                wx:if="{{item.avatarUrl}}"
+                class="member-avatar"
+                src="{{item.avatarUrl}}"
+                mode="aspectFill"
+              />
+              <view wx:else class="member-avatar-placeholder">
+                <text class="member-avatar-emoji">{{item.emoji || '🌱'}}</text>
+              </view>
+              <view wx:if="{{currentMemberId === item.id}}" class="member-active-ring"></view>
+            </view>
+            <text class="member-nickname">{{item.nickName}}</text>
+          </view>
+        </view>
+      </scroll-view>
+    </view>
+
+    <view class="overview-section">
+      <view class="section-header">
+        <text class="section-title">数据概览</text>
+      </view>
+      <view class="overview-card">
+        <view class="card-bg-decoration"></view>
+        <view class="overview-grid">
+          <view class="overview-item">
+            <view class="overview-value-wrapper">
+              <text class="overview-value">{{overview.totalDays}}</text>
+              <text class="overview-unit">天</text>
+            </view>
+            <text class="overview-label">总学习天数</text>
+          </view>
+          <view class="overview-divider"></view>
+          <view class="overview-item">
+            <view class="overview-value-wrapper">
+              <text class="overview-value">{{overview.classifyCount}}</text>
+              <text class="overview-unit">次</text>
+            </view>
+            <text class="overview-label">累计分类</text>
+          </view>
+          <view class="overview-divider"></view>
+          <view class="overview-item">
+            <view class="overview-value-wrapper">
+              <text class="overview-value">{{overview.quizCount}}</text>
+              <text class="overview-unit">道</text>
+            </view>
+            <text class="overview-label">累计答题</text>
+          </view>
+          <view class="overview-divider"></view>
+          <view class="overview-item">
+            <view class="overview-value-wrapper">
+              <text class="overview-value">{{overview.totalPoints}}</text>
+              <text class="overview-unit">分</text>
+            </view>
+            <text class="overview-label">总积分</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <view class="ability-section">
+      <view class="section-header">
+        <text class="section-title">答题能力分析</text>
+      </view>
+      <view class="ability-card">
+        <view class="ability-overview">
+          <view class="accuracy-ring">
+            <view class="ring-bg">
+              <view class="ring-progress" style="background: conic-gradient(#5BBD72 {{report.overallAccuracy}}%, #E8F5E9 {{report.overallAccuracy}}%);"></view>
+              <view class="ring-inner">
+                <text class="accuracy-value">{{report.overallAccuracy}}</text>
+                <text class="accuracy-unit">%</text>
+              </view>
+            </view>
+          </view>
+          <view class="ability-desc">
+            <view class="ability-desc-title">总体正确率</view>
+            <view class="ability-desc-text">
+              <text wx:if="{{report.overallAccuracy >= 80}}" class="ability-level excellent">优秀</text>
+              <text wx:elif="{{report.overallAccuracy >= 60}}" class="ability-level good">良好</text>
+              <text wx:else class="ability-level need-improve">需提升</text>
+              <text class="ability-desc-detail">继续加油！</text>
+            </view>
+            <view class="ability-stats">
+              <view class="ability-stat-item">
+                <text class="stat-num correct">{{report.correctCount}}</text>
+                <text class="stat-label">答对</text>
+              </view>
+              <view class="ability-stat-item">
+                <text class="stat-num wrong">{{report.wrongCount}}</text>
+                <text class="stat-label">答错</text>
+              </view>
+            </view>
+          </view>
+        </view>
+
+        <view class="category-chart-section">
+          <view class="chart-title">各分类正确率</view>
+          <view class="bar-chart">
+            <view
+              wx:for="{{categoryAccuracy}}"
+              wx:key="id"
+              class="bar-item"
+            >
+              <view class="bar-wrapper">
+                <view
+                  class="bar-fill"
+                  style="height: {{item.accuracy}}%; background: {{item.color}};"
+                ></view>
+                <text class="bar-value">{{item.accuracy}}%</text>
+              </view>
+              <view class="bar-icon" style="background: {{item.bgColor}};">
+                <text class="bar-icon-emoji">{{item.emoji}}</text>
+              </view>
+              <text class="bar-label">{{item.name}}</text>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <view class="weak-section" wx:if="{{weakCategories.length > 0}}">
+      <view class="section-header">
+        <text class="section-title">薄弱类别分析</text>
+        <text class="section-subtitle">正确率低于60%的类别需要重点练习</text>
+      </view>
+      <view class="weak-list">
+        <view
+          wx:for="{{weakCategories}}"
+          wx:key="id"
+          class="weak-card"
+        >
+          <view class="weak-header">
+            <view class="weak-title-row">
+              <view class="weak-category-icon" style="background: {{item.bgColor}};">
+                <text class="weak-icon-emoji">{{item.emoji}}</text>
+              </view>
+              <view class="weak-title-info">
+                <text class="weak-category-name">{{item.name}}</text>
+                <view class="weak-accuracy-row">
+                  <view class="weak-accuracy-bar">
+                    <view
+                      class="weak-accuracy-fill"
+                      style="width: {{item.accuracy}}%; background: {{item.accuracy >= 50 ? '#F39C12' : '#E85D5D'}};"
+                    ></view>
+                  </view>
+                  <text class="weak-accuracy-text" style="color: {{item.accuracy >= 50 ? '#F39C12' : '#E85D5D'}};">{{item.accuracy}}%</text>
+                </view>
+              </view>
+            </view>
+          </view>
+
+          <view class="weak-wrong-title">最近5次错题示例</view>
+          <view class="wrong-list">
+            <view
+              wx:for="{{item.recentWrong}}"
+              wx:for-item="wrong"
+              wx:key="id"
+              class="wrong-item"
+            >
+              <view class="wrong-index">{{index + 1}}</view>
+              <view class="wrong-content">
+                <text class="wrong-question">{{wrong.question}}</text>
+                <view class="wrong-answer-row">
+                  <text class="wrong-your-answer">你的答案: {{wrong.yourAnswer}}</text>
+                  <text class="wrong-correct-answer">正确答案: {{wrong.correctAnswer}}</text>
+                </view>
+              </view>
+            </view>
+          </view>
+
+          <view
+            class="practice-btn"
+            bindtap="goToPractice"
+            data-category="{{item}}"
+          >
+            <text class="practice-btn-icon">🎯</text>
+            <text class="practice-btn-text">去练习该类别</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <view class="weak-section empty-weak" wx:else>
+      <view class="section-header">
+        <text class="section-title">薄弱类别分析</text>
+      </view>
+      <view class="empty-card">
+        <text class="empty-icon">🎉</text>
+        <text class="empty-title">太棒了！暂无薄弱类别</text>
+        <text class="empty-desc">所有类别正确率均达到60%以上，继续保持！</text>
+      </view>
+    </view>
+
+    <view class="trend-section">
+      <view class="section-header">
+        <text class="section-title">学习趋势</text>
+        <text class="section-subtitle">最近7天学习数据</text>
+      </view>
+      <view class="trend-card">
+        <view class="trend-tabs">
+          <view
+            class="trend-tab {{trendTab === 'classify' ? 'active' : ''}}"
+            bindtap="switchTrendTab"
+            data-tab="classify"
+          >
+            <text>分类次数</text>
+          </view>
+          <view
+            class="trend-tab {{trendTab === 'quiz' ? 'active' : ''}}"
+            bindtap="switchTrendTab"
+            data-tab="quiz"
+          >
+            <text>答题数量</text>
+          </view>
+        </view>
+
+        <view class="trend-chart">
+          <view class="y-axis">
+            <text class="y-label">{{maxTrendValue}}</text>
+            <text class="y-label">{{maxTrendValue > 0 ? Math.floor(maxTrendValue / 2) : 0}}</text>
+            <text class="y-label">0</text>
+          </view>
+          <view class="chart-content">
+            <view class="bars-container">
+              <view
+                wx:for="{{weeklyStats}}"
+                wx:key="date"
+                class="trend-bar-wrapper"
+              >
+                <view class="bar-tooltip" wx:if="{{item[trendTab] > 0}}">{{item[trendTab]}}</view>
+                <view
+                  class="trend-bar"
+                  style="height: {{maxTrendValue > 0 ? (item[trendTab] / maxTrendValue * 100) : 0}}%; {{index === 6 ? 'background: linear-gradient(180deg, #6ECC84 0%, #5BBD72 100%);' : 'background: #B8DFC0;'}}"
+                ></view>
+                <text class="trend-date">{{item.dateLabel}}</text>
+                <text class="trend-weekday">{{item.weekday}}</text>
+              </view>
+            </view>
+          </view>
+        </view>
+
+        <view class="trend-summary">
+          <view class="summary-item">
+            <text class="summary-label">本周累计</text>
+            <text class="summary-value">{{weekTotal}} {{trendTab === 'classify' ? '次' : '道'}}</text>
+          </view>
+          <view class="summary-item">
+            <text class="summary-label">日均</text>
+            <text class="summary-value">{{dailyAverage}} {{trendTab === 'classify' ? '次' : '道'}}</text>
+          </view>
+          <view class="summary-item">
+            <text class="summary-label">最高</text>
+            <text class="summary-value">{{maxTrendValue}} {{trendTab === 'classify' ? '次' : '道'}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <view class="badges-section">
+      <view class="section-header">
+        <text class="section-title">勋章墙</text>
+        <text class="section-subtitle">已获得 {{unlockedBadgeCount}}/{{badges.length}}</text>
+      </view>
+      <view class="badges-card">
+        <view class="badges-grid">
+          <view
+            wx:for="{{badges}}"
+            wx:key="id"
+            class="badge-item {{item.unlocked ? 'unlocked' : 'locked'}}"
+          >
+            <view class="badge-icon-wrapper" style="background: {{item.unlocked ? item.bgColor : 'rgba(142, 142, 147, 0.1)'}};">
+              <text class="badge-icon">{{item.unlocked ? item.emoji : '🔒'}}</text>
+            </view>
+            <text class="badge-name">{{item.name}}</text>
+            <text class="badge-desc">{{item.description}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <view class="safe-area-bottom"></view>
+  </block>
+</view>

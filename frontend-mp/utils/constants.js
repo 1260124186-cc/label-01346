@@ -3153,6 +3153,41 @@ const RECYCLE_POINTS_CONFIG = {
   completeBonus: 30
 }
 
+const GROUP_TYPES = {
+  family: { id: 'family', name: '家庭组', icon: '👨‍👩‍👧‍👦', color: '#5BBD72', maxMembers: 8, desc: '与家人一起学习垃圾分类' },
+  class: { id: 'class', name: '班级组', icon: '🏫', color: '#4A90D9', maxMembers: 60, desc: '老师带领全班同学一起学习' }
+}
+
+const GROUP_ROLES = {
+  owner: { id: 'owner', name: '创建者', icon: '👑', permissions: ['manage', 'invite', 'remove', 'report', 'task'] },
+  parent: { id: 'parent', name: '家长', icon: '👨‍👩‍👧', permissions: ['invite', 'report'] },
+  teacher: { id: 'teacher', name: '老师', icon: '👨‍🏫', permissions: ['manage', 'invite', 'remove', 'report', 'task'] },
+  member: { id: 'member', name: '成员', icon: '👤', permissions: [] },
+  child: { id: 'child', name: '儿童', icon: '🧒', permissions: [] },
+  student: { id: 'student', name: '学生', icon: '🎒', permissions: [] }
+}
+
+const GROUP_TASKS = {
+  weekly_classify: { id: 'weekly_classify', name: '本周分类挑战', desc: '组内成员累计分类100次', icon: '♻️', target: 100, type: 'classify', period: 'weekly', rewardPoints: 500, rewardBadge: 'WEEKLY_TEAM_BADGE' }
+}
+
+const VIRTUAL_BADGES = {
+  WEEKLY_TEAM_BADGE: { id: 'WEEKLY_TEAM_BADGE', name: '团队之星', icon: '⭐', color: '#F39C12', desc: '完成本周组任务可获得' },
+  CLASSIFY_100: { id: 'CLASSIFY_100', name: '分类达人', icon: '🏅', color: '#5BBD72', desc: '累计分类100次' },
+  QUIZ_MASTER: { id: 'QUIZ_MASTER', name: '答题大师', icon: '🎯', color: '#9B59B6', desc: '答题正确率达到90%以上' },
+  TEAM_PLAYER: { id: 'TEAM_PLAYER', name: '团队伙伴', icon: '🤝', color: '#4A90D9', desc: '加入组并参与活动' },
+  PERFECT_WEEK: { id: 'PERFECT_WEEK', name: '全勤之星', icon: '🌟', color: '#E85D5D', desc: '一周7天连续打卡' }
+}
+
+const CHILD_MODE_CONFIG = {
+  enabled: false,
+  hidePhysicalExchange: true,
+  hideCommunity: true,
+  simplifiedUI: true,
+  maxDailyClassify: 50,
+  hideRealNameInput: true
+}
+
 module.exports = {
   TRASH_TYPES,
   QUIZ_SCENES,
@@ -3215,5 +3250,10 @@ module.exports = {
   RECYCLE_CATEGORIES,
   RECYCLE_ORDER_STATUS,
   RECYCLE_TIME_SLOTS,
-  RECYCLE_POINTS_CONFIG
+  RECYCLE_POINTS_CONFIG,
+  GROUP_TYPES,
+  GROUP_ROLES,
+  GROUP_TASKS,
+  VIRTUAL_BADGES,
+  CHILD_MODE_CONFIG
 }

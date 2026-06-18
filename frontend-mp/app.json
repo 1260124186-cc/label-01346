@@ -32,6 +32,7 @@
     "pages/recognize-result/recognize-result",
     "pages/drop-point/drop-point",
     "pages/leaderboard/leaderboard",
+    "pages/group-leaderboard/group-leaderboard",
     "pages/pk-battle/pk-battle",
     "pages/pk-result/pk-result",
     "pages/game-hall/game-hall",
@@ -46,7 +47,9 @@
     "pages/course-detail/course-detail",
     "pages/chapter-detail/chapter-detail",
     "pages/certificate/certificate",
-    "pages/certificates/certificates"
+    "pages/certificates/certificates",
+    "pages/family-group/family-group",
+    "pages/learning-report/learning-report"
   ],
   "window": {
     "backgroundTextStyle": "dark",

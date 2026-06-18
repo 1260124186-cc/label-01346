@@ -80,11 +80,22 @@
   min-width: 0;
 }
 
+.setting-title-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 4rpx;
+}
+
 .setting-title {
   font-size: 30rpx;
   font-weight: 500;
   color: #2D3436;
-  margin-bottom: 4rpx;
+}
+
+.setting-lock-icon {
+  font-size: 26rpx;
+  margin-left: 8rpx;
+  line-height: 1;
 }
 
 .setting-desc {

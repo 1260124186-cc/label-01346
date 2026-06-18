@@ -69,7 +69,26 @@
   </view>
 
   <!-- 商品分类 -->
-  <view class="category-section">
+  <view class="badge-tabs-section" wx:if="{{childModeEnabled}}">
+    <view class="badge-tabs">
+      <view 
+        class="badge-tab {{currentBadgeTab === 'goods' ? 'active' : ''}}"
+        bindtap="switchBadgeTab"
+        data-tab="goods"
+      >
+        <text class="tab-text">实物兑换</text>
+      </view>
+      <view 
+        class="badge-tab {{currentBadgeTab === 'badges' ? 'active' : ''}}"
+        bindtap="switchBadgeTab"
+        data-tab="badges"
+      >
+        <text class="tab-text">虚拟勋章</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="category-section" wx:if="{{!childModeEnabled}}">
     <view class="category-list">
       <view 
         wx:for="{{categories}}" 
@@ -84,6 +103,63 @@
     </view>
   </view>
 
+  <!-- 儿童模式 + goods tab：提示卡片 -->
+  <view class="child-mode-tip-card" wx:if="{{childModeEnabled && currentBadgeTab === 'goods'">
+    <view class="tip-icon-wrapper">
+      <text class="tip-icon">🧒</text>
+    </view>
+    <text class="tip-title">儿童模式提示</text>
+    <text class="tip-desc">儿童模式暂不支持实物兑换</text>
+    <text class="tip-suggest">快去看看你的虚拟勋章吧！</text>
+  </view>
+
+  <!-- 儿童模式 + badges tab：勋章列表 -->
+  <scroll-view 
+    class="goods-scroll-view"
+    scroll-y="{{true}}"
+    scroll-top="{{scrollTop}}"
+    bindscroll="onScroll"
+    enhanced="{{true}}"
+    show-scrollbar="{{false}}"
+    wx:if="{{childModeEnabled && currentBadgeTab === 'badges'}}"
+  >
+    <view class="badges-section">
+      <view class="badges-header">
+        <text class="badges-title">我的勋章墙</text>
+        <text class="badges-count">已获得 {{virtualBadges.length}} 枚</text>
+      </view>
+      <view class="badges-grid">
+        <view 
+          wx:for="{{virtualBadges}}" 
+          wx:key="id"
+          class="badge-card {{item.unlocked ? 'unlocked' : 'locked'}}"
+          bindtap="onBadgeTap"
+          data-item="{{item}}"
+        >
+          <view class="badge-status-icon unlocked-icon" wx:if="{{item.unlocked">
+            <text class="status-emoji">✅</text>
+          </view>
+          <view class="badge-status-icon locked-icon" wx:else>
+            <text class="status-emoji">🔒</text>
+          </view>
+          <view class="badge-icon-wrapper" style="background: {{item.unlocked ? item.color : '#CCCCCC'}};">
+            <text class="badge-icon">{{item.icon}}</text>
+          </view>
+          <text class="badge-name">{{item.name}}</text>
+          <view class="badge-progress-wrapper" wx:if="{{!item.unlocked}}">
+            <text class="badge-progress-text">{{item.progressText}}</text>
+          </view>
+          <view class="badge-obtained-time" wx:if="{{item.unlocked && item.obtainedTime}}">
+            <text class="obtained-time-text">{{item.obtainedTime}}</text>
+          </view>
+        </view>
+      </view>
+      <view class="list-footer">
+        <text class="footer-text">— 已经到底啦 —</text>
+      </view>
+    </view>
+  </scroll-view>
+
   <!-- 商品列表 - 使用 scroll-view 组件 -->
   <scroll-view 
     class="goods-scroll-view"
@@ -92,6 +168,7 @@
     bindscroll="onScroll"
     enhanced="{{true}}"
     show-scrollbar="{{false}}"
+    wx:if="{{!childModeEnabled}}"
   >
     <view class="goods-section">
       <view class="goods-grid">
@@ -199,6 +276,81 @@
           </view>
         </view>
       </scroll-view>
+    </view>
+  </view>
+
+  <!-- 勋章详情弹窗 -->
+  <view class="badge-modal {{showBadgeModal ? 'show' : ''}}" bindtap="hideBadgeModal">
+    <view class="badge-modal-content" catchtap="preventClose">
+      <view class="badge-modal-header">
+        <view class="badge-modal-icon-wrapper" style="background: {{selectedBadge.unlocked ? selectedBadge.color : '#CCCCCC'}};">
+          <text class="badge-modal-icon">{{selectedBadge.icon}}</text>
+        </view>
+        <view class="badge-modal-status" wx:if="{{selectedBadge.unlocked">
+          <text class="status-text unlocked">已获得</text>
+        </view>
+        <view class="badge-modal-status" wx:else>
+          <text class="status-text locked">未解锁</text>
+        </view>
+        <view class="badge-modal-close" bindtap="hideBadgeModal">
+          <text class="close-icon">×</text>
+        </view>
+      </view>
+      
+      <view class="badge-modal-body">
+        <view class="badge-modal-name">
+          <text class="name-text">{{selectedBadge.name}}</text>
+        </view>
+        
+        <view class="badge-modal-section">
+          <view class="section-label">
+            <text class="label-icon">📋</text>
+            <text class="label-text">勋章描述</text>
+          </view>
+          <view class="section-content">
+            <text class="content-text">{{selectedBadge.desc}}</text>
+          </view>
+        </view>
+        
+        <view class="badge-modal-section">
+          <view class="section-label">
+            <text class="label-icon">🎯</text>
+            <text class="label-text">获得条件</text>
+          </view>
+          <view class="section-content">
+            <text class="content-text">{{selectedBadge.condition}}</text>
+          </view>
+        </view>
+
+        <view class="badge-modal-section" wx:if="{{!selectedBadge.unlocked">
+          <view class="section-label">
+            <text class="label-icon">📊</text>
+            <text class="label-text">当前进度</text>
+          </view>
+          <view class="section-content">
+            <view class="progress-bar-wrapper">
+              <view class="progress-bar" style="width: {{selectedBadge.progress}}%;"></view>
+            </view>
+            <text class="progress-text">{{selectedBadge.progressText}}</text>
+          </view>
+        </view>
+
+        <view class="badge-modal-section" wx:if="{{selectedBadge.unlocked && selectedBadge.obtainedTime}}">
+          <view class="section-label">
+            <text class="label-icon">📅</text>
+            <text class="label-text">获得时间</text>
+          </view>
+          <view class="section-content">
+            <text class="content-text">{{selectedBadge.obtainedTime}}</text>
+          </view>
+        </view>
+      </view>
+      
+      <view class="badge-modal-footer">
+        <view class="badge-close-btn" bindtap="hideBadgeModal">
+          <text class="close-btn-text">关闭</text>
+        </view>
+      </view>
     </view>
   </view>
 </view>

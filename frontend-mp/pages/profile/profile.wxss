@@ -562,3 +562,258 @@
   font-weight: 600;
   line-height: 1;
 }
+
+/* ==================== 组信息入口卡片 ==================== */
+.group-entry-section {
+  padding: 0 32rpx 24rpx;
+}
+
+.group-entry-card {
+  display: flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(20rpx);
+  -webkit-backdrop-filter: blur(20rpx);
+  border-radius: 24rpx;
+  padding: 28rpx 28rpx;
+  box-shadow: 0 4rpx 20rpx rgba(91, 189, 114, 0.1);
+  transition: transform 0.2s ease;
+}
+
+.group-entry-card:active {
+  transform: scale(0.98);
+}
+
+/* 有组的样式 */
+.group-entry-card.has-group {
+  justify-content: space-between;
+}
+
+.group-entry-left {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+}
+
+.group-type-icon {
+  width: 88rpx;
+  height: 88rpx;
+  border-radius: 22rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 20rpx;
+  flex-shrink: 0;
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.1);
+}
+
+.group-icon {
+  font-size: 44rpx;
+  line-height: 1;
+}
+
+.group-entry-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.group-name {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 6rpx;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.group-member-count {
+  font-size: 24rpx;
+  color: var(--text-tertiary);
+  display: flex;
+  align-items: center;
+}
+
+.group-member-icon {
+  font-size: 22rpx;
+  margin-right: 6rpx;
+}
+
+.group-entry-right {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  margin-left: 16rpx;
+}
+
+.group-action-buttons {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  margin-right: 8rpx;
+}
+
+.group-action-btn {
+  width: 56rpx;
+  height: 56rpx;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s ease;
+}
+
+.group-action-btn:active {
+  transform: scale(0.9);
+}
+
+.group-action-btn.leaderboard {
+  background: linear-gradient(135deg, #FFD93D 0%, #FF9F43 100%);
+  box-shadow: 0 4rpx 10rpx rgba(255, 159, 67, 0.3);
+}
+
+.group-action-btn.report {
+  background: linear-gradient(135deg, #6C5CE7 0%, #A29BFE 100%);
+  box-shadow: 0 4rpx 10rpx rgba(108, 92, 231, 0.3);
+}
+
+.action-btn-icon {
+  font-size: 28rpx;
+  line-height: 1;
+}
+
+.group-entry-arrow {
+  font-size: 36rpx;
+  color: var(--text-tertiary);
+  font-weight: 300;
+  margin-left: 4rpx;
+}
+
+/* 无组引导样式 */
+.group-entry-card.no-group {
+  flex-direction: column;
+  align-items: center;
+  padding: 40rpx 28rpx;
+  background: linear-gradient(135deg, rgba(255, 154, 139, 0.1) 0%, rgba(102, 126, 234, 0.1) 100%);
+  border: 2rpx dashed rgba(91, 189, 114, 0.3);
+}
+
+.no-group-icon-wrapper {
+  width: 120rpx;
+  height: 120rpx;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #FF9A8B 0%, #667eea 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20rpx;
+  box-shadow: 0 8rpx 24rpx rgba(102, 126, 234, 0.25);
+}
+
+.no-group-icon {
+  font-size: 60rpx;
+  line-height: 1;
+}
+
+.no-group-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 24rpx;
+}
+
+.no-group-title {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 8rpx;
+}
+
+.no-group-desc {
+  font-size: 24rpx;
+  color: var(--text-tertiary);
+  text-align: center;
+  line-height: 1.5;
+}
+
+.no-group-action {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.no-group-btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 14rpx 40rpx;
+  background: linear-gradient(135deg, #5BBD72 0%, #4AA862 100%);
+  color: #FFFFFF;
+  font-size: 26rpx;
+  font-weight: 500;
+  border-radius: 32rpx;
+  box-shadow: 0 4rpx 12rpx rgba(91, 189, 114, 0.3);
+}
+
+/* ==================== 儿童模式简化样式 ==================== */
+
+/* 用户卡片 - 儿童模式 */
+.child-mode-card {
+  padding: 32rpx 28rpx;
+}
+
+.child-avatar-wrapper {
+  width: 160rpx;
+  height: 160rpx;
+  margin-right: 24rpx;
+}
+
+.child-avatar-placeholder {
+  background: linear-gradient(135deg, #FFEAA7 0%, #FDCB6E 100%);
+}
+
+.child-avatar-emoji {
+  font-size: 84rpx !important;
+}
+
+.child-user-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.child-nickname {
+  font-size: 40rpx !important;
+  font-weight: 700 !important;
+}
+
+.child-level-tag {
+  background: linear-gradient(135deg, rgba(91, 189, 114, 0.2) 0%, rgba(91, 189, 114, 0.1) 100%) !important;
+  padding: 10rpx 24rpx !important;
+}
+
+.child-points-badge {
+  padding: 20rpx 28rpx !important;
+  background: linear-gradient(135deg, #FF6B6B 0%, #FF8E53 100%) !important;
+}
+
+/* 成就勋章 - 儿童模式 */
+.child-achievement-item {
+  width: 33.33%;
+}
+
+.child-achievement-item .achievement-icon-wrapper {
+  width: 108rpx;
+  height: 108rpx;
+  box-shadow: 0 6rpx 18rpx rgba(91, 189, 114, 0.25);
+}
+
+.child-achievement-item .achievement-icon {
+  font-size: 52rpx;
+}
+
+.child-achievement-item .achievement-name {
+  font-size: 24rpx;
+  font-weight: 500;
+}

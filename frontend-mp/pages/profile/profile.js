@@ -31,6 +31,7 @@ Page({
     recordMenus: PROFILE_MENUS.find(g => g.groupId === 'record').items,
     serviceMenus: PROFILE_MENUS.find(g => g.groupId === 'service').items,
     otherMenus: PROFILE_MENUS.find(g => g.groupId === 'other').items,
+    noticeMenus: PROFILE_MENUS.find(g => g.groupId === 'notice') ? PROFILE_MENUS.find(g => g.groupId === 'notice').items : [],
     // 兼容旧的 menuList（测试用）
     menuList: PROFILE_MENUS,
     // 统计数据
@@ -42,7 +43,17 @@ Page({
     // 是否正在上传头像
     isUploading: false,
     // 签到状态
-    isSignedToday: false
+    isSignedToday: false,
+    // 儿童模式
+    childModeEnabled: false,
+    // 组信息
+    myGroups: [],
+    currentGroup: null,
+    // 权限
+    hasReportPermission: false,
+    // 成就勋章
+    achievements: [],
+    unlockedAchievementCount: 0
   },
 
   /**
@@ -51,6 +62,8 @@ Page({
   onLoad() {
     console.log('[Profile] 页面加载')
     this.initUserInfo()
+    this.loadChildModeAndGroupData()
+    this.loadAchievements()
   },
 
   /**
@@ -59,6 +72,87 @@ Page({
   onShow() {
     console.log('[Profile] 页面显示')
     this.refreshUserInfo()
+    this.loadChildModeAndGroupData()
+    this.loadAchievements()
+  },
+
+  /**
+   * 加载儿童模式、组信息、权限
+   */
+  loadChildModeAndGroupData() {
+    const childModeEnabled = app.isChildModeEnabled ? app.isChildModeEnabled() : false
+    const myGroups = app.getMyGroups ? app.getMyGroups() : []
+    const currentGroup = app.getCurrentGroup ? app.getCurrentGroup() : null
+    const hasReportPermission = app.hasPermission ? app.hasPermission('report') : false
+
+    const menuData = this.filterMenus(childModeEnabled)
+
+    this.setData({
+      childModeEnabled,
+      myGroups: Array.isArray(myGroups) ? myGroups : [],
+      currentGroup: currentGroup || null,
+      hasReportPermission,
+      ...menuData
+    })
+  },
+
+  /**
+   * 过滤菜单（儿童模式下简化）
+   */
+  filterMenus(childMode) {
+    const baseMenus = {
+      learnMenus: PROFILE_MENUS.find(g => g.groupId === 'learn').items,
+      recordMenus: PROFILE_MENUS.find(g => g.groupId === 'record').items,
+      serviceMenus: PROFILE_MENUS.find(g => g.groupId === 'service').items,
+      otherMenus: PROFILE_MENUS.find(g => g.groupId === 'other').items,
+      noticeMenus: PROFILE_MENUS.find(g => g.groupId === 'notice') ? PROFILE_MENUS.find(g => g.groupId === 'notice').items : []
+    }
+
+    if (!childMode) {
+      return baseMenus
+    }
+
+    if (app.filterMenusForChild) {
+      return app.filterMenusForChild(baseMenus)
+    }
+
+    const filteredLearn = baseMenus.learnMenus.filter(m => {
+      const excludeIds = ['community', 'exchange', 'orders', 'recycle']
+      return !excludeIds.includes(m.id)
+    }).slice(0, 6)
+
+    const filteredRecord = baseMenus.recordMenus.filter(m => {
+      const excludeIds = ['orders', 'quizRecords']
+      return !excludeIds.includes(m.id)
+    })
+
+    const filteredService = baseMenus.serviceMenus.filter(m => {
+      const excludeIds = ['recycle', 'recycleOrders', 'address']
+      return !excludeIds.includes(m.id)
+    })
+
+    return {
+      learnMenus: filteredLearn,
+      recordMenus: filteredRecord,
+      serviceMenus: filteredService,
+      otherMenus: baseMenus.otherMenus,
+      noticeMenus: []
+    }
+  },
+
+  /**
+   * 加载成就勋章
+   */
+  loadAchievements() {
+    let achievements = []
+    if (app.getAchievements) {
+      achievements = app.getAchievements()
+    }
+    const unlockedCount = achievements.filter(a => a.unlocked).length
+    this.setData({
+      achievements,
+      unlockedAchievementCount: unlockedCount
+    })
   },
 
   /**
@@ -77,6 +171,10 @@ Page({
       const levelInfo = getUserLevel(userInfo.points || 0)
       const stats = app.getStatistics()
 
+      const myGroups = app.getMyGroups ? app.getMyGroups() : []
+      const currentGroup = app.getCurrentGroup ? app.getCurrentGroup() : null
+      const hasReportPermission = app.hasPermission ? app.hasPermission('report') : false
+
       this.setData({
         userInfo: {
           ...userInfo,
@@ -88,7 +186,10 @@ Page({
           { id: 'points', label: '累计积分', value: stats.totalEarnedPoints },
           { id: 'days', label: '连续打卡', value: stats.continuousDays }
         ],
-        isSignedToday: app.isTodaySignedIn()
+        isSignedToday: app.isTodaySignedIn(),
+        myGroups: Array.isArray(myGroups) ? myGroups : [],
+        currentGroup: currentGroup || null,
+        hasReportPermission
       })
 
       console.log('[Profile] 用户信息已刷新', userInfo, stats)
@@ -98,6 +199,44 @@ Page({
   goToSignIn() {
     console.log('[Profile] 点击签到')
     navigateTo('/pages/signin/signin')
+  },
+
+  /**
+   * 跳转到家庭组页面
+   */
+  goToFamilyGroup() {
+    console.log('[Profile] 点击家庭组')
+    navigateTo('/pages/family-group/family-group')
+  },
+
+  /**
+   * 跳转到组排行榜
+   */
+  goToGroupLeaderboard() {
+    console.log('[Profile] 点击组排行榜')
+    navigateTo('/pages/group-leaderboard/group-leaderboard')
+  },
+
+  /**
+   * 跳转到学习报告
+   */
+  goToLearningReport() {
+    console.log('[Profile] 点击学习报告')
+    navigateTo('/pages/learning-report/learning-report')
+  },
+
+  /**
+   * 点击成就勋章
+   */
+  onAchievementTap(e) {
+    const { item } = e.currentTarget.dataset
+    console.log('[Profile] 点击成就', item.name)
+    if (item.unlocked) {
+      showToast(`已解锁：${item.name}`)
+    } else {
+      const remaining = (item.target || 0) - (item.current || 0)
+      showToast(`还差${remaining}即可解锁`)
+    }
   },
 
   /**

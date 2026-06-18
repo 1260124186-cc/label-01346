@@ -9,13 +9,45 @@ Page({
   data: {
     notifyEnabled: true,
     cacheSize: '0 MB',
-    version: '1.0.0'
+    version: '1.0.0',
+    childModeEnabled: false,
+    userRole: 'member',
+    roleOptions: [
+      { id: 'owner', name: '创建者' },
+      { id: 'parent', name: '家长' },
+      { id: 'teacher', name: '老师' },
+      { id: 'member', name: '成员' },
+      { id: 'child', name: '儿童' },
+      { id: 'student', name: '学生' }
+    ],
+    roleEmojiMap: {
+      owner: '👑',
+      parent: '👨‍👩‍👧',
+      teacher: '👨‍🏫',
+      member: '👤',
+      child: '🧒',
+      student: '🎒'
+    },
+    currentRoleDisplay: '👤 成员'
   },
 
   onLoad() {
     console.log('[Settings] 页面加载')
     this.loadSettings()
     this.calculateCacheSize()
+    const childModeEnabled = wx.getStorageSync('childModeEnabled') || false
+    const userRole = wx.getStorageSync('userRole') || 'member'
+    this.setData({ childModeEnabled, userRole })
+    this.updateRoleDisplay(userRole)
+  },
+
+  updateRoleDisplay(roleId) {
+    const roleOptions = this.data.roleOptions
+    const roleEmojiMap = this.data.roleEmojiMap
+    const role = roleOptions.find(r => r.id === roleId)
+    const emoji = roleEmojiMap[roleId] || '👤'
+    const name = role ? role.name : '成员'
+    this.setData({ currentRoleDisplay: `${emoji} ${name}` })
   },
 
   onShow() {
@@ -157,5 +189,69 @@ Page({
       hideLoading()
       showSuccess('反馈已提交，感谢您的建议！')
     }, 800)
+  },
+
+  onChildModeChange(e) {
+    const enabled = e.detail.value
+    console.log('[Settings] 儿童模式开关:', enabled)
+    this.toggleChildModeWithPassword(enabled)
+  },
+
+  toggleChildModeWithPassword(targetEnabled) {
+    if (targetEnabled) {
+      this.setData({ childModeEnabled: true })
+      wx.setStorageSync('childModeEnabled', true)
+      app.setChildModeEnabled(true)
+      showSuccess('儿童模式已开启')
+    } else {
+      wx.showModal({
+        title: '关闭儿童模式',
+        content: '请输入密码以关闭儿童模式',
+        editable: true,
+        placeholderText: '请输入密码',
+        confirmText: '确认',
+        confirmColor: '#5BBD72',
+        success: (res) => {
+          if (res.confirm) {
+            const password = (res.content || '').trim()
+            if (password === '1234') {
+              this.setData({ childModeEnabled: false })
+              wx.setStorageSync('childModeEnabled', false)
+              app.setChildModeEnabled(false)
+              showToast('儿童模式已关闭')
+            } else {
+              this.setData({ childModeEnabled: true })
+              showToast('密码错误，儿童模式未关闭')
+            }
+          } else {
+            this.setData({ childModeEnabled: true })
+          }
+        }
+      })
+    }
+  },
+
+  onRoleSelect() {
+    console.log('[Settings] 点击选择角色')
+    const roleOptions = this.data.roleOptions
+    const roleEmojiMap = this.data.roleEmojiMap
+    const itemList = roleOptions.map(role => `${roleEmojiMap[role.id]} ${role.name}`)
+
+    wx.showActionSheet({
+      itemList: itemList,
+      success: (res) => {
+        const selectedRole = roleOptions[res.tapIndex]
+        const roleId = selectedRole.id
+        const roleName = selectedRole.name
+        this.setData({ userRole: roleId })
+        this.updateRoleDisplay(roleId)
+        wx.setStorageSync('userRole', roleId)
+        app.setUserRole(roleId)
+        showSuccess(`已切换为「${roleName}」`)
+      },
+      fail: () => {
+        console.log('[Settings] 取消选择角色')
+      }
+    })
   }
 })

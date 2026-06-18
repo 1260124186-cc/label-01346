@@ -6,46 +6,49 @@
 <view class="page-container">
   <!-- 用户信息卡片 -->
   <view class="user-section">
-    <view class="user-card">
+    <view class="user-card {{childModeEnabled ? 'child-mode-card' : ''}}">
       <!-- 背景装饰 -->
       <view class="card-bg-decoration"></view>
       <view class="card-bg-circle"></view>
 
       <!-- 用户头像 -->
-      <view class="avatar-wrapper" bindtap="onAvatarTap">
+      <view class="avatar-wrapper {{childModeEnabled ? 'child-avatar-wrapper' : ''}}" bindtap="{{childModeEnabled ? '' : 'onAvatarTap'}}">
         <image
-          wx:if="{{userInfo.avatarUrl}}"
+          wx:if="{{userInfo.avatarUrl && !childModeEnabled}}"
           class="avatar-image"
           src="{{userInfo.avatarUrl}}"
           mode="aspectFill"
         />
-        <view wx:else class="avatar-placeholder">
-          <text class="avatar-emoji">🌱</text>
+        <view wx:else class="avatar-placeholder {{childModeEnabled ? 'child-avatar-placeholder' : ''}}">
+          <text class="avatar-emoji {{childModeEnabled ? 'child-avatar-emoji' : ''}}">{{levelInfo.icon}}</text>
         </view>
-        <view class="avatar-edit-icon">
+        <view class="avatar-edit-icon" wx:if="{{!childModeEnabled}}">
           <text class="edit-icon">📷</text>
         </view>
         <!-- 上传中遮罩 -->
-        <view class="avatar-loading" wx:if="{{isUploading}}">
+        <view class="avatar-loading" wx:if="{{isUploading && !childModeEnabled}}">
           <view class="loading-spinner"></view>
         </view>
       </view>
 
       <!-- 用户信息 -->
-      <view class="user-info">
-        <view class="nickname-wrapper" bindtap="onNickNameTap">
-          <text class="nickname">{{userInfo.nickName}}</text>
-          <text class="edit-hint">✎</text>
+      <view class="user-info {{childModeEnabled ? 'child-user-info' : ''}}">
+        <view class="nickname-wrapper" bindtap="{{childModeEnabled ? '' : 'onNickNameTap'}}">
+          <text class="nickname {{childModeEnabled ? 'child-nickname' : ''}}">{{userInfo.nickName}}</text>
+          <text class="edit-hint" wx:if="{{!childModeEnabled}}">✎</text>
         </view>
 
         <!-- 等级标签 -->
-        <view class="level-tag">
+        <view class="level-tag" wx:if="{{!childModeEnabled}}">
           <text class="level-icon">{{levelInfo.icon}}</text>
+          <text class="level-name">{{levelInfo.name}}</text>
+        </view>
+        <view class="level-tag child-level-tag" wx:else>
           <text class="level-name">{{levelInfo.name}}</text>
         </view>
 
         <!-- 等级进度条 -->
-        <view class="level-progress">
+        <view class="level-progress" wx:if="{{!childModeEnabled}}">
           <view class="progress-bar">
             <view class="progress-fill" style="width: {{levelInfo.progress}}%;"></view>
           </view>
@@ -54,9 +57,9 @@
       </view>
 
       <!-- 积分展示 -->
-      <view class="points-badge">
+      <view class="points-badge {{childModeEnabled ? 'child-points-badge' : ''}}">
         <text class="points-value">{{userInfo.points}}</text>
-        <text class="points-label">积分</text>
+        <text class="points-label">{{childModeEnabled ? '分' : '积分'}}</text>
       </view>
     </view>
   </view>
@@ -91,17 +94,64 @@
     </view>
   </view>
 
+  <!-- 组信息入口卡片 -->
+  <view class="group-entry-section">
+    <block wx:if="{{currentGroup}}">
+      <view class="group-entry-card has-group" bindtap="goToFamilyGroup">
+        <view class="group-entry-left">
+          <view class="group-type-icon" style="background: {{currentGroup.type === 'family' ? 'linear-gradient(135deg, #FF9A8B 0%, #FF6A88 100%)' : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'}};">
+            <text class="group-icon">{{currentGroup.type === 'family' ? '👨‍👩‍👧‍👦' : '🏫'}}</text>
+          </view>
+          <view class="group-entry-info">
+            <text class="group-name">{{currentGroup.name}}</text>
+            <text class="group-member-count">
+              <text class="group-member-icon">👥</text>
+              {{currentGroup.memberCount || 0}}名成员
+            </text>
+          </view>
+        </view>
+        <view class="group-entry-right">
+          <view class="group-action-buttons">
+            <view class="group-action-btn leaderboard" catchtap="goToGroupLeaderboard">
+              <text class="action-btn-icon">🏆</text>
+            </view>
+            <view class="group-action-btn report" wx:if="{{hasReportPermission}}" catchtap="goToLearningReport">
+              <text class="action-btn-icon">📊</text>
+            </view>
+          </view>
+          <text class="group-entry-arrow">›</text>
+        </view>
+      </view>
+    </block>
+    <block wx:else>
+      <view class="group-entry-card no-group" bindtap="goToFamilyGroup">
+        <view class="no-group-icon-wrapper">
+          <text class="no-group-icon">👨‍👩‍👧‍👦</text>
+        </view>
+        <view class="no-group-info">
+          <text class="no-group-title">创建/加入家庭/班级组</text>
+          <text class="no-group-desc">和家人朋友一起学习垃圾分类，组队PK赢奖励</text>
+        </view>
+        <view class="no-group-action">
+          <text class="no-group-btn">去创建</text>
+        </view>
+      </view>
+    </block>
+  </view>
+
   <!-- 成就勋章 -->
   <view class="achievement-section">
     <view class="achievement-header">
-      <text class="achievement-title">我的成就</text>
-      <text class="achievement-count">已解锁 {{unlockedAchievementCount}}/{{achievements.length}}</text>
+      <text class="achievement-title">{{childModeEnabled ? '我的勋章' : '我的成就'}}</text>
+      <text class="achievement-count" wx:if="{{!childModeEnabled}}">已解锁 {{unlockedAchievementCount}}/{{achievements.length}}</text>
+      <text class="achievement-count" wx:else>已获得 {{unlockedAchievementCount}} 枚</text>
     </view>
     <view class="achievement-grid">
       <view
         wx:for="{{achievements}}"
         wx:key="id"
-        class="achievement-item {{item.unlocked ? 'unlocked' : 'locked'}}"
+        wx:if="{{!childModeEnabled || item.unlocked}}"
+        class="achievement-item {{item.unlocked ? 'unlocked' : 'locked'}} {{childModeEnabled ? 'child-achievement-item' : ''}}"
         bindtap="onAchievementTap"
         data-item="{{item}}"
       >
@@ -109,10 +159,10 @@
           <text class="achievement-icon">{{item.unlocked ? item.emoji : '🔒'}}</text>
         </view>
         <text class="achievement-name">{{item.name}}</text>
-        <view class="achievement-progress-bar" wx:if="{{!item.unlocked}}">
+        <view class="achievement-progress-bar" wx:if="{{!item.unlocked && !childModeEnabled}}">
           <view class="achievement-progress-fill" style="width: {{item.progress}}%; background: {{item.color}};"></view>
         </view>
-        <text class="achievement-progress-text" wx:if="{{!item.unlocked}}">{{item.current}}/{{item.target}}</text>
+        <text class="achievement-progress-text" wx:if="{{!item.unlocked && !childModeEnabled}}">{{item.current}}/{{item.target}}</text>
       </view>
     </view>
   </view>
@@ -146,7 +196,7 @@
   </view>
 
   <!-- 功能菜单：学习中心 -->
-  <view class="menu-section">
+  <view class="menu-section" wx:if="{{learnMenus.length > 0}}">
     <view class="menu-group-title">
       <text class="group-title-text">学习中心</text>
     </view>
@@ -171,7 +221,7 @@
   </view>
 
   <!-- 功能菜单：我的记录 -->
-  <view class="menu-section">
+  <view class="menu-section" wx:if="{{recordMenus.length > 0}}">
     <view class="menu-group-title">
       <text class="group-title-text">我的记录</text>
     </view>
@@ -196,7 +246,7 @@
   </view>
 
   <!-- 功能菜单：我的服务 -->
-  <view class="menu-section">
+  <view class="menu-section" wx:if="{{serviceMenus.length > 0 && !childModeEnabled}}">
     <view class="menu-group-title">
       <text class="group-title-text">我的服务</text>
     </view>
@@ -221,7 +271,7 @@
   </view>
 
   <!-- 功能菜单：其他 -->
-  <view class="menu-section">
+  <view class="menu-section" wx:if="{{otherMenus.length > 0}}">
     <view class="menu-group-title">
       <text class="group-title-text">其他</text>
     </view>
