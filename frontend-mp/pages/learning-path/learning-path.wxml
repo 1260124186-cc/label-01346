@@ -25,19 +25,64 @@
           </view>
         </view>
         <view class="overview-stat-item">
-          <text class="stat-icon">🎯</text>
-          <view class="stat-text-wrap">
-            <text class="stat-value">{{totalCount}}</text>
-            <text class="stat-label">总节点</text>
-          </view>
-        </view>
-        <view class="overview-stat-item">
           <text class="stat-icon">💎</text>
           <view class="stat-text-wrap">
             <text class="stat-value">{{earnedPoints}}</text>
             <text class="stat-label">已获积分</text>
           </view>
         </view>
+        <view class="overview-stat-item">
+          <text class="stat-icon">🏅</text>
+          <view class="stat-text-wrap">
+            <text class="stat-value">{{earnedBadges.length}}</text>
+            <text class="stat-label">虚拟徽章</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <view class="earned-badges-row" wx:if="{{earnedBadges.length > 0}}">
+      <view class="badge-chip" wx:for="{{earnedBadges}}" wx:key="name" style="--badge-color: {{item.color}};">
+        <text class="badge-chip-emoji">{{item.badge}}</text>
+        <text class="badge-chip-name">{{item.name}}</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="recommended-section" wx:if="{{recommendedAction}}" bindtap="onRecommendedTap">
+    <view class="recommended-card">
+      <view class="recommended-left">
+        <text class="recommended-emoji">{{recommendedAction.emoji}}</text>
+      </view>
+      <view class="recommended-content">
+        <text class="recommended-title">{{recommendedAction.title}}</text>
+        <text class="recommended-message">{{recommendedAction.message}}</text>
+      </view>
+      <view class="recommended-arrow">
+        <text class="arrow-icon">›</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="weak-section" wx:if="{{weakAreas.length > 0}}">
+    <view class="weak-header">
+      <text class="weak-header-icon">⚠️</text>
+      <text class="weak-header-title">薄弱环节</text>
+      <text class="weak-header-count">{{weakAreas.length}}项待加强</text>
+    </view>
+    <view class="weak-list">
+      <view
+        class="weak-item"
+        wx:for="{{weakAreas}}"
+        wx:key="name"
+        data-item="{{item}}"
+        bindtap="onWeakAreaTap"
+        style="--weak-color: {{item.color}};"
+      >
+        <view class="weak-dot"></view>
+        <text class="weak-name">{{item.name}}</text>
+        <text class="weak-message">{{item.message}}</text>
+        <text class="weak-arrow">›</text>
       </view>
     </view>
   </view>
@@ -73,11 +118,17 @@
             <view class="node-status-tag" style="background: {{item.statusBg}}; color: {{item.statusColor}};">
               <text wx:if="{{item.status === 'completed'}}">已完成</text>
               <text wx:elif="{{item.status === 'in-progress'}}">进行中</text>
+              <text wx:elif="{{item.status === 'locked'}}">未解锁</text>
               <text wx:else>未开始</text>
             </view>
           </view>
 
           <text class="node-desc">{{item.description}}</text>
+
+          <view class="node-unlock-row" wx:if="{{item.status === 'locked' && item.unlockLabel}}">
+            <text class="unlock-icon">🔒</text>
+            <text class="unlock-text">解锁条件：{{item.unlockLabel}}</text>
+          </view>
 
           <view class="node-progress-row" wx:if="{{item.status !== 'locked' && item.total > 0}}">
             <view class="node-progress-bar">
@@ -87,13 +138,30 @@
           </view>
 
           <view class="node-meta">
-            <view class="meta-item">
+            <view class="meta-item" wx:if="{{item.total > 0}}">
               <text class="meta-icon">📖</text>
               <text class="meta-text">{{item.current}}/{{item.total}} {{item.unit}}</text>
             </view>
-            <view class="meta-item" wx:if="{{item.reward > 0}}">
+            <view class="meta-item">
               <text class="meta-icon">💎</text>
-              <text class="meta-text">+{{item.reward}}积分</text>
+              <text class="meta-text">+{{item.reward.points}}积分</text>
+            </view>
+            <view class="meta-item">
+              <text class="meta-icon">🏅</text>
+              <text class="meta-text">{{item.reward.badgeName}}</text>
+            </view>
+          </view>
+
+          <view class="node-reward-badges" wx:if="{{item.status === 'completed'}}">
+            <view class="reward-badge earned" style="--badge-color: {{item.color}};">
+              <text class="reward-badge-emoji">{{item.reward.badge}}</text>
+              <text class="reward-badge-label">已获得</text>
+            </view>
+          </view>
+          <view class="node-reward-badges" wx:elif="{{item.status !== 'locked'}}">
+            <view class="reward-badge locked-badge">
+              <text class="reward-badge-emoji">{{item.reward.badge}}</text>
+              <text class="reward-badge-label">待解锁</text>
             </view>
           </view>
 
@@ -121,7 +189,7 @@
       </view>
       <view class="tips-content">
         <text class="tips-title">学习小贴士</text>
-        <text class="tips-text">按顺序完成每个学习节点，循序渐进效果更佳。完成所有节点即可解锁"垃圾分类达人"成就勋章！</text>
+        <text class="tips-text">每个节点需满足解锁条件才可开始，前序正确率≥80%才能进入下一步。薄弱环节已标红提醒，优先攻克弱项效率更高！</text>
       </view>
     </view>
   </view>
