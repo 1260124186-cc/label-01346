@@ -144,7 +144,7 @@ Page({
       title: '全部已读',
       content: currentTab === 'all'
         ? '确定要将全部消息标记为已读吗？'
-        : `确定要将「${MESSAGE_TYPE_CONFIG[currentTab]?.name || ''}」类消息全部标记为已读吗？`,
+        : `确定要将「${(MESSAGE_TYPE_CONFIG[currentTab] && MESSAGE_TYPE_CONFIG[currentTab].name) || ''}」类消息全部标记为已读吗？`,
       confirmText: '全部已读',
       confirmColor: '#5BBD72'
     }).then(confirmed => {

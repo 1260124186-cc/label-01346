@@ -153,7 +153,8 @@ Page({
 
     const wrongQuestions = processedQuestions.filter(q => !q.isCorrect)
     const wrongIds = wrongQuestions.map(q => {
-      const fullQ = getQuestionById(recordQuestions[q.index - 1]?.id)
+      const recordQ = recordQuestions[q.index - 1]
+      const fullQ = recordQ ? getQuestionById(recordQ.id) : null
       return fullQ || {}
     }).filter(q => q.id)
 

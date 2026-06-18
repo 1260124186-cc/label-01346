@@ -22,11 +22,11 @@
       <view class="notice-header">
         <view class="notice-title-row">
           <text class="notice-title">{{item.title}}</text>
-          <view class="notice-badge">{{getDaysLeft(item.effectiveDate)}}天后实施</view>
+          <view class="notice-badge">{{item.daysLeft}}天后实施</view>
         </view>
         <view class="notice-date">
           <text class="date-label">实施日期：</text>
-          <text class="date-value">{{formatDate(item.effectiveDate)}}</text>
+          <text class="date-value">{{item.formattedDate}}</text>
         </view>
       </view>
 
@@ -42,20 +42,20 @@
         </view>
       </view>
 
-      <view class="types-section" wx:if="{{item.affectedTypes && item.affectedTypes.length > 0}}">
+      <view class="types-section" wx:if="{{item.affectedTypeInfos && item.affectedTypeInfos.length > 0}}">
         <view class="section-title">受影响分类</view>
         <view class="type-list">
           <view 
             class="type-tag" 
-            wx:for="{{item.affectedTypes}}" 
-            wx:for-item="typeId" 
-            wx:key="*this"
+            wx:for="{{item.affectedTypeInfos}}" 
+            wx:for-item="typeInfo" 
+            wx:key="id"
             bindtap="onTypeTap"
-            data-type-id="{{typeId}}"
-            style="background: {{cityTrashTypes[typeId-1]?.bgColor || '#E8F5E9'}}; color: {{cityTrashTypes[typeId-1]?.color || '#5BBD72'}};"
+            data-type-id="{{typeInfo.id}}"
+            style="background: {{typeInfo.bgColor}}; color: {{typeInfo.color}};"
           >
-            <text class="type-emoji">{{cityTrashTypes[typeId-1]?.emoji || '📦'}}</text>
-            <text class="type-name">{{cityTrashTypes[typeId-1]?.name || '分类' + typeId}}</text>
+            <text class="type-emoji">{{typeInfo.emoji}}</text>
+            <text class="type-name">{{typeInfo.name}}</text>
           </view>
         </view>
       </view>

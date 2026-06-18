@@ -1130,7 +1130,8 @@ App({
 
     this.globalData.wrongQuestions = wrongQuestions
     wx.setStorageSync('wrongQuestions', wrongQuestions)
-    console.log('[App] 错题已更新', question.question, '错误次数:', wrongQuestions.find(q => q.id === question.id)?.wrongCount || 1)
+    const foundWrong = wrongQuestions.find(q => q.id === question.id)
+    console.log('[App] 错题已更新', question.question, '错误次数:', foundWrong ? foundWrong.wrongCount : 1)
   },
 
   removeWrongQuestion(questionId) {
@@ -3698,7 +3699,8 @@ App({
     }
     const logs = this.globalData.certVerifyLogs || []
     const now = Date.now()
-    const windowMs = this.globalData.verifyRateLimit?.windowMs || 60 * 1000
+    const verifyRateLimit = this.globalData.verifyRateLimit || {}
+    const windowMs = verifyRateLimit.windowMs || 60 * 1000
     const filtered = logs.filter(l => now - l.timestamp < windowMs)
     filtered.push(log)
     this.globalData.certVerifyLogs = filtered
@@ -4509,7 +4511,9 @@ App({
       }
     }).sort((a, b) => {
       const roleOrder = { owner: 0, teacher: 1, parent: 2, member: 3, child: 4, student: 5 }
-      return (roleOrder[a.role] ?? 9) - (roleOrder[b.role] ?? 9)
+      const aOrder = roleOrder[a.role] !== undefined ? roleOrder[a.role] : 9
+      const bOrder = roleOrder[b.role] !== undefined ? roleOrder[b.role] : 9
+      return aOrder - bOrder
     })
   },
 
@@ -4621,13 +4625,14 @@ App({
 
     return Object.values(GROUP_TASKS).map(task => {
       const progress = this.getGroupTaskProgress(groupId, task.id)
+      const taskProgress = progresses[`${groupId}_${task.id}`] || {}
       return {
         ...task,
         progress: progress.progress,
         current: progress.current,
         target: task.target,
         completed: progress.completed,
-        rewardClaimed: progresses[`${groupId}_${task.id}`]?.claimed || false
+        rewardClaimed: taskProgress.claimed || false
       }
     })
   },
@@ -4796,7 +4801,8 @@ App({
     const totalClassify = classifyRecords.length + Math.floor(Math.random() * 100)
     const totalQuiz = quizRecords.reduce((s, r) => s + (r.totalQuestions || 0), 0) + Math.floor(Math.random() * 80)
     const correctQuiz = quizRecords.reduce((s, r) => s + (r.correctCount || 0), 0) + Math.floor(Math.random() * 60)
-    const totalPoints = (this.globalData.userInfo?.points || 0) + Math.floor(Math.random() * 2000)
+    const userInfo = this.globalData.userInfo || {}
+    const totalPoints = (userInfo.points || 0) + Math.floor(Math.random() * 2000)
     const streakDays = this.getStreakDays() + Math.floor(Math.random() * 10)
 
     return {

@@ -65,7 +65,8 @@ Page({
         }
 
         completedChapters.forEach(chapId => {
-          const chapter = course.chapters?.find(c => c.id === chapId)
+          const chapters = course.chapters || []
+          const chapter = chapters.find(c => c.id === chapId)
           if (chapter && chapter.duration) {
             totalMinutes += chapter.duration
           }

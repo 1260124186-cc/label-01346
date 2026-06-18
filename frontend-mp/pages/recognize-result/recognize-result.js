@@ -207,20 +207,22 @@ Page({
     }
     
     const feedbackType = FEEDBACK_TYPES.find(t => t.id === selectedFeedback)
+    const feedbackTypeName = feedbackType ? feedbackType.name : undefined
+    const resultDataName = resultData ? resultData.name : undefined
     console.log('[RecognizeResult] 提交反馈:', {
       type: selectedFeedback,
-      typeName: feedbackType?.name,
+      typeName: feedbackTypeName,
       content: feedbackContent,
-      trashName: resultData?.name
+      trashName: resultDataName
     })
     
     const feedbackRecords = wx.getStorageSync('feedbackRecords') || []
     feedbackRecords.unshift({
       id: generateId(),
       type: selectedFeedback,
-      typeName: feedbackType?.name,
+      typeName: feedbackTypeName,
       content: feedbackContent,
-      trashName: resultData?.name,
+      trashName: resultDataName,
       imagePath: this.data.capturedImage,
       time: formatDate(new Date(), 'YYYY-MM-DD HH:mm'),
       source: 'recognize'

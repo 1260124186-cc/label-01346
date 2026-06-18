@@ -33,16 +33,46 @@ Page({
     const cityTrashTypes = getTrashTypesForCity(currentCity)
     const hasUpcoming = upcomingStandards && upcomingStandards.length > 0
 
+    const processedStandards = this.processStandards(upcomingStandards, cityTrashTypes)
+
     this.setData({
       currentCity,
       currentCityInfo,
-      upcomingStandards,
+      upcomingStandards: processedStandards,
       hasUpcoming,
       cityTrashTypes
     })
 
     wx.setNavigationBarTitle({
       title: `${currentCityInfo.name}新标准预告`
+    })
+  },
+
+  processStandards(standards, trashTypes) {
+    if (!standards || !standards.length) return []
+    const typeMap = {}
+    trashTypes.forEach(t => {
+      typeMap[t.id] = t
+    })
+    return standards.map(std => {
+      const daysLeft = this.getDaysLeft(std.effectiveDate)
+      const formattedDate = this.formatDate(std.effectiveDate)
+      const affectedTypeInfos = (std.affectedTypes || []).map(typeId => {
+        const typeInfo = typeMap[typeId]
+        return {
+          id: typeId,
+          name: typeInfo ? typeInfo.name : '分类' + typeId,
+          emoji: typeInfo ? typeInfo.emoji : '📦',
+          bgColor: typeInfo ? typeInfo.bgColor : '#E8F5E9',
+          color: typeInfo ? typeInfo.color : '#5BBD72'
+        }
+      })
+      return {
+        ...std,
+        daysLeft,
+        formattedDate,
+        affectedTypeInfos
+      }
     })
   },
 
