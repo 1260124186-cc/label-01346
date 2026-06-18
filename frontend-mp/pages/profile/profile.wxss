@@ -345,38 +345,65 @@
 }
 
 .menu-group-title {
-  padding: 8rpx 8rpx 16rpx;
+  display: flex;
+  align-items: center;
+  padding: 8rpx 8rpx 20rpx;
+}
+
+.group-title-decoration {
+  width: 8rpx;
+  height: 32rpx;
+  background: linear-gradient(180deg, var(--color-primary) 0%, #4AA862 100%);
+  border-radius: 4rpx;
+  margin-right: 14rpx;
+  flex-shrink: 0;
 }
 
 .group-title-text {
   font-size: 28rpx;
   font-weight: 600;
-  color: #2D3436;
+  color: var(--text-primary);
 }
 
-/* weUI 样式覆盖 */
-.menu-cells {
-  background: rgba(255, 255, 255, 0.8) !important;
+/* 菜单列表容器 */
+.menu-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+}
+
+/* 每个菜单项独立卡片 */
+.menu-item-card {
+  display: flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.85);
   backdrop-filter: blur(20rpx);
   -webkit-backdrop-filter: blur(20rpx);
-  border-radius: 24rpx !important;
-  overflow: hidden;
-  box-shadow: 0 4rpx 20rpx rgba(91, 189, 114, 0.08);
+  border-radius: 20rpx;
+  padding: 24rpx 24rpx;
+  box-shadow: 0 4rpx 16rpx rgba(91, 189, 114, 0.06);
+  border: 1rpx solid rgba(255, 255, 255, 0.7);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-.menu-cell {
-  padding: 28rpx 32rpx !important;
+.menu-item-card:active {
+  transform: scale(0.98);
+  box-shadow: 0 2rpx 8rpx rgba(91, 189, 114, 0.08);
 }
 
+/* 图标容器 */
 .menu-icon-wrapper {
-  width: 56rpx;
-  height: 56rpx;
-  border-radius: 14rpx;
+  position: relative;
+  width: 72rpx;
+  height: 72rpx;
+  border-radius: 20rpx;
   display: flex;
   align-items: center;
   justify-content: center;
   margin-right: 20rpx;
   flex-shrink: 0;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.04);
+  border: 1rpx solid rgba(255, 255, 255, 0.6);
 }
 
 .menu-icon {
@@ -385,25 +412,50 @@
 }
 
 .menu-icon-emoji {
-  font-size: 32rpx;
+  font-size: 36rpx;
   line-height: 1;
 }
 
+/* 菜单文字内容 */
 .menu-content {
+  flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
+  justify-content: center;
 }
 
 .menu-title-text {
   font-size: 30rpx;
   font-weight: 500;
-  color: #2D3436;
-  margin-bottom: 4rpx;
+  color: var(--text-primary);
+  margin-bottom: 6rpx;
 }
 
 .menu-desc {
-  font-size: 24rpx;
-  color: #B2BEC3;
+  font-size: 22rpx;
+  color: var(--text-tertiary);
+  line-height: 1.4;
+}
+
+/* 右侧箭头 */
+.menu-arrow {
+  flex-shrink: 0;
+  margin-left: 12rpx;
+  width: 48rpx;
+  height: 48rpx;
+  border-radius: 50%;
+  background: rgba(91, 189, 114, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.arrow-icon {
+  font-size: 32rpx;
+  color: var(--color-primary);
+  font-weight: 300;
+  line-height: 1;
 }
 
 /* ==================== 成就勋章 ==================== */
@@ -541,19 +593,19 @@
 /* ==================== 菜单红点 ==================== */
 .menu-badge {
   position: absolute;
-  top: -8rpx;
-  right: -8rpx;
-  min-width: 32rpx;
-  height: 32rpx;
-  padding: 0 8rpx;
+  top: -10rpx;
+  right: -10rpx;
+  min-width: 34rpx;
+  height: 34rpx;
+  padding: 0 10rpx;
   background: #FF3B30;
-  border-radius: 16rpx;
+  border-radius: 17rpx;
   display: flex;
   align-items: center;
   justify-content: center;
   border: 3rpx solid #FFFFFF;
-  box-shadow: 0 2rpx 8rpx rgba(255, 59, 48, 0.3);
-  transform: scale(0.9);
+  box-shadow: 0 2rpx 8rpx rgba(255, 59, 48, 0.35);
+  z-index: 10;
 }
 
 .menu-badge-text {
