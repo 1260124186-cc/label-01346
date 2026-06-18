@@ -21,7 +21,8 @@ Page({
     currentTipIndex: 0,
     currentTip: ECO_TIPS[0],
     tipTimer: null,
-    hotNews: HOT_WASTE_NEWS
+    hotNews: HOT_WASTE_NEWS,
+    expiringBadge: null
   },
 
   /**
@@ -64,8 +65,14 @@ Page({
   refreshSignInStatus() {
     this.setData({
       isSignedToday: app.isTodaySignedIn(),
-      streakDays: app.getStreakDays()
+      streakDays: app.getStreakDays(),
+      expiringBadge: app.getNearestExpiringBadge()
     })
+  },
+
+  goToPoints() {
+    console.log('[Index] 点击积分即将过期提示')
+    navigateTo('/pages/points/points?tab=expiring')
   },
 
   goToSignIn() {

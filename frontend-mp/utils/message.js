@@ -10,7 +10,8 @@ const MESSAGE_TYPES = {
   SIGNIN: 'signin',
   QUIZ: 'quiz',
   ACHIEVEMENT: 'achievement',
-  TICKET: 'ticket'
+  TICKET: 'ticket',
+  POINTS_EXPIRE: 'points_expire'
 }
 
 const MESSAGE_TYPE_CONFIG = {
@@ -62,6 +63,13 @@ const MESSAGE_TYPE_CONFIG = {
     emoji: '📝',
     color: '#E67E22',
     bgColor: 'rgba(230, 126, 34, 0.1)'
+  },
+  [MESSAGE_TYPES.POINTS_EXPIRE]: {
+    id: MESSAGE_TYPES.POINTS_EXPIRE,
+    name: '积分过期',
+    emoji: '⏰',
+    color: '#E85D5D',
+    bgColor: 'rgba(232, 93, 93, 0.1)'
   }
 }
 

@@ -74,6 +74,18 @@
     </view>
   </view>
 
+  <!-- 积分即将过期弱提示 badge -->
+  <view wx:if="{{expiringBadge && expiringBadge.points > 0}}" class="expiring-badge-section" bindtap="goToPoints">
+    <view class="expiring-badge-card">
+      <view class="expiring-badge-icon">⏰</view>
+      <view class="expiring-badge-text">
+        <text class="badge-points">¥{{expiringBadge.points}}</text>
+        <text class="badge-label">积分将于 {{expiringBadge.dateLabel}} 过期</text>
+      </view>
+      <view class="expiring-badge-arrow">›</view>
+    </view>
+  </view>
+
   <!-- 我的学习路径入口 -->
   <view class="game-entry-section" bindtap="goToLearningPath">
     <view class="learning-path-entry-card">

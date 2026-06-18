@@ -22,14 +22,26 @@
           </view>
         </view>
         
-        <!-- 即将过期提醒 -->
-        <view class="expiring-tip" wx:if="{{expiringPoints > 0}}" bindtap="showValidityRules">
-          <text class="expiring-icon">⏰</text>
-          <text class="expiring-text">
-            有 {{expiringPoints}} 积分将于 {{nearestExpireDate}} 过期，快去使用吧
-          </text>
-          <text class="expiring-arrow">></text>
-        </view>
+        <!-- 即将过期提醒 - 分级展示 -->
+        <block wx:if="{{expiringTiered && (expiringTiered.within1Day.points > 0 || expiringTiered.within7Days.points > 0 || expiringTiered.within30Days.points > 0)}}">
+          <view class="expiring-tip-group" bindtap="showValidityRules">
+            <view class="expiring-tip danger" wx:if="{{expiringTiered.within1Day.points > 0}}">
+              <text class="expiring-icon">⚠️</text>
+              <text class="expiring-text">{{expiringTiered.within1Day.points}} 积分今日即将过期</text>
+              <text class="expiring-arrow">></text>
+            </view>
+            <view class="expiring-tip warning" wx:if="{{expiringTiered.within7Days.points > 0 && expiringTiered.within1Day.points === 0}}">
+              <text class="expiring-icon">⏰</text>
+              <text class="expiring-text">{{expiringTiered.within7Days.points}} 积分7天内即将过期</text>
+              <text class="expiring-arrow">></text>
+            </view>
+            <view class="expiring-tip info" wx:if="{{expiringTiered.within30Days.points > 0 && expiringTiered.within1Day.points === 0 && expiringTiered.within7Days.points === 0}}">
+              <text class="expiring-icon">🔔</text>
+              <text class="expiring-text">{{expiringTiered.within30Days.points}} 积分30天内即将过期</text>
+              <text class="expiring-arrow">></text>
+            </view>
+          </view>
+        </block>
         
         <view class="validity-link" bindtap="showValidityRules">
           <text class="link-text">积分有效期说明</text>
@@ -94,38 +106,51 @@
   <!-- 积分记录列表 -->
   <view class="records-section">
     <view class="records-list">
-      <view 
-        wx:for="{{pointsList}}" 
-        wx:key="id"
-        class="record-item"
-      >
-        <view class="record-icon" style="background: {{item.type === 'earn' ? 'rgba(91, 189, 114, 0.1)' : 'rgba(232, 93, 93, 0.1)'}};">
-          <text class="record-emoji">{{item.emoji}}</text>
+      <block wx:for="{{pointsList}}" wx:key="index">
+        <!-- 即将过期的分组头 -->
+        <view wx:if="{{item.isSectionHeader}}" class="expire-section-header" style="border-left-color: {{item.tierColor}};">
+          <text class="section-label" style="color: {{item.tierColor}};">{{item.tierLabel}}</text>
+          <text class="section-points">共 {{item.tierPoints}} 积分</text>
         </view>
-        <view class="record-info">
-          <text class="record-title">{{item.title}}</text>
-          <text class="record-desc">{{item.desc}}</text>
-          <view class="record-expired" wx:if="{{item.expired}}">
-            <text class="expired-text">已过期</text>
+        <!-- 普通记录 -->
+        <view wx:else class="record-item">
+          <view class="record-icon" style="background: {{item.type === 'earn' ? 'rgba(91, 189, 114, 0.1)' : 'rgba(232, 93, 93, 0.1)'}};">
+            <text class="record-emoji">{{item.emoji}}</text>
+          </view>
+          <view class="record-info">
+            <text class="record-title">{{item.title}}</text>
+            <text class="record-desc">{{item.desc}}</text>
+            <view class="record-meta">
+              <view wx:if="{{item.expireAt && !item.expired}}" class="record-expire-tag" style="color: {{item.tierColor || '#999'}};">
+                {{item.expireAt}} 过期
+              </view>
+              <view wx:if="{{item.expired}}" class="record-expired">
+                <text class="expired-text">已过期</text>
+              </view>
+              <view wx:if="{{item.remainingPoints != null && item.remainingPoints !== item.points}}" class="record-remaining">
+                剩余 {{item.remainingPoints}}/{{item.points}}
+              </view>
+            </view>
+          </view>
+          <view class="record-right">
+            <text class="record-points {{item.type === 'earn' ? 'earn' : 'spend'}}">
+              {{item.type === 'earn' ? '+' : '-'}}{{item.points}}
+            </text>
+            <text class="record-time">{{item.time}}</text>
           </view>
         </view>
-        <view class="record-right">
-          <text class="record-points {{item.type === 'earn' ? 'earn' : 'spend'}}">
-            {{item.type === 'earn' ? '+' : '-'}}{{item.points}}
-          </text>
-          <text class="record-time">{{item.time}}</text>
-        </view>
-      </view>
+      </block>
     </view>
 
     <!-- 空状态 -->
     <view class="empty-state" wx:if="{{pointsList.length === 0}}">
-      <text class="empty-emoji">💰</text>
-      <text class="empty-text">暂无积分记录</text>
+      <text class="empty-emoji">{{currentFilter === 'expiring' ? '✅' : '💰'}}</text>
+      <text class="empty-text">{{currentFilter === 'expiring' ? '暂无即将过期积分' : '暂无积分记录'}}</text>
+      <view wx:if="{{currentFilter === 'expiring'}}" class="empty-sub">您的积分状态良好</view>
     </view>
   </view>
   
-  <!-- 积分有效期弹窗 -->
+  <!-- 积分有效期弹窗 - 动态展示用户真实过期计划 -->
   <view class="validity-modal {{showValidityModal ? 'show' : ''}}" bindtap="hideValidityRules">
     <view class="validity-content" catchtap="preventClose">
       <view class="validity-header">
@@ -144,11 +169,33 @@
           </view>
         </view>
         
+        <!-- 用户真实过期计划 -->
+        <view class="validity-section user-plan" wx:if="{{expiryPlan && expiryPlan.length > 0}}">
+          <view class="section-icon">📊</view>
+          <view class="section-info">
+            <text class="section-title">我的过期计划</text>
+            <text class="section-desc user-plan-desc">以下是您的积分真实过期情况</text>
+            <view class="plan-list">
+              <view wx:for="{{expiryPlan}}" wx:key="expireAt" class="plan-item">
+                <view class="plan-date">{{item.month}}月{{item.day}}日</view>
+                <view class="plan-right">
+                  <text class="plan-points">{{item.totalPoints}} 积分</text>
+                  <text class="plan-days">{{item.daysLeft <= 0 ? '今日到期' : '剩' + item.daysLeft + '天'}}</text>
+                </view>
+              </view>
+            </view>
+          </view>
+        </view>
+        
+        <view class="validity-section tip-section" wx:if="{{!expiryPlan || expiryPlan.length === 0}}">
+          <text class="tip-text">🎉 当前暂无即将过期的积分，请继续保持！</text>
+        </view>
+        
         <view class="validity-section">
           <view class="section-icon">⏰</view>
           <view class="section-info">
             <text class="section-title">过期提醒</text>
-            <text class="section-desc">系统会在积分到期前30天进行提醒，请及时使用</text>
+            <text class="section-desc">系统会在积分到期前30/7/1天分级提醒，请及时使用</text>
           </view>
         </view>
         
@@ -156,7 +203,7 @@
           <view class="section-icon">🔄</view>
           <view class="section-info">
             <text class="section-title">扣减规则</text>
-            <text class="section-desc">积分到期后将自动从账户中扣除，无法恢复</text>
+            <text class="section-desc">消费采用先过期先扣（FIFO），到期后自动清零无法恢复</text>
           </view>
         </view>
         
@@ -168,10 +215,8 @@
           </view>
         </view>
         
-        <view class="validity-section tip-section">
-          <text class="tip-text">
-            💡 小贴士：多参与垃圾分类、每日签到、知识问答等活动获取积分，积分多多，福利多多！
-          </text>
+        <view class="validity-footer-btn" bindtap="goToExchange">
+          <text class="footer-btn-text">立即去兑换 →</text>
         </view>
         
         <view class="validity-footer">

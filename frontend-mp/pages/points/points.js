@@ -8,9 +8,11 @@ Page({
     totalSpent: 0,
     expiringPoints: 0,
     nearestExpireDate: '',
+    expiringBadge: null,
 
     filterTabs: [
       { id: 'all', name: '全部' },
+      { id: 'expiring', name: '即将过期' },
       { id: 'earn', name: '获得' },
       { id: 'spend', name: '消费' }
     ],
@@ -18,6 +20,8 @@ Page({
 
     allPoints: [],
     pointsList: [],
+    expiringTiered: null,
+    expiryPlan: [],
 
     quickActions: [
       { id: 'signin', emoji: '📅', title: '每日签到', desc: '连续签到赢积分', color: '#5BBD72' },
@@ -31,8 +35,11 @@ Page({
     showValidityModal: false
   },
 
-  onLoad() {
+  onLoad(options) {
     console.log('[Points] 页面加载')
+    if (options && options.tab) {
+      this.setData({ currentFilter: options.tab })
+    }
     this.loadPointsRecords()
   },
 
@@ -51,9 +58,16 @@ Page({
 
   loadExpiringInfo() {
     const validityInfo = app.getPointsValidityInfo()
+    const tiered = app.getExpiringPointsTiered()
+    const expiryPlan = app.getPointsExpiryPlan()
+    const badge = app.getNearestExpiringBadge()
+
     this.setData({
       expiringPoints: validityInfo.expiringPoints,
-      nearestExpireDate: validityInfo.nearestExpireDate
+      nearestExpireDate: validityInfo.nearestExpireDate,
+      expiringTiered: tiered,
+      expiryPlan: expiryPlan,
+      expiringBadge: badge
     })
   },
 
@@ -78,12 +92,41 @@ Page({
     console.log('[Points] 加载积分记录', allPoints.length, '条')
   },
 
+  buildExpiringList(tiered) {
+    const list = []
+    const addSection = (tier, tierLabel, tierColor) => {
+      if (tier && tier.records && tier.records.length > 0) {
+        list.push({
+          isSectionHeader: true,
+          tierLabel,
+          tierColor,
+          tierPoints: tier.points
+        })
+        tier.records.forEach(r => {
+          list.push({
+            isSectionHeader: false,
+            ...r,
+            tierLabel,
+            tierColor
+          })
+        })
+      }
+    }
+    addSection(tiered.within1Day, '1天内过期', '#E85D5D')
+    addSection(tiered.within7Days, '7天内过期', '#F39C12')
+    addSection(tiered.within30Days, '30天内过期', '#4A90D9')
+    return list
+  },
+
   filterPoints(type) {
     let list = this.data.allPoints
     if (type === 'earn') {
       list = this.data.allPoints.filter(item => item.type === 'earn')
     } else if (type === 'spend') {
       list = this.data.allPoints.filter(item => item.type === 'spend')
+    } else if (type === 'expiring') {
+      const tiered = app.getExpiringPointsTiered()
+      list = this.buildExpiringList(tiered)
     }
 
     this.setData({
@@ -117,7 +160,11 @@ Page({
   },
 
   showValidityRules() {
-    this.setData({ showValidityModal: true })
+    const expiryPlan = app.getPointsExpiryPlan()
+    this.setData({
+      showValidityModal: true,
+      expiryPlan: expiryPlan
+    })
   },
 
   hideValidityRules() {
@@ -125,6 +172,10 @@ Page({
   },
 
   preventClose() {},
+
+  goToExchange() {
+    wx.switchTab({ url: '/pages/exchange/exchange' })
+  },
 
   onPullDownRefresh() {
     console.log('[Points] 下拉刷新')

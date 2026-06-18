@@ -10,6 +10,14 @@ const {
 } = require('./utils/message')
 
 App({
+  globalData: {
+    userInfo: null,
+    userRole: 'user',
+    systemInfo: null,
+    pointsRecords: null,
+    expireCheckTimer: null
+  },
+
   /**
    * 小程序启动时触发
    */
@@ -55,6 +63,28 @@ App({
     this.initChildMode()
     this.initUserGroups()
     this.checkPushStrategies()
+
+    this.startExpireCheckInterval()
+  },
+
+  startExpireCheckInterval() {
+    if (this.globalData.expireCheckTimer) {
+      clearInterval(this.globalData.expireCheckTimer)
+    }
+    const timer = setInterval(() => {
+      console.log('[App] 定时触发积分过期检查')
+      this.checkAndExpirePoints()
+    }, 30 * 60 * 1000)
+    this.globalData.expireCheckTimer = timer
+    console.log('[App] 积分过期定时任务已启动，每30分钟检查一次')
+  },
+
+  stopExpireCheckInterval() {
+    if (this.globalData.expireCheckTimer) {
+      clearInterval(this.globalData.expireCheckTimer)
+      this.globalData.expireCheckTimer = null
+      console.log('[App] 积分过期定时任务已停止')
+    }
   },
 
   setUserRole(role) {
@@ -65,9 +95,14 @@ App({
 
   onShow() {
     console.log('[App] 小程序显示')
+    this.checkAndExpirePoints()
     this.simulateAutoShipping()
     this.simulateRecycleProgress()
     this.checkPushStrategies()
+  },
+
+  onHide() {
+    console.log('[App] 小程序隐藏')
   },
 
   /**
@@ -344,31 +379,31 @@ App({
 
   checkAndExpirePoints() {
     const now = new Date()
-    const oneYearAgo = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000)
-    const oneYearAgoStr = formatDate(oneYearAgo, 'YYYY-MM-DD')
+    const nowStr = formatDate(now, 'YYYY-MM-DD')
 
     const records = this.getPointsRecords()
     let totalExpired = 0
     const expiredIds = []
 
     records.forEach(record => {
-      if (record.type === 'earn' && !record.expired) {
-        const recordDate = record.time ? record.time.split(' ')[0] : ''
-        if (recordDate < oneYearAgoStr) {
+      if (record.type === 'earn' && !record.expired && record.expireAt) {
+        if (record.expireAt < nowStr && (record.remainingPoints || 0) > 0) {
           record.expired = true
           record.expireTime = formatDate(now, 'YYYY-MM-DD HH:mm')
           expiredIds.push(record.id)
-          totalExpired += record.points
+          totalExpired += record.remainingPoints || 0
+          record.remainingPoints = 0
         }
       }
     })
 
     if (totalExpired > 0) {
-      wx.setStorageSync('pointsRecords', records)
-      this.globalData.pointsRecords = records
+      this.savePointsRecords()
 
       const userInfo = this.globalData.userInfo
       userInfo.points = Math.max(0, userInfo.points - totalExpired)
+      const levelInfo = getUserLevel(userInfo.points)
+      userInfo.level = levelInfo.level
       this.globalData.userInfo = userInfo
       wx.setStorageSync('userInfo', userInfo)
 
@@ -380,45 +415,39 @@ App({
         desc: expiredIds.length + '笔积分到期自动过期',
         emoji: '⏰',
         points: totalExpired,
-        time: formatDate(now, 'YYYY-MM-DD HH:mm')
+        time: formatDate(now, 'YYYY-MM-DD HH:mm'),
+        consumedRecordIds: expiredIds
       }
       this.addPointsRecord(expireRecord)
 
-      console.log('[App] 积分过期扣减', totalExpired, '分')
+      if (messageManager && MESSAGE_TYPES.POINTS_EXPIRE) {
+        messageManager.addMessage({
+          type: MESSAGE_TYPES.POINTS_EXPIRE,
+          title: '积分已过期',
+          content: `您有 ${totalExpired} 积分已于今日到期自动清零。及时使用积分可避免损失哦~`,
+          emoji: '⏰',
+          data: {
+            link: '/pages/points/points'
+          }
+        })
+      }
+
+      console.log('[App] 积分过期扣减', totalExpired, '分，共', expiredIds.length, '笔')
     }
 
     return totalExpired
   },
 
   getExpiringPoints() {
-    const now = new Date()
-    const thirtyDaysLater = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000)
-    const thirtyDaysLaterStr = formatDate(thirtyDaysLater, 'YYYY-MM-DD')
-    const oneYearAgo = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000)
-
-    const records = this.getPointsRecords()
-    let expiringPoints = 0
-    let expireDate = ''
-
-    records.forEach(record => {
-      if (record.type === 'earn' && !record.expired && record.time) {
-        const recordDateStr = record.time.split(' ')[0]
-        const recordDate = new Date(recordDateStr)
-        const expireTime = new Date(recordDate.getTime() + 365 * 24 * 60 * 60 * 1000)
-        const expireTimeStr = formatDate(expireTime, 'YYYY-MM-DD')
-
-        if (expireTimeStr <= thirtyDaysLaterStr && expireTime > now) {
-          expiringPoints += record.points
-          if (!expireDate || expireTimeStr < expireDate) {
-            expireDate = expireTimeStr
-          }
-        }
-      }
-    })
+    const tiered = this.getExpiringPointsTiered()
+    let nearestDate = ''
+    if (tiered.within1Day.nearestDate) nearestDate = tiered.within1Day.nearestDate
+    else if (tiered.within7Days.nearestDate) nearestDate = tiered.within7Days.nearestDate
+    else if (tiered.within30Days.nearestDate) nearestDate = tiered.within30Days.nearestDate
 
     return {
-      points: expiringPoints,
-      expireDate: expireDate || '—'
+      points: tiered.totalExpiringWithin30,
+      expireDate: nearestDate || '—'
     }
   },
 
@@ -426,7 +455,7 @@ App({
     const expiring = this.getExpiringPoints()
     const totalEarned = this.getPointsRecords()
       .filter(r => r.type === 'earn' && !r.expired)
-      .reduce((sum, r) => sum + r.points, 0)
+      .reduce((sum, r) => sum + (r.remainingPoints != null ? r.remainingPoints : r.points), 0)
 
     return {
       totalValid: totalEarned,
@@ -437,18 +466,42 @@ App({
   },
 
   initPointsRecords() {
-    const records = wx.getStorageSync('pointsRecords')
-    if (records) {
-      this.globalData.pointsRecords = records
-    } else {
-      const now = new Date()
-      const today = formatDate(now, 'YYYY-MM-DD')
-      const yesterday = formatDate(new Date(now.getTime() - 86400000), 'YYYY-MM-DD')
-      const twoDaysAgo = formatDate(new Date(now.getTime() - 86400000 * 2), 'YYYY-MM-DD')
-      const threeDaysAgo = formatDate(new Date(now.getTime() - 86400000 * 3), 'YYYY-MM-DD')
+    const now = new Date()
+    const today = formatDate(now, 'YYYY-MM-DD')
+    const yesterday = formatDate(new Date(now.getTime() - 86400000), 'YYYY-MM-DD')
+    const twoDaysAgo = formatDate(new Date(now.getTime() - 86400000 * 2), 'YYYY-MM-DD')
+    const threeDaysAgo = formatDate(new Date(now.getTime() - 86400000 * 3), 'YYYY-MM-DD')
+    const tenDaysAgo = formatDate(new Date(now.getTime() - 86400000 * 10), 'YYYY-MM-DD')
+    const twentyDaysAgo = formatDate(new Date(now.getTime() - 86400000 * 20), 'YYYY-MM-DD')
+    const threeHundredDaysAgo = formatDate(new Date(now.getTime() - 86400000 * 300), 'YYYY-MM-DD')
+    const threeHundredFortyDaysAgo = formatDate(new Date(now.getTime() - 86400000 * 340), 'YYYY-MM-DD')
+    const threeHundredSixtyFourDaysAgo = formatDate(new Date(now.getTime() - 86400000 * 364), 'YYYY-MM-DD')
 
+    const makeEarnRecord = (r) => {
+      const recordDate = r.time ? r.time.split(' ')[0] : today
+      const expireAt = new Date(new Date(recordDate).getTime() + 365 * 24 * 60 * 60 * 1000)
+      return {
+        ...r,
+        expireAt: formatDate(expireAt, 'YYYY-MM-DD'),
+        remainingPoints: r.expired ? 0 : (r.remainingPoints != null ? r.remainingPoints : r.points),
+        expired: r.expired || false,
+        consumedRecordIds: r.consumedRecordIds || []
+      }
+    }
+
+    const storedRecords = wx.getStorageSync('pointsRecords')
+    if (storedRecords && storedRecords.length > 0) {
+      const migrated = storedRecords.map(r => {
+        if (r.type === 'earn') {
+          return makeEarnRecord(r)
+        }
+        return { consumedRecordIds: r.consumedRecordIds || [], ...r }
+      })
+      this.globalData.pointsRecords = migrated
+      wx.setStorageSync('pointsRecords', migrated)
+    } else {
       this.globalData.pointsRecords = [
-        {
+        makeEarnRecord({
           id: generateId(),
           type: 'earn',
           category: 'classify',
@@ -457,7 +510,7 @@ App({
           emoji: '♻️',
           points: 10,
           time: today + ' 14:30'
-        },
+        }),
         {
           id: generateId(),
           type: 'spend',
@@ -466,9 +519,10 @@ App({
           desc: '兑换环保购物袋',
           emoji: '🛍️',
           points: 100,
-          time: today + ' 10:15'
+          time: today + ' 10:15',
+          consumedRecordIds: []
         },
-        {
+        makeEarnRecord({
           id: generateId(),
           type: 'earn',
           category: 'signin',
@@ -477,8 +531,8 @@ App({
           emoji: '📅',
           points: 20,
           time: today + ' 08:00'
-        },
-        {
+        }),
+        makeEarnRecord({
           id: generateId(),
           type: 'earn',
           category: 'classify',
@@ -487,7 +541,7 @@ App({
           emoji: '🍂',
           points: 5,
           time: yesterday + ' 18:45'
-        },
+        }),
         {
           id: generateId(),
           type: 'spend',
@@ -496,9 +550,10 @@ App({
           desc: '兑换便携餐具套装',
           emoji: '🍴',
           points: 200,
-          time: yesterday + ' 14:20'
+          time: yesterday + ' 14:20',
+          consumedRecordIds: []
         },
-        {
+        makeEarnRecord({
           id: generateId(),
           type: 'earn',
           category: 'quiz',
@@ -507,8 +562,8 @@ App({
           emoji: '❓',
           points: 50,
           time: twoDaysAgo + ' 20:30'
-        },
-        {
+        }),
+        makeEarnRecord({
           id: generateId(),
           type: 'earn',
           category: 'invite',
@@ -517,21 +572,268 @@ App({
           emoji: '👥',
           points: 100,
           time: threeDaysAgo
-        }
+        }),
+        makeEarnRecord({
+          id: generateId(),
+          type: 'earn',
+          category: 'quiz',
+          title: '每日答题奖励',
+          desc: '30天前获得',
+          emoji: '📝',
+          points: 30,
+          time: tenDaysAgo + ' 09:00'
+        }),
+        makeEarnRecord({
+          id: generateId(),
+          type: 'earn',
+          category: 'signin',
+          title: '签到奖励',
+          desc: '20天前获得，30天内过期',
+          emoji: '📅',
+          points: 80,
+          time: twentyDaysAgo + ' 08:30'
+        }),
+        makeEarnRecord({
+          id: generateId(),
+          type: 'earn',
+          category: 'classify',
+          title: '垃圾分类奖励',
+          desc: '65天内过期',
+          emoji: '♻️',
+          points: 120,
+          time: threeHundredDaysAgo + ' 15:00'
+        }),
+        makeEarnRecord({
+          id: generateId(),
+          type: 'earn',
+          category: 'quiz',
+          title: '章节闯关奖励',
+          desc: '25天内过期',
+          emoji: '❓',
+          points: 150,
+          time: threeHundredFortyDaysAgo + ' 19:20'
+        }),
+        makeEarnRecord({
+          id: generateId(),
+          type: 'earn',
+          category: 'invite',
+          title: '邀请好友奖励',
+          desc: '1天内过期示例',
+          emoji: '👥',
+          points: 50,
+          time: threeHundredSixtyFourDaysAgo + ' 10:00'
+        })
       ]
       wx.setStorageSync('pointsRecords', this.globalData.pointsRecords)
     }
     console.log('[App] 积分记录已加载', this.globalData.pointsRecords.length, '条')
   },
 
-  addPointsRecord(record) {
-    this.globalData.pointsRecords.unshift(record)
+  savePointsRecords() {
     wx.setStorageSync('pointsRecords', this.globalData.pointsRecords)
-    console.log('[App] 新增积分记录', record.title)
+  },
+
+  addPointsRecord(record) {
+    if (record.type === 'earn' && !record.expireAt) {
+      const recordDate = record.time ? record.time.split(' ')[0] : formatDate(new Date(), 'YYYY-MM-DD')
+      const expireAt = new Date(new Date(recordDate).getTime() + 365 * 24 * 60 * 60 * 1000)
+      record.expireAt = formatDate(expireAt, 'YYYY-MM-DD')
+      record.remainingPoints = record.points
+      record.consumedRecordIds = []
+      record.expired = false
+    }
+    if (record.type === 'spend' && !record.consumedRecordIds) {
+      record.consumedRecordIds = []
+    }
+    this.globalData.pointsRecords.unshift(record)
+    this.savePointsRecords()
+    console.log('[App] 新增积分记录', record.title, 'expireAt:', record.expireAt)
   },
 
   getPointsRecords() {
     return this.globalData.pointsRecords || []
+  },
+
+  consumePointsFIFO(pointsToConsume, spendRecordId) {
+    if (pointsToConsume <= 0) return { success: true, consumed: 0, breakdown: [] }
+
+    const now = new Date()
+    const nowStr = formatDate(now, 'YYYY-MM-DD')
+
+    const earnRecords = this.globalData.pointsRecords
+      .filter(r => r.type === 'earn' && !r.expired && (r.remainingPoints || 0) > 0)
+      .sort((a, b) => {
+        const aExp = new Date(a.expireAt || a.time).getTime()
+        const bExp = new Date(b.expireAt || b.time).getTime()
+        return aExp - bExp
+      })
+
+    let remaining = pointsToConsume
+    const breakdown = []
+    const consumedIds = []
+
+    for (const rec of earnRecords) {
+      if (remaining <= 0) break
+      const available = Math.min(rec.remainingPoints || 0, remaining)
+      if (available > 0) {
+        rec.remainingPoints -= available
+        remaining -= available
+        consumedIds.push(rec.id)
+        breakdown.push({
+          recordId: rec.id,
+          points: available,
+          expireAt: rec.expireAt,
+          title: rec.title
+        })
+      }
+    }
+
+    const actuallyConsumed = pointsToConsume - remaining
+    if (spendRecordId && consumedIds.length > 0) {
+      const spendRec = this.globalData.pointsRecords.find(r => r.id === spendRecordId)
+      if (spendRec) {
+        spendRec.consumedRecordIds = consumedIds
+      }
+    }
+
+    this.savePointsRecords()
+    return {
+      success: remaining === 0,
+      consumed: actuallyConsumed,
+      breakdown,
+      remainingToConsume: remaining
+    }
+  },
+
+  getPointsExpiryPlan() {
+    const nowStr = formatDate(new Date(), 'YYYY-MM-DD')
+    const now = new Date()
+    const earnRecords = this.globalData.pointsRecords
+      .filter(r => r.type === 'earn' && !r.expired && (r.remainingPoints || 0) > 0)
+      .map(r => ({
+        id: r.id,
+        points: r.remainingPoints || 0,
+        expireAt: r.expireAt,
+        title: r.title,
+        emoji: r.emoji,
+        time: r.time,
+        daysLeft: Math.ceil((new Date(r.expireAt).getTime() - now.getTime()) / (24 * 60 * 60 * 1000))
+      }))
+      .sort((a, b) => new Date(a.expireAt) - new Date(b.expireAt))
+
+    const groups = {}
+    earnRecords.forEach(r => {
+      const key = r.expireAt
+      if (!groups[key]) {
+        groups[key] = {
+          expireAt: key,
+          totalPoints: 0,
+          daysLeft: r.daysLeft,
+          records: []
+        }
+      }
+      groups[key].totalPoints += r.points
+      groups[key].records.push(r)
+    })
+
+    const plan = Object.values(groups)
+      .sort((a, b) => new Date(a.expireAt) - new Date(b.expireAt))
+      .map(g => {
+        const d = new Date(g.expireAt)
+        return {
+          ...g,
+          month: d.getMonth() + 1,
+          day: d.getDate()
+        }
+      })
+
+    return plan
+  },
+
+  getExpiringPointsTiered() {
+    const now = new Date()
+    const nowStr = formatDate(now, 'YYYY-MM-DD')
+    const tier1 = 1
+    const tier7 = 7
+    const tier30 = 30
+
+    const result = {
+      within1Day: { points: 0, nearestDate: '', records: [] },
+      within7Days: { points: 0, nearestDate: '', records: [] },
+      within30Days: { points: 0, nearestDate: '', records: [] },
+      beyond30Days: { points: 0, nearestDate: '', records: [] },
+      totalExpiringWithin30: 0
+    }
+
+    const earnRecords = this.globalData.pointsRecords
+      .filter(r => r.type === 'earn' && !r.expired && (r.remainingPoints || 0) > 0)
+
+    earnRecords.forEach(r => {
+      const expDate = new Date(r.expireAt)
+      const daysLeft = Math.ceil((expDate.getTime() - now.getTime()) / (24 * 60 * 60 * 1000))
+      const info = {
+        id: r.id,
+        points: r.remainingPoints || 0,
+        expireAt: r.expireAt,
+        daysLeft,
+        title: r.title,
+        emoji: r.emoji
+      }
+
+      if (daysLeft <= tier1) {
+        result.within1Day.points += info.points
+        result.within1Day.records.push(info)
+        if (!result.within1Day.nearestDate || r.expireAt < result.within1Day.nearestDate) {
+          result.within1Day.nearestDate = r.expireAt
+        }
+      } else if (daysLeft <= tier7) {
+        result.within7Days.points += info.points
+        result.within7Days.records.push(info)
+        if (!result.within7Days.nearestDate || r.expireAt < result.within7Days.nearestDate) {
+          result.within7Days.nearestDate = r.expireAt
+        }
+      } else if (daysLeft <= tier30) {
+        result.within30Days.points += info.points
+        result.within30Days.records.push(info)
+        if (!result.within30Days.nearestDate || r.expireAt < result.within30Days.nearestDate) {
+          result.within30Days.nearestDate = r.expireAt
+        }
+      } else {
+        result.beyond30Days.points += info.points
+        result.beyond30Days.records.push(info)
+      }
+    })
+
+    result.totalExpiringWithin30 =
+      result.within1Day.points + result.within7Days.points + result.within30Days.points
+
+    return result
+  },
+
+  getNearestExpiringBadge() {
+    const tiered = this.getExpiringPointsTiered()
+    if (tiered.totalExpiringWithin30 <= 0) return null
+
+    let nearest = null
+    if (tiered.within1Day.points > 0) {
+      nearest = tiered.within1Day
+    } else if (tiered.within7Days.points > 0) {
+      nearest = tiered.within7Days
+    } else if (tiered.within30Days.points > 0) {
+      nearest = tiered.within30Days
+    }
+    if (!nearest) return null
+
+    const date = new Date(nearest.nearestDate)
+    const month = date.getMonth() + 1
+    const day = date.getDate()
+    return {
+      points: nearest.points,
+      month,
+      day,
+      dateLabel: `${month}月${day}日`,
+      nearestDate: nearest.nearestDate
+    }
   },
 
   /**
@@ -1169,6 +1471,10 @@ App({
         time: timeStr
       }
       this.addPointsRecord(record)
+
+      if (points < 0) {
+        this.consumePointsFIFO(Math.abs(points), record.id)
+      }
     }
 
     this.checkAchievements()
@@ -3626,21 +3932,47 @@ App({
       }
     }
 
-    const expiringInfo = this.getExpiringPoints()
-    if (expiringInfo.points > 0 && expiringInfo.points >= 50) {
-      if (messageManager.shouldSendPointsExpireReminder()) {
-        messageManager.addMessage({
-          type: MESSAGE_TYPES.SYSTEM,
-          title: '积分即将过期提醒',
-          content: `您有 ${expiringInfo.points} 积分将于 ${expiringInfo.expireDate} 过期，快去积分商城兑换心仪的商品吧！`,
-          emoji: '⏰',
-          data: {
-            link: '/pages/exchange/exchange'
-          }
-        })
-        messageManager.updatePointsExpireReminderTime()
-        console.log('[App] 已推送积分即将过期提醒', expiringInfo.points, '分')
+    const tiered = this.getExpiringPointsTiered()
+    let expireMessage = null
+    let priority = 0
+
+    if (tiered.within1Day.points > 0) {
+      priority = 3
+      expireMessage = {
+        title: '积分今日过期提醒',
+        content: `您有 ${tiered.within1Day.points} 积分将于今日过期，立即使用避免损失！`,
+        emoji: '⚠️'
       }
+    } else if (tiered.within7Days.points > 0 && tiered.within7Days.nearestDate) {
+      priority = 2
+      const date = new Date(tiered.within7Days.nearestDate)
+      expireMessage = {
+        title: '积分7天内过期提醒',
+        content: `您有 ${tiered.within7Days.points} 积分将于 ${date.getMonth() + 1}月${date.getDate()}日 过期，快去积分商城兑换吧！`,
+        emoji: '⏰'
+      }
+    } else if (tiered.within30Days.points > 0 && tiered.within30Days.nearestDate && tiered.totalExpiringWithin30 >= 50) {
+      priority = 1
+      const date = new Date(tiered.within30Days.nearestDate)
+      expireMessage = {
+        title: '积分即将过期提醒',
+        content: `您有 ${tiered.totalExpiringWithin30} 积分将于 ${date.getMonth() + 1}月${date.getDate()}日 过期，及时使用哦~`,
+        emoji: '🔔'
+      }
+    }
+
+    if (expireMessage && messageManager.shouldSendPointsExpireReminder()) {
+      messageManager.addMessage({
+        type: MESSAGE_TYPES.POINTS_EXPIRE,
+        title: expireMessage.title,
+        content: expireMessage.content,
+        emoji: expireMessage.emoji,
+        data: {
+          link: '/pages/points/points?tab=expiring'
+        }
+      })
+      messageManager.updatePointsExpireReminderTime()
+      console.log('[App] 已推送积分过期提醒（优先级' + priority + '）', tiered)
     }
   },
 
