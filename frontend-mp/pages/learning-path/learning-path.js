@@ -2,7 +2,7 @@ const app = getApp()
 const { COURSES } = require('../../data/courses')
 const { QUIZ_CHAPTERS } = require('../../data/quiz')
 const { TRASH_TYPES } = require('../../utils/constants')
-const { navigateTo, showToast } = require('../../utils/util')
+const { navigateTo, showToast, getStorage } = require('../../utils/util')
 
 const GAME_TYPES = ['catch', 'conveyor', 'match']
 
@@ -49,7 +49,7 @@ const LEARNING_PATH_NODES = [
       label: '分类练习正确率 ≥ 80%',
       check(data) { return data.sortAccuracy >= 80 }
     },
-    link: '/pages/quiz/quiz'
+    link: '/pages/quiz-chapter/quiz-chapter'
   },
   {
     id: 'course-chapter',
@@ -247,24 +247,32 @@ Page({
 
   getSortPracticeInfo() {
     const classifyRecords = app.getClassifyRecords ? app.getClassifyRecords() : []
-    const count = classifyRecords.length
+    const wrongSortItems = getStorage('wrongSortItems', [])
+
+    const correctCount = classifyRecords.length
+    let wrongCount = 0
+    if (Array.isArray(wrongSortItems)) {
+      wrongCount = wrongSortItems.reduce((sum, item) => sum + (item.wrongCount || 1), 0)
+    }
+
+    const count = correctCount + wrongCount
     const target = 10
-    const accuracy = 100
-    return { count, target, accuracy }
+    const accuracy = count > 0 ? Math.floor((correctCount / count) * 100) : 0
+    return { count, target, accuracy, correctCount, wrongCount }
   },
 
   getQuizInfo() {
-    const quizRecords = app.getQuizRecords ? app.getQuizRecords() : []
-    const chapterRecords = quizRecords.filter(r => r.quizType === 'chapter')
-
-    const completedChapterIds = new Set()
-    chapterRecords.forEach(r => {
-      if (r.accuracy >= 80) {
-        const chId = r.chapterId
-        if (chId) completedChapterIds.add(chId)
+    const chaptersProgress = getStorage('chaptersProgress', {})
+    let completed = 0
+    QUIZ_CHAPTERS.forEach(chapter => {
+      const progress = chaptersProgress[chapter.id] || 0
+      if (progress >= 80) {
+        completed++
       }
     })
 
+    const quizRecords = app.getQuizRecords ? app.getQuizRecords() : []
+    const chapterRecords = quizRecords.filter(r => r.quizType === 'chapter')
     let totalQuestions = 0
     let totalCorrect = 0
     chapterRecords.forEach(r => {
@@ -274,7 +282,7 @@ Page({
     const accuracy = totalQuestions > 0 ? Math.floor((totalCorrect / totalQuestions) * 100) : 0
 
     return {
-      completed: completedChapterIds.size,
+      completed,
       total: QUIZ_CHAPTERS.length,
       accuracy
     }
@@ -368,7 +376,7 @@ Page({
         color: '#F39C12',
         count: 0,
         message: `闯关正确率仅${quizAccuracy}%，低于80%达标线`,
-        link: '/pages/quiz/quiz'
+        link: '/pages/quiz-chapter/quiz-chapter'
       })
     }
 
