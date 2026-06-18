@@ -1,0 +1,8 @@
+{
+  "navigationBarTitleText": "提交工单",
+  "navigationBarBackgroundColor": "#5BBD72",
+  "navigationBarTextStyle": "white",
+  "backgroundColor": "#F7FAF8",
+  "enablePullDownRefresh": false,
+  "usingComponents": {}
+}

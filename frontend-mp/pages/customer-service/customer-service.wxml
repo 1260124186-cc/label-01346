@@ -1,0 +1,107 @@
+<view class="page-container">
+  <!-- 顶部客服热线 -->
+  <view class="contact-section">
+    <view class="contact-card" bindtap="onCallService">
+      <view class="contact-left">
+        <view class="contact-icon">
+          <text class="icon-emoji">📞</text>
+        </view>
+        <view class="contact-info">
+          <text class="contact-title">客服热线</text>
+          <text class="contact-phone">{{servicePhone}}</text>
+        </view>
+      </view>
+      <view class="contact-right">
+        <text class="call-btn">立即拨打</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 工单入口 -->
+  <view class="ticket-section">
+    <view class="section-header">
+      <text class="section-title">📝 提交工单</text>
+      <view class="view-all" bindtap="onViewAllTickets">
+        <text class="view-all-text">全部工单</text>
+        <text class="view-all-arrow">›</text>
+      </view>
+    </view>
+
+    <!-- 工单状态快捷入口 -->
+    <view class="status-quick-entry">
+      <view class="status-item" bindtap="onViewTicketsByStatus" data-status="pending">
+        <view class="status-count pending">{{ticketCount.pending || 0}}</view>
+        <text class="status-label">待受理</text>
+      </view>
+      <view class="status-item" bindtap="onViewTicketsByStatus" data-status="processing">
+        <view class="status-count processing">{{ticketCount.processing || 0}}</view>
+        <text class="status-label">处理中</text>
+      </view>
+      <view class="status-item" bindtap="onViewTicketsByStatus" data-status="resolved">
+        <view class="status-count resolved">{{ticketCount.resolved || 0}}</view>
+        <text class="status-label">已解决</text>
+      </view>
+    </view>
+
+    <!-- 工单类型选择 -->
+    <view class="ticket-type-grid">
+      <view
+        wx:for="{{ticketTypeList}}"
+        wx:key="id"
+        class="type-card {{item.isUrgent ? 'urgent' : ''}}"
+        bindtap="onTicketTypeTap"
+        data-type-id="{{item.id}}"
+      >
+        <view class="type-icon" style="background: {{item.bgColor}};">
+          <text class="icon-emoji">{{item.emoji}}</text>
+          <view wx:if="{{item.isUrgent}}" class="urgent-tag">
+            <text class="urgent-text">紧急</text>
+          </view>
+        </view>
+        <view class="type-info">
+          <text class="type-name">{{item.name}}</text>
+          <text class="type-desc">{{item.description}}</text>
+        </view>
+        <view class="type-arrow">
+          <text class="arrow-icon">›</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- FAQ 折叠面板 -->
+  <view class="faq-section">
+    <view class="section-header">
+      <text class="section-title">❓ 常见问题</text>
+    </view>
+
+    <view class="faq-list">
+      <view
+        wx:for="{{faqList}}"
+        wx:key="id"
+        class="faq-item {{expandedFaqIds.indexOf(item.id) > -1 ? 'expanded' : ''}}"
+        bindtap="onFaqTap"
+        data-id="{{item.id}}"
+      >
+        <view class="faq-header">
+          <text class="faq-question">{{item.question}}</text>
+          <view class="faq-toggle">
+            <text class="toggle-icon">{{expandedFaqIds.indexOf(item.id) > -1 ? '−' : '+'}}</text>
+          </view>
+        </view>
+        <view class="faq-body" wx:if="{{expandedFaqIds.indexOf(item.id) > -1}}">
+          <view class="faq-answer">
+            <text wx:for="{{item.answerLines}}" wx:for-item="line" wx:key="index" class="answer-line">{{line}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 底部提示 -->
+  <view class="footer-tip">
+    <text class="tip-text">提交工单后，我们会在1-2个工作日内处理</text>
+  </view>
+
+  <view class="safe-area-bottom"></view>
+</view>

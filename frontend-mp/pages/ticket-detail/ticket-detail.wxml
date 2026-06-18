@@ -1,0 +1,280 @@
+<view class="page-container" wx:if="{{ticket}}">
+  <!-- 紧急拨号浮条 -->
+  <view class="urgent-call-bar" wx:if="{{isUrgentType && ticket.status !== 'resolved'}}">
+    <view class="urgent-call-content">
+      <view class="urgent-icon-wrapper">
+        <text class="urgent-icon">🚨</text>
+      </view>
+      <view class="urgent-text-wrapper">
+        <text class="urgent-title">紧急订单 - 回收上门</text>
+        <text class="urgent-desc">需要立即处理，请拨打客服热线</text>
+      </view>
+      <button class="urgent-call-btn" bindtap="onUrgentCall" hover-class="btn-press">
+        <text class="call-icon">📞</text>
+        <text class="call-text">紧急拨号</text>
+      </button>
+    </view>
+  </view>
+
+  <!-- 工单信息卡片 -->
+  <view class="info-card">
+    <view class="card-header">
+      <view class="type-badge" style="background: {{typeConfig.bgColor}};">
+        <text class="type-emoji">{{typeConfig.emoji}}</text>
+        <text class="type-name">{{typeConfig.name}}</text>
+      </view>
+      <view class="status-badge" style="color: {{statusConfig.color}}; background: {{statusConfig.bgColor}};">
+        <text class="status-emoji">{{statusConfig.emoji}}</text>
+        <text class="status-name">{{statusConfig.name}}</text>
+      </view>
+    </view>
+
+    <view class="card-body">
+      <text class="ticket-title">{{ticket.title}}</text>
+      <text class="ticket-desc">{{ticket.description}}</text>
+
+      <!-- 工单图片 -->
+      <view class="ticket-images" wx:if="{{ticket.images && ticket.images.length > 0}}">
+        <image
+          wx:for="{{ticket.images}}"
+          wx:key="*this"
+          src="{{item}}"
+          class="ticket-image"
+          mode="aspectFill"
+          bindtap="onPreviewImage"
+          data-current="{{item}}"
+        />
+      </view>
+
+      <!-- 扩展信息 -->
+      <view class="extra-info" wx:if="{{ticket.orderNo || ticket.recycleOrderNo || ticket.itemName || ticket.entryTitle}}">
+        <view class="info-item" wx:if="{{ticket.orderNo}}">
+          <text class="info-label">订单号</text>
+          <text class="info-value">{{ticket.orderNo}}</text>
+        </view>
+        <view class="info-item" wx:if="{{ticket.recycleOrderNo}}">
+          <text class="info-label">回收单号</text>
+          <text class="info-value">{{ticket.recycleOrderNo}}</text>
+        </view>
+        <view class="info-item" wx:if="{{ticket.itemName}}">
+          <text class="info-label">物品名称</text>
+          <text class="info-value">{{ticket.itemName}}</text>
+        </view>
+        <view class="info-item" wx:if="{{ticket.entryTitle}}">
+          <text class="info-label">百科词条</text>
+          <text class="info-value">{{ticket.entryTitle}}</text>
+        </view>
+      </view>
+
+      <!-- 评分展示 -->
+      <view class="rating-section" wx:if="{{ticket.rating}}">
+        <text class="rating-label">您的评价</text>
+        <view class="rating-stars">
+          <text
+            wx:for="{{[1, 2, 3, 4, 5]}}"
+            wx:key="*this"
+            class="star {{item <= ticket.rating ? 'active' : ''}}"
+          >★</text>
+        </view>
+        <text class="rating-text">{{ticket.rating >= 4 ? '非常满意' : ticket.rating >= 3 ? '满意' : '不满意'}}</text>
+      </view>
+    </view>
+
+    <view class="card-footer">
+      <text class="ticket-no">工单号：{{ticket.id}}</text>
+      <text class="create-time">{{ticket.createdAt}}</text>
+    </view>
+  </view>
+
+  <!-- 客服联系按钮 -->
+  <view class="action-section" wx:if="{{ticket.status !== 'resolved'}}">
+    <view class="contact-card" bindtap="onCallService" hover-class="card-hover">
+      <view class="contact-icon-wrapper">
+        <text class="contact-emoji">📞</text>
+      </view>
+      <view class="contact-info">
+        <text class="contact-title">拨打客服热线</text>
+        <text class="contact-phone">{{statusConfig.name}}，优先处理您的问题</text>
+      </view>
+      <view class="contact-arrow">
+        <text class="arrow">›</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 对话记录 -->
+  <view class="reply-section" wx:if="{{ticket.replies && ticket.replies.length > 0}}">
+    <view class="section-header">
+      <text class="section-title">对话记录</text>
+      <text class="section-count">{{ticket.replies.length}} 条</text>
+    </view>
+
+    <view class="reply-list">
+      <view
+        wx:for="{{ticket.replies}}"
+        wx:key="id"
+        class="reply-item {{item.isStaff ? 'staff-reply' : 'user-reply'}}"
+      >
+        <view class="reply-avatar">
+          <text class="avatar-emoji">{{item.isStaff ? '👩‍💼' : '👤'}}</text>
+        </view>
+        <view class="reply-content-wrapper">
+          <view class="reply-header">
+            <text class="reply-name">{{item.isStaff ? '客服小美' : '我'}}</text>
+            <text class="reply-time">{{item.createdAt}}</text>
+          </view>
+          <view class="reply-content">
+            <text class="reply-text" wx:if="{{item.content}}">{{item.content}}</text>
+            <view class="reply-images" wx:if="{{item.images && item.images.length > 0}}">
+              <image
+                wx:for="{{item.images}}"
+                wx:for-item="img"
+                wx:key="*this"
+                src="{{img}}"
+                class="reply-image"
+                mode="aspectFill"
+                bindtap="onPreviewImage"
+                data-current="{{img}}"
+              />
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 追加回复区域 -->
+  <view class="input-section" wx:if="{{ticket.status !== 'resolved'}}">
+    <view class="section-header">
+      <text class="section-title">追加描述</text>
+      <text class="section-desc">可添加文字和图片补充说明</text>
+    </view>
+
+    <view class="input-wrapper">
+      <textarea
+        class="reply-textarea"
+        placeholder="请输入补充描述，帮助我们更好地理解您的问题..."
+        value="{{replyContent}}"
+        bindinput="onReplyInput"
+        maxlength="500"
+        auto-height="{{true}}"
+        show-confirm-bar="{{false}}"
+        adjust-position="{{true}}"
+      />
+      <view class="textarea-footer">
+        <text class="char-count">{{replyContent.length}}/500</text>
+      </view>
+    </view>
+
+    <view class="image-uploader">
+      <view
+        wx:for="{{replyImages}}"
+        wx:key="*this"
+        class="uploaded-image-wrapper"
+      >
+        <image
+          src="{{item}}"
+          class="uploaded-image"
+          mode="aspectFill"
+          bindtap="onPreviewImage"
+          data-current="{{item}}"
+        />
+        <view class="remove-btn" bindtap="onRemoveImage" data-index="{{index}}">
+          <text class="remove-icon">×</text>
+        </view>
+      </view>
+      <view
+        class="upload-btn"
+        wx:if="{{replyImages.length < maxImages}}"
+        bindtap="onChooseImage"
+        hover-class="btn-press"
+      >
+        <text class="upload-icon">+</text>
+        <text class="upload-text">上传图片</text>
+      </view>
+    </view>
+
+    <button
+      class="submit-btn"
+      bindtap="onSubmitReply"
+      disabled="{{isSubmitting}}"
+      hover-class="btn-press"
+    >
+      <view wx:if="{{isSubmitting}}" class="btn-loading"></view>
+      <text wx:else class="btn-text">提交回复</text>
+    </button>
+  </view>
+
+  <!-- 评价入口（已解决但未评价） -->
+  <view class="rating-entry" wx:if="{{ticket.status === 'resolved' && !ticket.rating}}">
+    <view class="rating-card" bindtap="onShowRating" hover-class="card-hover">
+      <view class="rating-icon-wrapper">
+        <text class="rating-emoji">⭐</text>
+      </view>
+      <view class="rating-info">
+        <text class="rating-title">评价本次服务</text>
+        <text class="rating-desc">您的反馈是我们进步的动力</text>
+      </view>
+      <view class="rating-arrow">
+        <text class="arrow">›</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 已解决状态提示 -->
+  <view class="resolved-tip" wx:if="{{ticket.status === 'resolved'}}">
+    <view class="tip-icon-wrapper">
+      <text class="tip-emoji">✅</text>
+    </view>
+    <text class="tip-title">工单已解决</text>
+    <text class="tip-desc">感谢您的耐心等待，如有其他问题请随时联系我们</text>
+  </view>
+
+  <view class="safe-area-bottom"></view>
+
+  <!-- 评分弹窗 -->
+  <view class="rating-modal" wx:if="{{showRating}}" catchtap="onCancelRating">
+    <view class="rating-modal-content" catchtap="">
+      <view class="modal-header">
+        <text class="modal-title">服务评价</text>
+        <view class="modal-close" bindtap="onCancelRating">
+          <text class="close-icon">×</text>
+        </view>
+      </view>
+      <view class="modal-body">
+        <text class="modal-desc">请对本次客服服务进行评价</text>
+        <view class="modal-stars">
+          <text
+            wx:for="{{[1, 2, 3, 4, 5]}}"
+            wx:key="*this"
+            class="modal-star {{item <= tempRating ? 'active' : ''}}"
+            bindtap="onRatingTap"
+            data-rating="{{item}}"
+          >★</text>
+        </view>
+        <text class="modal-rating-text">
+          {{tempRating === 1 ? '非常不满意' : tempRating === 2 ? '不满意' : tempRating === 3 ? '一般' : tempRating === 4 ? '满意' : tempRating === 5 ? '非常满意' : '请点击星星评分'}}
+        </text>
+      </view>
+      <view class="modal-footer">
+        <button class="cancel-btn" bindtap="onCancelRating" hover-class="btn-press">
+          取消
+        </button>
+        <button
+          class="confirm-btn"
+          bindtap="onSubmitRating"
+          disabled="{{tempRating === 0}}"
+          hover-class="btn-press"
+        >
+          确认评价
+        </button>
+      </view>
+    </view>
+  </view>
+</view>
+
+<!-- 加载状态 -->
+<view class="loading-container" wx:elif="{{!ticket}}">
+  <view class="loading-spinner"></view>
+  <text class="loading-text">加载中...</text>
+</view>

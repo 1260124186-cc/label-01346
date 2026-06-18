@@ -9,7 +9,8 @@ const MESSAGE_TYPES = {
   ORDER: 'order',
   SIGNIN: 'signin',
   QUIZ: 'quiz',
-  ACHIEVEMENT: 'achievement'
+  ACHIEVEMENT: 'achievement',
+  TICKET: 'ticket'
 }
 
 const MESSAGE_TYPE_CONFIG = {
@@ -54,6 +55,13 @@ const MESSAGE_TYPE_CONFIG = {
     emoji: '🏆',
     color: '#9B59B6',
     bgColor: 'rgba(155, 89, 182, 0.1)'
+  },
+  [MESSAGE_TYPES.TICKET]: {
+    id: MESSAGE_TYPES.TICKET,
+    name: '工单通知',
+    emoji: '📝',
+    color: '#E67E22',
+    bgColor: 'rgba(230, 126, 34, 0.1)'
   }
 }
 

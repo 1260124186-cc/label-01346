@@ -14,6 +14,7 @@ Page({
       { id: MESSAGE_TYPES.SYSTEM, name: '系统通知' },
       { id: MESSAGE_TYPES.ACTIVITY, name: '活动提醒' },
       { id: MESSAGE_TYPES.ORDER, name: '订单物流' },
+      { id: MESSAGE_TYPES.TICKET, name: '工单通知' },
       { id: MESSAGE_TYPES.SIGNIN, name: '签到提醒' },
       { id: MESSAGE_TYPES.QUIZ, name: '问答新题' },
       { id: MESSAGE_TYPES.ACHIEVEMENT, name: '成就勋章' }
@@ -63,6 +64,7 @@ Page({
     if (currentTab === MESSAGE_TYPES.SYSTEM) emptyTip = '暂无系统通知'
     else if (currentTab === MESSAGE_TYPES.ACTIVITY) emptyTip = '暂无活动提醒'
     else if (currentTab === MESSAGE_TYPES.ORDER) emptyTip = '暂无订单物流消息'
+    else if (currentTab === MESSAGE_TYPES.TICKET) emptyTip = '暂无工单通知'
     else if (currentTab === MESSAGE_TYPES.SIGNIN) emptyTip = '暂无签到提醒'
     else if (currentTab === MESSAGE_TYPES.QUIZ) emptyTip = '暂无新题上线通知'
 

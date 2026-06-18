@@ -5,6 +5,8 @@
 const app = getApp()
 const { PROFILE_MENUS, getUserLevel } = require('../../utils/constants')
 const { showToast, showModal, formatNumber, navigateTo } = require('../../utils/util')
+const { ticketManager } = require('../../utils/ticket')
+const { messageManager } = require('../../utils/message')
 
 Page({
   /**
@@ -192,8 +194,46 @@ Page({
         hasReportPermission
       })
 
+      this.refreshMenuBadges()
+
       console.log('[Profile] 用户信息已刷新', userInfo, stats)
     }
+  },
+
+  /**
+   * 刷新菜单角标
+   */
+  refreshMenuBadges() {
+    const { noticeMenus, serviceMenus } = this.data
+
+    const updatedNoticeMenus = noticeMenus.map(menu => {
+      if (menu.hasBadge) {
+        let badgeCount = 0
+        if (menu.id === 'messages') {
+          badgeCount = messageManager.getUnreadCount()
+        }
+        return { ...menu, badgeCount }
+      }
+      return menu
+    })
+
+    const updatedServiceMenus = serviceMenus.map(menu => {
+      if (menu.hasBadge) {
+        let badgeCount = 0
+        if (menu.id === 'customerService') {
+          badgeCount = ticketManager.getUnreadCount()
+        } else if (menu.id === 'tickets') {
+          badgeCount = ticketManager.getUnreadCount()
+        }
+        return { ...menu, badgeCount }
+      }
+      return menu
+    })
+
+    this.setData({
+      noticeMenus: updatedNoticeMenus,
+      serviceMenus: updatedServiceMenus
+    })
   },
 
   goToSignIn() {

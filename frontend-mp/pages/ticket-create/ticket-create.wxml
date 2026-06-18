@@ -1,0 +1,159 @@
+<view class="page-container" wx:if="{{typeConfig}}">
+  <!-- 紧急提示条 -->
+  <view class="urgent-bar" wx:if="{{isUrgentType}}">
+    <view class="urgent-left">
+      <text class="urgent-icon">🚨</text>
+      <text class="urgent-text">紧急问题，建议优先拨打客服热线</text>
+    </view>
+    <view class="urgent-right" bindtap="onCallService">
+      <text class="call-text">立即拨打</text>
+    </view>
+  </view>
+
+  <!-- 类型提示卡片 -->
+  <view class="type-hint-card">
+    <view class="hint-icon" style="background: {{typeConfig.bgColor}};">
+      <text class="icon-emoji">{{typeConfig.emoji}}</text>
+    </view>
+    <view class="hint-info">
+      <text class="hint-title">{{typeConfig.name}}</text>
+      <text class="hint-desc">{{typeConfig.description}}</text>
+    </view>
+  </view>
+
+  <!-- 表单区域 -->
+  <view class="form-section">
+    <!-- 问题标题 -->
+    <view class="form-item">
+      <view class="item-label">
+        <text class="label-text">问题标题</text>
+        <text class="required-mark">*</text>
+      </view>
+      <view class="item-input-wrapper">
+        <input
+          class="item-input"
+          placeholder="请简要描述您遇到的问题"
+          placeholder-class="input-placeholder"
+          value="{{title}}"
+          bindinput="onTitleInput"
+          maxlength="50"
+        />
+        <text class="char-count">{{title.length}}/50</text>
+      </view>
+    </view>
+
+    <!-- 订单号（订单问题） -->
+    <view class="form-item" wx:if="{{ticketType === 'order'}}">
+      <view class="item-label">
+        <text class="label-text">订单号</text>
+        <text class="required-mark">*</text>
+      </view>
+      <view class="item-input-wrapper">
+        <input
+          class="item-input"
+          placeholder="请输入兑换订单号"
+          placeholder-class="input-placeholder"
+          value="{{orderNo}}"
+          bindinput="onOrderNoInput"
+        />
+      </view>
+    </view>
+
+    <!-- 回收订单号（回收问题） -->
+    <view class="form-item" wx:if="{{ticketType === 'recycle'}}">
+      <view class="item-label">
+        <text class="label-text">回收订单号</text>
+        <text class="required-mark">*</text>
+      </view>
+      <view class="item-input-wrapper">
+        <input
+          class="item-input"
+          placeholder="请输入回收订单号"
+          placeholder-class="input-placeholder"
+          value="{{recycleOrderNo}}"
+          bindinput="onRecycleOrderNoInput"
+        />
+      </view>
+    </view>
+
+    <!-- 详细描述 -->
+    <view class="form-item">
+      <view class="item-label">
+        <text class="label-text">详细描述</text>
+        <text class="required-mark">*</text>
+      </view>
+      <view class="item-textarea-wrapper">
+        <textarea
+          class="item-textarea"
+          placeholder="请详细描述您遇到的问题，包括时间、地点、具体情况等，以便我们更好地为您解决问题"
+          placeholder-class="input-placeholder"
+          value="{{description}}"
+          bindinput="onDescriptionInput"
+          maxlength="500"
+          auto-height
+        />
+        <text class="char-count">{{description.length}}/500</text>
+      </view>
+    </view>
+
+    <!-- 图片上传 -->
+    <view class="form-item">
+      <view class="item-label">
+        <text class="label-text">上传图片</text>
+        <text class="label-hint">（可选，最多{{maxImages}}张）</text>
+      </view>
+      <view class="image-uploader">
+        <view class="image-list">
+          <view
+            wx:for="{{images}}"
+            wx:key="index"
+            class="image-item"
+          >
+            <image
+              class="uploaded-image"
+              src="{{item}}"
+              mode="aspectFill"
+              bindtap="onPreviewImage"
+              data-current="{{item}}"
+            />
+            <view class="remove-btn" bindtap="onRemoveImage" data-index="{{index}}">
+              <text class="remove-icon">×</text>
+            </view>
+          </view>
+          <view
+            class="upload-btn"
+            wx:if="{{images.length < maxImages}}"
+            bindtap="onChooseImage"
+          >
+            <text class="upload-icon">+</text>
+            <text class="upload-text">添加图片</text>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 提示信息 -->
+  <view class="notice-section">
+    <view class="notice-card">
+      <text class="notice-icon">📋</text>
+      <view class="notice-content">
+        <text class="notice-title">提交须知</text>
+        <text class="notice-desc">1. 我们会在1-2个工作日内处理您的工单\n2. 工单处理进度会通过消息通知您\n3. 紧急问题请拨打客服热线：{{typeConfig.isUrgent ? '400-123-4567' : '400-123-4567'}}</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="bottom-space"></view>
+
+  <!-- 底部提交按钮 -->
+  <view class="bottom-bar">
+    <view class="submit-btn {{isSubmitting ? 'disabled' : ''}}" bindtap="onSubmit">
+      <text wx:if="{{!isSubmitting}}" class="submit-text">提交工单</text>
+      <view wx:else class="loading-wrapper">
+        <view class="loading-spinner"></view>
+        <text class="submit-text">提交中...</text>
+      </view>
+    </view>
+  </view>
+</view>

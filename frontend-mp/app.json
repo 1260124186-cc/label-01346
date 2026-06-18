@@ -52,7 +52,11 @@
     "pages/family-group/family-group",
     "pages/learning-report/learning-report",
     "pages/learning-path/learning-path",
-    "pages/achievement-detail/achievement-detail"
+    "pages/achievement-detail/achievement-detail",
+    "pages/customer-service/customer-service",
+    "pages/ticket-create/ticket-create",
+    "pages/tickets/tickets",
+    "pages/ticket-detail/ticket-detail"
   ],
   "window": {
     "backgroundTextStyle": "dark",
