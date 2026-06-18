@@ -249,7 +249,9 @@ Page({
     const classifyRecords = app.getClassifyRecords ? app.getClassifyRecords() : []
     const wrongSortItems = getStorage('wrongSortItems', [])
 
-    const correctCount = classifyRecords.length
+    const practiceRecords = classifyRecords.filter(r => r.source === 'practice')
+    const correctCount = practiceRecords.length
+
     let wrongCount = 0
     if (Array.isArray(wrongSortItems)) {
       wrongCount = wrongSortItems.reduce((sum, item) => sum + (item.wrongCount || 1), 0)

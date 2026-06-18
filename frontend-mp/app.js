@@ -613,9 +613,10 @@ App({
   },
 
   addClassifyRecord(record) {
+    record.source = record.source || 'manual'
     this.globalData.classifyRecords.unshift(record)
     wx.setStorageSync('classifyRecords', this.globalData.classifyRecords)
-    console.log('[App] 新增分类记录', record.trashName)
+    console.log('[App] 新增分类记录', record.trashName, 'source:', record.source)
   },
 
   getClassifyRecords() {

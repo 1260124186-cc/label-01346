@@ -217,7 +217,8 @@ Page({
       emoji: question.emoji,
       bgColor: trashType ? trashType.bgColor : '',
       points: POINTS_PER_CORRECT,
-      time: formatDate(new Date(), 'YYYY-MM-DD HH:mm')
+      time: formatDate(new Date(), 'YYYY-MM-DD HH:mm'),
+      source: 'practice'
     }
     app.addClassifyRecord(record)
   },
