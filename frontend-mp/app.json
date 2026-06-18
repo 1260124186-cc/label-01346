@@ -49,7 +49,8 @@
     "pages/certificate/certificate",
     "pages/certificates/certificates",
     "pages/family-group/family-group",
-    "pages/learning-report/learning-report"
+    "pages/learning-report/learning-report",
+    "pages/learning-path/learning-path"
   ],
   "window": {
     "backgroundTextStyle": "dark",

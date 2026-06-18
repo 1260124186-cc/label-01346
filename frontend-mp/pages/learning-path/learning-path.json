@@ -1,0 +1,8 @@
+{
+  "navigationBarTitleText": "我的学习路径",
+  "navigationBarBackgroundColor": "#FF9800",
+  "navigationBarTextStyle": "white",
+  "backgroundColor": "#FFF8E1",
+  "enablePullDownRefresh": true,
+  "backgroundTextStyle": "light"
+}
