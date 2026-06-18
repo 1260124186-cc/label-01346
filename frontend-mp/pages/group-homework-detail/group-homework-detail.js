@@ -84,6 +84,25 @@ Page({
         const daysLeftText = this.getDaysLeftText(homework)
         const deadlineText = formatDate(homework.deadline, 'YYYY-MM-DD')
 
+        // 兼容 reward 对象或扁平字段，构造展示用的 displayReward
+        const rawReward = homework.reward || {
+          type: homework.rewardType || 'points_pool',
+          points: homework.rewardPoints || 0,
+          badgeId: homework.rewardBadgeId || '',
+          badgeName: homework.rewardBadgeName || '',
+          badgeIcon: '🏅'
+        }
+        const displayReward = {
+          type: rawReward.type,
+          icon: rawReward.type === 'points_pool' ? '💰' : (rawReward.badgeIcon || '🏅'),
+          title: rawReward.type === 'points_pool' ? '组积分池奖励' : '组限定勋章',
+          desc: rawReward.type === 'points_pool'
+            ? (rawReward.points > 0 ? `${rawReward.points} 积分` : '无积分奖励')
+            : (rawReward.badgeName || rawReward.badgeId || '专属勋章'),
+          badgeName: rawReward.badgeName || '',
+          points: rawReward.points || 0
+        }
+
         const taskList = homework.tasks.map((task, index) => {
           const typeInfo = this.getTaskTypeInfo(task.type)
           const detail = this.getTaskDetail(task)
@@ -103,6 +122,7 @@ Page({
             tasks: taskList,
             daysLeftText,
             deadlineText,
+            displayReward,
             completionText: `${homework.completedCount}/${homework.totalMembers}人完成`,
             overallProgress: homework.totalMembers > 0 ? Math.round(homework.completedCount / homework.totalMembers * 100) : 0
           },

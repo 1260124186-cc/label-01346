@@ -4768,11 +4768,18 @@ App({
         ],
         memberIds: [],
         deadline: nextWeek,
-        rewardType: 'points_pool',
-        rewardPoints: 500,
-        rewardBadgeId: 'GROUP_HOMEWORK_BADGE',
-        reminderEnabled: true,
-        reminderDays: [3, 1],
+        reward: {
+          type: 'points_pool',
+          points: 500,
+          badgeId: '',
+          badgeName: '',
+          badgeIcon: '🏅'
+        },
+        reminder: {
+          enabled: true,
+          days: [3, 1],
+          lastReminded: {}
+        },
         status: 'in_progress',
         createTime: today,
         updateTime: today
@@ -4793,11 +4800,18 @@ App({
         ],
         memberIds: [],
         deadline: tomorrow,
-        rewardType: 'group_badge',
-        rewardPoints: 0,
-        rewardBadgeId: 'GROUP_HOMEWORK_BADGE',
-        reminderEnabled: true,
-        reminderDays: [3, 1],
+        reward: {
+          type: 'group_badge',
+          points: 0,
+          badgeId: 'GROUP_HOMEWORK_BADGE',
+          badgeName: '学习小达人',
+          badgeIcon: '🏅'
+        },
+        reminder: {
+          enabled: true,
+          days: [3, 1],
+          lastReminded: {}
+        },
         status: 'in_progress',
         createTime: today,
         updateTime: today
@@ -4852,6 +4866,31 @@ App({
     const today = formatDate(new Date(), 'YYYY-MM-DD')
     const userId = this.getUserId()
 
+    // 兼容两种奖励字段结构：reward 对象 或 扁平字段
+    let reward
+    if (homeworkData.reward && typeof homeworkData.reward === 'object') {
+      reward = {
+        type: homeworkData.reward.type || 'points_pool',
+        points: homeworkData.reward.points || 0,
+        badgeId: homeworkData.reward.badgeId || '',
+        badgeName: homeworkData.reward.badgeName || '',
+        badgeIcon: homeworkData.reward.badgeIcon || '🏅'
+      }
+    } else {
+      reward = {
+        type: homeworkData.rewardType || 'points_pool',
+        points: homeworkData.rewardPoints || 0,
+        badgeId: homeworkData.rewardBadgeId || '',
+        badgeName: homeworkData.rewardBadgeName || '',
+        badgeIcon: '🏅'
+      }
+    }
+
+    // 兼容两种提醒字段：sendReminder 或 reminderEnabled
+    const reminderEnabled = homeworkData.sendReminder !== undefined
+      ? homeworkData.sendReminder
+      : (homeworkData.reminderEnabled !== false)
+
     const newHomework = {
       id: 'hw_' + generateId(),
       groupId: homeworkData.groupId,
@@ -4863,11 +4902,12 @@ App({
       tasks: homeworkData.tasks || [],
       memberIds: homeworkData.memberIds || group.members.map(m => m.id),
       deadline: homeworkData.deadline,
-      rewardType: homeworkData.rewardType || 'points_pool',
-      rewardPoints: homeworkData.rewardPoints || 0,
-      rewardBadgeId: homeworkData.rewardBadgeId || '',
-      reminderEnabled: homeworkData.reminderEnabled !== false,
-      reminderDays: homeworkData.reminderDays || [3, 1],
+      reward: reward,
+      reminder: {
+        enabled: reminderEnabled,
+        days: homeworkData.reminderDays || [3, 1],
+        lastReminded: {}
+      },
       status: 'in_progress',
       createTime: today,
       updateTime: today
@@ -4880,7 +4920,7 @@ App({
 
     this._sendHomeworkAssignedMessage(newHomework)
 
-    console.log('[App] 组作业创建成功:', newHomework.title)
+    console.log('[App] 组作业创建成功:', newHomework.title, 'reward:', reward)
     return { success: true, homework: newHomework }
   },
 
@@ -5044,12 +5084,21 @@ App({
     const { MESSAGE_TYPES } = require('./utils/message')
     const { messageManager } = require('./utils/message')
 
-    if (homework.rewardType === 'points_pool' && homework.rewardPoints > 0) {
-      this._addGroupPoints(homework.groupId, homework.rewardPoints, '组作业完成奖励')
+    // 兼容两种结构：reward 对象 或 扁平字段
+    const reward = homework.reward || {
+      type: homework.rewardType || 'points_pool',
+      points: homework.rewardPoints || 0,
+      badgeId: homework.rewardBadgeId || '',
+      badgeName: homework.rewardBadgeName || ''
     }
 
-    if (homework.rewardType === 'group_badge' && homework.rewardBadgeId) {
-      this.unlockBadge(homework.rewardBadgeId, memberId)
+    if (reward.type === 'points_pool' && reward.points > 0) {
+      this._addGroupPoints(homework.groupId, reward.points, '组作业完成奖励')
+    }
+
+    if (reward.type === 'group_badge' && (reward.badgeId || reward.badgeName)) {
+      const badgeId = reward.badgeId || `custom_${homework.id}_badge`
+      this.unlockBadge(badgeId, memberId)
     }
 
     const memberIds = homework.memberIds && homework.memberIds.length > 0
@@ -5074,7 +5123,7 @@ App({
       })
     }
 
-    console.log('[App] 作业奖励已发放:', memberId, homework.title)
+    console.log('[App] 作业奖励已发放:', memberId, homework.title, reward)
   },
 
   _sendHomeworkAssignedMessage(homework) {
@@ -5117,17 +5166,28 @@ App({
 
     homeworkList.forEach(homework => {
       if (homework.status !== 'in_progress') return
-      if (!homework.reminderEnabled) return
+
+      // 兼容两种提醒结构：reminder 对象 或 扁平字段
+      const reminder = homework.reminder || {
+        enabled: homework.reminderEnabled !== false,
+        days: homework.reminderDays || [3, 1],
+        lastReminded: {}
+      }
+      if (!reminder.enabled) return
 
       const deadlineDate = new Date(homework.deadline)
       const daysLeft = Math.ceil((deadlineDate - now) / (1000 * 60 * 60 * 24))
 
-      if (homework.reminderDays && homework.reminderDays.includes(daysLeft)) {
+      if (reminder.days && reminder.days.includes(daysLeft)) {
         const memberIds = homework.memberIds && homework.memberIds.length > 0
           ? homework.memberIds
           : (this._findGroup(homework.groupId)?.members || []).map(m => m.id)
 
         memberIds.forEach(memberId => {
+          // 检查是否已经在这个天数节点提醒过
+          const lastRemindedKey = String(daysLeft)
+          if (reminder.lastReminded && reminder.lastReminded[memberId] === lastRemindedKey) return
+
           const progress = this._calculateMemberHomeworkProgress(homework, memberId)
           if (!progress.completed && messageManager.getSubscriptionSetting('homeworkDue')) {
             messageManager.addMessage({
@@ -5142,11 +5202,17 @@ App({
                 link: `/pages/group-homework-detail/group-homework-detail?id=${homework.id}`
               }
             })
+            // 记录已提醒
+            if (homework.reminder && homework.reminder.lastReminded) {
+              homework.reminder.lastReminded[memberId] = lastRemindedKey
+            }
           }
         })
       }
     })
 
+    // 保存更新后的提醒记录
+    this._saveGroupHomework()
     messageManager.updateHomeworkReminderTime()
   },
 
@@ -5156,8 +5222,9 @@ App({
     if (!group) return []
 
     const members = group.members || []
+    const currentUserId = this.getUserId()
 
-    return members.map(member => {
+    const rawRanking = members.map(member => {
       const memberHomework = homeworkList.filter(hw =>
         hw.memberIds.includes(member.id) || hw.memberIds.length === 0
       )
@@ -5180,19 +5247,33 @@ App({
       const completionRate = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0
       const taskCompletionRate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0
 
+      // 兼容不同的成员字段命名：nickName / name，emoji / avatar
+      const memberName = member.nickName || member.name || '成员'
+      const memberEmoji = member.emoji || member.avatarEmoji || '🌱'
+      const avatarUrl = member.avatarUrl || member.avatar || ''
+
       return {
         memberId: member.id,
-        nickName: member.nickName,
-        avatarUrl: member.avatarUrl,
+        memberName,
+        memberEmoji,
+        avatarUrl,
+        nickName: memberName,
         role: member.role,
         totalHomework: totalCount,
         completedHomework: completedCount,
         totalTasks,
         completedTasks,
         completionRate,
-        taskCompletionRate
+        taskCompletionRate,
+        isCurrentUser: member.id === currentUserId
       }
     }).sort((a, b) => b.completionRate - a.completionRate || b.taskCompletionRate - a.taskCompletionRate)
+
+    // 添加排名字段 rank
+    return rawRanking.map((item, index) => ({
+      ...item,
+      rank: index + 1
+    }))
   },
 
   updateMemberHomeworkProgress(memberId) {

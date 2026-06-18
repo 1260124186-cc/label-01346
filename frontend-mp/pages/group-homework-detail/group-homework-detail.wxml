@@ -51,14 +51,14 @@
       </view>
     </view>
 
-    <view wx:if="{{homework.reward}}" class="reward-card">
-      <view class="reward-icon">{{homework.reward.type === 'points_pool' ? '💰' : '🏅'}}</view>
+    <view wx:if="{{homework.displayReward}}" class="reward-card">
+      <view class="reward-icon">{{homework.displayReward.icon}}</view>
       <view class="reward-info">
         <view class="reward-title">
-          {{homework.reward.type === 'points_pool' ? '组积分池奖励' : '组限定勋章'}}
+          {{homework.displayReward.title}}
         </view>
         <view class="reward-desc">
-          {{homework.reward.type === 'points_pool' ? homework.reward.points + ' 积分' : homework.reward.badgeName}}
+          {{homework.displayReward.desc}}
         </view>
       </view>
       <view class="reward-badge">
