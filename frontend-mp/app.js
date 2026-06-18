@@ -76,6 +76,7 @@ App({
     this.initMessageSystem()
     this.initChildMode()
     this.initUserGroups()
+    this.initGroupHomework()
     this.checkPushStrategies()
 
     this.startExpireCheckInterval()
@@ -4719,6 +4720,488 @@ App({
     wx.setStorageSync('groupTasksProgress', progresses)
 
     return { success: true }
+  },
+
+  /**
+   * ============ 组作业 ============
+   */
+
+  initGroupHomework() {
+    const storedHomework = wx.getStorageSync('groupHomework')
+    const homeworkProgress = wx.getStorageSync('homeworkProgress') || {}
+
+    let homeworkList = storedHomework
+    if (!homeworkList || homeworkList.length === 0) {
+      homeworkList = this._createMockHomework()
+      wx.setStorageSync('groupHomework', homeworkList)
+    }
+
+    this.globalData.groupHomework = homeworkList
+    this.globalData.homeworkProgress = homeworkProgress
+
+    this._checkHomeworkDeadlines()
+    console.log('[App] 组作业系统已初始化', homeworkList.length, '个作业')
+  },
+
+  _createMockHomework() {
+    const now = new Date()
+    const today = formatDate(now, 'YYYY-MM-DD')
+    const tomorrow = formatDate(new Date(now.getTime() + 86400000), 'YYYY-MM-DD')
+    const nextWeek = formatDate(new Date(now.getTime() + 7 * 86400000), 'YYYY-MM-DD')
+    const group = this.getCurrentGroup()
+    const groupId = group ? group.id : 'default_group'
+    const userId = this.getUserId()
+
+    return [
+      {
+        id: 'hw_' + generateId(),
+        groupId: groupId,
+        creatorId: userId,
+        title: '有害垃圾专题学习',
+        description: '本周完成有害垃圾章节学习 + 分类练习20题 + 每日签到5天',
+        icon: '☣️',
+        color: '#E85D5D',
+        tasks: [
+          { type: 'chapter', chapterId: 2, name: '有害垃圾章节', required: true },
+          { type: 'quiz', count: 20, difficulty: 'medium', name: '分类练习', required: true },
+          { type: 'signin', days: 5, name: '每日签到', required: true }
+        ],
+        memberIds: [],
+        deadline: nextWeek,
+        rewardType: 'points_pool',
+        rewardPoints: 500,
+        rewardBadgeId: 'GROUP_HOMEWORK_BADGE',
+        reminderEnabled: true,
+        reminderDays: [3, 1],
+        status: 'in_progress',
+        createTime: today,
+        updateTime: today
+      },
+      {
+        id: 'hw_' + generateId(),
+        groupId: groupId,
+        creatorId: userId,
+        title: '开学第一周作业',
+        description: '可回收垃圾 + 有害垃圾章节学习，每日签到5天，答题20道',
+        icon: '🎒',
+        color: '#9B59B6',
+        tasks: [
+          { type: 'chapter', chapterId: 1, name: '可回收垃圾章节', required: true },
+          { type: 'chapter', chapterId: 2, name: '有害垃圾章节', required: true },
+          { type: 'quiz', count: 20, difficulty: 'easy', name: '分类练习', required: true },
+          { type: 'signin', days: 5, name: '每日签到', required: true }
+        ],
+        memberIds: [],
+        deadline: tomorrow,
+        rewardType: 'group_badge',
+        rewardPoints: 0,
+        rewardBadgeId: 'GROUP_HOMEWORK_BADGE',
+        reminderEnabled: true,
+        reminderDays: [3, 1],
+        status: 'in_progress',
+        createTime: today,
+        updateTime: today
+      }
+    ]
+  },
+
+  _saveGroupHomework() {
+    wx.setStorageSync('groupHomework', this.globalData.groupHomework)
+  },
+
+  _saveHomeworkProgress() {
+    wx.setStorageSync('homeworkProgress', this.globalData.homeworkProgress)
+  },
+
+  getGroupHomeworks(groupId, status = 'all') {
+    const group = this._findGroup(groupId)
+    if (!group) return []
+
+    let homeworkList = (this.globalData.groupHomework || []).filter(hw => hw.groupId === groupId)
+
+    homeworkList = homeworkList.map(hw => ({
+      ...hw,
+      ...this._getHomeworkStatusInfo(hw)
+    }))
+
+    if (status !== 'all') {
+      homeworkList = homeworkList.filter(hw => hw.status === status)
+    }
+
+    return homeworkList.sort((a, b) => new Date(b.createTime) - new Date(a.createTime))
+  },
+
+  getGroupHomeworkById(homeworkId) {
+    const homework = (this.globalData.groupHomework || []).find(hw => hw.id === homeworkId)
+    if (!homework) return null
+
+    return {
+      ...homework,
+      ...this._getHomeworkStatusInfo(homework)
+    }
+  },
+
+  createGroupHomework(homeworkData) {
+    if (!this.hasPermission('task', homeworkData.groupId)) {
+      return { success: false, message: '无权限创建组作业' }
+    }
+
+    const group = this._findGroup(homeworkData.groupId)
+    if (!group) return { success: false, message: '组不存在' }
+
+    const today = formatDate(new Date(), 'YYYY-MM-DD')
+    const userId = this.getUserId()
+
+    const newHomework = {
+      id: 'hw_' + generateId(),
+      groupId: homeworkData.groupId,
+      creatorId: userId,
+      title: homeworkData.title,
+      description: homeworkData.description || '',
+      icon: homeworkData.icon || '📋',
+      color: homeworkData.color || '#9B59B6',
+      tasks: homeworkData.tasks || [],
+      memberIds: homeworkData.memberIds || group.members.map(m => m.id),
+      deadline: homeworkData.deadline,
+      rewardType: homeworkData.rewardType || 'points_pool',
+      rewardPoints: homeworkData.rewardPoints || 0,
+      rewardBadgeId: homeworkData.rewardBadgeId || '',
+      reminderEnabled: homeworkData.reminderEnabled !== false,
+      reminderDays: homeworkData.reminderDays || [3, 1],
+      status: 'in_progress',
+      createTime: today,
+      updateTime: today
+    }
+
+    const homeworkList = this.globalData.groupHomework || []
+    homeworkList.unshift(newHomework)
+    this.globalData.groupHomework = homeworkList
+    this._saveGroupHomework()
+
+    this._sendHomeworkAssignedMessage(newHomework)
+
+    console.log('[App] 组作业创建成功:', newHomework.title)
+    return { success: true, homework: newHomework }
+  },
+
+  _getHomeworkStatusInfo(homework) {
+    const now = new Date()
+    const today = formatDate(now, 'YYYY-MM-DD')
+    const deadlineDate = new Date(homework.deadline)
+    const daysLeft = Math.ceil((deadlineDate - now) / (1000 * 60 * 60 * 24))
+
+    let status = homework.status
+    if (status === 'in_progress' && today > homework.deadline) {
+      status = 'expired'
+    }
+
+    const memberProgress = this._getAllMemberProgress(homework)
+    const completedCount = memberProgress.filter(m => m.completed).length
+    const totalMembers = memberProgress.length
+    const completionRate = totalMembers > 0 ? Math.round((completedCount / totalMembers) * 100) : 0
+
+    return {
+      status,
+      daysLeft,
+      completedCount,
+      totalMembers,
+      completionRate,
+      memberProgress
+    }
+  },
+
+  _getAllMemberProgress(homework) {
+    const group = this._findGroup(homework.groupId)
+    if (!group) return []
+
+    const memberIds = homework.memberIds && homework.memberIds.length > 0
+      ? homework.memberIds
+      : group.members.map(m => m.id)
+
+    return memberIds.map(memberId => {
+      const member = group.members.find(m => m.id === memberId)
+      const progress = this._calculateMemberHomeworkProgress(homework, memberId)
+      return {
+        memberId,
+        nickName: member ? member.nickName : '未知成员',
+        avatarUrl: member ? member.avatarUrl : '',
+        role: member ? member.role : 'member',
+        ...progress
+      }
+    }).sort((a, b) => b.completionRate - a.completionRate)
+  },
+
+  _calculateMemberHomeworkProgress(homework, memberId) {
+    const progressKey = `${homework.id}_${memberId}`
+    const storedProgress = (this.globalData.homeworkProgress || {})[progressKey] || {}
+
+    const taskProgress = homework.tasks.map(task => {
+      const taskResult = this._checkTaskCompletion(homework, task, memberId)
+      return {
+        ...task,
+        ...taskResult
+      }
+    })
+
+    const requiredTasks = taskProgress.filter(t => t.required)
+    const completedRequired = requiredTasks.filter(t => t.completed).length
+    const completionRate = requiredTasks.length > 0
+      ? Math.round((completedRequired / requiredTasks.length) * 100)
+      : 0
+
+    const allCompleted = requiredTasks.every(t => t.completed)
+
+    const result = {
+      tasks: taskProgress,
+      completionRate,
+      completed: allCompleted,
+      completedAt: storedProgress.completedAt || (allCompleted ? formatDate(new Date(), 'YYYY-MM-DD HH:mm') : null),
+      lastCheckTime: formatDate(new Date(), 'YYYY-MM-DD HH:mm')
+    }
+
+    if (allCompleted && !storedProgress.completedAt) {
+      if (!this.globalData.homeworkProgress) this.globalData.homeworkProgress = {}
+      this.globalData.homeworkProgress[progressKey] = {
+        ...storedProgress,
+        completedAt: result.completedAt
+      }
+      this._saveHomeworkProgress()
+
+      this._awardHomeworkReward(homework, memberId)
+    }
+
+    return result
+  },
+
+  _checkTaskCompletion(homework, task, memberId) {
+    const { QUIZ_CHAPTERS } = require('./utils/constants')
+
+    switch (task.type) {
+      case 'chapter': {
+        const learningProgress = this.globalData.learningProgress || {}
+        const chapterProgress = learningProgress[`${memberId}_${task.chapterId}`] || { completed: false, progress: 0 }
+        const chapter = QUIZ_CHAPTERS.find(c => c.id === task.chapterId)
+        return {
+          current: chapterProgress.progress || 0,
+          target: 100,
+          progress: chapterProgress.progress || 0,
+          completed: chapterProgress.completed || false,
+          chapterName: chapter ? chapter.name : '章节学习'
+        }
+      }
+
+      case 'quiz': {
+        const quizRecords = this.getQuizRecords()
+        const memberRecords = quizRecords.filter(r => r.memberId === memberId || r.memberId === undefined)
+        const totalQuestions = memberRecords.reduce((sum, r) => sum + (r.totalQuestions || 0), 0)
+        const target = task.count || 20
+        return {
+          current: totalQuestions,
+          target,
+          progress: Math.min(100, Math.round((totalQuestions / target) * 100)),
+          completed: totalQuestions >= target
+        }
+      }
+
+      case 'signin': {
+        const signInRecords = this.getSignInRecords()
+        const target = task.days || 5
+        const now = new Date()
+        let consecutiveDays = 0
+        for (let i = 0; i < target; i++) {
+          const checkDate = formatDate(new Date(now.getTime() - i * 86400000), 'YYYY-MM-DD')
+          if (signInRecords.includes(checkDate)) {
+            consecutiveDays++
+          } else {
+            break
+          }
+        }
+        return {
+          current: consecutiveDays,
+          target,
+          progress: Math.min(100, Math.round((consecutiveDays / target) * 100)),
+          completed: consecutiveDays >= target
+        }
+      }
+
+      case 'classify': {
+        const classifyRecords = this.getClassifyRecords()
+        const target = task.count || 10
+        return {
+          current: classifyRecords.length,
+          target,
+          progress: Math.min(100, Math.round((classifyRecords.length / target) * 100)),
+          completed: classifyRecords.length >= target
+        }
+      }
+
+      default:
+        return { current: 0, target: 1, progress: 0, completed: false }
+    }
+  },
+
+  _awardHomeworkReward(homework, memberId) {
+    const { MESSAGE_TYPES } = require('./utils/message')
+    const { messageManager } = require('./utils/message')
+
+    if (homework.rewardType === 'points_pool' && homework.rewardPoints > 0) {
+      this._addGroupPoints(homework.groupId, homework.rewardPoints, '组作业完成奖励')
+    }
+
+    if (homework.rewardType === 'group_badge' && homework.rewardBadgeId) {
+      this.unlockBadge(homework.rewardBadgeId, memberId)
+    }
+
+    const memberIds = homework.memberIds && homework.memberIds.length > 0
+      ? homework.memberIds
+      : (this._findGroup(homework.groupId)?.members || []).map(m => m.id)
+
+    const allCompleted = memberIds.every(id => {
+      const progress = this._calculateMemberHomeworkProgress(homework, id)
+      return progress.completed
+    })
+
+    if (allCompleted && messageManager.getSubscriptionSetting('homeworkComplete')) {
+      messageManager.addMessage({
+        type: MESSAGE_TYPES.HOMEWORK_COMPLETED,
+        title: '🎉 组作业全部完成',
+        content: `「${homework.title}」已被所有成员完成，奖励已发放！`,
+        emoji: '🎊',
+        data: {
+          homeworkId: homework.id,
+          link: `/pages/group-homework-detail/group-homework-detail?id=${homework.id}`
+        }
+      })
+    }
+
+    console.log('[App] 作业奖励已发放:', memberId, homework.title)
+  },
+
+  _sendHomeworkAssignedMessage(homework) {
+    const { MESSAGE_TYPES } = require('./utils/message')
+    const { messageManager } = require('./utils/message')
+
+    if (!messageManager.getSubscriptionSetting('homeworkAssigned')) return
+
+    const group = this._findGroup(homework.groupId)
+    const memberIds = homework.memberIds && homework.memberIds.length > 0
+      ? homework.memberIds
+      : (group?.members || []).map(m => m.id)
+
+    memberIds.forEach(memberId => {
+      if (memberId === homework.creatorId) return
+
+      messageManager.addMessage({
+        type: MESSAGE_TYPES.HOMEWORK,
+        title: '📋 新组作业发布',
+        content: `老师/家长发布了新作业「${homework.title}」，截止日期：${homework.deadline}`,
+        emoji: '📝',
+        data: {
+          homeworkId: homework.id,
+          targetMemberId: memberId,
+          link: `/pages/group-homework-detail/group-homework-detail?id=${homework.id}`
+        }
+      })
+    })
+  },
+
+  _checkHomeworkDeadlines() {
+    const { MESSAGE_TYPES } = require('./utils/message')
+    const { messageManager } = require('./utils/message')
+    const { HOMEWORK_REMINDER_CONFIG } = require('./utils/constants')
+
+    if (!messageManager.shouldSendHomeworkReminder()) return
+
+    const homeworkList = this.globalData.groupHomework || []
+    const now = new Date()
+
+    homeworkList.forEach(homework => {
+      if (homework.status !== 'in_progress') return
+      if (!homework.reminderEnabled) return
+
+      const deadlineDate = new Date(homework.deadline)
+      const daysLeft = Math.ceil((deadlineDate - now) / (1000 * 60 * 60 * 24))
+
+      if (homework.reminderDays && homework.reminderDays.includes(daysLeft)) {
+        const memberIds = homework.memberIds && homework.memberIds.length > 0
+          ? homework.memberIds
+          : (this._findGroup(homework.groupId)?.members || []).map(m => m.id)
+
+        memberIds.forEach(memberId => {
+          const progress = this._calculateMemberHomeworkProgress(homework, memberId)
+          if (!progress.completed && messageManager.getSubscriptionSetting('homeworkDue')) {
+            messageManager.addMessage({
+              type: MESSAGE_TYPES.HOMEWORK_REMINDER,
+              title: '⏰ 作业截止提醒',
+              content: `「${homework.title}」还有 ${daysLeft} 天截止，当前完成度：${progress.completionRate}%`,
+              emoji: '🔔',
+              data: {
+                homeworkId: homework.id,
+                targetMemberId: memberId,
+                daysLeft,
+                link: `/pages/group-homework-detail/group-homework-detail?id=${homework.id}`
+              }
+            })
+          }
+        })
+      }
+    })
+
+    messageManager.updateHomeworkReminderTime()
+  },
+
+  getHomeworkCompletionRanking(groupId) {
+    const homeworkList = this.getGroupHomeworks(groupId, 'all')
+    const group = this._findGroup(groupId)
+    if (!group) return []
+
+    const members = group.members || []
+
+    return members.map(member => {
+      const memberHomework = homeworkList.filter(hw =>
+        hw.memberIds.includes(member.id) || hw.memberIds.length === 0
+      )
+
+      const totalCount = memberHomework.length
+      const completedCount = memberHomework.filter(hw => {
+        const progress = this._calculateMemberHomeworkProgress(hw, member.id)
+        return progress.completed
+      }).length
+
+      const totalTasks = memberHomework.reduce((sum, hw) => {
+        return sum + hw.tasks.filter(t => t.required).length
+      }, 0)
+
+      const completedTasks = memberHomework.reduce((sum, hw) => {
+        const progress = this._calculateMemberHomeworkProgress(hw, member.id)
+        return sum + progress.tasks.filter(t => t.required && t.completed).length
+      }, 0)
+
+      const completionRate = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0
+      const taskCompletionRate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0
+
+      return {
+        memberId: member.id,
+        nickName: member.nickName,
+        avatarUrl: member.avatarUrl,
+        role: member.role,
+        totalHomework: totalCount,
+        completedHomework: completedCount,
+        totalTasks,
+        completedTasks,
+        completionRate,
+        taskCompletionRate
+      }
+    }).sort((a, b) => b.completionRate - a.completionRate || b.taskCompletionRate - a.taskCompletionRate)
+  },
+
+  updateMemberHomeworkProgress(memberId) {
+    const homeworkList = this.globalData.groupHomework || []
+    homeworkList.forEach(homework => {
+      if (homework.status === 'in_progress') {
+        this._calculateMemberHomeworkProgress(homework, memberId)
+      }
+    })
   },
 
   /**

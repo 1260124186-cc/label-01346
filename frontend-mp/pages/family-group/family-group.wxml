@@ -128,6 +128,34 @@
       </view>
     </view>
 
+    <!-- 组作业入口 -->
+    <view class="homework-section card" bindtap="goToHomework">
+      <view class="section-header">
+        <view class="section-header-left">
+          <text class="section-header-icon">📋</text>
+          <text class="section-header-title">组作业</text>
+        </view>
+        <view class="homework-entry">
+          <text class="entry-label">{{homeworkStats.text}}</text>
+          <text class="entry-arrow">›</text>
+        </view>
+      </view>
+      <view class="homework-stats">
+        <view class="homework-stat-item">
+          <text class="homework-stat-value">{{homeworkStats.inProgress}}</text>
+          <text class="homework-stat-label">进行中</text>
+        </view>
+        <view class="homework-stat-item">
+          <text class="homework-stat-value">{{homeworkStats.completed}}</text>
+          <text class="homework-stat-label">已完成</text>
+        </view>
+        <view class="homework-stat-item">
+          <text class="homework-stat-value">{{homeworkStats.myPending}}</text>
+          <text class="homework-stat-label">待我完成</text>
+        </view>
+      </view>
+    </view>
+
     <!-- 组成就徽章 -->
     <view class="badge-section card" wx:if="{{groupBadges.length > 0}}">
       <view class="section-header">

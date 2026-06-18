@@ -1,0 +1,351 @@
+<view class="page-container">
+  <view class="form-section">
+    <view class="section-title">基础信息</view>
+
+    <view class="form-item">
+      <view class="form-label">作业标题 <text class="required">*</text></view>
+      <input
+        class="form-input"
+        placeholder="请输入作业标题"
+        value="{{formData.title}}"
+        bindinput="onTitleInput"
+        maxlength="50"
+      />
+    </view>
+
+    <view class="form-item">
+      <view class="form-label">作业描述</view>
+      <textarea
+        class="form-textarea"
+        placeholder="请输入作业描述（选填）"
+        value="{{formData.description}}"
+        bindinput="onDescriptionInput"
+        maxlength="200"
+        auto-height
+      />
+    </view>
+
+    <view class="form-item">
+      <view class="form-label">截止时间 <text class="required">*</text></view>
+      <picker
+        mode="date"
+        value="{{formData.deadline}}"
+        start="{{minDate}}"
+        end="{{maxDate}}"
+        bindchange="onDeadlineChange"
+      >
+        <view class="picker-display">
+          <text class="picker-value">{{formData.deadline}}</text>
+          <text class="picker-arrow">›</text>
+        </view>
+      </picker>
+    </view>
+  </view>
+
+  <view class="form-section">
+    <view class="section-header">
+      <view class="section-title">任务列表 <text class="required">*</text></view>
+      <view class="add-task-btn" bindtap="onAddTask">
+        <text class="add-icon">+</text>
+        <text class="add-text">添加任务</text>
+      </view>
+    </view>
+
+    <view wx:if="{{displayTasks.length === 0}}" class="empty-tasks">
+      <view class="empty-icon">📋</view>
+      <view class="empty-text">还没有添加任务</view>
+      <view class="empty-desc">点击上方按钮添加学习任务</view>
+    </view>
+
+    <view wx:else class="task-list">
+      <view
+        wx:for="{{displayTasks}}"
+        wx:key="index"
+        class="task-card"
+      >
+        <view class="task-header">
+          <view class="task-type-badge">
+            {{item.typeLabel}}
+          </view>
+          <view class="task-required" wx:if="{{item.required}}">
+            <text>必做</text>
+          </view>
+          <view class="task-required optional" wx:else>
+            <text>选做</text>
+          </view>
+        </view>
+        <view class="task-name">{{item.name}}</view>
+        <view class="task-detail">{{item.detail}}</view>
+        <view class="task-actions">
+          <view class="action-btn edit" bindtap="onEditTask" data-index="{{index}}">
+            <text>编辑</text>
+          </view>
+          <view class="action-btn delete" bindtap="onDeleteTask" data-index="{{index}}">
+            <text>删除</text>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view class="form-section">
+    <view class="section-header">
+      <view class="section-title">指定成员 <text class="required">*</text></view>
+      <view class="member-count">已选 {{selectedMemberIds.length}} 人</view>
+    </view>
+
+    <view class="member-display" bindtap="onOpenMemberPicker">
+      <view class="member-avatars">
+        <block wx:for="{{availableMembers}}" wx:key="id">
+          <view wx:if="{{item.selected}}" class="member-avatar-small">
+            <text>{{item.name[0]}}</text>
+          </view>
+        </block>
+      </view>
+      <text class="picker-arrow">›</text>
+    </view>
+  </view>
+
+  <view class="form-section">
+    <view class="section-title">奖励设置</view>
+
+    <view class="form-item">
+      <view class="form-label">奖励方式</view>
+      <radio-group bindchange="onRewardTypeChange">
+        <view class="reward-options">
+          <label
+            wx:for="{{rewardTypes}}"
+            wx:key="id"
+            class="reward-option {{formData.rewardType === item.id ? 'selected' : ''}}"
+          >
+            <radio
+              value="{{item.id}}"
+              checked="{{formData.rewardType === item.id}}"
+              color="#5BBD72"
+            />
+            <view class="reward-info">
+              <view class="reward-icon">{{item.icon}}</view>
+              <view class="reward-text">
+                <view class="reward-name">{{item.name}}</view>
+                <view class="reward-desc">{{item.description}}</view>
+              </view>
+            </view>
+          </label>
+        </view>
+      </radio-group>
+    </view>
+
+    <view wx:if="{{formData.rewardType === 'points_pool'}}" class="form-item">
+      <view class="form-label">积分数量</view>
+      <input
+        class="form-input"
+        type="number"
+        placeholder="请输入奖励积分数量"
+        value="{{formData.rewardPoints}}"
+        bindinput="onRewardPointsInput"
+      />
+    </view>
+
+    <view wx:if="{{formData.rewardType === 'group_badge'}}" class="form-item">
+      <view class="form-label">勋章名称</view>
+      <input
+        class="form-input"
+        placeholder="请输入勋章名称，如：学习小达人"
+        value="{{formData.rewardBadgeName}}"
+        bindinput="onRewardBadgeInput"
+        maxlength="20"
+      />
+    </view>
+  </view>
+
+  <view class="form-section">
+    <view class="section-title">提醒设置</view>
+
+    <view class="form-item row">
+      <view class="form-label">未完成提醒</view>
+      <switch
+        checked="{{formData.sendReminder}}"
+        bindchange="onReminderChange"
+        color="#5BBD72"
+      />
+    </view>
+    <view class="hint-text">开启后，截止前将通过订阅消息提醒未完成成员</view>
+  </view>
+
+  <view class="submit-section">
+    <button
+      class="submit-btn"
+      bindtap="onSubmit"
+      disabled="{{submitting}}"
+      loading="{{submitting}}"
+    >
+      {{submitting ? '创建中...' : '发布组作业'}}
+    </button>
+  </view>
+
+  <view class="safe-area-bottom"></view>
+
+  <view wx:if="{{showTaskEditor}}" class="task-editor-modal" catchtap="stopPropagation">
+    <view class="modal-mask" bindtap="onCloseTaskEditor"></view>
+    <view class="modal-content task-editor">
+      <view class="modal-header">
+        <text class="modal-title">{{editingTaskIndex >= 0 ? '编辑任务' : '添加任务'}}</text>
+        <view class="modal-close" bindtap="onCloseTaskEditor">
+          <text>✕</text>
+        </view>
+      </view>
+
+      <scroll-view class="modal-body" scroll-y="{{true}}">
+        <view class="form-item">
+          <view class="form-label">任务类型</view>
+          <view class="task-type-grid">
+            <view
+              wx:for="{{taskTypes}}"
+              wx:key="id"
+              class="task-type-item {{editingTask.type === item.id ? 'selected' : ''}}"
+              bindtap="onTaskTypeSelect"
+              data-type="{{item.id}}"
+            >
+              <text class="type-icon">{{item.icon}}</text>
+              <text class="type-name">{{item.name}}</text>
+            </view>
+          </view>
+        </view>
+
+        <view class="form-item">
+          <view class="form-label">任务名称</view>
+          <input
+            class="form-input"
+            placeholder="请输入任务名称"
+            value="{{editingTask.name}}"
+            bindinput="onTaskNameInput"
+            maxlength="30"
+          />
+        </view>
+
+        <view wx:if="{{editingTask.type === 'chapter'}}" class="form-item">
+          <view class="form-label">章节序号</view>
+          <input
+            class="form-input"
+            type="number"
+            placeholder="请输入章节序号"
+            value="{{editingTask.chapterId}}"
+            bindinput="onTaskChapterChange"
+          />
+        </view>
+
+        <view wx:if="{{editingTask.type === 'quiz'}}" class="form-item">
+          <view class="form-label">题目数量</view>
+          <input
+            class="form-input"
+            type="number"
+            placeholder="请输入题目数量"
+            value="{{editingTask.count}}"
+            bindinput="onTaskCountInput"
+          />
+        </view>
+
+        <view wx:if="{{editingTask.type === 'quiz'}}" class="form-item">
+          <view class="form-label">难度</view>
+          <radio-group bindchange="onTaskDifficultyChange">
+            <view class="difficulty-options">
+              <label class="difficulty-option">
+                <radio value="easy" checked="{{editingTask.difficulty === 'easy'}}" color="#5BBD72"/>
+                <text>简单</text>
+              </label>
+              <label class="difficulty-option">
+                <radio value="medium" checked="{{editingTask.difficulty === 'medium'}}" color="#5BBD72"/>
+                <text>中等</text>
+              </label>
+              <label class="difficulty-option">
+                <radio value="hard" checked="{{editingTask.difficulty === 'hard'}}" color="#5BBD72"/>
+                <text>困难</text>
+              </label>
+            </view>
+          </radio-group>
+        </view>
+
+        <view wx:if="{{editingTask.type === 'signin'}}" class="form-item">
+          <view class="form-label">连续签到天数</view>
+          <input
+            class="form-input"
+            type="number"
+            placeholder="请输入签到天数"
+            value="{{editingTask.days}}"
+            bindinput="onTaskDaysInput"
+          />
+        </view>
+
+        <view wx:if="{{editingTask.type === 'classify'}}" class="form-item">
+          <view class="form-label">分类次数</view>
+          <input
+            class="form-input"
+            type="number"
+            placeholder="请输入分类次数"
+            value="{{editingTask.count}}"
+            bindinput="onTaskCountInput"
+          />
+        </view>
+
+        <view class="form-item row">
+          <view class="form-label">是否必做</view>
+          <switch
+            checked="{{editingTask.required}}"
+            bindchange="onTaskRequiredChange"
+            color="#5BBD72"
+          />
+        </view>
+      </scroll-view>
+
+      <view class="modal-footer">
+        <button class="save-task-btn" bindtap="onSaveTask">保存任务</button>
+      </view>
+    </view>
+  </view>
+
+  <view wx:if="{{showMemberPicker}}" class="member-picker-modal" catchtap="stopPropagation">
+    <view class="modal-mask" bindtap="onCloseMemberPicker"></view>
+    <view class="modal-content member-picker">
+      <view class="modal-header">
+        <text class="modal-title">选择成员</text>
+        <view class="modal-close" bindtap="onCloseMemberPicker">
+          <text>✕</text>
+        </view>
+      </view>
+
+      <view class="picker-actions">
+        <view class="action-link" bindtap="onSelectAllMembers">全选</view>
+        <view class="action-link" bindtap="onClearMembers">清空</view>
+      </view>
+
+      <scroll-view class="modal-body" scroll-y="{{true}}">
+        <view class="member-list">
+          <view
+            wx:for="{{availableMembers}}"
+            wx:key="id"
+            class="member-item {{item.selected ? 'selected' : ''}}"
+            bindtap="onMemberToggle"
+            data-id="{{item.id}}"
+          >
+            <view class="member-avatar">
+              <text>{{item.name[0]}}</text>
+            </view>
+            <view class="member-info">
+              <view class="member-name">{{item.name}}</view>
+              <view class="member-role">{{item.role === 'child' ? '儿童' : item.role === 'student' ? '学生' : '成员'}}</view>
+            </view>
+            <view class="member-checkbox">
+              <text wx:if="{{item.selected}}">✓</text>
+            </view>
+          </view>
+        </view>
+      </scroll-view>
+
+      <view class="modal-footer">
+        <button class="save-task-btn" bindtap="onCloseMemberPicker">
+          确定 ({{selectedMemberIds.length}}人)
+        </button>
+      </view>
+    </view>
+  </view>
+</view>

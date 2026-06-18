@@ -16,6 +16,12 @@ Page({
     isCurrentUserOwner: false,
     isCurrentUserAdmin: false,
     groupBadges: [],
+    homeworkStats: {
+      inProgress: 0,
+      completed: 0,
+      myPending: 0,
+      text: '查看全部'
+    },
     showCreateModal: false,
     showJoinModal: false,
     showRoleModal: false,
@@ -76,6 +82,8 @@ Page({
     const formattedMembers = this.formatMembers(members || [])
     const groupBadges = this.loadGroupBadges(groupId)
 
+    const homeworkStats = this.loadHomeworkStats(groupId)
+
     this.setData({
       members: formattedMembers,
       memberCount: formattedMembers.length,
@@ -83,7 +91,8 @@ Page({
         total: pointsPool.total || 0,
         weekAdded: pointsPool.weekAdded || 0
       },
-      groupBadges
+      groupBadges,
+      homeworkStats
     })
   },
 
@@ -93,6 +102,44 @@ Page({
 
     const { ACHIEVEMENTS } = require('../../utils/constants')
     return badgeIds.map(id => ACHIEVEMENTS.find(a => a.id === id)).filter(Boolean)
+  },
+
+  loadHomeworkStats(groupId) {
+    const stats = {
+      inProgress: 0,
+      completed: 0,
+      myPending: 0,
+      text: '查看全部'
+    }
+
+    try {
+      if (typeof app.getGroupHomeworks === 'function') {
+        const allHomework = app.getGroupHomeworks(groupId, 'all')
+        const userId = app.getUserId ? app.getUserId() : ''
+
+        stats.inProgress = allHomework.filter(h => h.status === 'in_progress').length
+        stats.completed = allHomework.filter(h => h.status === 'completed').length
+
+        const myPending = allHomework.filter(h => {
+          if (h.status !== 'in_progress' && h.status !== 'not_started') return false
+          const myProgress = h.memberProgress?.find(m => m.memberId === userId)
+          return myProgress && !myProgress.completed
+        })
+        stats.myPending = myPending.length
+
+        if (stats.myPending > 0) {
+          stats.text = `${stats.myPending}个待完成`
+        }
+      }
+    } catch (e) {
+      console.warn('[FamilyGroup] 加载作业统计失败', e)
+    }
+
+    return stats
+  },
+
+  goToHomework() {
+    navigateTo('/pages/group-homework/group-homework')
   },
 
   onBadgeTap(e) {

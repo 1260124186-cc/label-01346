@@ -487,6 +487,60 @@
   color: var(--text-white);
 }
 
+/* ==================== 组作业入口 ==================== */
+.homework-section {
+  margin-top: var(--spacing-md);
+  transition: all var(--transition-fast) ease;
+}
+
+.homework-section:active {
+  transform: scale(0.98);
+}
+
+.homework-entry {
+  display: flex;
+  align-items: center;
+  gap: 4rpx;
+}
+
+.entry-label {
+  font-size: var(--font-sm);
+  color: var(--color-primary);
+  font-weight: 500;
+}
+
+.entry-arrow {
+  font-size: 28rpx;
+  color: var(--color-primary);
+}
+
+.homework-stats {
+  display: flex;
+  justify-content: space-around;
+  margin-top: var(--spacing-md);
+  padding-top: var(--spacing-md);
+  border-top: 1rpx solid var(--border-light);
+}
+
+.homework-stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.homework-stat-value {
+  font-size: var(--font-xl);
+  font-weight: 700;
+  color: var(--color-primary);
+  line-height: 1.2;
+}
+
+.homework-stat-label {
+  font-size: var(--font-xs);
+  color: var(--text-tertiary);
+}
+
 /* ==================== 组徽章 ==================== */
 .badge-section {
   margin-top: var(--spacing-md);

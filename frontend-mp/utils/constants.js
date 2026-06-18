@@ -3710,6 +3710,109 @@ const GROUP_TASKS = {
   weekly_classify: { id: 'weekly_classify', name: '本周分类挑战', desc: '组内成员累计分类100次', icon: '♻️', target: 100, type: 'classify', period: 'weekly', rewardPoints: 500, rewardBadge: 'WEEKLY_TEAM_BADGE' }
 }
 
+const HOMEWORK_TASK_TYPES = {
+  CHAPTER: { id: 'chapter', name: '章节学习', icon: '📚', description: '完成指定章节学习' },
+  QUIZ: { id: 'quiz', name: '分类练习', icon: '❓', description: '完成指定数量练习题' },
+  SIGNIN: { id: 'signin', name: '每日签到', icon: '📅', description: '连续签到指定天数' },
+  CLASSIFY: { id: 'classify', name: '分类实践', icon: '♻️', description: '完成指定次数垃圾分类' }
+}
+
+const HOMEWORK_STATUS = {
+  NOT_STARTED: { id: 'not_started', name: '未开始', color: '#8E8E93', bgColor: 'rgba(142, 142, 147, 0.1)' },
+  IN_PROGRESS: { id: 'in_progress', name: '进行中', color: '#F39C12', bgColor: 'rgba(243, 156, 18, 0.1)' },
+  COMPLETED: { id: 'completed', name: '已完成', color: '#5BBD72', bgColor: 'rgba(91, 189, 114, 0.1)' },
+  EXPIRED: { id: 'expired', name: '已过期', color: '#E85D5D', bgColor: 'rgba(232, 93, 93, 0.1)' }
+}
+
+const HOMEWORK_TEMPLATES = [
+  {
+    id: 'tpl_first_week',
+    name: '开学第一周',
+    icon: '🎒',
+    description: '新学期第一周学习计划，快速进入学习状态',
+    color: '#9B59B6',
+    tasks: [
+      { type: 'chapter', chapterId: 1, required: true },
+      { type: 'chapter', chapterId: 2, required: true },
+      { type: 'quiz', count: 20, difficulty: 'easy', required: true },
+      { type: 'signin', days: 5, required: true }
+    ],
+    defaultDeadlineDays: 7,
+    recommended: true
+  },
+  {
+    id: 'tpl_vacation',
+    name: '假期专项',
+    icon: '🏖️',
+    description: '寒暑假学习计划，保持学习习惯',
+    color: '#3498DB',
+    tasks: [
+      { type: 'chapter', chapterId: 1, required: true },
+      { type: 'chapter', chapterId: 2, required: true },
+      { type: 'chapter', chapterId: 3, required: true },
+      { type: 'chapter', chapterId: 4, required: true },
+      { type: 'quiz', count: 50, difficulty: 'medium', required: true },
+      { type: 'classify', count: 30, required: true },
+      { type: 'signin', days: 20, required: true }
+    ],
+    defaultDeadlineDays: 30,
+    recommended: true
+  },
+  {
+    id: 'tpl_harmful',
+    name: '有害垃圾专题',
+    icon: '☣️',
+    description: '深入学习有害垃圾分类知识',
+    color: '#E85D5D',
+    tasks: [
+      { type: 'chapter', chapterId: 2, required: true },
+      { type: 'quiz', count: 20, difficulty: 'medium', required: true },
+      { type: 'signin', days: 5, required: true }
+    ],
+    defaultDeadlineDays: 7,
+    recommended: false
+  },
+  {
+    id: 'tpl_weekend',
+    name: '周末巩固',
+    icon: '📝',
+    description: '周末复习巩固本周学习内容',
+    color: '#F39C12',
+    tasks: [
+      { type: 'quiz', count: 15, difficulty: 'medium', required: true },
+      { type: 'signin', days: 2, required: true }
+    ],
+    defaultDeadlineDays: 3,
+    recommended: false
+  },
+  {
+    id: 'tpl_exam_prep',
+    name: '考前冲刺',
+    icon: '🎯',
+    description: '垃圾分类知识竞赛考前强化训练',
+    color: '#27AE60',
+    tasks: [
+      { type: 'chapter', chapterId: 5, required: true },
+      { type: 'quiz', count: 30, difficulty: 'hard', required: true },
+      { type: 'quiz', count: 20, difficulty: 'medium', required: true },
+      { type: 'signin', days: 7, required: true }
+    ],
+    defaultDeadlineDays: 10,
+    recommended: false
+  }
+]
+
+const HOMEWORK_REWARD_TYPES = {
+  POINTS_POOL: { id: 'points_pool', name: '组积分池加分', icon: '💰', description: '为组积分池增加积分' },
+  GROUP_BADGE: { id: 'group_badge', name: '组限定勋章', icon: '🏅', description: '为完成成员发放组专属勋章' }
+}
+
+const HOMEWORK_REMINDER_CONFIG = {
+  FIRST_REMINDER_DAYS: 3,
+  SECOND_REMINDER_DAYS: 1,
+  DAILY_REMINDER_HOUR: 20
+}
+
 const VIRTUAL_BADGES = {
   WEEKLY_TEAM_BADGE: { id: 'WEEKLY_TEAM_BADGE', name: '团队之星', icon: '⭐', color: '#F39C12', desc: '完成本周组任务可获得' },
   CLASSIFY_100: { id: 'CLASSIFY_100', name: '分类达人', icon: '🏅', color: '#5BBD72', desc: '累计分类100次' },
@@ -3817,6 +3920,11 @@ module.exports = {
   GROUP_TYPES,
   GROUP_ROLES,
   GROUP_TASKS,
+  HOMEWORK_TASK_TYPES,
+  HOMEWORK_STATUS,
+  HOMEWORK_TEMPLATES,
+  HOMEWORK_REWARD_TYPES,
+  HOMEWORK_REMINDER_CONFIG,
   VIRTUAL_BADGES,
   CHILD_MODE_CONFIG
 }

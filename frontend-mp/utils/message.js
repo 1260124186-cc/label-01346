@@ -11,7 +11,10 @@ const MESSAGE_TYPES = {
   QUIZ: 'quiz',
   ACHIEVEMENT: 'achievement',
   TICKET: 'ticket',
-  POINTS_EXPIRE: 'points_expire'
+  POINTS_EXPIRE: 'points_expire',
+  HOMEWORK: 'homework',
+  HOMEWORK_REMINDER: 'homework_reminder',
+  HOMEWORK_COMPLETED: 'homework_completed'
 }
 
 const MESSAGE_TYPE_CONFIG = {
@@ -70,6 +73,27 @@ const MESSAGE_TYPE_CONFIG = {
     emoji: '⏰',
     color: '#E85D5D',
     bgColor: 'rgba(232, 93, 93, 0.1)'
+  },
+  [MESSAGE_TYPES.HOMEWORK]: {
+    id: MESSAGE_TYPES.HOMEWORK,
+    name: '组作业通知',
+    emoji: '📋',
+    color: '#9B59B6',
+    bgColor: 'rgba(155, 89, 182, 0.1)'
+  },
+  [MESSAGE_TYPES.HOMEWORK_REMINDER]: {
+    id: MESSAGE_TYPES.HOMEWORK_REMINDER,
+    name: '作业提醒',
+    emoji: '🔔',
+    color: '#F39C12',
+    bgColor: 'rgba(243, 156, 18, 0.1)'
+  },
+  [MESSAGE_TYPES.HOMEWORK_COMPLETED]: {
+    id: MESSAGE_TYPES.HOMEWORK_COMPLETED,
+    name: '作业完成',
+    emoji: '🎉',
+    color: '#5BBD72',
+    bgColor: 'rgba(91, 189, 114, 0.1)'
   }
 }
 
@@ -88,6 +112,21 @@ const SUBSCRIPTION_TEMPLATES = {
     name: '活动开始提醒',
     tmplIds: [],
     description: '关注的活动开始前提醒您参与'
+  },
+  HOMEWORK_ASSIGNED: {
+    name: '组作业通知',
+    tmplIds: [],
+    description: '老师/家长发布新组作业时通知'
+  },
+  HOMEWORK_DUE: {
+    name: '作业截止提醒',
+    tmplIds: [],
+    description: '组作业截止前提醒未完成成员'
+  },
+  HOMEWORK_COMPLETE: {
+    name: '作业完成通知',
+    tmplIds: [],
+    description: '组作业全部完成时通知发布者'
   }
 }
 
@@ -216,8 +255,12 @@ class MessageManager {
         signinReminder: true,
         shipmentNotice: true,
         activityStart: true,
+        homeworkAssigned: true,
+        homeworkDue: true,
+        homeworkComplete: true,
         lastSigninReminderTime: 0,
-        lastPointsExpireReminderTime: 0
+        lastPointsExpireReminderTime: 0,
+        lastHomeworkReminderTime: 0
       }
       this.saveSubscriptionSettings()
     }
@@ -368,6 +411,19 @@ class MessageManager {
 
   updatePointsExpireReminderTime() {
     this.subscriptionSettings.lastPointsExpireReminderTime = Date.now()
+    this.saveSubscriptionSettings()
+  }
+
+  shouldSendHomeworkReminder() {
+    if (!this.getSubscriptionSetting('homeworkDue')) return false
+    const now = Date.now()
+    const lastTime = this.subscriptionSettings.lastHomeworkReminderTime || 0
+    const hoursDiff = (now - lastTime) / (1000 * 60 * 60)
+    return hoursDiff >= 12
+  }
+
+  updateHomeworkReminderTime() {
+    this.subscriptionSettings.lastHomeworkReminderTime = Date.now()
     this.saveSubscriptionSettings()
   }
 }

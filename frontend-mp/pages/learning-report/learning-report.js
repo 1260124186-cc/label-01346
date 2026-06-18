@@ -26,7 +26,9 @@ Page({
     weekTotal: 0,
     dailyAverage: 0,
     badges: [],
-    unlockedBadgeCount: 0
+    unlockedBadgeCount: 0,
+    homeworkRanking: [],
+    hasHomeworkData: false
   },
 
   onLoad() {
@@ -126,7 +128,8 @@ Page({
       this.fetchLearningReport(memberId),
       this.fetchWeakCategories(memberId),
       this.fetchWeeklyStats(memberId),
-      this.fetchMemberBadges(memberId)
+      this.fetchMemberBadges(memberId),
+      this.fetchHomeworkRanking()
     ]).then(() => {
       wx.hideLoading()
       if (callback) callback()
@@ -374,6 +377,66 @@ Page({
       ...achievement,
       unlocked: unlockedIds.includes(achievement.id)
     }))
+  },
+
+  fetchHomeworkRanking() {
+    return new Promise((resolve) => {
+      let rankingData = null
+      try {
+        if (typeof app.getHomeworkCompletionRanking === 'function') {
+          const currentGroup = app.getCurrentGroup()
+          if (currentGroup) {
+            rankingData = app.getHomeworkCompletionRanking(currentGroup.id)
+          }
+        }
+      } catch (e) {
+        console.warn('[LearningReport] 获取作业排名失败', e)
+      }
+
+      if (!rankingData || rankingData.length === 0) {
+        rankingData = this.getMockHomeworkRanking()
+      }
+
+      const hasHomeworkData = rankingData.length > 0
+
+      this.setData({
+        homeworkRanking: rankingData,
+        hasHomeworkData
+      })
+
+      resolve()
+    })
+  },
+
+  getMockHomeworkRanking() {
+    const groupMembers = this.data.members
+    return groupMembers.map((member, index) => {
+      const completionRate = Math.max(0, Math.min(100, 100 - index * 25 + Math.floor(Math.random() * 15)))
+      const completedHomework = Math.floor(completionRate / 20)
+      const totalHomework = 4
+      return {
+        memberId: member.id,
+        memberName: member.nickName,
+        memberEmoji: member.emoji || '🌱',
+        avatarUrl: member.avatarUrl,
+        completionRate,
+        completedHomework,
+        totalHomework,
+        rank: index + 1,
+        isCurrentUser: member.id === this.data.currentMemberId
+      }
+    }).sort((a, b) => b.completionRate - a.completionRate).map((item, index) => ({
+      ...item,
+      rank: index + 1
+    }))
+  },
+
+  goToHomeworkDetail(e) {
+    navigateTo('/pages/group-homework/group-homework')
+  },
+
+  goToHomeworkList() {
+    navigateTo('/pages/group-homework/group-homework')
   },
 
   goToPractice(e) {
