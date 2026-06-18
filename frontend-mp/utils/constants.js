@@ -2421,6 +2421,27 @@ const ACHIEVEMENTS = [
     condition: { type: 'inviteCount', value: 10 },
     color: '#1ABC9C',
     bgColor: 'rgba(26, 188, 156, 0.15)'
+  },
+  {
+    id: 'group_task_hero',
+    name: '团队之光',
+    emoji: '🤝',
+    description: '完成1次家庭组任务',
+    type: 'group',
+    condition: { type: 'groupTaskComplete', value: 1 },
+    color: '#E67E22',
+    bgColor: 'rgba(230, 126, 34, 0.15)',
+    linkedGroupBadge: true
+  },
+  {
+    id: 'cert_collector',
+    name: '证途璀璨',
+    emoji: '🎓',
+    description: '获得1张课程结业证书',
+    type: 'certificate',
+    condition: { type: 'certCollect', value: 1 },
+    color: '#8E44AD',
+    bgColor: 'rgba(142, 68, 173, 0.15)'
   }
 ]
 

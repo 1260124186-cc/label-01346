@@ -1498,6 +1498,10 @@ App({
     const inviteCount = this.getInviteRecords().length
     const quizRecords = this.getQuizRecords()
     const correctQuizCount = quizRecords.reduce((sum, r) => sum + (r.correctCount || 0), 0)
+    const certificates = this.globalData.certificates || wx.getStorageSync('certificates') || []
+    const certCount = certificates.length
+    const myGroups = this.getMyGroups ? this.getMyGroups() : []
+    const groupTaskCompleteCount = myGroups.filter(g => g.taskCompleted).length
 
     ACHIEVEMENTS.forEach(achievement => {
       if (unlockedIds.includes(achievement.id)) return
@@ -1521,6 +1525,12 @@ App({
         case 'inviteCount':
           unlocked = inviteCount >= cond.value
           break
+        case 'certCollect':
+          unlocked = certCount >= cond.value
+          break
+        case 'groupTaskComplete':
+          unlocked = groupTaskCompleteCount >= cond.value
+          break
       }
 
       if (unlocked) {
@@ -1532,9 +1542,70 @@ App({
 
     if (newlyUnlocked.length > 0) {
       wx.setStorageSync('unlockedAchievements', this.globalData.unlockedAchievements)
+
+      const unlockRecords = wx.getStorageSync('achievementUnlockRecords') || {}
+      const now = formatDate(new Date(), 'YYYY-MM-DD HH:mm')
+      newlyUnlocked.forEach(achievement => {
+        unlockRecords[achievement.id] = now
+      })
+      wx.setStorageSync('achievementUnlockRecords', unlockRecords)
+
+      newlyUnlocked.forEach(achievement => {
+        if (messageManager && MESSAGE_TYPES.ACHIEVEMENT) {
+          messageManager.addMessage({
+            type: MESSAGE_TYPES.ACHIEVEMENT,
+            title: '成就解锁',
+            content: `恭喜！你已解锁「${achievement.name}」勋章：${achievement.description}`,
+            emoji: achievement.emoji,
+            data: {
+              achievementId: achievement.id,
+              link: '/pages/achievement-detail/achievement-detail?id=' + achievement.id + '&showUnlock=true'
+            }
+          })
+        }
+
+        if (achievement.condition.type === 'groupTaskComplete' || achievement.linkedGroupBadge) {
+          this.syncGroupBadge(achievement)
+        }
+      })
+
+      this.notifyAchievementUnlock(newlyUnlocked)
     }
 
     return newlyUnlocked
+  },
+
+  notifyAchievementUnlock(achievements) {
+    const achievement = achievements[0]
+    if (!achievement) return
+
+    const pages = getCurrentPages()
+    const currentPage = pages[pages.length - 1]
+    if (currentPage && currentPage.playUnlockAnimation) {
+      currentPage.playUnlockAnimation()
+    }
+  },
+
+  syncGroupBadge(achievement) {
+    const myGroups = this.getMyGroups ? this.getMyGroups() : []
+    if (myGroups.length === 0) return
+
+    const groupBadges = wx.getStorageSync('groupBadges') || {}
+    myGroups.forEach(group => {
+      if (!groupBadges[group.id]) {
+        groupBadges[group.id] = []
+      }
+      if (!groupBadges[group.id].includes(achievement.id)) {
+        groupBadges[group.id].push(achievement.id)
+      }
+    })
+    wx.setStorageSync('groupBadges', groupBadges)
+    console.log('[App] 已同步组徽章', achievement.name)
+  },
+
+  getGroupBadges(groupId) {
+    const groupBadges = wx.getStorageSync('groupBadges') || {}
+    return groupBadges[groupId] || []
   },
 
   /**
@@ -1550,6 +1621,10 @@ App({
     const inviteCount = this.getInviteRecords().length
     const quizRecords = this.getQuizRecords()
     const correctQuizCount = quizRecords.reduce((sum, r) => sum + (r.correctCount || 0), 0)
+    const certificates = this.globalData.certificates || wx.getStorageSync('certificates') || []
+    const certCount = certificates.length
+    const myGroups = this.getMyGroups ? this.getMyGroups() : []
+    const groupTaskCompleteCount = myGroups.filter(g => g.taskCompleted).length
 
     return ACHIEVEMENTS.map(achievement => {
       let current = 0
@@ -1570,6 +1645,12 @@ App({
           break
         case 'inviteCount':
           current = inviteCount
+          break
+        case 'certCollect':
+          current = certCount
+          break
+        case 'groupTaskComplete':
+          current = groupTaskCompleteCount
           break
       }
 

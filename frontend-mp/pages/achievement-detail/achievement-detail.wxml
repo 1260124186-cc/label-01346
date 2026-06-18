@@ -1,0 +1,190 @@
+<view class="page-container" wx:if="{{achievement}}">
+  <!-- 解锁全屏动效 -->
+  <view class="unlock-overlay" wx:if="{{showUnlockAnimation}}">
+    <view class="unlock-bg"></view>
+    <view class="unlock-content">
+      <view class="unlock-badge">
+        <text class="unlock-emoji">{{achievement.emoji}}</text>
+      </view>
+      <view class="unlock-text">
+        <text class="unlock-title">成就解锁！</text>
+        <text class="unlock-name">{{achievement.name}}</text>
+      </view>
+    </view>
+    <view class="unlock-particles">
+      <view
+        wx:for="{{unlockParticles}}"
+        wx:key="id"
+        class="particle"
+        style="left: {{item.left}}%; animation-delay: {{item.delay}}s; animation-duration: {{item.duration}}s; transform: scale({{item.scale}});"
+      >
+        {{item.emoji}}
+      </view>
+    </view>
+  </view>
+
+  <!-- 成就卡片 -->
+  <view class="achievement-hero">
+    <view class="hero-bg" style="background: linear-gradient(135deg, {{achievement.color}}22 0%, {{achievement.bgColor}} 100%);">
+      <view class="hero-glow" style="background: radial-gradient(circle, {{achievement.color}}30 0%, transparent 70%);"></view>
+    </view>
+    <view class="hero-content">
+      <view class="badge-wrapper {{isUnlocked ? 'unlocked' : 'locked'}}" style="border-color: {{achievement.color}};">
+        <view class="badge-inner" style="background: {{isUnlocked ? achievement.bgColor : 'rgba(142, 142, 147, 0.1)'}};">
+          <text class="badge-emoji">{{isUnlocked ? achievement.emoji : '🔒'}}</text>
+        </view>
+        <view class="badge-ring" style="border-color: {{achievement.color}};"></view>
+        <view class="badge-ring outer" style="border-color: {{achievement.color}}30;"></view>
+      </view>
+      <text class="hero-name">{{achievement.name}}</text>
+      <text class="hero-desc">{{achievement.description}}</text>
+      <view class="hero-status" wx:if="{{isUnlocked}}">
+        <view class="status-badge" style="background: {{achievement.color}}20; color: {{achievement.color}};">
+          <text class="status-icon">✓</text>
+          <text>已解锁</text>
+        </view>
+      </view>
+      <view class="hero-locked" wx:else>
+        <text class="locked-text">未解锁</text>
+        <view class="progress-section">
+          <view class="progress-bar">
+            <view class="progress-fill" style="width: {{achievement.progress}}%; background: {{achievement.color}};"></view>
+          </view>
+          <text class="progress-text">{{achievement.current}}/{{achievement.target}}</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 解锁条件与时间 -->
+  <view class="info-section">
+    <view class="info-card">
+      <view class="info-card-header">
+        <text class="info-card-icon">📋</text>
+        <text class="info-card-title">解锁条件</text>
+      </view>
+      <view class="condition-row">
+        <view class="condition-icon" style="background: {{achievement.bgColor}};">
+          <text>{{achievement.emoji}}</text>
+        </view>
+        <view class="condition-content">
+          <text class="condition-text">{{achievement.description}}</text>
+          <text class="condition-detail">需要完成 {{achievement.target}} 次{{achievement.condition.type === 'classifyCount' ? '分类' : achievement.condition.type === 'correctQuizCount' ? '正确答题' : achievement.condition.type === 'continuousSignIn' ? '连续签到' : achievement.condition.type === 'totalPoints' ? '积分获取' : achievement.condition.type === 'inviteCount' ? '邀请好友' : achievement.condition.type === 'groupTaskComplete' ? '组任务' : achievement.condition.type === 'certCollect' ? '获取证书' : ''}}</text>
+        </view>
+        <view class="condition-status">
+          <text class="status-value" style="color: {{isUnlocked ? achievement.color : '#B2BEC3'}};">{{achievement.current}}/{{achievement.target}}</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="info-card" wx:if="{{isUnlocked && unlockTime}}">
+      <view class="info-card-header">
+        <text class="info-card-icon">🕐</text>
+        <text class="info-card-title">解锁时间</text>
+      </view>
+      <view class="unlock-time-row">
+        <text class="unlock-time-value">{{unlockTime}}</text>
+        <text class="unlock-time-tag" style="background: {{achievement.color}}15; color: {{achievement.color}};">🎉 已达成</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 关联行为数据 -->
+  <view class="records-section" wx:if="{{relatedRecords.length > 0}}">
+    <view class="section-header">
+      <view class="section-title-row">
+        <text class="section-icon">📊</text>
+        <text class="section-title">关联行为数据</text>
+      </view>
+      <view class="section-link" bindtap="onRelatedLinkTap" wx:if="{{relatedLink}}">
+        <text class="link-text">{{relatedLinkLabel}}</text>
+        <text class="link-arrow">›</text>
+      </view>
+    </view>
+    <view class="records-list">
+      <view
+        wx:for="{{relatedRecords}}"
+        wx:key="id"
+        class="record-item"
+        bindtap="onRecordItemTap"
+        data-item="{{item}}"
+      >
+        <view class="record-emoji">{{item.emoji}}</view>
+        <view class="record-content">
+          <text class="record-title">{{item.title}}</text>
+          <text class="record-subtitle">{{item.subtitle}}</text>
+        </view>
+        <text class="record-time">{{item.time}}</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- Slogan -->
+  <view class="slogan-section" wx:if="{{isUnlocked}}">
+    <view class="slogan-card" style="background: linear-gradient(135deg, {{achievement.color}}10, {{achievement.color}}05);">
+      <text class="slogan-quote">"</text>
+      <text class="slogan-text" style="color: {{achievement.color}};">{{slogan}}</text>
+      <text class="slogan-quote end">"</text>
+    </view>
+  </view>
+
+  <!-- 操作按钮 -->
+  <view class="action-section" wx:if="{{isUnlocked}}">
+    <view class="action-grid">
+      <button class="action-btn poster-btn" bindtap="showPosterModal">
+        <text class="btn-icon">🎨</text>
+        <text class="btn-text">生成海报</text>
+      </button>
+      <button class="action-btn share-btn" open-type="share">
+        <text class="btn-icon">👥</text>
+        <text class="btn-text">分享好友</text>
+      </button>
+      <button class="action-btn timeline-btn" bindtap="onShareTimeline">
+        <text class="btn-icon">📢</text>
+        <text class="btn-text">朋友圈</text>
+      </button>
+      <button class="action-btn back-btn" bindtap="goBack">
+        <text class="btn-icon">👤</text>
+        <text class="btn-text">个人中心</text>
+      </button>
+    </view>
+  </view>
+
+  <!-- 海报弹窗 -->
+  <view class="poster-modal" wx:if="{{showPosterModal}}" catchtap="hidePosterModal">
+    <view class="poster-modal-content" catchtap="stopPropagation">
+      <view class="poster-preview" wx:if="{{tempImagePath}}">
+        <image class="poster-image" src="{{tempImagePath}}" mode="aspectFit"></image>
+      </view>
+      <view class="poster-placeholder" wx:else>
+        <text class="placeholder-icon">🎨</text>
+        <text class="placeholder-text">点击下方按钮生成海报</text>
+      </view>
+      <view class="poster-actions">
+        <button class="poster-action-btn generate" bindtap="onGeneratePoster" loading="{{isDrawing}}" disabled="{{isDrawing}}">
+          <text class="action-icon">✨</text>
+          <text class="action-label">{{isDrawing ? '生成中...' : '生成海报'}}</text>
+        </button>
+        <button class="poster-action-btn save" bindtap="onSavePoster" wx:if="{{tempImagePath}}">
+          <text class="action-icon">💾</text>
+          <text class="action-label">保存到相册</text>
+        </button>
+      </view>
+      <view class="poster-close" catchtap="hidePosterModal">
+        <text class="close-icon">✕</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 隐藏Canvas -->
+  <view class="canvas-container">
+    <canvas
+      type="2d"
+      id="posterCanvas"
+      class="poster-canvas"
+      style="width: {{canvasWidth}}px; height: {{canvasHeight}}px;"
+    ></canvas>
+  </view>
+
+  <view class="safe-area-bottom"></view>
+</view>

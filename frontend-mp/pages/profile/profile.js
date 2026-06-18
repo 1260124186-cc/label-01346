@@ -231,12 +231,7 @@ Page({
   onAchievementTap(e) {
     const { item } = e.currentTarget.dataset
     console.log('[Profile] 点击成就', item.name)
-    if (item.unlocked) {
-      showToast(`已解锁：${item.name}`)
-    } else {
-      const remaining = (item.target || 0) - (item.current || 0)
-      showToast(`还差${remaining}即可解锁`)
-    }
+    navigateTo('/pages/achievement-detail/achievement-detail?id=' + item.id)
   },
 
   /**

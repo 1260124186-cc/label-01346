@@ -8,7 +8,8 @@ const MESSAGE_TYPES = {
   ACTIVITY: 'activity',
   ORDER: 'order',
   SIGNIN: 'signin',
-  QUIZ: 'quiz'
+  QUIZ: 'quiz',
+  ACHIEVEMENT: 'achievement'
 }
 
 const MESSAGE_TYPE_CONFIG = {
@@ -46,6 +47,13 @@ const MESSAGE_TYPE_CONFIG = {
     emoji: '❓',
     color: '#E85D5D',
     bgColor: 'rgba(232, 93, 93, 0.1)'
+  },
+  [MESSAGE_TYPES.ACHIEVEMENT]: {
+    id: MESSAGE_TYPES.ACHIEVEMENT,
+    name: '成就勋章',
+    emoji: '🏆',
+    color: '#9B59B6',
+    bgColor: 'rgba(155, 89, 182, 0.1)'
   }
 }
 

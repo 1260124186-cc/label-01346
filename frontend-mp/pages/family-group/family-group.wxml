@@ -128,6 +128,33 @@
       </view>
     </view>
 
+    <!-- 组成就徽章 -->
+    <view class="badge-section card" wx:if="{{groupBadges.length > 0}}">
+      <view class="section-header">
+        <view class="section-header-left">
+          <text class="section-header-icon">🏆</text>
+          <text class="section-header-title">组徽章</text>
+        </view>
+        <text class="badge-count">{{groupBadges.length}}枚</text>
+      </view>
+      <scroll-view class="badge-scroll" scroll-x="true" enhanced="true" show-scrollbar="false">
+        <view class="badge-list">
+          <view
+            class="badge-item"
+            wx:for="{{groupBadges}}"
+            wx:key="id"
+            bindtap="onBadgeTap"
+            data-id="{{item.id}}"
+          >
+            <view class="badge-icon-wrapper" style="background: {{item.bgColor}};">
+              <text class="badge-emoji">{{item.emoji}}</text>
+            </view>
+            <text class="badge-name">{{item.name}}</text>
+          </view>
+        </view>
+      </scroll-view>
+    </view>
+
     <!-- 成员列表 -->
     <view class="member-section card">
       <view class="section-header">

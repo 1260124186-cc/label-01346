@@ -50,7 +50,8 @@
     "pages/certificates/certificates",
     "pages/family-group/family-group",
     "pages/learning-report/learning-report",
-    "pages/learning-path/learning-path"
+    "pages/learning-path/learning-path",
+    "pages/achievement-detail/achievement-detail"
   ],
   "window": {
     "backgroundTextStyle": "dark",

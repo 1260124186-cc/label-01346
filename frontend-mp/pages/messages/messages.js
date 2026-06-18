@@ -15,7 +15,8 @@ Page({
       { id: MESSAGE_TYPES.ACTIVITY, name: '活动提醒' },
       { id: MESSAGE_TYPES.ORDER, name: '订单物流' },
       { id: MESSAGE_TYPES.SIGNIN, name: '签到提醒' },
-      { id: MESSAGE_TYPES.QUIZ, name: '问答新题' }
+      { id: MESSAGE_TYPES.QUIZ, name: '问答新题' },
+      { id: MESSAGE_TYPES.ACHIEVEMENT, name: '成就勋章' }
     ],
     messageList: [],
     unreadCount: {},

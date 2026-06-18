@@ -1,5 +1,5 @@
 const app = getApp()
-const { showToast, showSuccess, showError, showModal, formatDate } = require('../../utils/util')
+const { showToast, showSuccess, showError, showModal, formatDate, navigateTo } = require('../../utils/util')
 
 Page({
   data: {
@@ -15,6 +15,7 @@ Page({
     inviteCode: '',
     isCurrentUserOwner: false,
     isCurrentUserAdmin: false,
+    groupBadges: [],
     showCreateModal: false,
     showJoinModal: false,
     showRoleModal: false,
@@ -73,6 +74,7 @@ Page({
     const members = app.getGroupMembers ? app.getGroupMembers(groupId) : []
     const pointsPool = app.getGroupPointsPool ? app.getGroupPointsPool(groupId) : { total: 0, weekAdded: 0 }
     const formattedMembers = this.formatMembers(members || [])
+    const groupBadges = this.loadGroupBadges(groupId)
 
     this.setData({
       members: formattedMembers,
@@ -80,8 +82,23 @@ Page({
       pointsPool: {
         total: pointsPool.total || 0,
         weekAdded: pointsPool.weekAdded || 0
-      }
+      },
+      groupBadges
     })
+  },
+
+  loadGroupBadges(groupId) {
+    const badgeIds = app.getGroupBadges ? app.getGroupBadges(groupId) : []
+    if (badgeIds.length === 0) return []
+
+    const { ACHIEVEMENTS } = require('../../utils/constants')
+    return badgeIds.map(id => ACHIEVEMENTS.find(a => a.id === id)).filter(Boolean)
+  },
+
+  onBadgeTap(e) {
+    const { id } = e.currentTarget.dataset
+    if (!id) return
+    navigateTo('/pages/achievement-detail/achievement-detail?id=' + id)
   },
 
   formatMembers(members) {

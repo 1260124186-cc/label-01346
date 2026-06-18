@@ -487,6 +487,57 @@
   color: var(--text-white);
 }
 
+/* ==================== 组徽章 ==================== */
+.badge-section {
+  margin-top: var(--spacing-md);
+}
+
+.badge-count {
+  font-size: var(--font-sm);
+  color: var(--text-tertiary);
+}
+
+.badge-scroll {
+  width: 100%;
+  white-space: nowrap;
+}
+
+.badge-list {
+  display: inline-flex;
+  gap: var(--spacing-md);
+  padding: var(--spacing-sm) 0;
+}
+
+.badge-item {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8rpx;
+  min-width: 120rpx;
+}
+
+.badge-icon-wrapper {
+  width: 88rpx;
+  height: 88rpx;
+  border-radius: var(--radius-round);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.badge-emoji {
+  font-size: 44rpx;
+}
+
+.badge-name {
+  font-size: var(--font-xs);
+  color: var(--text-secondary);
+  white-space: nowrap;
+  max-width: 120rpx;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 /* ==================== 成员列表 ==================== */
 .member-count {
   font-size: var(--font-sm);
