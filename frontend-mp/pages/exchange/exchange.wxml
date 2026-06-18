@@ -104,7 +104,7 @@
   </view>
 
   <!-- 儿童模式 + goods tab：提示卡片 -->
-  <view class="child-mode-tip-card" wx:if="{{childModeEnabled && currentBadgeTab === 'goods'">
+  <view class="child-mode-tip-card" wx:if="{{childModeEnabled && currentBadgeTab === 'goods'}}">
     <view class="tip-icon-wrapper">
       <text class="tip-icon">🧒</text>
     </view>
@@ -136,7 +136,7 @@
           bindtap="onBadgeTap"
           data-item="{{item}}"
         >
-          <view class="badge-status-icon unlocked-icon" wx:if="{{item.unlocked">
+          <view class="badge-status-icon unlocked-icon" wx:if="{{item.unlocked}}">
             <text class="status-emoji">✅</text>
           </view>
           <view class="badge-status-icon locked-icon" wx:else>
@@ -286,7 +286,7 @@
         <view class="badge-modal-icon-wrapper" style="background: {{selectedBadge.unlocked ? selectedBadge.color : '#CCCCCC'}};">
           <text class="badge-modal-icon">{{selectedBadge.icon}}</text>
         </view>
-        <view class="badge-modal-status" wx:if="{{selectedBadge.unlocked">
+        <view class="badge-modal-status" wx:if="{{selectedBadge.unlocked}}">
           <text class="status-text unlocked">已获得</text>
         </view>
         <view class="badge-modal-status" wx:else>
@@ -322,7 +322,7 @@
           </view>
         </view>
 
-        <view class="badge-modal-section" wx:if="{{!selectedBadge.unlocked">
+        <view class="badge-modal-section" wx:if="{{!selectedBadge.unlocked}}">
           <view class="section-label">
             <text class="label-icon">📊</text>
             <text class="label-text">当前进度</text>
