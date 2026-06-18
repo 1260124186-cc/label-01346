@@ -74,6 +74,30 @@
     </view>
   </view>
 
+  <!-- 我的学习路径入口 -->
+  <view class="game-entry-section" bindtap="goToLearningPath">
+    <view class="learning-path-entry-card">
+      <view class="learning-path-entry-bg"></view>
+      <view class="game-entry-content">
+        <view class="game-entry-left">
+          <view class="game-entry-emoji">🗺️</view>
+          <view class="game-entry-text">
+            <view class="game-entry-title">我的学习路径</view>
+            <view class="game-entry-subtitle">
+              阅读常识 · 分类练习 · 章节闯关 · 课程学习 · 游戏通关
+            </view>
+          </view>
+        </view>
+        <view class="game-entry-right">
+          <view class="game-entry-btn" style="background: linear-gradient(135deg, #FF9800 0%, #5BBD72 100%);">
+            <text>去学习</text>
+            <text class="game-arrow">›</text>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+
   <!-- 垃圾分类小游戏入口 -->
   <view class="game-entry-section" bindtap="goToGameHall">
     <view class="game-entry-card">

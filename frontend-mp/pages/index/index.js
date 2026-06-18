@@ -299,6 +299,11 @@ Page({
     navigateTo('/pages/game-hall/game-hall')
   },
 
+  goToLearningPath() {
+    console.log('[Index] 点击我的学习路径')
+    navigateTo('/pages/learning-path/learning-path')
+  },
+
   goToRecycleBook() {
     console.log('[Index] 点击预约上门回收')
     navigateTo('/pages/recycle-book/recycle-book')

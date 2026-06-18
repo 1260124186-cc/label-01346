@@ -1,7 +1,10 @@
 const app = getApp()
 const { COURSES } = require('../../data/courses')
-const { QUIZ_CHAPTERS, QUIZ_QUESTIONS } = require('../../data/quiz')
-const { navigateTo, getStorage, showToast } = require('../../utils/util')
+const { QUIZ_CHAPTERS } = require('../../data/quiz')
+const { TRASH_TYPES } = require('../../utils/constants')
+const { navigateTo, showToast } = require('../../utils/util')
+
+const GAME_TYPES = ['catch', 'conveyor', 'match']
 
 const LEARNING_PATH_NODES = [
   {
@@ -11,8 +14,7 @@ const LEARNING_PATH_NODES = [
     emoji: '📖',
     color: '#4A90D9',
     colorDark: '#357ABD',
-    unit: '篇',
-    total: 4,
+    unit: '类',
     reward: { points: 20, badge: '📚', badgeName: '知识先锋' },
     unlockCondition: null,
     link: '/pages/classify/classify'
@@ -20,12 +22,11 @@ const LEARNING_PATH_NODES = [
   {
     id: 'sort-practice',
     title: '完成分类练习',
-    description: '通过实际分类练习巩固知识，提高分类准确率',
+    description: '通过实际分类操作巩固知识，提高分类准确率',
     emoji: '♻️',
     color: '#5BBD72',
     colorDark: '#4AA862',
     unit: '次',
-    total: 5,
     reward: { points: 30, badge: '♻️', badgeName: '分类能手' },
     unlockCondition: {
       nodeId: 'read-knowledge',
@@ -42,14 +43,13 @@ const LEARNING_PATH_NODES = [
     color: '#F39C12',
     colorDark: '#D68910',
     unit: '章',
-    total: QUIZ_CHAPTERS.length,
     reward: { points: 50, badge: '🏆', badgeName: '闯关达人' },
     unlockCondition: {
       nodeId: 'sort-practice',
       label: '分类练习正确率 ≥ 80%',
       check(data) { return data.sortAccuracy >= 80 }
     },
-    link: '/pages/quiz-chapter/quiz-chapter'
+    link: '/pages/quiz/quiz'
   },
   {
     id: 'course-chapter',
@@ -59,7 +59,6 @@ const LEARNING_PATH_NODES = [
     color: '#9B59B6',
     colorDark: '#7D3C98',
     unit: '章',
-    total: 0,
     reward: { points: 100, badge: '🎓', badgeName: '学识渊博' },
     unlockCondition: {
       nodeId: 'quiz-chapter',
@@ -75,13 +74,12 @@ const LEARNING_PATH_NODES = [
     emoji: '🎮',
     color: '#E85D5D',
     colorDark: '#C0392B',
-    unit: '关',
-    total: 3,
+    unit: '款',
     reward: { points: 80, badge: '🎮', badgeName: '游戏王者' },
     unlockCondition: {
       nodeId: 'course-chapter',
       label: '课程章节完成率 ≥ 60%',
-      check(data) { return data.courseProgress >= 60 }
+      check(data) { return data.coursePercent >= 60 }
     },
     link: '/pages/game-hall/game-hall'
   }
@@ -107,19 +105,17 @@ Page({
   },
 
   onLoad() {
-    console.log('[LearningPath] 页面加载')
     this.loadPathData()
   },
 
   onShow() {
-    console.log('[LearningPath] 页面显示')
     this.loadPathData()
   },
 
   loadPathData() {
     const metrics = this.gatherAllMetrics()
     const progressData = this.computeProgressData(metrics)
-    const { pathNodes, lastCompletedIndex } = this.buildPathNodes(progressData, metrics)
+    const { pathNodes } = this.buildPathNodes(progressData, metrics)
     const { weakAreas, recommendedAction } = this.detectWeakAreas(metrics)
     const earnedBadges = pathNodes
       .filter(n => n.status === 'completed' && n.reward.badge)
@@ -144,21 +140,21 @@ Page({
   },
 
   gatherAllMetrics() {
-    const classifyReadCount = this.getClassifyReadCount()
-    const readProgress = Math.min(Math.floor((classifyReadCount / 4) * 100), 100)
+    const classifyReadInfo = this.getClassifyReadInfo()
+    const readProgress = classifyReadInfo.percent
 
-    const sortPracticeCount = this.getSortPracticeCount()
-    const sortAccuracy = this.getSortAccuracy()
+    const sortPracticeInfo = this.getSortPracticeInfo()
+    const sortAccuracy = sortPracticeInfo.accuracy
 
-    const quizProgress = this.getQuizProgress()
-    const quizAccuracy = this.getQuizAccuracy()
+    const quizInfo = this.getQuizInfo()
+    const quizAccuracy = quizInfo.accuracy
 
-    const courseProgress = this.getCourseProgress()
-    const coursePercent = courseProgress.total > 0
-      ? Math.min(Math.floor((courseProgress.completed / courseProgress.total) * 100), 100)
+    const courseInfo = this.getCourseInfo()
+    const coursePercent = courseInfo.total > 0
+      ? Math.min(Math.floor((courseInfo.completed / courseInfo.total) * 100), 100)
       : 0
 
-    const gameProgress = this.getGameProgress()
+    const gameInfo = this.getGameInfo()
 
     const categoryStats = app.getCategoryStats ? app.getCategoryStats() : []
     const wrongQuestions = app.getWrongQuestions ? app.getWrongQuestions() : []
@@ -170,40 +166,34 @@ Page({
 
     return {
       readProgress,
-      classifyReadCount,
-      sortPracticeCount,
+      classifyReadInfo,
+      sortPracticeInfo,
       sortAccuracy,
-      quizProgress,
+      quizInfo,
       quizAccuracy,
-      courseProgress,
+      courseInfo,
       coursePercent,
-      gameProgress,
+      gameInfo,
       categoryStats,
-      wrongQuestions,
       wrongByChapter
     }
   },
 
   computeProgressData(metrics) {
     return [
-      { current: metrics.classifyReadCount, total: 4 },
-      { current: metrics.sortPracticeCount, total: 5 },
-      { current: metrics.quizProgress.completed, total: metrics.quizProgress.total },
-      { current: metrics.courseProgress.completed, total: metrics.courseProgress.total },
-      { current: metrics.gameProgress, total: 3 }
+      { current: metrics.classifyReadInfo.read, total: metrics.classifyReadInfo.total },
+      { current: metrics.sortPracticeInfo.count, total: metrics.sortPracticeInfo.target },
+      { current: metrics.quizInfo.completed, total: metrics.quizInfo.total },
+      { current: metrics.courseInfo.completed, total: metrics.courseInfo.total },
+      { current: metrics.gameInfo.played, total: metrics.gameInfo.total }
     ]
   },
 
   buildPathNodes(progressData, metrics) {
-    let lastCompletedIndex = -1
     const pathNodes = LEARNING_PATH_NODES.map((node, index) => {
       const { current, total } = progressData[index]
       const progressPercent = total > 0 ? Math.min(Math.floor((current / total) * 100), 100) : 0
       const isCompleted = progressPercent >= 100
-
-      if (isCompleted) {
-        lastCompletedIndex = index
-      }
 
       let status = 'pending'
       let unlockMet = true
@@ -240,12 +230,87 @@ Page({
       }
     })
 
-    return { pathNodes, lastCompletedIndex }
+    return { pathNodes }
+  },
+
+  getClassifyReadInfo() {
+    const classifyRecords = app.getClassifyRecords ? app.getClassifyRecords() : []
+    const readTypeIds = new Set()
+    classifyRecords.forEach(r => {
+      if (r.typeId) readTypeIds.add(r.typeId)
+    })
+    const total = TRASH_TYPES.length
+    const read = readTypeIds.size
+    const percent = Math.min(Math.floor((read / total) * 100), 100)
+    return { read, total, percent }
+  },
+
+  getSortPracticeInfo() {
+    const classifyRecords = app.getClassifyRecords ? app.getClassifyRecords() : []
+    const count = classifyRecords.length
+    const target = 10
+    const accuracy = 100
+    return { count, target, accuracy }
+  },
+
+  getQuizInfo() {
+    const quizRecords = app.getQuizRecords ? app.getQuizRecords() : []
+    const chapterRecords = quizRecords.filter(r => r.quizType === 'chapter')
+
+    const completedChapterIds = new Set()
+    chapterRecords.forEach(r => {
+      if (r.accuracy >= 80) {
+        const chId = r.chapterId
+        if (chId) completedChapterIds.add(chId)
+      }
+    })
+
+    let totalQuestions = 0
+    let totalCorrect = 0
+    chapterRecords.forEach(r => {
+      totalQuestions += r.totalQuestions || 0
+      totalCorrect += r.correctCount || 0
+    })
+    const accuracy = totalQuestions > 0 ? Math.floor((totalCorrect / totalQuestions) * 100) : 0
+
+    return {
+      completed: completedChapterIds.size,
+      total: QUIZ_CHAPTERS.length,
+      accuracy
+    }
+  },
+
+  getCourseInfo() {
+    const learningProgress = app.getLearningProgress ? app.getLearningProgress() : {}
+    let completedChapters = 0
+    let totalChapters = 0
+
+    COURSES.forEach(course => {
+      totalChapters += course.totalChapters || 0
+      const progress = learningProgress[course.id]
+      if (progress && progress.completedChapters) {
+        completedChapters += progress.completedChapters.length
+      }
+    })
+
+    return { completed: completedChapters, total: totalChapters }
+  },
+
+  getGameInfo() {
+    const gameRecords = app.getGameRecords ? app.getGameRecords() : []
+    const playedTypes = new Set()
+    gameRecords.forEach(r => {
+      if (r.gameType) playedTypes.add(r.gameType)
+    })
+    return {
+      played: playedTypes.size,
+      total: GAME_TYPES.length
+    }
   },
 
   detectWeakAreas(metrics) {
     const weakAreas = []
-    const { categoryStats, wrongByChapter, quizAccuracy, sortAccuracy, readProgress, coursePercent } = metrics
+    const { categoryStats, wrongByChapter, quizAccuracy, sortAccuracy } = metrics
 
     const CHAPTER_NAMES = { 1: '可回收物', 2: '有害垃圾', 3: '厨余垃圾', 4: '其他垃圾', 5: '综合知识' }
     const CHAPTER_COLORS = { 1: '#4A90D9', 2: '#E85D5D', 3: '#5BBD72', 4: '#8E8E93', 5: '#9B59B6' }
@@ -303,7 +368,7 @@ Page({
         color: '#F39C12',
         count: 0,
         message: `闯关正确率仅${quizAccuracy}%，低于80%达标线`,
-        link: '/pages/quiz-chapter/quiz-chapter'
+        link: '/pages/quiz/quiz'
       })
     }
 
@@ -348,77 +413,8 @@ Page({
     return { weakAreas, recommendedAction }
   },
 
-  getClassifyReadCount() {
-    const classifyProgress = getStorage('classifyReadProgress', {})
-    return Object.keys(classifyProgress).filter(k => classifyProgress[k]).length
-  },
-
-  getSortPracticeCount() {
-    const practiceRecords = getStorage('sortPracticeRecords', [])
-    return Array.isArray(practiceRecords) ? practiceRecords.length : 0
-  },
-
-  getSortAccuracy() {
-    const practiceRecords = getStorage('sortPracticeRecords', [])
-    if (!Array.isArray(practiceRecords) || practiceRecords.length === 0) return 0
-    const total = practiceRecords.length
-    const correct = practiceRecords.filter(r => r.isCorrect || r.correct).length
-    return Math.floor((correct / total) * 100)
-  },
-
-  getQuizProgress() {
-    const quizProgress = getStorage('quizChapterProgress', {})
-    let completed = 0
-    QUIZ_CHAPTERS.forEach(chapter => {
-      const progress = quizProgress[chapter.id]
-      if (progress && progress.completed) {
-        completed++
-      }
-    })
-    return { completed, total: QUIZ_CHAPTERS.length }
-  },
-
-  getQuizAccuracy() {
-    const quizRecords = app.getQuizRecords ? app.getQuizRecords() : []
-    if (!Array.isArray(quizRecords) || quizRecords.length === 0) return 0
-    let totalQuestions = 0
-    let totalCorrect = 0
-    quizRecords.forEach(r => {
-      totalQuestions += r.totalQuestions || 0
-      totalCorrect += r.correctCount || 0
-    })
-    return totalQuestions > 0 ? Math.floor((totalCorrect / totalQuestions) * 100) : 0
-  },
-
-  getCourseProgress() {
-    const learningProgress = getStorage('learningProgress', {})
-    let completedChapters = 0
-    let totalChapters = 0
-
-    COURSES.forEach(course => {
-      totalChapters += course.totalChapters || 0
-      const progress = learningProgress[course.id]
-      if (progress && progress.completedChapters) {
-        completedChapters += progress.completedChapters.length
-      }
-    })
-
-    return { completed: completedChapters, total: totalChapters }
-  },
-
-  getGameProgress() {
-    const gameProgress = getStorage('gameProgress', {})
-    let completedLevels = 0
-    if (gameProgress.catch) completedLevels++
-    if (gameProgress.conveyor) completedLevels++
-    if (gameProgress.match) completedLevels++
-    return completedLevels
-  },
-
   onNodeTap(e) {
     const { item } = e.currentTarget.dataset
-    console.log('[LearningPath] 点击节点', item.title)
-
     if (item.status === 'locked') {
       if (item.unlockLabel) {
         showToast(`解锁条件：${item.unlockLabel}`)
@@ -427,7 +423,6 @@ Page({
       }
       return
     }
-
     if (item.link) {
       navigateTo(item.link)
     } else {
@@ -437,7 +432,6 @@ Page({
 
   onWeakAreaTap(e) {
     const { item } = e.currentTarget.dataset
-    console.log('[LearningPath] 点击薄弱项', item.name)
     if (item.link) {
       navigateTo(item.link)
     }
@@ -451,7 +445,6 @@ Page({
   },
 
   onPullDownRefresh() {
-    console.log('[LearningPath] 下拉刷新')
     this.loadPathData()
     setTimeout(() => {
       wx.stopPullDownRefresh()
