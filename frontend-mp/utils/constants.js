@@ -231,6 +231,7 @@ const PROFILE_MENUS = [
     groupId: 'service',
     groupName: '我的服务',
     items: [
+      { id: 'certVerify', icon: 'verify', emoji: '🔐', title: '证书验真', desc: '扫码或输入编号验证证书真伪', link: '/pages/certificate-verify/certificate-verify', badge: 'NEW' },
       { id: 'recycle', icon: 'recycle', emoji: '🚛', title: '上门回收', desc: '预约家电家具等上门回收', link: '/pages/recycle-book/recycle-book' },
       { id: 'recycleOrders', icon: 'order', emoji: '📦', title: '回收订单', desc: '查看上门回收订单记录', link: '/pages/recycle-orders/recycle-orders' },
       { id: 'invite', icon: 'invite', emoji: '👥', title: '我的邀请', desc: '邀请好友得积分奖励', link: '/pages/invite/invite' },

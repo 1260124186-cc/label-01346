@@ -48,6 +48,7 @@
     "pages/chapter-detail/chapter-detail",
     "pages/certificate/certificate",
     "pages/certificates/certificates",
+    "pages/certificate-verify/certificate-verify",
     "pages/family-group/family-group",
     "pages/learning-report/learning-report",
     "pages/learning-path/learning-path",

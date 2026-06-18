@@ -1,4 +1,23 @@
 <view class="page-container" wx:if="{{certificate}}">
+  <view class="revoke-banner" wx:if="{{isRevoked}}">
+    <text class="revoke-icon">🚫</text>
+    <view class="revoke-text">
+      <text class="revoke-title">该证书已被撤销</text>
+      <text class="revoke-subtitle">撤销时间：{{revokeAtText}}，撤销后无法通过公开验真</text>
+    </view>
+  </view>
+
+  <view class="verify-info-card" wx:if="{{!isRevoked}}">
+    <view class="verify-info-left">
+      <text class="verify-info-icon">🔐</text>
+      <view class="verify-info-text">
+        <text class="verify-info-title">支持公开验真</text>
+        <text class="verify-info-subtitle">证书编号 & 验证码均可用于验真</text>
+      </view>
+    </view>
+    <view class="verify-info-badge">官方认证</view>
+  </view>
+
   <view class="cert-section">
     <view class="cert-wrapper">
       <view
@@ -105,7 +124,8 @@
                 <view class="qr-dots" style="border-color: var(--primary);"></view>
               </view>
             </view>
-            <text class="qr-label">扫码验证真伪</text>
+            <text class="qr-label">扫码验真</text>
+            <text class="qr-sub-label">{{certificate.verifyCode}}</text>
           </view>
 
           <view class="seal-section">
@@ -136,6 +156,10 @@
         <text class="btn-icon">💾</text>
         <text class="btn-text">保存证书</text>
       </button>
+      <button class="action-btn verify-btn" bindtap="goToVerify">
+        <text class="btn-icon">🔍</text>
+        <text class="btn-text">验真页面</text>
+      </button>
       <button class="action-btn share-friend" open-type="share">
         <text class="btn-icon">👥</text>
         <text class="btn-text">分享好友</text>
@@ -143,6 +167,18 @@
       <button class="action-btn share-timeline" bindtap="onShareTimeline">
         <text class="btn-icon">📢</text>
         <text class="btn-text">朋友圈</text>
+      </button>
+      <button class="action-btn copy-link" bindtap="copyVerifyLink">
+        <text class="btn-icon">🔗</text>
+        <text class="btn-text">复制验真链接</text>
+      </button>
+      <button class="action-btn copy-code" bindtap="copyVerifyCode">
+        <text class="btn-icon">📋</text>
+        <text class="btn-text">复制验证码</text>
+      </button>
+      <button class="action-btn revoke" wx:if="{{!isRevoked}}" bindtap="onRevoke">
+        <text class="btn-icon">🚫</text>
+        <text class="btn-text">撤销证书</text>
       </button>
       <button class="action-btn back" bindtap="goBackProfile">
         <text class="btn-icon">👤</text>

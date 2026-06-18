@@ -309,6 +309,11 @@ Page({
     navigateTo('/pages/recycle-book/recycle-book')
   },
 
+  goToVerify() {
+    console.log('[Index] 点击证书验真')
+    navigateTo('/pages/certificate-verify/certificate-verify')
+  },
+
   /**
    * 页面相关事件处理函数--监听用户下拉动作
    */

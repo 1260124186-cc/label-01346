@@ -98,6 +98,30 @@
     </view>
   </view>
 
+  <!-- 证书验真入口 -->
+  <view class="game-entry-section" bindtap="goToVerify">
+    <view class="verify-entry-card">
+      <view class="verify-entry-bg"></view>
+      <view class="game-entry-content">
+        <view class="game-entry-left">
+          <view class="game-entry-emoji">🔐</view>
+          <view class="game-entry-text">
+            <view class="game-entry-title">证书公开验真</view>
+            <view class="game-entry-subtitle">
+              扫码或输入证书编号 · 快速验证结业证书真伪 · 适用于学校企业HR
+            </view>
+          </view>
+        </view>
+        <view class="game-entry-right">
+          <view class="game-entry-btn" style="background: linear-gradient(135deg, #5BBD72 0%, #27AE60 100%);">
+            <text>去验真</text>
+            <text class="game-arrow">›</text>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+
   <!-- 垃圾分类小游戏入口 -->
   <view class="game-entry-section" bindtap="goToGameHall">
     <view class="game-entry-card">

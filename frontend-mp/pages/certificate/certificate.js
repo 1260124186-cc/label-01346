@@ -17,7 +17,10 @@ Page({
     tempImagePath: '',
     canvasWidth: 750,
     canvasHeight: 1000,
-    isDrawing: false
+    isDrawing: false,
+    verifyLink: '',
+    isRevoked: false,
+    revokeAtText: ''
   },
 
   onLoad(options) {
@@ -37,18 +40,37 @@ Page({
     if (!certificate.certNo) {
       certificate.certNo = 'CERT' + Date.now()
     }
+    if (!certificate.verifyCode) {
+      certificate.verifyCode = 'VC' + certificate.certNo.slice(-8)
+    }
+    if (!certificate.issueAt) {
+      certificate.issueAt = new Date().toISOString()
+    }
+    if (certificate.revokeAt === undefined) {
+      certificate.revokeAt = null
+    }
 
     const userInfo = app.globalData.userInfo || {}
-    certificate.userNickName = certificate.userNickName || userInfo.nickName || '环保达人'
-    certificate.avatarUrl = certificate.avatarUrl || userInfo.avatarUrl || ''
-    certificate.passDate = certificate.passDate || formatDate(new Date(), 'YYYY年MM月DD日')
+    certificate.userNickName = certificate.userNickName || certificate.holderName || userInfo.nickName || '环保达人'
+    certificate.avatarUrl = certificate.avatarUrl || certificate.holderAvatar || userInfo.avatarUrl || ''
+    certificate.passDate = certificate.passDate || certificate.issueDate || formatDate(new Date(), 'YYYY年MM月DD日')
+    certificate.holderName = certificate.holderName || certificate.userNickName
 
     const colorKey = this.getColorKeyByCourseId(certificate.courseId)
     const courseColor = CERTIFICATE_COLORS[colorKey] || CERTIFICATE_COLORS.default
 
+    const verifyLink = app.getVerifyLink ? app.getVerifyLink(certificate.id) :
+      `/pages/certificate-verify/certificate-verify?code=${encodeURIComponent(certificate.verifyCode || certificate.certNo)}`
+
+    const isRevoked = !!certificate.revokeAt
+    const revokeAtText = certificate.revokeAt ? formatDate(new Date(certificate.revokeAt), 'YYYY年MM月DD日 HH:mm') : ''
+
     this.setData({
       certificate,
-      courseColor
+      courseColor,
+      verifyLink,
+      isRevoked,
+      revokeAtText
     })
 
     console.log('[Certificate] 证书数据加载完成', certificate)
@@ -65,19 +87,34 @@ Page({
   generateMockCertificate(certId) {
     const { COURSES } = require('../../data/courses.js')
     const course = COURSES[0] || {}
+    const now = new Date()
+    const rawNo = 'CERT' + Date.now().toString().slice(-10) + Math.floor(Math.random() * 1000)
 
     return {
       id: certId || generateId(),
+      certNo: rawNo,
+      verifyCode: 'VC' + rawNo.slice(-8),
       courseId: course.id || 'course_kitchen_01',
       courseTitle: course.title || '厨余垃圾减量与资源化',
       certificateName: course.certificateName || '厨余垃圾管理师',
       certificateLevel: course.certificateLevel || '初级',
+      categoryId: 'kitchen',
+      categoryColor: '#5BBD72',
+      categoryIcon: '🍂',
       userNickName: '',
+      holderName: '',
       avatarUrl: '',
+      holderAvatar: '',
       totalDuration: course.totalDuration || 45,
+      totalChapters: course.totalChapters || 5,
       accuracy: 92,
       passDate: '',
-      certNo: '',
+      issueDate: formatDate(now, 'YYYY-MM-DD'),
+      issueTime: formatDate(now, 'YYYY-MM-DD HH:mm:ss'),
+      issueAt: now.toISOString(),
+      expireDate: formatDate(new Date(now.getTime() + 365 * 24 * 3600 * 1000), 'YYYY-MM-DD'),
+      revokeAt: null,
+      issuer: '垃圾分类培训认证中心',
       pointsReward: course.pointsReward || 200
     }
   },
@@ -556,13 +593,98 @@ Page({
     })
   },
 
+  goBackProfile() {
+    const pages = getCurrentPages()
+    if (pages.length > 1) {
+      navigateBack()
+    } else {
+      navigateTo('/pages/profile/profile')
+    }
+  },
+
+  goToVerify() {
+    const { certificate } = this.data
+    if (!certificate) return
+    navigateTo('/pages/certificate-verify/certificate-verify', {
+      code: certificate.verifyCode || certificate.certNo
+    })
+  },
+
+  copyVerifyLink() {
+    const { verifyLink } = this.data
+    if (!verifyLink) {
+      showToast('验真链接生成失败')
+      return
+    }
+
+    wx.setClipboardData({
+      data: verifyLink,
+      success: () => {
+        showSuccess('验真链接已复制')
+      },
+      fail: () => {
+        showToast('复制失败，请重试')
+      }
+    })
+  },
+
+  copyVerifyCode() {
+    const { certificate } = this.data
+    if (!certificate) return
+    const code = certificate.verifyCode || certificate.certNo
+    wx.setClipboardData({
+      data: code,
+      success: () => {
+        showSuccess('验证码已复制')
+      }
+    })
+  },
+
+  onRevoke() {
+    const { certificate, isRevoked } = this.data
+    if (!certificate) return
+    if (isRevoked) {
+      showToast('证书已被撤销')
+      return
+    }
+
+    wx.showModal({
+      title: '撤销证书',
+      content: '撤销后该证书将无法通过公开验真，此操作不可恢复，确定继续？',
+      confirmText: '确认撤销',
+      confirmColor: '#E85D5D',
+      cancelText: '取消',
+      success: (modalRes) => {
+        if (!modalRes.confirm) return
+
+        wx.showModal({
+          title: '撤销原因',
+          editable: true,
+          placeholderText: '请输入撤销原因（选填）',
+          confirmText: '提交',
+          success: (res) => {
+            if (!res.confirm) return
+            const reason = res.content || '用户主动撤销'
+            const result = app.revokeCertificate(certificate.id, reason)
+            if (result.success) {
+              showSuccess('证书已撤销')
+              this.loadCertificate(certificate.id)
+            } else {
+              showToast(result.error || '撤销失败')
+            }
+          }
+        })
+      }
+    })
+  },
+
   onShareAppMessage() {
-    const { certificate, courseColor, tempImagePath } = this.data
+    const { certificate, courseColor, tempImagePath, verifyLink } = this.data
     const title = `我获得了「${certificate.certificateName}」${certificate.certificateLevel}证书，快来一起学习垃圾分类吧！`
 
     const shareInfo = {
       title,
-      path: '/pages/index/index?from=cert_share&certId=' + certificate.id
+      path: verifyLink || '/pages/index/index?from=cert_share&certId=' + certificate.id
     }
 
     if (tempImagePath) {
@@ -578,10 +700,10 @@ Page({
   },
 
   onShareTimeline() {
-    const { certificate, tempImagePath } = this.data
+    const { certificate, tempImagePath, verifyLink } = this.data
     const shareInfo = {
-      title: `我已获得「${certificate.certificateName}」${certificate.certificateLevel}证书！`,
-      query: `from=cert_timeline&certId=${certificate.id}`
+      title: `我已获得「${certificate.certificateName}」${certificate.certificateLevel}证书！扫码可验真`,
+      query: verifyLink ? verifyLink.replace(/^.*\?/, '') : `from=cert_timeline&certId=${certificate.id}`
     }
 
     if (tempImagePath) {
@@ -589,14 +711,5 @@ Page({
     }
 
     return shareInfo
-  },
-
-  goBackProfile() {
-    const pages = getCurrentPages()
-    if (pages.length > 1) {
-      navigateBack()
-    } else {
-      navigateTo('/pages/profile/profile')
-    }
   }
 })

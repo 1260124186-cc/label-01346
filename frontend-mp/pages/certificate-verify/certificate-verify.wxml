@@ -1,0 +1,205 @@
+<view class="page-container">
+  <view class="header-section">
+    <view class="header-bg"></view>
+    <view class="header-content">
+      <view class="header-icon">🔍</view>
+      <view class="header-title">证书公开验真</view>
+      <view class="header-subtitle">扫描证书 QR 码或输入编号，快速核验证书真伪</view>
+    </view>
+  </view>
+
+  <view class="search-section">
+    <view class="search-card">
+      <view class="search-row">
+        <view class="search-input-wrapper">
+          <text class="search-icon">📋</text>
+          <input
+            class="search-input"
+            placeholder="请输入证书编号 / 验证码"
+            placeholder-style="color: #B2BEC3;"
+            value="{{inputCode}}"
+            bindinput="onInput"
+            confirm-type="search"
+            bindconfirm="onVerify"
+            maxlength="50"
+          />
+          <view class="clear-btn" wx:if="{{inputCode}}" bindtap="onClearInput">
+            <text class="clear-icon">✕</text>
+          </view>
+        </view>
+      </view>
+
+      <view class="action-row">
+        <button class="action-btn scan" bindtap="onScan">
+          <text class="btn-icon">📷</text>
+          <text class="btn-text">扫码验真</text>
+        </button>
+        <button
+          class="action-btn verify {{inputCode ? 'active' : 'disabled'}}"
+          bindtap="onVerify"
+          loading="{{isVerifying}}"
+          disabled="{{!inputCode || isVerifying}}"
+        >
+          <text class="btn-icon">✅</text>
+          <text class="btn-text">{{isVerifying ? '验真中...' : '立即验真'}}</text>
+        </button>
+      </view>
+
+      <view class="tip-row">
+        <text class="tip-icon">💡</text>
+        <text class="tip-text">证书编号可在证书详情页或证书图片底部查看</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="result-section" wx:if="{{result}}">
+    <view class="result-card {{result.valid ? 'success' : result.errorCode === 'REVOKED' ? 'revoked' : result.errorCode === 'EXPIRED' ? 'expired' : 'error'}}">
+      <view class="result-header">
+        <view class="result-status-icon">
+          <text wx:if="{{result.valid}}">✅</text>
+          <text wx:elif="{{result.errorCode === 'REVOKED'}}">🚫</text>
+          <text wx:elif="{{result.errorCode === 'EXPIRED'}}">⏰</text>
+          <text wx:else>❌</text>
+        </view>
+        <view class="result-status-text">
+          <view class="status-title">
+            <text wx:if="{{result.valid}}">证书真实有效</text>
+            <text wx:elif="{{result.errorCode === 'REVOKED'}}">证书已被撤销</text>
+            <text wx:elif="{{result.errorCode === 'EXPIRED'}}">证书已过期</text>
+            <text wx:elif="{{result.errorCode === 'NOT_FOUND'}}">未找到证书</text>
+            <text wx:elif="{{result.errorCode === 'RATE_LIMIT'}}">请求过于频繁</text>
+            <text wx:else>验真失败</text>
+          </view>
+          <view class="status-subtitle">
+            <text wx:if="{{result.valid}}">该证书已通过官方认证</text>
+            <text wx:elif="{{result.errorCode === 'REVOKED'}}">该证书已被发证机构撤销</text>
+            <text wx:elif="{{result.errorCode === 'EXPIRED'}}">该证书已超过有效期限</text>
+            <text wx:elif="{{result.errorCode === 'NOT_FOUND'}}">请检查证书编号是否正确</text>
+            <text wx:elif="{{result.errorCode === 'RATE_LIMIT'}}">请稍后再试，感谢您的理解</text>
+            <text wx:else>{{result.errorMsg}}</text>
+          </view>
+        </view>
+      </view>
+
+      <view class="result-divider" wx:if="{{result.certificate}}"></view>
+
+      <view class="cert-info-grid" wx:if="{{result.certificate}}">
+        <view class="cert-info-row">
+          <view class="cert-info-item">
+            <text class="info-label">持有人</text>
+            <text class="info-value name">{{result.certificate.holderMaskedName}}</text>
+          </view>
+          <view class="cert-info-item">
+            <text class="info-label">证书等级</text>
+            <text class="info-value">{{result.certificate.certificateLevel}}</text>
+          </view>
+        </view>
+
+        <view class="cert-info-row">
+          <view class="cert-info-item full">
+            <text class="info-label">课程名称</text>
+            <text class="info-value course">{{result.certificate.courseTitle}}</text>
+          </view>
+        </view>
+
+        <view class="cert-info-row">
+          <view class="cert-info-item full">
+            <text class="info-label">证书名称</text>
+            <text class="info-value cert-name" style="color: {{result.certificate.categoryColor || '#5BBD72'}};">
+              {{result.certificate.categoryIcon || '🎓'}} {{result.certificate.certificateName}}
+            </text>
+          </view>
+        </view>
+
+        <view class="cert-info-row">
+          <view class="cert-info-item">
+            <text class="info-label">颁发日期</text>
+            <text class="info-value">{{result.certificate.issueDate}}</text>
+          </view>
+          <view class="cert-info-item">
+            <text class="info-label">有效期至</text>
+            <text class="info-value {{result.certificate.expired ? 'expired' : ''}}">
+              {{result.certificate.expireDate || '长期有效'}}
+            </text>
+          </view>
+        </view>
+
+        <view class="cert-info-row" wx:if="{{result.certificate.revokeAt}}">
+          <view class="cert-info-item full">
+            <text class="info-label">撤销时间</text>
+            <text class="info-value revoked">{{formatISODate(result.certificate.revokeAt)}}</text>
+          </view>
+        </view>
+
+        <view class="cert-info-row">
+          <view class="cert-info-item">
+            <text class="info-label">证书编号</text>
+            <text class="info-value mono">{{result.certificate.certNo}}</text>
+          </view>
+          <view class="cert-info-item">
+            <text class="info-label">验证码</text>
+            <text class="info-value mono">{{result.certificate.verifyCode}}</text>
+          </view>
+        </view>
+
+        <view class="cert-info-row" wx:if="{{result.valid}}">
+          <view class="cert-info-item">
+            <text class="info-label">考核成绩</text>
+            <text class="info-value score">{{result.certificate.accuracy}} 分</text>
+          </view>
+          <view class="cert-info-item">
+            <text class="info-label">学习时长</text>
+            <text class="info-value">{{result.certificate.totalDuration}} 学时</text>
+          </view>
+        </view>
+
+        <view class="cert-info-row" wx:if="{{result.valid && result.certificate.issuer}}">
+          <view class="cert-info-item full">
+            <text class="info-label">发证机构</text>
+            <text class="info-value issuer">{{result.certificate.issuer}}</text>
+          </view>
+        </view>
+      </view>
+
+      <view class="verify-meta" wx:if="{{result.valid}}">
+        <view class="meta-row">
+          <text class="meta-icon">🕐</text>
+          <text class="meta-text">验真时间：{{verifyTime}}</text>
+        </view>
+        <view class="meta-row">
+          <text class="meta-icon">🔐</text>
+          <text class="meta-text">验真结果仅供参考，以发证机构官方数据为准</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view class="notice-section">
+    <view class="notice-card">
+      <view class="notice-title-row">
+        <text class="notice-icon">📢</text>
+        <text class="notice-title">验真须知</text>
+      </view>
+      <view class="notice-list">
+        <view class="notice-item">
+          <text class="notice-dot">•</text>
+          <text class="notice-text">本服务为公开验真，仅显示持有人脱敏信息，保护个人隐私</text>
+        </view>
+        <view class="notice-item">
+          <text class="notice-dot">•</text>
+          <text class="notice-text">撤销、过期证书均会明确标注状态，请谨慎采信</text>
+        </view>
+        <view class="notice-item">
+          <text class="notice-dot">•</text>
+          <text class="notice-text">为防止恶意爬取，本服务设有频率限制，请合理使用</text>
+        </view>
+        <view class="notice-item">
+          <text class="notice-dot">•</text>
+          <text class="notice-text">如有疑问，请联系发证机构：垃圾分类培训认证中心</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view class="safe-area-bottom"></view>
+</view>

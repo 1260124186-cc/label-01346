@@ -46,6 +46,7 @@ App({
     this.initRecycleOrders()
     this.initLearningProgress()
     this.initCertificates()
+    this.initVerifyLogs()
     this.checkAndExpirePoints()
     this.getSystemInfo()
     this.simulateAutoShipping()
@@ -2912,8 +2913,24 @@ App({
   },
 
   initCertificates() {
-    const certs = wx.getStorageSync('certificates')
-    this.globalData.certificates = certs || []
+    let certs = wx.getStorageSync('certificates') || []
+    certs = certs.map(cert => {
+      if (!cert.verifyCode) {
+        cert.verifyCode = 'VC' + (cert.certNo || cert.id || generateId()).slice(-8)
+      }
+      if (!cert.issueAt) {
+        cert.issueAt = cert.issueTime || new Date(cert.issueDate || Date.now()).toISOString()
+      }
+      if (cert.revoked === undefined && cert.revokeAt === undefined) {
+        cert.revokeAt = null
+      }
+      if (cert.revoked && !cert.revokeAt) {
+        cert.revokeAt = new Date().toISOString()
+      }
+      return cert
+    })
+    this.globalData.certificates = certs
+    this.saveCertificates()
     console.log('[App] 证书数据已加载', this.globalData.certificates.length, '张')
   },
 
@@ -2946,9 +2963,11 @@ App({
     const category = COURSE_CATEGORIES.find(c => c.id === course.categoryId) || COURSE_CATEGORIES[0]
     const userInfo = this.globalData.userInfo || {}
 
+    const rawNo = 'CERT' + Date.now().toString().slice(-10) + Math.floor(Math.random() * 1000)
     const certificate = {
       id: certId,
-      certNo: 'CERT' + Date.now().toString().slice(-10) + Math.floor(Math.random() * 1000),
+      certNo: rawNo,
+      verifyCode: 'VC' + rawNo.slice(-8),
       courseId: course.id,
       courseTitle: course.title,
       certificateName: course.certificateName,
@@ -2964,7 +2983,9 @@ App({
       pointsReward: course.pointsReward || 0,
       issueDate: formatDate(now, 'YYYY-MM-DD'),
       issueTime: formatDate(now, 'YYYY-MM-DD HH:mm:ss'),
+      issueAt: now.toISOString(),
       expireDate: formatDate(new Date(now.getTime() + 365 * 24 * 3600 * 1000), 'YYYY-MM-DD'),
+      revokeAt: null,
       issuer: '垃圾分类培训认证中心',
       instructor: course.instructor ? course.instructor.name : ''
     }
@@ -2998,6 +3019,257 @@ App({
 
     console.log('[App] 证书已发放', certId, certificate.certificateName)
     return certificate
+  },
+
+  initVerifyLogs() {
+    let logs = wx.getStorageSync('certVerifyLogs') || []
+    const now = Date.now()
+    const windowMs = 60 * 1000
+    logs = logs.filter(log => now - log.timestamp < windowMs)
+    this.globalData.certVerifyLogs = logs
+    this.globalData.verifyRateLimit = {
+      windowMs: windowMs,
+      maxPerWindow: 20
+    }
+    wx.setStorageSync('certVerifyLogs', logs)
+    console.log('[App] 验真日志初始化完成，窗口内记录:', logs.length)
+  },
+
+  addVerifyLog(logEntry) {
+    const log = {
+      id: generateId(),
+      timestamp: Date.now(),
+      ...logEntry
+    }
+    const logs = this.globalData.certVerifyLogs || []
+    const now = Date.now()
+    const windowMs = this.globalData.verifyRateLimit?.windowMs || 60 * 1000
+    const filtered = logs.filter(l => now - l.timestamp < windowMs)
+    filtered.push(log)
+    this.globalData.certVerifyLogs = filtered
+    wx.setStorageSync('certVerifyLogs', filtered)
+
+    const allLogs = wx.getStorageSync('certVerifyHistoryLogs') || []
+    allLogs.push(log)
+    if (allLogs.length > 1000) {
+      allLogs.splice(0, allLogs.length - 1000)
+    }
+    wx.setStorageSync('certVerifyHistoryLogs', allLogs)
+    return log
+  },
+
+  checkRateLimit(requesterKey) {
+    const limit = this.globalData.verifyRateLimit || { windowMs: 60 * 1000, maxPerWindow: 20 }
+    const logs = this.globalData.certVerifyLogs || []
+    const now = Date.now()
+    const windowMs = limit.windowMs
+
+    const windowLogs = logs.filter(l => now - l.timestamp < windowMs)
+    const totalInWindow = windowLogs.length
+    const byRequester = windowLogs.filter(l => l.requesterKey === requesterKey).length
+
+    return {
+      allowed: totalInWindow < limit.maxPerWindow && byRequester < 10,
+      totalInWindow,
+      byRequester,
+      maxPerWindow: limit.maxPerWindow,
+      maxPerRequester: 10
+    }
+  },
+
+  maskNickName(nickName) {
+    if (!nickName) return '***'
+    if (nickName.length <= 1) return nickName + '**'
+    if (nickName.length === 2) return nickName[0] + '*'
+    const maskLen = Math.max(1, Math.floor(nickName.length / 2))
+    const start = Math.floor((nickName.length - maskLen) / 2)
+    let result = ''
+    for (let i = 0; i < nickName.length; i++) {
+      result += (i >= start && i < start + maskLen) ? '*' : nickName[i]
+    }
+    return result
+  },
+
+  verifyCertificate(query) {
+    const requesterKey = this.getDeviceId() || 'anon'
+    const rateCheck = this.checkRateLimit(requesterKey)
+
+    if (!rateCheck.allowed) {
+      this.addVerifyLog({
+        requesterKey,
+        query,
+        success: false,
+        errorCode: 'RATE_LIMIT',
+        errorMsg: '查询次数过多，请稍后再试'
+      })
+      return {
+        valid: false,
+        errorCode: 'RATE_LIMIT',
+        errorMsg: '查询次数过多，请稍后再试',
+        rateCheck
+      }
+    }
+
+    if (!query) {
+      this.addVerifyLog({
+        requesterKey,
+        query,
+        success: false,
+        errorCode: 'EMPTY_QUERY',
+        errorMsg: '请输入证书编号或验证码'
+      })
+      return {
+        valid: false,
+        errorCode: 'EMPTY_QUERY',
+        errorMsg: '请输入证书编号或验证码'
+      }
+    }
+
+    const trimmed = String(query).trim().toUpperCase()
+    const certs = this.getCertificates()
+
+    const cert = certs.find(c =>
+      (c.certNo && String(c.certNo).toUpperCase() === trimmed) ||
+      (c.verifyCode && String(c.verifyCode).toUpperCase() === trimmed) ||
+      (c.id && String(c.id).toUpperCase() === trimmed)
+    )
+
+    if (!cert) {
+      this.addVerifyLog({
+        requesterKey,
+        query,
+        success: false,
+        errorCode: 'NOT_FOUND',
+        errorMsg: '未找到该证书信息'
+      })
+      return {
+        valid: false,
+        errorCode: 'NOT_FOUND',
+        errorMsg: '未找到该证书信息'
+      }
+    }
+
+    if (cert.revokeAt) {
+      this.addVerifyLog({
+        requesterKey,
+        query,
+        certId: cert.id,
+        certNo: cert.certNo,
+        success: false,
+        errorCode: 'REVOKED',
+        errorMsg: '该证书已被撤销'
+      })
+      return {
+        valid: false,
+        errorCode: 'REVOKED',
+        errorMsg: '该证书已被撤销',
+        certificate: {
+          certNo: cert.certNo,
+          verifyCode: cert.verifyCode,
+          holderMaskedName: this.maskNickName(cert.holderName),
+          courseTitle: cert.courseTitle,
+          certificateName: cert.certificateName,
+          certificateLevel: cert.certificateLevel,
+          issueDate: cert.issueDate,
+          issueAt: cert.issueAt,
+          revokeAt: cert.revokeAt,
+          revoked: true
+        }
+      }
+    }
+
+    const now = new Date()
+    if (cert.expireDate) {
+      const expireDate = new Date(cert.expireDate)
+      if (now > expireDate) {
+        this.addVerifyLog({
+          requesterKey,
+          query,
+          certId: cert.id,
+          certNo: cert.certNo,
+          success: false,
+          errorCode: 'EXPIRED',
+          errorMsg: '该证书已过期'
+        })
+        return {
+          valid: false,
+          errorCode: 'EXPIRED',
+          errorMsg: '该证书已过期',
+          certificate: {
+            certNo: cert.certNo,
+            verifyCode: cert.verifyCode,
+            holderMaskedName: this.maskNickName(cert.holderName),
+            courseTitle: cert.courseTitle,
+            certificateName: cert.certificateName,
+            certificateLevel: cert.certificateLevel,
+            issueDate: cert.issueDate,
+            issueAt: cert.issueAt,
+            expireDate: cert.expireDate,
+            expired: true
+          }
+        }
+      }
+    }
+
+    this.addVerifyLog({
+      requesterKey,
+      query,
+      certId: cert.id,
+      certNo: cert.certNo,
+      success: true,
+      errorCode: null,
+      errorMsg: null
+    })
+
+    return {
+      valid: true,
+      certificate: {
+        certNo: cert.certNo,
+        verifyCode: cert.verifyCode,
+        holderMaskedName: this.maskNickName(cert.holderName),
+        courseTitle: cert.courseTitle,
+        certificateName: cert.certificateName,
+        certificateLevel: cert.certificateLevel,
+        issueDate: cert.issueDate,
+        issueAt: cert.issueAt,
+        expireDate: cert.expireDate,
+        issuer: cert.issuer,
+        accuracy: cert.accuracy,
+        totalDuration: cert.totalDuration,
+        categoryIcon: cert.categoryIcon,
+        categoryColor: cert.categoryColor,
+        revoked: false,
+        expired: false
+      }
+    }
+  },
+
+  revokeCertificate(certId, reason = '') {
+    const cert = this.getCertificateById(certId)
+    if (!cert) {
+      return { success: false, error: '证书不存在' }
+    }
+    if (cert.revokeAt) {
+      return { success: false, error: '证书已被撤销' }
+    }
+
+    cert.revokeAt = new Date().toISOString()
+    cert.revokeReason = reason
+    this.saveCertificates()
+
+    console.log('[App] 证书已撤销', certId, reason)
+    return { success: true, certificate: cert }
+  },
+
+  getVerifyLink(certId) {
+    const cert = this.getCertificateById(certId)
+    if (!cert) return ''
+    const code = cert.verifyCode || cert.certNo || certId
+    return `/pages/certificate-verify/certificate-verify?code=${encodeURIComponent(code)}`
+  },
+
+  getVerifyHistory() {
+    return wx.getStorageSync('certVerifyHistoryLogs') || []
   },
 
   checkAndGrantCertificate(chapterId, accuracy) {
