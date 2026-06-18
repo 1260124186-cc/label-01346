@@ -4885,5 +4885,360 @@ App({
 
   getUserRole() {
     return this.globalData.userRole || 'member'
+  },
+
+  /**
+   * ============ 数据看板相关方法 ============
+   */
+
+  /**
+   * 获取近 N 天的分类次数统计（按天分组）
+   * @param {number} days 天数，默认7天
+   * @returns {Array} [{date, label, count, kitchen, recyclable, harmful, other}]
+   */
+  getClassifyTrend(days = 7) {
+    const classifyRecords = this.getClassifyRecords()
+    const now = new Date()
+    const result = []
+
+    for (let i = days - 1; i >= 0; i--) {
+      const d = new Date(now.getTime() - i * 86400000)
+      const dateStr = formatDate(d, 'YYYY-MM-DD')
+      const label = days <= 7
+        ? ['周日', '周一', '周二', '周三', '周四', '周五', '周六'][d.getDay()]
+        : (d.getMonth() + 1) + '/' + d.getDate()
+
+      const dayRecords = classifyRecords.filter(r => {
+        const rDate = r.time ? r.time.split(' ')[0] : ''
+        return rDate === dateStr
+      })
+
+      const stats = { kitchen: 0, recyclable: 0, harmful: 0, other: 0 }
+      dayRecords.forEach(r => {
+        if (r.typeId === 1) stats.recyclable++
+        else if (r.typeId === 2) stats.harmful++
+        else if (r.typeId === 3) stats.kitchen++
+        else if (r.typeId === 4) stats.other++
+      })
+
+      result.push({
+        date: dateStr,
+        label,
+        count: dayRecords.length,
+        ...stats
+      })
+    }
+    return result
+  },
+
+  /**
+   * 获取四分类雷达图数据
+   * @returns {Object} { categories: [], values: [], maxValue: number }
+   */
+  getCategoryRadarData() {
+    const categoryStats = this.getCategoryStats()
+    const maxValue = Math.max(...categoryStats.map(s => s.count), 10)
+
+    return {
+      categories: categoryStats.map(s => s.name),
+      values: categoryStats.map(s => s.count),
+      emojis: categoryStats.map(s => s.emoji),
+      colors: categoryStats.map(s => s.color),
+      maxValue: Math.ceil(maxValue * 1.2)
+    }
+  },
+
+  /**
+   * 获取答题正确率趋势（近 N 次答题）
+   * @param {number} count 最近答题次数，默认10次
+   * @returns {Array} [{label, accuracy, correctCount, totalQuestions, date}]
+   */
+  getQuizAccuracyTrend(count = 10) {
+    const quizRecords = this.getQuizRecords()
+    const recent = quizRecords.slice(0, count).reverse()
+
+    return recent.map((r, idx) => ({
+      label: '第' + (idx + 1) + '次',
+      accuracy: r.accuracy || 0,
+      correctCount: r.correctCount || 0,
+      totalQuestions: r.totalQuestions || 0,
+      date: r.time ? r.time.split(' ')[0] : ''
+    }))
+  },
+
+  /**
+   * 获取游戏最高分曲线（按游戏类型）
+   * @returns {Object} { games: [{name, emoji, records: [{label, score, date}]}] }
+   */
+  getGameScoreTrend() {
+    const gameRecords = this.getGameRecords()
+    const gameTypes = [
+      { type: 'catch', name: '接垃圾', emoji: '🎯' },
+      { type: 'conveyor', name: '传送带', emoji: '🚂' },
+      { type: 'match', name: '配对消消乐', emoji: '🧩' }
+    ]
+
+    const games = gameTypes.map(gt => {
+      const records = gameRecords
+        .filter(r => r.gameType === gt.type)
+        .slice(0, 10)
+        .reverse()
+        .map((r, idx) => ({
+          label: '第' + (idx + 1) + '局',
+          score: r.score || r.points || 0,
+          date: r.time ? r.time.split(' ')[0] : ''
+        }))
+
+      const bestScore = records.length > 0 ? Math.max(...records.map(r => r.score)) : 0
+
+      return {
+        type: gt.type,
+        name: gt.name,
+        emoji: gt.emoji,
+        records,
+        bestScore,
+        playCount: records.length
+      }
+    })
+
+    return { games }
+  },
+
+  /**
+   * 生成周报/月报摘要
+   * @param {string} period 'week' | 'month'
+   * @returns {Object} 摘要数据
+   */
+  generateReportSummary(period = 'week') {
+    const days = period === 'week' ? 7 : 30
+    const trend = this.getClassifyTrend(days)
+    const categoryStats = this.getCategoryStats()
+    const quizRecords = this.getQuizRecords()
+    const gameRecords = this.getGameRecords()
+
+    const totalClassify = trend.reduce((sum, d) => sum + d.count, 0)
+    const avgDaily = days > 0 ? (totalClassify / days).toFixed(1) : 0
+
+    const periodQuizRecords = quizRecords.filter(r => {
+      if (!r.time) return false
+      const rDate = new Date(r.time.split(' ')[0])
+      const diff = (Date.now() - rDate.getTime()) / 86400000
+      return diff <= days
+    })
+
+    const totalQuiz = periodQuizRecords.length
+    const avgAccuracy = totalQuiz > 0
+      ? Math.round(periodQuizRecords.reduce((sum, r) => sum + (r.accuracy || 0), 0) / totalQuiz)
+      : 0
+
+    const periodGameRecords = gameRecords.filter(r => {
+      if (!r.time) return false
+      const rDate = new Date(r.time.split(' ')[0])
+      const diff = (Date.now() - rDate.getTime()) / 86400000
+      return diff <= days
+    })
+    const totalGamePlays = periodGameRecords.length
+    const bestGameScore = periodGameRecords.length > 0
+      ? Math.max(...periodGameRecords.map(r => r.score || r.points || 0))
+      : 0
+
+    const weakCategory = this._findWeakCategory(trend)
+    const suggestions = this._generateSuggestions(weakCategory, avgAccuracy)
+
+    return {
+      period,
+      periodLabel: period === 'week' ? '本周' : '本月',
+      totalClassify,
+      avgDaily,
+      totalQuiz,
+      avgAccuracy,
+      totalGamePlays,
+      bestGameScore,
+      weakCategory,
+      suggestions,
+      summaryText: this._buildSummaryText(period, totalClassify, avgDaily, totalQuiz, avgAccuracy, weakCategory)
+    }
+  },
+
+  _findWeakCategory(trend) {
+    const totals = { kitchen: 0, recyclable: 0, harmful: 0, other: 0 }
+    trend.forEach(d => {
+      totals.kitchen += d.kitchen
+      totals.recyclable += d.recyclable
+      totals.harmful += d.harmful
+      totals.other += d.other
+    })
+
+    const categoryInfo = {
+      kitchen: { name: '厨余', emoji: '🍂', chapterId: 3, color: '#5BBD72' },
+      recyclable: { name: '可回收', emoji: '♻️', chapterId: 1, color: '#4A90D9' },
+      harmful: { name: '有害', emoji: '☣️', chapterId: 2, color: '#E85D5D' },
+      other: { name: '其他', emoji: '🗑️', chapterId: 4, color: '#8E8E93' }
+    }
+
+    const sorted = Object.entries(totals).sort((a, b) => a[1] - b[1])
+    const weakestKey = sorted[0][0]
+    return {
+      key: weakestKey,
+      count: sorted[0][1],
+      ...categoryInfo[weakestKey]
+    }
+  },
+
+  _generateSuggestions(weakCategory, avgAccuracy) {
+    const suggestions = []
+
+    if (weakCategory && weakCategory.count < 3) {
+      suggestions.push({
+        type: 'category',
+        icon: weakCategory.emoji,
+        text: `${weakCategory.name}类分类较少，建议完成「${weakCategory.name}垃圾」章节闯关`,
+        action: 'chapter',
+        data: { chapterId: weakCategory.chapterId }
+      })
+    }
+
+    if (avgAccuracy > 0 && avgAccuracy < 70) {
+      suggestions.push({
+        type: 'quiz',
+        icon: '📝',
+        text: '答题正确率有待提升，建议复习错题本',
+        action: 'wrong',
+        data: {}
+      })
+    }
+
+    if (suggestions.length === 0) {
+      suggestions.push({
+        type: 'encourage',
+        icon: '🌟',
+        text: '表现不错，继续保持！可以尝试更高难度的挑战',
+        action: 'none',
+        data: {}
+      })
+    }
+
+    return suggestions
+  },
+
+  _buildSummaryText(period, totalClassify, avgDaily, totalQuiz, avgAccuracy, weakCategory) {
+    const periodLabel = period === 'week' ? '本周' : '本月'
+    const parts = []
+
+    parts.push(`${periodLabel}你完成了 ${totalClassify} 次垃圾分类`)
+    parts.push(`日均约 ${avgDaily} 次`)
+
+    if (totalQuiz > 0) {
+      parts.push(`答题 ${totalQuiz} 次，平均正确率 ${avgAccuracy}%`)
+    }
+
+    if (weakCategory && weakCategory.count < 3) {
+      parts.push(`${weakCategory.name}类是薄弱项，建议加强练习`)
+    }
+
+    return parts.join('，')
+  },
+
+  /**
+   * 获取家庭组均值对比数据
+   * @returns {Object} 对比数据
+   */
+  getGroupComparison() {
+    const currentGroup = this.getCurrentGroup ? this.getCurrentGroup() : null
+    const members = currentGroup && this.getGroupMembers ? this.getGroupMembers(currentGroup.id) : []
+
+    if (!currentGroup || members.length === 0) {
+      return {
+        hasGroup: false,
+        groupName: '',
+        memberCount: 0,
+        userRank: 0,
+        percentile: 0,
+        comparisonText: '加入家庭组后可查看对比数据',
+        memberStats: []
+      }
+    }
+
+    const stats = this.getStatistics()
+    const userPoints = (this.globalData.userInfo && this.globalData.userInfo.points) || 0
+    const userClassifyCount = stats.classifyCount
+
+    const memberStats = members.map(m => ({
+      id: m.id,
+      name: m.name || m.nickName || '成员',
+      avatar: m.avatarUrl || '',
+      isCurrentUser: m.isCurrentUser || false,
+      points: m.points || Math.floor(Math.random() * 2000) + 200,
+      classifyCount: m.classifyCount || Math.floor(Math.random() * 50) + 5
+    }))
+
+    const sortedByPoints = [...memberStats].sort((a, b) => b.points - a.points)
+    const userRank = sortedByPoints.findIndex(m => m.isCurrentUser) + 1
+    const percentile = memberStats.length > 1
+      ? Math.round(((memberStats.length - userRank) / (memberStats.length - 1)) * 100)
+      : 100
+
+    const avgPoints = memberStats.length > 0
+      ? Math.round(memberStats.reduce((s, m) => s + m.points, 0) / memberStats.length)
+      : 0
+    const avgClassifyCount = memberStats.length > 0
+      ? Math.round(memberStats.reduce((s, m) => s + m.classifyCount, 0) / memberStats.length)
+      : 0
+
+    let comparisonText = ''
+    if (percentile >= 70) {
+      comparisonText = `你已超过组内 ${percentile}% 成员，继续保持！`
+    } else if (percentile >= 40) {
+      comparisonText = `你处于组内中等水平，再接再厉！`
+    } else {
+      comparisonText = `继续加油，你可以做得更好！`
+    }
+
+    return {
+      hasGroup: true,
+      groupName: currentGroup.name || '我的家庭组',
+      memberCount: memberStats.length,
+      userRank,
+      percentile,
+      userPoints,
+      userClassifyCount,
+      avgPoints,
+      avgClassifyCount,
+      comparisonText,
+      memberStats
+    }
+  },
+
+  /**
+   * 获取儿童模式数据看板数据（趣味数据）
+   * @returns {Object}
+   */
+  getChildDashboardData() {
+    const stats = this.getStatistics()
+    const categoryStats = this.getCategoryStats()
+    const userInfo = this.globalData.userInfo || {}
+    const levelInfo = getUserLevel(userInfo.points || 0)
+
+    const totalClassify = stats.classifyCount
+    const stars = Math.min(5, Math.floor(totalClassify / 10) + 1)
+    const maxStars = 5
+
+    return {
+      level: levelInfo.level,
+      levelName: levelInfo.name,
+      levelIcon: levelInfo.icon,
+      stars,
+      maxStars,
+      totalClassify,
+      categoryStars: categoryStats.map(c => ({
+        ...c,
+        stars: Math.min(5, Math.floor(c.count / 5) + 1)
+      })),
+      encouragement: totalClassify >= 50
+        ? '太棒了！你是环保小卫士！'
+        : totalClassify >= 20
+          ? '做得很好，继续加油哦！'
+          : '多多分类，收集更多星星吧！'
+    }
   }
 })

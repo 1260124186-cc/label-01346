@@ -806,7 +806,146 @@ const createAppMock = () => {
   checkAntiCheat: jest.fn(() => ({ passed: true })),
   recordAntiCheatScore: jest.fn(),
   recordAntiCheatPK: jest.fn(),
-  getAntiCheatFlaggedActions: jest.fn(() => [])
+  getAntiCheatFlaggedActions: jest.fn(() => []),
+  getUserRole: jest.fn(() => 'adult'),
+  isChildModeEnabled: jest.fn(() => false),
+  getOrdersByStatus: jest.fn((status) => {
+    const app = global.getApp()
+    const orders = app.globalData.orders || []
+    if (status === 'all') return orders
+    return orders.filter(o => o.status === status)
+  }),
+  updateOrderStatus: jest.fn((id, status) => {
+    const app = global.getApp()
+    const orders = app.globalData.orders || []
+    const order = orders.find(o => o.id === id)
+    if (order) order.status = status
+  }),
+  getPointsValidityInfo: jest.fn(() => ({
+    expiringPoints: 0,
+    nearestExpireDate: '',
+    expiringBadge: null,
+    expiringTiered: null,
+    expiryPlan: []
+  })),
+  getClassifyTrend: jest.fn((days = 7) => {
+    const result = []
+    for (let i = days - 1; i >= 0; i--) {
+      const d = new Date('2026-06-16T00:00:00')
+      d.setDate(d.getDate() - i)
+      const m = String(d.getMonth() + 1).padStart(2, '0')
+      const day = String(d.getDate()).padStart(2, '0')
+      result.push({
+        date: `${d.getFullYear()}-${m}-${day}`,
+        label: `${d.getMonth() + 1}/${d.getDate()}`,
+        count: Math.floor(Math.random() * 5) + 1,
+        kitchen: Math.floor(Math.random() * 2),
+        recyclable: Math.floor(Math.random() * 2),
+        harmful: Math.floor(Math.random() * 2),
+        other: Math.floor(Math.random() * 2)
+      })
+    }
+    return result
+  }),
+  getCategoryRadarData: jest.fn(() => ({
+    categories: ['可回收', '有害', '厨余', '其他'],
+    values: [85, 60, 70, 50],
+    emojis: ['♻️', '🔋', '🍂', '🧻'],
+    colors: ['#4A90D9', '#E85D5D', '#5BBD72', '#8E8E93'],
+    maxValue: 100
+  })),
+  getQuizAccuracyTrend: jest.fn((count = 10) => {
+    const result = []
+    for (let i = 0; i < count; i++) {
+      result.push({
+        label: `第${i + 1}次`,
+        accuracy: Math.floor(Math.random() * 30) + 70,
+        correctCount: Math.floor(Math.random() * 3) + 3,
+        totalQuestions: 5,
+        date: '2026-06-16'
+      })
+    }
+    return result
+  }),
+  getGameScoreTrend: jest.fn(() => ({
+    games: [
+      { type: 'classify', name: '分类小游戏', emoji: '🎮', records: [{score: 80}, {score: 90}, {score: 95}], bestScore: 95, playCount: 3 },
+      { type: 'catch', name: '接物游戏', emoji: '🧺', records: [{score: 70}, {score: 85}], bestScore: 85, playCount: 2 }
+    ]
+  })),
+  generateReportSummary: jest.fn((period = 'week') => ({
+    period,
+    periodText: period === 'week' ? '本周' : '本月',
+    summaryText: period === 'week'
+      ? '本周厨余类分类次数较少，建议加强厨余垃圾分类练习。'
+      : '本月表现良好，可回收物分类最积极，有害垃圾分类正确率较高。',
+    totalClassify: 28,
+    totalPoints: 185,
+    totalQuiz: 5,
+    avgAccuracy: 82,
+    weakCategory: { name: '厨余', emoji: '🍂', color: '#5BBD72', count: 4, suggestion: '建议完成厨余章节闯关' },
+    suggestions: [
+      { id: 'chapter-kitchen', text: '完成厨余章节闯关', target: '/pages/quiz-chapter/quiz-chapter', params: { chapterId: 'kitchen' } },
+      { id: 'game', text: '玩一次分类小游戏', target: '/pages/game/game', params: {} },
+      { id: 'daily', text: '完成每日答题挑战', target: '/pages/quiz-daily/quiz-daily', params: {} }
+    ],
+    categoryBreakdown: [
+      { name: '可回收', emoji: '♻️', color: '#4A90D9', count: 12, percent: 43 },
+      { name: '有害', emoji: '🔋', color: '#E85D5D', count: 5, percent: 18 },
+      { name: '厨余', emoji: '🍂', color: '#5BBD72', count: 4, percent: 14 },
+      { name: '其他', emoji: '🧻', color: '#8E8E93', count: 7, percent: 25 }
+    ]
+  })),
+  getGroupComparison: jest.fn(() => {
+    const mockMembers = [
+      { id: 'user_mock_id', name: '我', avatar: '', points: 1280, isMe: true },
+      { id: 'm1', name: '爸爸', avatar: '', points: 980, isMe: false },
+      { id: 'm2', name: '妈妈', avatar: '', points: 1560, isMe: false },
+      { id: 'm3', name: '爷爷', avatar: '', points: 720, isMe: false },
+      { id: 'm4', name: '奶奶', avatar: '', points: 650, isMe: false }
+    ]
+    mockMembers.sort((a, b) => b.points - a.points)
+    mockMembers.forEach((m, i) => m.rank = i + 1)
+    const me = mockMembers.find(m => m.isMe)
+    const percentile = mockMembers.length > 1
+      ? Math.round(((mockMembers.length - me.rank) / (mockMembers.length - 1)) * 100)
+      : 50
+    const avgPoints = Math.round(mockMembers.reduce((s, m) => s + m.points, 0) / mockMembers.length)
+    return {
+      hasGroup: true,
+      groupName: '幸福家庭组',
+      memberCount: mockMembers.length,
+      myRank: me.rank,
+      percentile,
+      myPoints: me.points,
+      groupAvg: avgPoints,
+      topPerformer: mockMembers[0],
+      rankedMembers: mockMembers
+    }
+  }),
+  getChildDashboardData: jest.fn(() => ({
+    level: 3,
+    levelName: '环保小卫士',
+    levelEmoji: '🌟',
+    stars: 28,
+    totalStars: 50,
+    starsToNext: 22,
+    progressPercent: 56,
+    encourageText: '太棒了！继续加油，马上就能升级啦！',
+    weeklyStars: 7,
+    categoryStars: [
+      { name: '可回收', emoji: '♻️', color: '#4A90D9', stars: 9 },
+      { name: '有害', emoji: '🔋', color: '#E85D5D', stars: 6 },
+      { name: '厨余', emoji: '🍂', color: '#5BBD72', stars: 8 },
+      { name: '其他', emoji: '🧻', color: '#8E8E93', stars: 5 }
+    ],
+    funStats: [
+      { icon: '🏆', label: '分类小达人', value: '128' },
+      { icon: '🔥', label: '连续打卡', value: '16天' },
+      { icon: '📚', label: '知识宝库', value: '5章' },
+      { icon: '🎮', label: '游戏通关', value: '3个' }
+    ]
+  }))
   }
 }
 

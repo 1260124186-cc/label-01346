@@ -1,73 +1,471 @@
 <!--
-  分类记录页面
-  功能：展示用户的垃圾分类历史记录
+  分类记录页面 + 个人环保数据看板
 -->
 <view class="page-container">
-  <!-- 统计概览 -->
-  <view class="summary-section">
-    <view class="summary-card">
-      <view class="summary-item">
-        <text class="summary-value">{{totalCount}}</text>
-        <text class="summary-label">总分类次数</text>
+
+  <!-- ============ 儿童模式视图 ============ -->
+  <view wx:if="{{isChildMode}}" class="child-dashboard">
+    <!-- 顶部等级卡片 -->
+    <view class="child-level-card">
+      <view class="child-level-icon">{{childData.levelIcon}}</view>
+      <view class="child-level-info">
+        <text class="child-level-name">{{childData.levelName}}</text>
+        <text class="child-level-label">Lv.{{childData.level}}</text>
       </view>
-      <view class="summary-divider"></view>
-      <view class="summary-item">
-        <text class="summary-value">{{totalPoints}}</text>
-        <text class="summary-label">获得积分</text>
-      </view>
-      <view class="summary-divider"></view>
-      <view class="summary-item">
-        <text class="summary-value">{{continuousDays}}</text>
-        <text class="summary-label">连续天数</text>
+      <view class="child-stars">
+        <text
+          wx:for="{{childData.maxStars}}"
+          wx:key="index"
+          class="child-star {{index < childData.stars ? 'active' : ''}}"
+        >⭐</text>
       </view>
     </view>
-  </view>
 
-  <!-- 分类统计 -->
-  <view class="category-section">
-    <view class="section-title">分类统计</view>
-    <view class="category-grid">
-      <view 
-        wx:for="{{categoryStats}}" 
-        wx:key="id"
-        class="category-item"
-        style="--item-color: {{item.color}};"
-      >
-        <text class="category-emoji">{{item.emoji}}</text>
-        <text class="category-name">{{item.name}}</text>
-        <text class="category-count">{{item.count}}次</text>
-      </view>
+    <!-- 鼓励语 -->
+    <view class="child-encouragement">
+      <text class="encouragement-text">{{childData.encouragement}}</text>
     </view>
-  </view>
 
-  <!-- 记录列表 -->
-  <view class="records-section">
-    <view class="section-title">活动记录</view>
-    <view class="records-list">
-      <view 
-        wx:for="{{recordList}}" 
-        wx:key="id"
-        class="record-item"
-      >
-        <view class="record-icon" style="background: {{item.bgColor}};">
-          <text class="record-emoji">{{item.emoji}}</text>
-        </view>
-        <view class="record-info">
-          <text class="record-name">{{item.displayTitle}}</text>
-          <text class="record-type">{{item.displaySubtitle}}</text>
-        </view>
-        <view class="record-right">
-          <text class="record-points">{{item.pointsPrefix}}{{item.points}}积分</text>
-          <text class="record-time">{{item.time}}</text>
+    <!-- 分类星星展示 -->
+    <view class="child-category-section">
+      <view class="child-section-title">我的分类星星</view>
+      <view class="child-category-grid">
+        <view
+          wx:for="{{childData.categoryStars}}"
+          wx:key="id"
+          class="child-category-item"
+          style="--cat-color: {{item.color}};"
+        >
+          <text class="child-category-emoji">{{item.emoji}}</text>
+          <text class="child-category-name">{{item.name}}</text>
+          <view class="child-category-stars">
+            <text
+              wx:for="{{5}}"
+              wx:for-item="starIdx"
+              wx:key="starIdx"
+              class="child-mini-star {{starIdx < item.stars ? 'active' : ''}}"
+            >⭐</text>
+          </view>
         </view>
       </view>
     </view>
 
-    <!-- 空状态 -->
-    <view class="empty-state" wx:if="{{recordList.length === 0}}">
-      <text class="empty-emoji">📋</text>
-      <text class="empty-text">暂无活动记录</text>
-      <text class="empty-hint">快去进行垃圾分类或答题赢积分吧</text>
+    <!-- 分类总次数（趣味展示） -->
+    <view class="child-total-card">
+      <text class="child-total-label">累计分类</text>
+      <view class="child-total-value-wrap">
+        <text class="child-total-value">{{childData.totalClassify}}</text>
+        <text class="child-total-unit">次</text>
+      </view>
+      <text class="child-total-tip">每次分类都让地球更美好 🌍</text>
     </view>
   </view>
+
+  <!-- ============ 普通模式视图 ============ -->
+  <view wx:else class="dashboard-container">
+
+    <!-- 顶部操作栏 -->
+    <view class="dashboard-header">
+      <text class="dashboard-title">数据看板</text>
+      <view class="header-actions">
+        <view class="action-btn export-btn" bindtap="onExportImage">
+          <text class="action-icon">📷</text>
+          <text class="action-text">导出分享</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 统计概览（保留原有） -->
+    <view class="summary-section">
+      <view class="summary-card">
+        <view class="summary-item">
+          <text class="summary-value">{{totalCount}}</text>
+          <text class="summary-label">总分类次数</text>
+        </view>
+        <view class="summary-divider"></view>
+        <view class="summary-item">
+          <text class="summary-value">{{totalPoints}}</text>
+          <text class="summary-label">获得积分</text>
+        </view>
+        <view class="summary-divider"></view>
+        <view class="summary-item">
+          <text class="summary-value">{{continuousDays}}</text>
+          <text class="summary-label">连续天数</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 1. 分类次数折线图 -->
+    <view class="chart-section">
+      <view class="chart-header">
+        <text class="chart-title">📈 分类次数趋势</text>
+        <view class="chart-tabs">
+          <view
+            class="chart-tab {{trendDays === 7 ? 'active' : ''}}"
+            data-days="7"
+            bindtap="onSwitchTrendDays"
+          >近7天</view>
+          <view
+            class="chart-tab {{trendDays === 30 ? 'active' : ''}}"
+            data-days="30"
+            bindtap="onSwitchTrendDays"
+          >近30天</view>
+        </view>
+      </view>
+      <view class="chart-card">
+        <view class="line-chart">
+          <!-- Y轴刻度 -->
+          <view class="y-axis">
+            <text class="y-label">{{trendMaxCount}}</text>
+            <text class="y-label">{{Math.floor(trendMaxCount / 2)}}</text>
+            <text class="y-label">0</text>
+          </view>
+          <!-- 折线区域 -->
+          <view class="chart-area">
+            <!-- 网格线 -->
+            <view class="grid-line" style="top: 0%"></view>
+            <view class="grid-line" style="top: 50%"></view>
+            <view class="grid-line" style="top: 100%"></view>
+            <!-- 折线路径 -->
+            <view class="line-path">
+              <view
+                wx:for="{{classifyTrend}}"
+                wx:key="date"
+                class="line-point-wrapper"
+                style="left: {{(index / (classifyTrend.length - 1 || 1)) * 100}}%;"
+              >
+                <view
+                  class="line-point"
+                  style="bottom: {{trendMaxCount > 0 ? (item.count / trendMaxCount * 100) : 0}}%; background: #5BBD72;"
+                ></view>
+                <view class="point-tooltip">{{item.count}}次</view>
+              </view>
+              <!-- SVG折线 -->
+              <svg class="line-svg" viewBox="0 0 100 100" preserveAspectRatio="none">
+                <polyline
+                  points="{{trendLinePoints}}"
+                  fill="none"
+                  stroke="#5BBD72"
+                  stroke-width="1.5"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+                <polygon
+                  points="{{trendAreaPoints}}"
+                  fill="url(#lineGradient)"
+                  opacity="0.2"
+                />
+                <defs>
+                  <linearGradient id="lineGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="#5BBD72" stop-opacity="0.4"/>
+                    <stop offset="100%" stop-color="#5BBD72" stop-opacity="0"/>
+                  </linearGradient>
+                </defs>
+              </svg>
+            </view>
+            <!-- X轴标签 -->
+            <view class="x-axis">
+              <text
+                wx:for="{{classifyTrend}}"
+                wx:key="date"
+                class="x-label"
+              >{{item.label}}</text>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 2. 四分类雷达图 -->
+    <view class="chart-section">
+      <view class="chart-header">
+        <text class="chart-title">🎯 四分类能力雷达</text>
+      </view>
+      <view class="chart-card radar-chart-card">
+        <view class="radar-chart">
+          <svg viewBox="0 0 200 200" class="radar-svg">
+            <!-- 背景网格 (4层) -->
+            <polygon points="{{radarGridPoints.level4}}" fill="rgba(91, 189, 114, 0.05)" stroke="rgba(91, 189, 114, 0.2)" stroke-width="1"/>
+            <polygon points="{{radarGridPoints.level3}}" fill="rgba(91, 189, 114, 0.08)" stroke="rgba(91, 189, 114, 0.2)" stroke-width="1"/>
+            <polygon points="{{radarGridPoints.level2}}" fill="rgba(91, 189, 114, 0.1)" stroke="rgba(91, 189, 114, 0.2)" stroke-width="1"/>
+            <polygon points="{{radarGridPoints.level1}}" fill="rgba(91, 189, 114, 0.15)" stroke="rgba(91, 189, 114, 0.3)" stroke-width="1"/>
+            <!-- 轴线 -->
+            <line wx:for="{{radarAxisLines}}" wx:key="index" x1="100" y1="100" x2="{{item.x}}" y2="{{item.y}}" stroke="rgba(91, 189, 114, 0.2)" stroke-width="1"/>
+            <!-- 数据区域 -->
+            <polygon points="{{radarDataPoints}}" fill="rgba(91, 189, 114, 0.3)" stroke="#5BBD72" stroke-width="2"/>
+            <!-- 数据点 -->
+            <circle wx:for="{{radarDataPointList}}" wx:key="index" cx="{{item.x}}" cy="{{item.y}}" r="4" fill="{{item.color}}" stroke="#fff" stroke-width="1.5"/>
+          </svg>
+          <!-- 分类标签 -->
+          <view class="radar-labels">
+            <view
+              wx:for="{{radarLabelList}}"
+              wx:key="index"
+              class="radar-label"
+              style="left: {{item.left}}%; top: {{item.top}}%; transform: translate(-50%, -50%);"
+            >
+              <text class="radar-emoji">{{item.emoji}}</text>
+              <text class="radar-name">{{item.name}}</text>
+              <text class="radar-value">{{item.value}}次</text>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 3. 答题正确率趋势 -->
+    <view class="chart-section" wx:if="{{quizTrend.length > 0}}">
+      <view class="chart-header">
+        <text class="chart-title">📝 答题正确率趋势</text>
+      </view>
+      <view class="chart-card">
+        <view class="bar-chart">
+          <view class="chart-area bar-area">
+            <view class="grid-line" style="top: 0%"></view>
+            <view class="grid-line" style="top: 25%"></view>
+            <view class="grid-line" style="top: 50%"></view>
+            <view class="grid-line" style="top: 75%"></view>
+            <view class="grid-line" style="top: 100%"></view>
+            <view class="bars-container">
+              <view
+                wx:for="{{quizTrend}}"
+                wx:key="label"
+                class="bar-wrapper"
+              >
+                <view
+                  class="bar-item"
+                  style="height: {{item.accuracy}}%; background: linear-gradient(180deg, #9B59B6 0%, #7D3C98 100%);"
+                >
+                  <text class="bar-value">{{item.accuracy}}%</text>
+                </view>
+                <text class="bar-label">{{item.label}}</text>
+              </view>
+            </view>
+          </view>
+          <view class="y-axis bar-y-axis">
+            <text class="y-label">100%</text>
+            <text class="y-label">75%</text>
+            <text class="y-label">50%</text>
+            <text class="y-label">25%</text>
+            <text class="y-label">0%</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 4. 游戏最高分曲线 -->
+    <view class="chart-section" wx:if="{{hasGameData}}">
+      <view class="chart-header">
+        <text class="chart-title">🎮 游戏最高分</text>
+      </view>
+      <view class="chart-card">
+        <view class="game-score-list">
+          <view
+            wx:for="{{gameTrend.games}}"
+            wx:key="type"
+            class="game-score-item"
+          >
+            <view class="game-header">
+              <text class="game-emoji">{{item.emoji}}</text>
+              <text class="game-name">{{item.name}}</text>
+              <view class="game-best">
+                <text class="best-label">最高分</text>
+                <text class="best-value">{{item.bestScore}}</text>
+              </view>
+            </view>
+            <view wx:if="{{item.records.length > 0}}" class="game-mini-chart">
+              <view class="mini-chart-area">
+                <view
+                  wx:for="{{item.records}}"
+                  wx:for-item="record"
+                  wx:key="label"
+                  class="mini-bar-wrapper"
+                >
+                  <view
+                    class="mini-bar"
+                    style="height: {{item.bestScore > 0 ? (record.score / item.bestScore * 100) : 0}}%; background: #F39C12;"
+                  ></view>
+                </view>
+              </view>
+            </view>
+            <view wx:else class="no-game-data">
+              <text class="no-data-text">暂无游戏记录</text>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 5. 周报/月报摘要 -->
+    <view class="chart-section">
+      <view class="chart-header">
+        <text class="chart-title">📊 智能分析报告</text>
+        <view class="chart-tabs">
+          <view
+            class="chart-tab {{reportPeriod === 'week' ? 'active' : ''}}"
+            data-period="week"
+            bindtap="onSwitchReportPeriod"
+          >周报</view>
+          <view
+            class="chart-tab {{reportPeriod === 'month' ? 'active' : ''}}"
+            data-period="month"
+            bindtap="onSwitchReportPeriod"
+          >月报</view>
+        </view>
+      </view>
+      <view class="report-card">
+        <view class="report-summary">
+          <text class="report-icon">💡</text>
+          <text class="report-text">{{reportData.summaryText}}</text>
+        </view>
+        <view class="report-stats-grid">
+          <view class="report-stat-item">
+            <text class="stat-value">{{reportData.totalClassify}}</text>
+            <text class="stat-label">{{reportData.periodLabel}}分类次数</text>
+          </view>
+          <view class="report-stat-item">
+            <text class="stat-value">{{reportData.avgDaily}}</text>
+            <text class="stat-label">日均分类</text>
+          </view>
+          <view class="report-stat-item">
+            <text class="stat-value">{{reportData.avgAccuracy || '-'}}{{reportData.avgAccuracy ? '%' : ''}}</text>
+            <text class="stat-label">平均正确率</text>
+          </view>
+          <view class="report-stat-item">
+            <text class="stat-value">{{reportData.bestGameScore || '-'}}</text>
+            <text class="stat-label">游戏最高分</text>
+          </view>
+        </view>
+        <view class="report-suggestions">
+          <text class="suggestions-title">🔔 个性化建议</text>
+          <view
+            wx:for="{{reportData.suggestions}}"
+            wx:key="index"
+            class="suggestion-item"
+            data-action="{{item.action}}"
+            data-data="{{item.data}}"
+            bindtap="onSuggestionTap"
+          >
+            <text class="suggestion-icon">{{item.icon}}</text>
+            <text class="suggestion-text">{{item.text}}</text>
+            <text class="suggestion-arrow">›</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 6. 组内对比 -->
+    <view class="chart-section">
+      <view class="chart-header">
+        <text class="chart-title">👨‍👩‍👧 家庭组对比</text>
+      </view>
+      <view class="chart-card">
+        <view wx:if="{{groupData.hasGroup}}" class="group-comparison">
+          <view class="group-header">
+            <text class="group-name">{{groupData.groupName}}</text>
+            <text class="group-count">共{{groupData.memberCount}}人</text>
+          </view>
+          <view class="comparison-highlight">
+            <view class="highlight-percentile">
+              <text class="percentile-value">{{groupData.percentile}}%</text>
+              <text class="percentile-label">超过组内成员比例</text>
+            </view>
+            <view class="comparison-text">{{groupData.comparisonText}}</view>
+          </view>
+          <view class="comparison-stats">
+            <view class="comp-stat">
+              <text class="comp-label">我的积分</text>
+              <text class="comp-value my-value">{{groupData.userPoints}}</text>
+            </view>
+            <view class="comp-stat">
+              <text class="comp-label">组内均值</text>
+              <text class="comp-value avg-value">{{groupData.avgPoints}}</text>
+            </view>
+            <view class="comp-stat">
+              <text class="comp-label">我的排名</text>
+              <text class="comp-value rank-value">第{{groupData.userRank}}名</text>
+            </view>
+          </view>
+          <view class="member-ranking">
+            <text class="ranking-title">成员排行</text>
+            <view
+              wx:for="{{groupData.memberStats}}"
+              wx:key="id"
+              class="member-rank-item"
+            >
+              <view class="rank-number {{item.isCurrentUser ? 'my-rank' : ''}}">{{index + 1}}</view>
+              <view class="member-info">
+                <text class="member-name {{item.isCurrentUser ? 'my-name' : ''}}">{{item.name}}{{item.isCurrentUser ? '（我）' : ''}}</text>
+                <text class="member-sub">{{item.classifyCount}}次分类</text>
+              </view>
+              <text class="member-points">{{item.points}}分</text>
+            </view>
+          </view>
+        </view>
+        <view wx:else class="no-group-data">
+          <text class="no-group-icon">👥</text>
+          <text class="no-group-text">{{groupData.comparisonText}}</text>
+          <view class="join-group-btn" bindtap="onGoToFamilyGroup">
+            <text>去创建/加入家庭组</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 原有：分类统计 -->
+    <view class="category-section">
+      <view class="section-title">分类统计</view>
+      <view class="category-grid">
+        <view
+          wx:for="{{categoryStats}}"
+          wx:key="id"
+          class="category-item"
+          style="--item-color: {{item.color}};"
+        >
+          <text class="category-emoji">{{item.emoji}}</text>
+          <text class="category-name">{{item.name}}</text>
+          <text class="category-count">{{item.count}}次</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 原有：记录列表 -->
+    <view class="records-section">
+      <view class="section-title">活动记录</view>
+      <view class="records-list">
+        <view
+          wx:for="{{recordList}}"
+          wx:key="id"
+          class="record-item"
+        >
+          <view class="record-icon" style="background: {{item.bgColor}};">
+            <text class="record-emoji">{{item.emoji}}</text>
+          </view>
+          <view class="record-info">
+            <text class="record-name">{{item.displayTitle}}</text>
+            <text class="record-type">{{item.displaySubtitle}}</text>
+          </view>
+          <view class="record-right">
+            <text class="record-points">{{item.pointsPrefix}}{{item.points}}积分</text>
+            <text class="record-time">{{item.time}}</text>
+          </view>
+        </view>
+      </view>
+
+      <view class="empty-state" wx:if="{{recordList.length === 0}}">
+        <text class="empty-emoji">📋</text>
+        <text class="empty-text">暂无活动记录</text>
+        <text class="empty-hint">快去进行垃圾分类或答题赢积分吧</text>
+      </view>
+    </view>
+
+  </view>
+
+  <!-- 导出画布（隐藏） -->
+  <canvas
+    canvas-id="exportCanvas"
+    class="export-canvas"
+    style="width: {{canvasWidth}}px; height: {{canvasHeight}}px;"
+  ></canvas>
+
 </view>

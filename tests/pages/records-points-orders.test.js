@@ -42,8 +42,8 @@ describe('records', () => {
     expect(recordsPage.data.recordList).toEqual([])
   })
 
-  test('loadRecords 从 app 加载并计算统计数据', () => {
-    instance.loadRecords()
+  test('loadAllData 从 app 加载并计算统计数据', () => {
+    instance.loadAllData()
     expect(instance.data.totalCount).toBe(defaultClassifyRecords.length)
     expect(instance.data.categoryStats).toHaveLength(4)
     instance.data.categoryStats.forEach(item => {
@@ -57,7 +57,7 @@ describe('records', () => {
   })
 
   test('recordList 每项包含 displayTitle/displaySubtitle/emoji/bgColor/points/pointsPrefix/time', () => {
-    instance.loadRecords()
+    instance.loadAllData()
     const list = instance.data.recordList
     expect(list.length).toBeGreaterThan(0)
     list.forEach(item => {
@@ -71,8 +71,8 @@ describe('records', () => {
     })
   })
 
-  test('新增答题记录后 loadRecords 反映变化', () => {
-    instance.loadRecords()
+  test('新增答题记录后 loadAllData 反映变化', () => {
+    instance.loadAllData()
     const beforeCount = instance.data.recordList.length
 
     const app = global.getApp()
@@ -82,7 +82,7 @@ describe('records', () => {
       points: 50, time: '2026-06-16 16:00'
     })
 
-    instance.loadRecords()
+    instance.loadAllData()
     expect(instance.data.recordList.length).toBe(beforeCount + 1)
   })
 })
@@ -120,10 +120,11 @@ describe('points', () => {
     expect(instance.data.currentPoints).toBe(1280)
   })
 
-  test('data 包含 filterTabs 含 all/earn/spend', () => {
+  test('data 包含 filterTabs 含 all/expiring/earn/spend', () => {
     const tabs = pointsPage.data.filterTabs
     expect(tabs).toEqual([
       { id: 'all', name: '全部' },
+      { id: 'expiring', name: '即将过期' },
       { id: 'earn', name: '获得' },
       { id: 'spend', name: '消费' }
     ])
@@ -234,13 +235,8 @@ describe('orders', () => {
     expect(order).toHaveProperty('createTime')
   })
 
-  test('onReorder 调用 wx.switchTab 跳转到 /pages/exchange/exchange', () => {
-    instance.onReorder()
-    expect(global.wx.switchTab).toHaveBeenCalledWith({ url: '/pages/exchange/exchange' })
-  })
-
-  test('goExchange 调用 wx.switchTab 跳转到 /pages/exchange/exchange', () => {
-    instance.goExchange()
+  test('onGoExchange 调用 wx.switchTab 跳转到 /pages/exchange/exchange', () => {
+    instance.onGoExchange()
     expect(global.wx.switchTab).toHaveBeenCalledWith({ url: '/pages/exchange/exchange' })
   })
 
