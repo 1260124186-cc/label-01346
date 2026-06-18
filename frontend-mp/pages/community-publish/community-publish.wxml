@@ -25,7 +25,9 @@
 
   <!-- 话题选择 -->
   <view class="section">
-    <view class="section-title">选择话题标签（可选，最多3个）</view>
+    <view class="section-title">
+      <text class="section-title-text">选择话题标签（可选，最多3个）</text>
+    </view>
     <view class="topics-grid">
       <view
         wx:for="{{topicsWithSelected}}"
@@ -82,10 +84,60 @@
     </view>
   </view>
 
+  <!-- 知识卡片 -->
+  <view class="section">
+    <view class="section-title">
+      <text class="section-title-text">插入分类知识卡片（可选，最多3张）</text>
+      <view class="insert-kc-btn" bindtap="onInsertKnowledgeCard">
+        <text class="insert-icon">📑</text>
+        <text class="insert-text">选择</text>
+      </view>
+    </view>
+
+    <view class="selected-kc-list" wx:if="{{selectedKnowledgeCards.length > 0}}">
+      <view
+        wx:for="{{selectedKnowledgeCards}}"
+        wx:key="id"
+        class="kc-card"
+        style="border-color: {{item.color}}30; background: linear-gradient(135deg, {{item.color}}08 0%, #FFFFFF 100%);"
+      >
+        <view class="kc-icon-wrapper" style="background: {{item.color}}1A;">
+          <text class="kc-emoji">{{item.emoji}}</text>
+        </view>
+        <view class="kc-content">
+          <view class="kc-header">
+            <text class="kc-type-tag" style="background: {{item.color}}1A; color: {{item.color}};">
+              {{item.type === 'course' ? '课程' : '百科'}}
+            </text>
+            <text class="kc-title">{{item.title}}</text>
+          </view>
+          <text class="kc-summary">{{item.summary}}</text>
+          <view class="kc-meta">
+            <text class="kc-meta-item" wx:if="{{item.relatedTrashCount}}">📚 关联{{item.relatedTrashCount}}种分类</text>
+            <text class="kc-meta-item" wx:if="{{item.chaptersCount}}">🎓 {{item.chaptersCount}}节课</text>
+          </view>
+        </view>
+        <view class="kc-remove" catchtap="onRemoveKnowledgeCard" data-card-id="{{item.id}}">
+          <text class="remove-icon">×</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="kc-empty-hint" wx:if="{{selectedKnowledgeCards.length === 0}}">
+      <text class="hint-emoji">📑</text>
+      <text class="hint-text">插入话题关联的分类百科或环保课程，帮助大家学习更多知识</text>
+    </view>
+  </view>
+
   <!-- 积分提示 -->
   <view class="points-hint">
     <text class="hint-icon">💡</text>
-    <text class="hint-text">发布成功可获得 {{publishPoints}} 积分，优质内容还能获得额外奖励哦～</text>
+    <text class="hint-text">发布成功可获得 {{publishPoints}} 积分
+      <text wx:if="{{currentCreatorLevel && currentCreatorLevel.pointsMultiplier > 1}}">
+        （{{currentCreatorLevel.name}} x{{currentCreatorLevel.pointsMultiplier}} 系数）
+      </text>
+      ，优质内容还能获得额外奖励哦～
+    </text>
   </view>
 
   <!-- 发布按钮 -->
@@ -101,4 +153,48 @@
 
   <!-- 底部安全 -->
   <view class="bottom-safe"></view>
+
+  <!-- 知识卡片选择弹窗 -->
+  <view class="kc-picker-modal" wx:if="{{showKnowledgePicker}}" catchtap="onCloseKnowledgePicker">
+    <view class="kc-picker-content" catchtap="">
+      <view class="kc-picker-header">
+        <text class="kc-picker-title">选择知识卡片</text>
+        <view class="kc-picker-close" bindtap="onCloseKnowledgePicker">
+          <text class="close-icon">×</text>
+        </view>
+      </view>
+      <text class="kc-picker-subtitle">已选 {{selectedKnowledgeCards.length}}/3 张，卡片将与帖子关联展示</text>
+
+      <scroll-view class="kc-picker-scroll" scroll-y>
+        <view
+          wx:for="{{availableKnowledgeCards}}"
+          wx:key="id"
+          class="kc-picker-item {{item.isSelected ? 'selected' : ''}}"
+          bindtap="onKnowledgeCardTap"
+          data-card="{{item}}"
+          style="--kc-color: {{item.color}};"
+        >
+          <view class="kc-picker-icon" style="background: {{item.color}}15;">
+            <text class="kc-emoji">{{item.emoji}}</text>
+          </view>
+          <view class="kc-picker-info">
+            <view class="kc-picker-row">
+              <text class="kc-picker-tag" style="background: {{item.color}}15; color: {{item.color}};">
+                {{item.type === 'course' ? '课程' : '百科'}}
+              </text>
+              <text class="kc-picker-name">{{item.title}}</text>
+            </view>
+            <text class="kc-picker-summary">{{item.summary}}</text>
+          </view>
+          <view class="kc-picker-check">
+            <text wx:if="{{item.isSelected}}">✓</text>
+          </view>
+        </view>
+      </scroll-view>
+
+      <view class="kc-picker-footer">
+        <button class="kc-picker-confirm" bindtap="onCloseKnowledgePicker">确定</button>
+      </view>
+    </view>
+  </view>
 </view>

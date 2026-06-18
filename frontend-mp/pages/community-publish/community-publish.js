@@ -1,5 +1,5 @@
 const app = getApp()
-const { COMMUNITY_POST_TYPES, COMMUNITY_TOPICS, COMMUNITY_POINTS_CONFIG } = require('../../utils/constants')
+const { COMMUNITY_POST_TYPES, COMMUNITY_TOPICS, COMMUNITY_POINTS_CONFIG, getKnowledgeCardsByTopic, TOPIC_KNOWLEDGE_CARDS } = require('../../utils/constants')
 const { showToast, showSuccess, navigateBack } = require('../../utils/util')
 
 Page({
@@ -13,11 +13,24 @@ Page({
     images: [],
     maxImages: 9,
     contentMaxLength: 500,
-    publishPoints: COMMUNITY_POINTS_CONFIG.publishPost
+    publishPoints: COMMUNITY_POINTS_CONFIG.publishPost,
+    availableKnowledgeCards: [],
+    selectedKnowledgeCards: [],
+    showKnowledgePicker: false,
+    currentCreatorLevel: null
   },
 
   onLoad() {
     this.refreshTopicsWithSelected()
+    this.loadCreatorLevel()
+  },
+
+  loadCreatorLevel() {
+    const level = app.getCurrentUserCreatorLevel()
+    this.setData({
+      currentCreatorLevel: level,
+      publishPoints: Math.floor(COMMUNITY_POINTS_CONFIG.publishPost * level.pointsMultiplier)
+    })
   },
 
   refreshTopicsWithSelected() {
@@ -28,6 +41,31 @@ Page({
       isSelected: selectedIds.indexOf(t.id) > -1
     }))
     this.setData({ topicsWithSelected })
+    this.refreshAvailableKnowledgeCards()
+  },
+
+  refreshAvailableKnowledgeCards() {
+    const { selectedTopics } = this.data
+    const selectedCardIds = this.data.selectedKnowledgeCards.map(c => c.id)
+    let cards = []
+    selectedTopics.forEach(topic => {
+      const topicCards = getKnowledgeCardsByTopic(topic.id)
+      topicCards.forEach(card => {
+        if (!cards.find(c => c.id === card.id)) {
+          cards.push({
+            ...card,
+            isSelected: selectedCardIds.indexOf(card.id) > -1
+          })
+        }
+      })
+    })
+    if (cards.length === 0) {
+      cards = TOPIC_KNOWLEDGE_CARDS.map(card => ({
+        ...card,
+        isSelected: selectedCardIds.indexOf(card.id) > -1
+      }))
+    }
+    this.setData({ availableKnowledgeCards: cards })
   },
 
   onTypeTap(e) {
@@ -101,9 +139,49 @@ Page({
     })
   },
 
+  onInsertKnowledgeCard() {
+    this.refreshAvailableKnowledgeCards()
+    this.setData({ showKnowledgePicker: true })
+  },
+
+  onCloseKnowledgePicker() {
+    this.setData({ showKnowledgePicker: false })
+  },
+
+  onKnowledgeCardTap(e) {
+    const { card } = e.currentTarget.dataset
+    let selected = [...this.data.selectedKnowledgeCards]
+    const idx = selected.findIndex(c => c.id === card.id)
+    if (idx > -1) {
+      selected.splice(idx, 1)
+    } else {
+      if (selected.length >= 3) {
+        showToast('最多插入3张知识卡片')
+        return
+      }
+      selected.push(card)
+    }
+    this.setData({ selectedKnowledgeCards: selected }, () => {
+      this.refreshAvailableKnowledgeCards()
+    })
+  },
+
+  onRemoveKnowledgeCard(e) {
+    const { cardId } = e.currentTarget.dataset
+    const selected = this.data.selectedKnowledgeCards.filter(c => c.id !== cardId)
+    this.setData({ selectedKnowledgeCards: selected }, () => {
+      this.refreshAvailableKnowledgeCards()
+    })
+  },
+
+  onKnowledgeCardLinkTap(e) {
+    const { card } = e.currentTarget.dataset
+    showToast(`跳转到${card.type === 'course' ? '课程' : '百科'}：${card.title}`)
+  },
+
   validateContent() {
     const { content, images, currentType } = this.data
-    
+
     if (currentType === 'photo') {
       if (images.length === 0) {
         showToast('请至少上传一张图片')
@@ -121,7 +199,7 @@ Page({
   onPublish() {
     if (!this.validateContent()) return
 
-    const { content, images, currentType, selectedTopics } = this.data
+    const { content, images, currentType, selectedTopics, selectedKnowledgeCards } = this.data
 
     wx.showLoading({ title: '发布中...', mask: true })
 
@@ -130,7 +208,8 @@ Page({
       content: content,
       images: images,
       topics: selectedTopics.map(t => t.id),
-      topicNames: selectedTopics.map(t => t.name)
+      topicNames: selectedTopics.map(t => t.name),
+      knowledgeCards: selectedKnowledgeCards
     })
 
     wx.hideLoading()

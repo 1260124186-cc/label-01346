@@ -2974,6 +2974,125 @@ const COMMUNITY_REPORT_REASONS = [
   { id: 'violate', name: '其他违法违规内容' }
 ]
 
+const COMMUNITY_REPORT_CONFIG = {
+  autoHideThreshold: 5,
+  reviewQueueKey: 'community_report_queue',
+  localMarkKey: 'community_local_reports'
+}
+
+const CREATOR_LEVELS = [
+  { level: 1, name: '初级创作者', minPosts: 0, minLikes: 0, icon: '✍️', pointsMultiplier: 1.0, badgeColor: '#8E8E93' },
+  { level: 2, name: '活跃创作者', minPosts: 5, minLikes: 50, icon: '📖', pointsMultiplier: 1.1, badgeColor: '#4A90D9' },
+  { level: 3, name: '科普达人', minPosts: 15, minLikes: 200, icon: '🌟', pointsMultiplier: 1.3, badgeColor: '#F39C12', isExpert: true },
+  { level: 4, name: '资深科普达人', minPosts: 30, minLikes: 500, icon: '🏆', pointsMultiplier: 1.5, badgeColor: '#E67E22', isExpert: true },
+  { level: 5, name: '环保大使', minPosts: 60, minLikes: 1500, icon: '👑', pointsMultiplier: 2.0, badgeColor: '#E85D5D', isExpert: true }
+]
+
+const getCreatorLevel = (postCount, likeCount) => {
+  let currentLevel = CREATOR_LEVELS[0]
+  for (const level of CREATOR_LEVELS) {
+    if (postCount >= level.minPosts && likeCount >= level.minLikes) {
+      currentLevel = level
+    }
+  }
+  return currentLevel
+}
+
+const TOPIC_KNOWLEDGE_CARDS = [
+  {
+    id: 'kc_kitchen',
+    topicId: 'kitchen_sort',
+    topicName: '厨余垃圾分类',
+    title: '厨余垃圾小百科',
+    type: 'encyclopedia',
+    emoji: '🍂',
+    color: '#5BBD72',
+    summary: '了解厨余垃圾的正确投放方式，这些细节要注意...',
+    linkType: 'classify',
+    linkId: '3',
+    relatedTrashCount: 6
+  },
+  {
+    id: 'kc_recycle',
+    topicId: 'recycle_diy',
+    topicName: '旧物改造',
+    title: '可回收物利用课程',
+    type: 'course',
+    emoji: '♻️',
+    color: '#4A90D9',
+    summary: '学习5种旧物改造技巧，让废品变废为宝',
+    linkType: 'course',
+    linkId: 'recycle_diy_101',
+    chaptersCount: 5
+  },
+  {
+    id: 'kc_zero',
+    topicId: 'zero_waste',
+    topicName: '零废弃生活',
+    title: '零废弃生活指南',
+    type: 'encyclopedia',
+    emoji: '🌱',
+    color: '#27AE60',
+    summary: '从零开始的零废弃生活，从这10件小事做起',
+    linkType: 'learning',
+    linkId: '',
+    relatedTrashCount: 12
+  },
+  {
+    id: 'kc_plastic',
+    topicId: 'plastic_free',
+    topicName: '减塑行动',
+    title: '塑料污染科普',
+    type: 'course',
+    emoji: '🥤',
+    color: '#9B59B6',
+    summary: '了解塑料对环境的影响，学习实用减塑技巧',
+    linkType: 'course',
+    linkId: 'plastic_free_101',
+    chaptersCount: 4
+  },
+  {
+    id: 'kc_travel',
+    topicId: 'green_travel',
+    topicName: '绿色出行',
+    title: '绿色出行知识卡',
+    type: 'encyclopedia',
+    emoji: '🚲',
+    color: '#16A085',
+    summary: '选择绿色出行方式，为地球减负',
+    linkType: 'classify',
+    linkId: '1',
+    relatedTrashCount: 3
+  },
+  {
+    id: 'kc_energy',
+    topicId: 'energy_save',
+    topicName: '节约能源',
+    title: '家庭节能课程',
+    type: 'course',
+    emoji: '💡',
+    color: '#F39C12',
+    summary: '10个家庭节能小技巧，每月省下电费看得见',
+    linkType: 'course',
+    linkId: 'energy_save_101',
+    chaptersCount: 6
+  }
+]
+
+const getKnowledgeCardsByTopic = (topicId) => {
+  return TOPIC_KNOWLEDGE_CARDS.filter(card => card.topicId === topicId)
+}
+
+const WEEKLY_EXPERT_LIST = [
+  { id: 'exp_u1', userId: 'u2', nickName: '分类达人小王', avatarEmoji: '📚', postCount: 38, likeCount: 2856, weekLikes: 568, badge: '科普达人', level: 3 },
+  { id: 'exp_u2', userId: 'u1', nickName: '绿色生活家', avatarEmoji: '🌳', postCount: 52, likeCount: 4120, weekLikes: 489, badge: '资深科普达人', level: 4 },
+  { id: 'exp_u3', userId: 'u3', nickName: '手工爱好者', avatarEmoji: '🎨', postCount: 24, likeCount: 1820, weekLikes: 356, badge: '科普达人', level: 3 },
+  { id: 'exp_u4', userId: 'u4', nickName: '环保妈妈', avatarEmoji: '👩', postCount: 18, likeCount: 960, weekLikes: 234, badge: '活跃创作者', level: 2 },
+  { id: 'exp_u5', userId: 'u5', nickName: '零废弃实践者', avatarEmoji: '🌿', postCount: 12, likeCount: 680, weekLikes: 178, badge: '活跃创作者', level: 2 }
+]
+
+const OFFICIAL_FEATURED_POSTS = ['p3', 'p5']
+
 const COMMUNITY_POINTS_CONFIG = {
   publishPost: 20,
   dailyPublishMax: 60,
@@ -2983,12 +3102,15 @@ const COMMUNITY_POINTS_CONFIG = {
   dailyCommentMax: 20,
   sharePost: 5,
   dailyShareMax: 25,
+  pinCommentBonus: 10,
   qualityBonus: {
     likes50: 30,
     likes200: 100,
     likes500: 300,
     comments30: 50,
-    shares50: 80
+    shares50: 80,
+    featured: 200,
+    weeklyExpert: 500
   }
 }
 
@@ -3259,6 +3381,13 @@ module.exports = {
   COMMUNITY_POSTS,
   COMMUNITY_COMMENTS,
   COMMUNITY_REPORT_REASONS,
+  COMMUNITY_REPORT_CONFIG,
+  CREATOR_LEVELS,
+  getCreatorLevel,
+  TOPIC_KNOWLEDGE_CARDS,
+  getKnowledgeCardsByTopic,
+  WEEKLY_EXPERT_LIST,
+  OFFICIAL_FEATURED_POSTS,
   COMMUNITY_POINTS_CONFIG,
   LEADERBOARD_CONFIG,
   LEADERBOARD_USERS,

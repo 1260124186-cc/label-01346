@@ -9,18 +9,29 @@ Page({
     topics: COMMUNITY_TOPICS,
     currentTopic: '',
     posts: [],
-    userPoints: 0
+    userPoints: 0,
+    weeklyExperts: [],
+    featuredPosts: [],
+    showExpertBanner: true,
+    currentCreatorLevel: null
   },
 
   onLoad() {
     console.log('[Community] 页面加载')
-    this.loadPosts()
+    this.loadAllData()
   },
 
   onShow() {
     console.log('[Community] 页面显示')
+    this.loadAllData()
+  },
+
+  loadAllData() {
     this.loadPosts()
+    this.loadWeeklyExperts()
+    this.loadFeaturedPosts()
     this.refreshUserInfo()
+    this.loadCreatorLevel()
   },
 
   refreshUserInfo() {
@@ -30,6 +41,21 @@ Page({
         userPoints: userInfo.points || 0
       })
     }
+  },
+
+  loadCreatorLevel() {
+    const level = app.getCurrentUserCreatorLevel()
+    this.setData({ currentCreatorLevel: level })
+  },
+
+  loadWeeklyExperts() {
+    const experts = app.getWeeklyExpertList()
+    this.setData({ weeklyExperts: experts.slice(0, 5) })
+  },
+
+  loadFeaturedPosts() {
+    const featured = app.getFeaturedPosts()
+    this.setData({ featuredPosts: featured.slice(0, 3) })
   },
 
   loadPosts() {
@@ -86,10 +112,16 @@ Page({
 
   onShareTap(e) {
     const { id } = e.currentTarget.dataset
-    const post = app.getCommunityPostById(id)
-    if (!post) return
-
     this.setData({ sharePostId: id })
+  },
+
+  onExpertTap(e) {
+    const { userId } = e.currentTarget.dataset
+    showToast('达人主页开发中')
+  },
+
+  onCloseExpertBanner() {
+    this.setData({ showExpertBanner: false })
   },
 
   onPublishTap() {
@@ -98,7 +130,7 @@ Page({
 
   onPullDownRefresh() {
     console.log('[Community] 下拉刷新')
-    this.loadPosts()
+    this.loadAllData()
     setTimeout(() => {
       wx.stopPullDownRefresh()
     }, 800)

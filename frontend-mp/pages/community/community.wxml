@@ -14,6 +14,13 @@
     </view>
   </view>
 
+  <!-- 创作者等级标识 -->
+  <view class="creator-bar" wx:if="{{currentCreatorLevel && currentCreatorLevel.level > 1}}">
+    <text class="creator-icon">{{currentCreatorLevel.icon}}</text>
+    <text class="creator-name">{{currentCreatorLevel.name}}</text>
+    <text class="creator-multiplier" wx:if="{{currentCreatorLevel.pointsMultiplier > 1}}">积分x{{currentCreatorLevel.pointsMultiplier}}</text>
+  </view>
+
   <!-- 话题标签 -->
   <view class="topics-section">
     <scroll-view class="topics-scroll" scroll-x enable-flex>
@@ -27,6 +34,40 @@
         <text class="topic-icon">{{item.icon}}</text>
         <text class="topic-name">#{{item.name}}</text>
         <text class="topic-count" wx:if="{{currentTopic === item.id}}">{{item.count}}条</text>
+      </view>
+    </scroll-view>
+  </view>
+
+  <!-- 每周环保达人榜 -->
+  <view class="expert-banner" wx:if="{{showExpertBanner && weeklyExperts.length > 0}}">
+    <view class="expert-header">
+      <view class="expert-title-row">
+        <text class="expert-crown">👑</text>
+        <text class="expert-title">本周环保达人榜</text>
+        <text class="expert-subtitle">帖子加权曝光</text>
+      </view>
+      <view class="expert-close" bindtap="onCloseExpertBanner">
+        <text class="close-icon">×</text>
+      </view>
+    </view>
+    <scroll-view class="expert-scroll" scroll-x enable-flex>
+      <view
+        wx:for="{{weeklyExperts}}"
+        wx:key="id"
+        class="expert-item"
+        bindtap="onExpertTap"
+        data-user-id="{{item.userId}}"
+      >
+        <view class="expert-rank rank-{{index + 1}}">{{index + 1}}</view>
+        <view class="expert-avatar">
+          <text class="expert-avatar-emoji">{{item.avatarEmoji}}</text>
+        </view>
+        <text class="expert-nickname">{{item.nickName}}</text>
+        <view class="expert-badge-mini" style="background: {{item.creatorBadgeColor}}1A; color: {{item.creatorBadgeColor}};">
+          <text class="badge-icon-mini">{{item.creatorBadgeIcon}}</text>
+          <text class="badge-name-mini">{{item.badge}}</text>
+        </view>
+        <text class="expert-weeklikes">本周+{{item.weekLikes}}赞</text>
       </view>
     </scroll-view>
   </view>
@@ -51,10 +92,16 @@
     <view
       wx:for="{{posts}}"
       wx:key="id"
-      class="post-card"
+      class="post-card {{item.isFeatured ? 'featured' : ''}}"
       bindtap="onPostTap"
       data-id="{{item.id}}"
     >
+      <!-- 精选标识 -->
+      <view class="post-featured-badge" wx:if="{{item.isFeatured}}">
+        <text class="featured-icon">⭐</text>
+        <text class="featured-text">官方精选</text>
+      </view>
+
       <!-- 官方内容标识 -->
       <view class="post-official-badge" wx:if="{{item.isOfficial}}">
         <text class="badge-icon">🌿</text>
@@ -70,6 +117,10 @@
           <view class="post-user-row">
             <text class="post-nickname">{{item.userNickName}}</text>
             <text class="official-icon" wx:if="{{item.isOfficial}}">✓</text>
+            <view class="creator-badge" wx:if="{{item.creatorLevel >= 3}}" style="background: {{item.creatorBadgeColor}}15; border-color: {{item.creatorBadgeColor}}40;">
+              <text class="creator-badge-icon">{{item.creatorBadgeIcon}}</text>
+              <text class="creator-badge-text" style="color: {{item.creatorBadgeColor}};">{{item.creatorBadge}}</text>
+            </view>
           </view>
           <text class="post-time">{{item.createTime}}</text>
         </view>

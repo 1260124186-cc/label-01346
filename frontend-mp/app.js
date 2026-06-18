@@ -1669,16 +1669,48 @@ App({
    * 初始化社区帖子
    */
   initCommunityPosts() {
-    const { COMMUNITY_POSTS } = require('./utils/constants')
+    const { COMMUNITY_POSTS, OFFICIAL_FEATURED_POSTS, getCreatorLevel } = require('./utils/constants')
     const stored = wx.getStorageSync('communityPosts')
 
     if (stored && stored.length > 0) {
       this.globalData.communityPosts = stored
     } else {
-      this.globalData.communityPosts = [...COMMUNITY_POSTS]
+      this.globalData.communityPosts = COMMUNITY_POSTS.map(post => ({
+        ...post,
+        isFeatured: OFFICIAL_FEATURED_POSTS.includes(post.id),
+        pinnedCommentId: '',
+        knowledgeCards: [],
+        reportCount: post.reportCount || 0,
+        creatorLevel: 1,
+        creatorBadge: '初级创作者'
+      }))
+      this.refreshPostsCreatorLevel()
       wx.setStorageSync('communityPosts', this.globalData.communityPosts)
     }
     console.log('[App] 社区帖子已加载', this.globalData.communityPosts.length, '条')
+  },
+
+  refreshPostsCreatorLevel() {
+    const { getCreatorLevel } = require('./utils/constants')
+    const userStats = {}
+    this.globalData.communityPosts.forEach(post => {
+      const uid = post.userId
+      if (!userStats[uid]) {
+        userStats[uid] = { postCount: 0, likeCount: 0 }
+      }
+      userStats[uid].postCount += 1
+      userStats[uid].likeCount += post.likes || 0
+    })
+    this.globalData.communityPosts.forEach(post => {
+      const stats = userStats[post.userId] || { postCount: 0, likeCount: 0 }
+      const level = getCreatorLevel(stats.postCount, stats.likeCount)
+      post.creatorLevel = level.level
+      post.creatorBadge = level.name
+      post.creatorBadgeIcon = level.icon
+      post.creatorBadgeColor = level.badgeColor
+      post.creatorPointsMultiplier = level.pointsMultiplier
+      post.isExpertCreator = !!level.isExpert
+    })
   },
 
   saveCommunityPosts() {
@@ -1686,6 +1718,7 @@ App({
   },
 
   getCommunityPosts(filter = {}) {
+    const { WEEKLY_EXPERT_LIST } = require('./utils/constants')
     let posts = this.globalData.communityPosts || []
     posts = posts.filter(p => p.status === 'normal')
 
@@ -1699,7 +1732,39 @@ App({
       posts = posts.filter(p => p.isOfficial)
     }
 
-    return posts.sort((a, b) => new Date(b.createTime) - new Date(a.createTime))
+    const expertUserIds = WEEKLY_EXPERT_LIST.map(e => e.userId)
+    posts = posts.map(p => {
+      let weight = 0
+      if (p.isFeatured) weight += 1000
+      if (expertUserIds.includes(p.userId)) weight += 500
+      if (p.isExpertCreator) weight += 200
+      if (p.isOfficial) weight += 300
+      weight += (p.likes || 0) * 2
+      weight += (p.comments || 0) * 3
+      weight += (p.shares || 0) * 5
+      return { ...p, _weight: weight }
+    })
+
+    return posts.sort((a, b) => {
+      if (b._weight !== a._weight) return b._weight - a._weight
+      return new Date(b.createTime) - new Date(a.createTime)
+    })
+  },
+
+  getWeeklyExpertList() {
+    const { WEEKLY_EXPERT_LIST, getCreatorLevel } = require('./utils/constants')
+    return WEEKLY_EXPERT_LIST.map(exp => {
+      const level = getCreatorLevel(exp.postCount, exp.likeCount)
+      return { ...exp, creatorLevel: level.level, creatorBadge: level.name, creatorBadgeIcon: level.icon, creatorBadgeColor: level.badgeColor }
+    })
+  },
+
+  getFeaturedPosts() {
+    return this.getCommunityPosts({}).filter(p => p.isFeatured)
+  },
+
+  isPostOwner(userId) {
+    return userId === this.getUserId()
   },
 
   getCommunityPostById(postId) {
@@ -1707,8 +1772,11 @@ App({
   },
 
   addCommunityPost(post) {
-    const { COMMUNITY_POINTS_CONFIG } = require('./utils/constants')
+    const { COMMUNITY_POINTS_CONFIG, getCreatorLevel } = require('./utils/constants')
     const userInfo = this.globalData.userInfo
+
+    const userStats = this.getUserPostStats()
+    const creatorLevel = getCreatorLevel(userStats.postCount, userStats.likeCount)
 
     const newPost = {
       id: 'post_' + generateId(),
@@ -1723,29 +1791,61 @@ App({
       images: post.images || [],
       topics: post.topics || [],
       topicNames: post.topicNames || [],
+      knowledgeCards: post.knowledgeCards || [],
       likes: 0,
       comments: 0,
       shares: 0,
       liked: false,
+      isFeatured: false,
+      pinnedCommentId: '',
+      reportCount: 0,
+      creatorLevel: creatorLevel.level,
+      creatorBadge: creatorLevel.name,
+      creatorBadgeIcon: creatorLevel.icon,
+      creatorBadgeColor: creatorLevel.badgeColor,
+      isExpertCreator: !!creatorLevel.isExpert,
+      creatorPointsMultiplier: creatorLevel.pointsMultiplier,
       createTime: formatDate(new Date(), 'YYYY-MM-DD HH:mm'),
       status: 'normal'
     }
 
     this.globalData.communityPosts.unshift(newPost)
     this.saveCommunityPosts()
+    this.refreshPostsCreatorLevel()
 
-    const actualPoints = this.addCommunityDailyPoints('publish', COMMUNITY_POINTS_CONFIG.publishPost)
+    const basePoints = COMMUNITY_POINTS_CONFIG.publishPost
+    const multipliedPoints = Math.floor(basePoints * creatorLevel.pointsMultiplier)
+    const actualPoints = this.addCommunityDailyPoints('publish', multipliedPoints)
     if (actualPoints > 0) {
       this.updateUserPoints(actualPoints, {
         category: 'community_publish',
         title: '社区发布',
-        desc: `发布${post.type === 'experience' ? '环保心得' : post.type === 'skill' ? '分类技巧' : '晒图'}`,
+        desc: `发布${post.type === 'experience' ? '环保心得' : post.type === 'skill' ? '分类技巧' : '晒图'}${creatorLevel.pointsMultiplier > 1 ? `(x${creatorLevel.pointsMultiplier}系数)` : ''}`,
         emoji: '✍️'
       })
     }
 
     console.log('[App] 新增社区帖子', newPost.id)
     return { post: newPost, points: actualPoints }
+  },
+
+  getUserPostStats() {
+    const userId = this.getUserId()
+    let postCount = 0
+    let likeCount = 0
+    this.globalData.communityPosts.forEach(post => {
+      if (post.userId === userId) {
+        postCount += 1
+        likeCount += post.likes || 0
+      }
+    })
+    return { postCount, likeCount }
+  },
+
+  getCurrentUserCreatorLevel() {
+    const { getCreatorLevel } = require('./utils/constants')
+    const stats = this.getUserPostStats()
+    return getCreatorLevel(stats.postCount, stats.likeCount)
   },
 
   toggleLikePost(postId) {
@@ -1853,7 +1953,18 @@ App({
     if (stored && Object.keys(stored).length > 0) {
       this.globalData.communityComments = stored
     } else {
-      this.globalData.communityComments = { ...COMMUNITY_COMMENTS }
+      const enriched = {}
+      Object.keys(COMMUNITY_COMMENTS).forEach(postId => {
+        enriched[postId] = COMMUNITY_COMMENTS[postId].map(c => ({
+          ...c,
+          replies: [],
+          mentions: [],
+          replyTo: null,
+          isPinned: false,
+          reportCount: 0
+        }))
+      })
+      this.globalData.communityComments = enriched
       wx.setStorageSync('communityComments', this.globalData.communityComments)
     }
     console.log('[App] 社区评论已加载')
@@ -1863,15 +1974,70 @@ App({
     wx.setStorageSync('communityComments', this.globalData.communityComments)
   },
 
-  getCommentsByPostId(postId) {
-    return this.globalData.communityComments[postId] || []
+  parseMentions(content) {
+    const mentions = []
+    const regex = /@(\S+?)(?=\s|$|,|.|!|\?|，|。|！|？)/g
+    let match
+    while ((match = regex.exec(content)) !== null) {
+      mentions.push({ name: match[1], index: match.index, rawIndex: match.index, length: match[0].length })
+    }
+    return mentions
   },
 
-  addComment(postId, content) {
-    const { COMMUNITY_POINTS_CONFIG } = require('./utils/constants')
+  buildDisplayContent(content, mentions) {
+    if (!mentions || mentions.length === 0) {
+      return [{ type: 'text', text: content }]
+    }
+    const segs = []
+    let cursor = 0
+    mentions.forEach(m => {
+      if (m.index > cursor) {
+        segs.push({ type: 'text', text: content.slice(cursor, m.index) })
+      }
+      segs.push({ type: 'mention', text: m.name })
+      cursor = m.index + m.length
+    })
+    if (cursor < content.length) {
+      segs.push({ type: 'text', text: content.slice(cursor) })
+    }
+    return segs
+  },
+
+  enrichCommentDisplay(comment) {
+    const self = this
+    if (!comment.mentions || comment.mentions.length === 0) {
+      comment.displayContent = [{ type: 'text', text: comment.content }]
+    } else {
+      comment.displayContent = self.buildDisplayContent(comment.content, comment.mentions)
+    }
+    if (comment.replies && comment.replies.length > 0) {
+      comment.replies = comment.replies.map(r => self.enrichCommentDisplay(r))
+    }
+    return comment
+  },
+
+  getCommentsByPostId(postId) {
+    const comments = (this.globalData.communityComments[postId] || []).map(c => this.enrichCommentDisplay(c))
+    const post = this.getCommunityPostById(postId)
+    const pinnedId = post ? post.pinnedCommentId : ''
+    return comments.sort((a, b) => {
+      if (a.id === pinnedId) return -1
+      if (b.id === pinnedId) return 1
+      if (a.isPinned && !b.isPinned) return -1
+      if (!a.isPinned && b.isPinned) return 1
+      return 0
+    })
+  },
+
+  addComment(postId, content, options = {}) {
+    const { COMMUNITY_POINTS_CONFIG, getCreatorLevel } = require('./utils/constants')
     const userInfo = this.globalData.userInfo
     const post = this.getCommunityPostById(postId)
     if (!post) return { success: false }
+
+    const mentions = this.parseMentions(content)
+    const userStats = this.getUserPostStats()
+    const creatorLevel = getCreatorLevel(userStats.postCount, userStats.likeCount)
 
     const newComment = {
       id: 'comment_' + generateId(),
@@ -1880,26 +2046,43 @@ App({
       userNickName: userInfo ? userInfo.nickName : '环保达人',
       userAvatarEmoji: '🌱',
       content,
+      mentions,
+      replyTo: options.replyTo || null,
+      replies: [],
       likes: 0,
       liked: false,
+      isPinned: false,
+      reportCount: 0,
       createTime: formatDate(new Date(), 'YYYY-MM-DD HH:mm')
     }
 
     if (!this.globalData.communityComments[postId]) {
       this.globalData.communityComments[postId] = []
     }
-    this.globalData.communityComments[postId].unshift(newComment)
+
+    if (options.replyTo && options.replyTo.commentId) {
+      const parentComment = this.globalData.communityComments[postId].find(c => c.id === options.replyTo.commentId)
+      if (parentComment) {
+        if (!parentComment.replies) parentComment.replies = []
+        parentComment.replies.push(newComment)
+      }
+    } else {
+      this.globalData.communityComments[postId].unshift(newComment)
+    }
+
     this.saveCommunityComments()
 
     post.comments += 1
     this.saveCommunityPosts()
 
-    const points = this.addCommunityDailyPoints('comment', COMMUNITY_POINTS_CONFIG.commentPost)
+    const basePoints = COMMUNITY_POINTS_CONFIG.commentPost
+    const multipliedPoints = Math.floor(basePoints * creatorLevel.pointsMultiplier)
+    const points = this.addCommunityDailyPoints('comment', multipliedPoints)
     if (points > 0) {
       this.updateUserPoints(points, {
         category: 'community_comment',
         title: '社区评论',
-        desc: '参与话题讨论',
+        desc: options.replyTo ? '回复评论' : '参与话题讨论',
         emoji: '💬'
       })
     }
@@ -1912,27 +2095,109 @@ App({
     const comments = this.globalData.communityComments[postId]
     if (!comments) return { success: false }
 
-    const comment = comments.find(c => c.id === commentId)
-    if (!comment) return { success: false }
+    let target = null
+    for (const c of comments) {
+      if (c.id === commentId) { target = c; break }
+      if (c.replies && c.replies.length > 0) {
+        const found = c.replies.find(r => r.id === commentId)
+        if (found) { target = found; break }
+      }
+    }
+    if (!target) return { success: false }
 
-    if (comment.liked) {
-      comment.likes = Math.max(0, comment.likes - 1)
-      comment.liked = false
+    if (target.liked) {
+      target.likes = Math.max(0, target.likes - 1)
+      target.liked = false
     } else {
-      comment.likes += 1
-      comment.liked = true
+      target.likes += 1
+      target.liked = true
     }
 
     this.saveCommunityComments()
-    return { success: true, liked: comment.liked, likes: comment.likes }
+    return { success: true, liked: target.liked, likes: target.likes }
+  },
+
+  pinComment(postId, commentId) {
+    const { COMMUNITY_POINTS_CONFIG } = require('./utils/constants')
+    const post = this.getCommunityPostById(postId)
+    if (!post) return { success: false }
+    if (!this.isPostOwner(post.userId)) return { success: false, reason: 'not_owner' }
+
+    if (post.pinnedCommentId === commentId) {
+      post.pinnedCommentId = ''
+      this.saveCommunityPosts()
+      return { success: true, pinned: false }
+    }
+
+    post.pinnedCommentId = commentId
+    this.saveCommunityPosts()
+
+    const comments = this.globalData.communityComments[postId] || []
+    for (const c of comments) {
+      if (c.id === commentId) {
+        c.isPinned = true
+      } else {
+        c.isPinned = false
+      }
+      if (c.replies) c.replies.forEach(r => { r.isPinned = false })
+    }
+    this.saveCommunityComments()
+
+    const bonus = COMMUNITY_POINTS_CONFIG.pinCommentBonus
+    if (bonus > 0) {
+      this.updateUserPoints(bonus, {
+        category: 'community_pin',
+        title: '评论被置顶',
+        desc: '优质评论被楼主置顶',
+        emoji: '📌'
+      })
+    }
+    return { success: true, pinned: true, points: bonus }
+  },
+
+  reportComment(postId, commentId, reason) {
+    const { COMMUNITY_REPORT_CONFIG } = require('./utils/constants')
+    const comments = this.globalData.communityComments[postId]
+    if (!comments) return { success: false }
+
+    let target = null
+    for (const c of comments) {
+      if (c.id === commentId) { target = c; break }
+      if (c.replies) {
+        const found = c.replies.find(r => r.id === commentId)
+        if (found) { target = found; break }
+      }
+    }
+    if (!target) return { success: false }
+
+    target.reportCount = (target.reportCount || 0) + 1
+    if (target.reportCount >= COMMUNITY_REPORT_CONFIG.autoHideThreshold) {
+      target.isHidden = true
+    }
+    this.saveCommunityComments()
+
+    this.addReport({
+      targetId: commentId,
+      targetType: 'comment',
+      reasonId: reason.reasonId,
+      reasonName: reason.reasonName,
+      description: reason.description
+    })
+
+    return { success: true }
   },
 
   /**
    * 初始化举报记录
    */
   initCommunityReports() {
+    const { COMMUNITY_REPORT_CONFIG } = require('./utils/constants')
     const stored = wx.getStorageSync('communityReports')
     this.globalData.communityReports = stored || []
+    const localMarks = wx.getStorageSync(COMMUNITY_REPORT_CONFIG.localMarkKey)
+    this.globalData.communityLocalReports = localMarks || {}
+    const queue = wx.getStorageSync(COMMUNITY_REPORT_CONFIG.reviewQueueKey)
+    this.globalData.communityReviewQueue = queue || []
     console.log('[App] 社区举报记录已加载')
   },
 
@@ -1941,6 +2206,7 @@ App({
   },
 
   addReport(report) {
+    const { COMMUNITY_REPORT_CONFIG } = require('./utils/constants')
     const newReport = {
       id: 'report_' + generateId(),
       targetId: report.targetId,
@@ -1956,11 +2222,24 @@ App({
     this.globalData.communityReports.push(newReport)
     this.saveCommunityReports()
 
+    const key = `${report.targetType}_${report.targetId}`
+    if (!this.globalData.communityLocalReports) this.globalData.communityLocalReports = {}
+    this.globalData.communityLocalReports[key] = { reported: true, reportTime: newReport.createTime }
+    wx.setStorageSync(COMMUNITY_REPORT_CONFIG.localMarkKey, this.globalData.communityLocalReports)
+
+    if (!this.globalData.communityReviewQueue) this.globalData.communityReviewQueue = []
+    this.globalData.communityReviewQueue.push(newReport)
+    wx.setStorageSync(COMMUNITY_REPORT_CONFIG.reviewQueueKey, this.globalData.communityReviewQueue)
+
     if (report.targetType === 'post') {
       const post = this.getCommunityPostById(report.targetId)
       if (post) {
         post.reportCount = (post.reportCount || 0) + 1
-        if (post.reportCount >= 3) {
+        if (post.reportCount >= COMMUNITY_REPORT_CONFIG.autoHideThreshold) {
+          post.status = 'hidden'
+          post.hiddenReason = 'auto_hide_by_reports'
+          post.hiddenTime = formatDate(new Date(), 'YYYY-MM-DD HH:mm')
+        } else if (post.reportCount >= 3) {
           post.status = 'reviewing'
         }
         this.saveCommunityPosts()
@@ -1969,6 +2248,15 @@ App({
 
     console.log('[App] 新增举报', newReport.id)
     return newReport
+  },
+
+  isLocallyReported(targetType, targetId) {
+    const key = `${targetType}_${targetId}`
+    return !!(this.globalData.communityLocalReports && this.globalData.communityLocalReports[key])
+  },
+
+  getReviewQueue() {
+    return this.globalData.communityReviewQueue || []
   },
 
   /**
