@@ -142,22 +142,42 @@ Page({
 
   fetchLearningReport(memberId) {
     return new Promise((resolve) => {
-      let reportData = null
+      let rawData = null
       try {
         if (typeof app.getMemberLearningReport === 'function') {
-          reportData = app.getMemberLearningReport(memberId)
+          rawData = app.getMemberLearningReport(memberId)
         }
       } catch (e) {
         console.warn('[LearningReport] 获取学习报告失败', e)
       }
 
-      if (!reportData) {
-        reportData = this.getMockLearningReport()
+      if (!rawData) {
+        rawData = this.getMockLearningReport()
       }
 
+      // ========== 字段契约映射 ==========
+      // app.getMemberLearningReport() 返回字段 → 页面展示字段
+      //   totalStudyDays    → overview.totalDays       (总学习天数)
+      //   totalClassify     → overview.classifyCount   (累计分类次数)
+      //   totalQuiz         → overview.quizCount       (累计答题数)
+      //   totalPoints       → overview.totalPoints     (总积分)
+      //   correctQuiz       → report.correctCount      (答对题数)
+      //   overallAccuracy   → report.overallAccuracy   (总正确率)
+      //   totalQuiz - correctQuiz → report.wrongCount  (答错题数，需计算)
+      // =====================================
+
+      const totalDays = rawData.totalStudyDays || rawData.totalDays || 0
+      const totalClassify = rawData.totalClassify || rawData.classifyCount || 0
+      const totalQuiz = rawData.totalQuiz || rawData.quizCount || 0
+      const correctQuiz = rawData.correctQuiz || rawData.correctCount || 0
+      const wrongQuiz = totalQuiz - correctQuiz > 0 ? totalQuiz - correctQuiz : 0
+      const overallAccuracy = rawData.overallAccuracy || (totalQuiz > 0 ? Math.round((correctQuiz / totalQuiz) * 100) : 0)
+
       const categoryAccuracy = TRASH_TYPES.map(type => {
-        const catStats = (reportData.categoryStats || []).find(c => c.typeId === type.id)
-        const accuracy = catStats ? Math.round(catStats.correct / (catStats.correct + catStats.wrong) * 100) : Math.floor(Math.random() * 40) + 55
+        const catStats = (rawData.categoryStats || []).find(c => c.typeId === type.id)
+        const accuracy = catStats
+          ? Math.round(catStats.correct / (catStats.correct + catStats.wrong) * 100)
+          : Math.floor(Math.random() * 40) + 55
         return {
           id: type.id,
           name: type.name.replace('垃圾', ''),
@@ -170,17 +190,22 @@ Page({
 
       this.setData({
         overview: {
-          totalDays: reportData.totalDays || 0,
-          classifyCount: reportData.classifyCount || 0,
-          quizCount: reportData.quizCount || 0,
-          totalPoints: reportData.totalPoints || 0
+          totalDays,
+          classifyCount: totalClassify,
+          quizCount: totalQuiz,
+          totalPoints: rawData.totalPoints || 0
         },
         report: {
-          overallAccuracy: reportData.overallAccuracy || 0,
-          correctCount: reportData.correctCount || 0,
-          wrongCount: reportData.wrongCount || 0
+          overallAccuracy,
+          correctCount: correctQuiz,
+          wrongCount: wrongQuiz
         },
         categoryAccuracy
+      })
+
+      console.log('[LearningReport] 报告数据映射完成:', {
+        overview: { totalDays, totalClassify, totalQuiz, totalPoints: rawData.totalPoints },
+        report: { overallAccuracy, correctQuiz, wrongQuiz }
       })
 
       resolve()
@@ -222,8 +247,15 @@ Page({
         weakData = this.getMockWeakCategories()
       }
 
+      // 字段映射：真实接口 recentWrongQuestions → 页面展示 recentWrong
+      const mappedData = weakData.map(item => ({
+        ...item,
+        wrongCount: item.wrongCount || 0,
+        recentWrong: item.recentWrongQuestions || item.recentWrong || []
+      }))
+
       this.setData({
-        weakCategories: weakData
+        weakCategories: mappedData
       })
       resolve()
     })
@@ -278,22 +310,59 @@ Page({
 
   fetchWeeklyStats(memberId) {
     return new Promise((resolve) => {
-      let statsData = null
+      let rawStats = null
       try {
         if (typeof app.getMemberWeeklyStats === 'function') {
-          statsData = app.getMemberWeeklyStats(memberId)
+          rawStats = app.getMemberWeeklyStats(memberId)
         }
       } catch (e) {
         console.warn('[LearningReport] 获取周数据失败', e)
       }
 
-      if (!statsData) {
-        statsData = this.getMockWeeklyStats()
+      if (!rawStats) {
+        rawStats = this.getMockWeeklyStats()
       }
 
-      this.updateTrendCalculations(statsData)
+      // ========== 字段契约映射 ==========
+      // app.getMemberWeeklyStats() 返回对象 { days, totalClassify, totalQuiz, ... }
+      //   days[i].date           → dateLabel (MM-DD 或 今天)
+      //   days[i].weekday        → weekday (周日/一/...)
+      //   days[i].classifyCount  → classify
+      //   days[i].quizCount      → quiz
+      // 页面期望数组格式 [...stats]
+      // =====================================
+
+      let weeklyStats = []
+      if (Array.isArray(rawStats)) {
+        // 已是数组格式（mock 数据）
+        weeklyStats = rawStats
+      } else if (rawStats.days && Array.isArray(rawStats.days)) {
+        // 对象格式（真实接口）→ 转换为数组
+        const todayStr = this._formatDate(new Date(), 'MM-DD')
+        weeklyStats = rawStats.days.map((day, idx) => {
+          const isToday = day.date === todayStr || idx === rawStats.days.length - 1
+          return {
+            date: day.date,
+            dateLabel: isToday ? '今天' : day.date,
+            weekday: day.weekday ? `周${day.weekday}` : '',
+            classify: day.classifyCount || 0,
+            quiz: day.quizCount || 0
+          }
+        })
+      }
+
+      this.updateTrendCalculations(weeklyStats)
       resolve()
     })
+  },
+
+  _formatDate(date, format) {
+    const month = date.getMonth() + 1
+    const day = date.getDate()
+    if (format === 'MM-DD') {
+      return `${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+    }
+    return date.toISOString().split('T')[0]
   },
 
   getMockWeeklyStats() {
