@@ -8,6 +8,7 @@ Page({
     homework: null,
     statusInfo: null,
     myProgress: null,
+    uncompletedCount: 0,
     memberProgressList: [],
     currentGroup: null,
     isCurrentUserAdmin: false,
@@ -85,6 +86,7 @@ Page({
           return {
             member,
             progress,
+            progressStatusClass: progress.completed ? 'completed' : '',
             completionText: this.getCompletionText(progress),
             statusText: this.getMemberStatusText(progress, homework.status)
           }
@@ -120,6 +122,7 @@ Page({
             ...task,
             typeInfo,
             detail,
+            taskProgressPercent: (taskProgress && taskProgress.progress) ? taskProgress.progress : 0,
             statusClass: this.getTaskStatusClass(taskProgress),
             statusText: this.getTaskStatusText(taskProgress)
           }
@@ -136,7 +139,12 @@ Page({
             overallProgress: homework.totalMembers > 0 ? Math.round(homework.completedCount / homework.totalMembers * 100) : 0
           },
           statusInfo,
-          myProgress,
+          myProgress: {
+            ...myProgress,
+            statusText: myProgress.completed ? '🎉 已完成' : (myProgress.completionRate + '%'),
+            statusClass: myProgress.completed ? 'completed' : ''
+          },
+          uncompletedCount: (homework.totalMembers || 0) - (homework.completedCount || 0),
           memberProgressList,
           currentGroup,
           isCurrentUserAdmin,

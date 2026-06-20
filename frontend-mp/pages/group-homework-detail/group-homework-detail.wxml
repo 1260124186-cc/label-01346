@@ -40,7 +40,7 @@
         </view>
         <view class="stat-divider"></view>
         <view class="stat-item">
-          <text class="stat-value">{{homework.totalMembers - homework.completedCount}}</text>
+          <text class="stat-value">{{uncompletedCount}}</text>
           <text class="stat-label">未完成</text>
         </view>
         <view class="stat-divider"></view>
@@ -110,7 +110,7 @@
                 <view class="task-progress-bar">
                   <view
                     class="task-progress-fill {{item.statusClass}}"
-                    style="width: {{myProgress.tasks[index]?.progress || 0}}%;"
+                    style="width: {{item.taskProgressPercent}}%;"
                   ></view>
                 </view>
                 <text class="task-progress-text {{item.statusClass}}">
@@ -145,7 +145,7 @@
             <view class="member-info">
               <view class="member-header">
                 <text class="member-name">{{item.member.name}}</text>
-                <text class="member-status {{item.progress.completed ? 'completed' : ''}}">
+                <text class="member-status {{item.progressStatusClass}}">
                   {{item.statusText}}
                 </text>
               </view>
@@ -175,8 +175,8 @@
     <view class="my-progress-card">
       <view class="my-progress-header">
         <text class="my-progress-title">我的进度</text>
-        <text class="my-progress-value {{myProgress.completed ? 'completed' : ''}}">
-          {{myProgress.completed ? '🎉 已完成' : myProgress.completionRate + '%'}}
+        <text class="my-progress-value {{myProgress.statusClass}}">
+          {{myProgress.statusText}}
         </text>
       </view>
       <view class="my-progress-bar">
