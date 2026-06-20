@@ -241,19 +241,19 @@
             wx:if="{{activity.type === 'signin_double_week' || activity.pointsCategories}}">
         <text class="action-icon">📅</text>
         <text class="action-name">每日签到</text>
-        <text class="action-tip">+{{activity.multiplier || 2}}倍积分</text>
+        <text class="action-tip">+{{multiplierText || '2倍积分'}}</text>
       </view>
       <view class="action-cell" bindtap="onGoQuiz"
             wx:if="{{activity.type === 'quiz_double' || activity.pointsCategories}}">
         <text class="action-icon">🧠</text>
         <text class="action-name">环保知识答题</text>
-        <text class="action-tip">+{{activity.multiplier || 2}}倍积分</text>
+        <text class="action-tip">+{{multiplierText || '2倍积分'}}</text>
       </view>
       <view class="action-cell" bindtap="onGoExchange"
             wx:if="{{activity.type === 'game_double_week' || activity.pointsCategories}}">
         <text class="action-icon">🎮</text>
         <text class="action-name">垃圾分类游戏</text>
-        <text class="action-tip">+{{activity.multiplier || 2}}倍积分</text>
+        <text class="action-tip">+{{multiplierText || '2倍积分'}}</text>
       </view>
     </view>
   </view>
@@ -294,7 +294,7 @@
     <view class="report-summary">
       <text>本次活动参与用户 {{activityReport.summary.uniqueUsers}} 人，发放积分 {{activityReport.summary.totalPointsDistributed}} 分，兑换商品 {{activityReport.summary.goodsRedeemed}} 件</text>
     </view>
-    <view class="report-btn" bindtap="onGoMessages">查看完整报告</view>
+    <view class="report-btn" bindtap="onGoMessages" data-tab="activity_report">查看完整报告</view>
   </view>
 
   <view class="section-card">
@@ -336,7 +336,7 @@
       <text class="points-value">{{userPoints}}</text>
     </view>
     <view class="bar-actions">
-      <view class="bar-btn secondary" bindtap="onGoMessages" wx:if="{{activityReport}}">
+      <view class="bar-btn secondary" bindtap="onGoMessages" data-tab="activity_report" wx:if="{{activityReport}}">
         <text class="btn-text">报告</text>
       </view>
       <view class="bar-btn" bindtap="onGoExchange">

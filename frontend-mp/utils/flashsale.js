@@ -140,13 +140,27 @@ class FlashSaleManager {
     const effectiveNext = nextSession || nearestSession
     const displaySession = currentSession || effectiveNext
 
+    const overallStatus = currentSession ? FLASH_SALE_STATUS.ONGOING : (effectiveNext ? effectiveNext.status : FLASH_SALE_STATUS.ENDED)
+    const statusTextMap = {
+      [FLASH_SALE_STATUS.ONGOING]: '进行中',
+      [FLASH_SALE_STATUS.REMINDER_WINDOW]: '即将开抢',
+      [FLASH_SALE_STATUS.NOT_STARTED]: '未开始',
+      [FLASH_SALE_STATUS.ENDED]: '已结束',
+      [FLASH_SALE_STATUS.SOLD_OUT]: '已抢光'
+    }
+
+    if (displaySession) {
+      displaySession.statusText = statusTextMap[displaySession.status] || '未知'
+    }
+
     return {
       current: currentSession,
       next: effectiveNext,
       display: displaySession,
       isActive: !!currentSession,
       isReminderWindow: !!nextSession && nextSession.status === FLASH_SALE_STATUS.REMINDER_WINDOW,
-      overallStatus: currentSession ? FLASH_SALE_STATUS.ONGOING : (effectiveNext ? effectiveNext.status : FLASH_SALE_STATUS.ENDED)
+      overallStatus,
+      statusText: statusTextMap[overallStatus] || '未知'
     }
   }
 

@@ -32,8 +32,15 @@ Page({
     }
   },
 
-  onLoad() {
+  onLoad(options) {
     console.log('[Messages] 页面加载')
+    if (options && options.tab) {
+      const tabId = options.tab
+      const validTab = this.data.tabList.some(t => t.id === tabId)
+      if (validTab) {
+        this.setData({ currentTab: tabId })
+      }
+    }
     this.refreshData()
   },
 

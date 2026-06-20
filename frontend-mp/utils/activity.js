@@ -20,6 +20,8 @@ const ACTIVITY_TYPE_META = {
   [ACTIVITY_TYPES.DOUBLE_POINTS_NEW_USER]: {
     id: ACTIVITY_TYPES.DOUBLE_POINTS_NEW_USER,
     name: '新人双倍积分',
+    label: '新人双倍',
+    emoji: '🌟',
     category: 'points_double',
     description: '新用户注册首周享受双倍积分',
     defaultPointsMultiplier: 2,
@@ -28,18 +30,24 @@ const ACTIVITY_TYPE_META = {
   [ACTIVITY_TYPES.FLASH_SALE]: {
     id: ACTIVITY_TYPES.FLASH_SALE,
     name: '限时秒杀',
+    label: '限时秒杀',
+    emoji: '⚡',
     category: 'flash_sale',
     description: '每日定时开抢，限量商品超值兑换'
   },
   [ACTIVITY_TYPES.LEVEL_DISCOUNT]: {
     id: ACTIVITY_TYPES.LEVEL_DISCOUNT,
     name: '等级折扣',
+    label: '等级折扣',
+    emoji: '👑',
     category: 'discount',
     description: '根据用户等级享受商品兑换折扣'
   },
   [ACTIVITY_TYPES.SIGNIN_DOUBLE_WEEK]: {
     id: ACTIVITY_TYPES.SIGNIN_DOUBLE_WEEK,
     name: '签到翻倍周',
+    label: '签到翻倍',
+    emoji: '📅',
     category: 'points_double',
     description: '签到积分翻倍活动周',
     defaultPointsMultiplier: 2,
@@ -48,6 +56,8 @@ const ACTIVITY_TYPE_META = {
   [ACTIVITY_TYPES.GAME_DOUBLE_WEEK]: {
     id: ACTIVITY_TYPES.GAME_DOUBLE_WEEK,
     name: '游戏积分翻倍周',
+    label: '游戏翻倍',
+    emoji: '🎮',
     category: 'points_double',
     description: '游戏积分翻倍活动周',
     defaultPointsMultiplier: 2,
@@ -56,6 +66,8 @@ const ACTIVITY_TYPE_META = {
   [ACTIVITY_TYPES.QUIZ_DOUBLE]: {
     id: ACTIVITY_TYPES.QUIZ_DOUBLE,
     name: '答题双倍',
+    label: '答题翻倍',
+    emoji: '🧠',
     category: 'points_double',
     description: '知识问答积分翻倍',
     defaultPointsMultiplier: 2,
@@ -64,6 +76,8 @@ const ACTIVITY_TYPE_META = {
   [ACTIVITY_TYPES.CLASSIFY_DOUBLE]: {
     id: ACTIVITY_TYPES.CLASSIFY_DOUBLE,
     name: '分类双倍',
+    label: '分类翻倍',
+    emoji: '♻️',
     category: 'points_double',
     description: '垃圾分类积分翻倍',
     defaultPointsMultiplier: 2,
@@ -72,6 +86,8 @@ const ACTIVITY_TYPE_META = {
   [ACTIVITY_TYPES.INVITE_DOUBLE]: {
     id: ACTIVITY_TYPES.INVITE_DOUBLE,
     name: '邀请双倍',
+    label: '邀请翻倍',
+    emoji: '🤝',
     category: 'points_double',
     description: '邀请好友积分翻倍',
     defaultPointsMultiplier: 2,
@@ -342,7 +358,29 @@ class ActivityManager {
   }
 
   getActivityById(activityId) {
-    return this.activities.find(a => a.id === activityId)
+    const activity = this.activities.find(a => a.id === activityId)
+    if (!activity) return null
+
+    const typeMeta = ACTIVITY_TYPE_META[activity.type] || null
+    const inDateRange = this.isActivityInDateRange(activity)
+    const now = Date.now()
+    const end = activity.endTime ? new Date(activity.endTime + ' 23:59:59').getTime() : Infinity
+    const hasEnded = !inDateRange && now > end
+    const report = this.reports.find(r => r.activityId === activityId)
+
+    activity.isActive = activity.status === 'active' && inDateRange
+    activity.isEnded = hasEnded
+    activity.reportGenerated = !!report
+    activity.reportId = report ? report.id : null
+    activity.typeText = typeMeta ? typeMeta.name : activity.type
+    activity.statusText = activity.isActive ? '进行中' : (activity.isEnded ? '已结束' : '即将开始')
+    activity.multiplier = activity.pointsMultiplier || (typeMeta ? typeMeta.defaultPointsMultiplier : null) || null
+    activity.pointsCategories = activity.pointsCategories ||
+      (typeMeta && typeMeta.affectedCategories
+        ? typeMeta.affectedCategories.map(c => this._getCategoryLabel(c))
+        : [])
+
+    return activity
   }
 
   getActivitiesByType(type) {

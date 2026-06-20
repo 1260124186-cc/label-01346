@@ -32,7 +32,9 @@ Page({
     userDiscount: null,
     activityReport: null,
     participationStats: null,
-    inDateRange: true
+    inDateRange: true,
+    multiplier: null,
+    multiplierText: ''
   },
 
   onLoad(options) {
@@ -92,11 +94,16 @@ Page({
     const inDateRange = app.getActivityManager().isActivityInDateRange(activity)
     const eligibilityResult = app.checkActivityEligibility(activity)
 
+    const multiplier = activity.multiplier || (activityTypeMeta && activityTypeMeta.defaultPointsMultiplier) || null
+    const multiplierText = multiplier ? `${multiplier}倍积分` : ''
+
     this.setData({
       activity,
       activityTypeMeta,
       inDateRange,
-      eligibilityResult
+      eligibilityResult,
+      multiplier,
+      multiplierText
     })
 
     wx.setNavigationBarTitle({ title: activity.title })
@@ -108,6 +115,7 @@ Page({
     }
 
     this.refreshParticipationStats()
+    this.checkActivityReport()
   },
 
   refreshUserInfo() {
@@ -407,8 +415,12 @@ Page({
     wx.switchTab({ url: '/pages/exchange/exchange' })
   },
 
-  onGoMessages() {
-    navigateTo('/pages/messages/messages')
+  onGoMessages(e) {
+    const { tab } = e.currentTarget.dataset
+    const url = tab
+      ? `/pages/messages/messages?tab=${tab}`
+      : '/pages/messages/messages'
+    navigateTo(url)
   },
 
   onGoSignin() {
