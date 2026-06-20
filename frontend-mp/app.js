@@ -2802,21 +2802,30 @@ App({
 
   generateUserSeasonStats(user, currentSeasonId) {
     if (!currentSeasonId) return user
+
+    const totalPoints = user.points || 0
+    const totalClassify = user.classifyCount || 0
+    const totalAccuracy = user.accuracy || 0
+    const totalGameScore = user.gameScore || 0
+
     const seasonRange = this.getSeasonTimeRange(currentSeasonId)
-    const daysInSeason = Math.ceil((seasonRange.endTime - seasonRange.startTime) / (24 * 3600 * 1000))
+    const daysInSeason = Math.max(1, Math.ceil((seasonRange.endTime - seasonRange.startTime) / (24 * 3600 * 1000)))
     const now = Date.now()
     const elapsedDays = Math.max(1, Math.min(daysInSeason, Math.ceil((now - seasonRange.startTime) / (24 * 3600 * 1000))))
-    const progress = elapsedDays / daysInSeason
+    const seasonProgress = elapsedDays / daysInSeason
+    const weekProgress = Math.min(1, 7 / daysInSeason)
 
-    const seasonPoints = Math.floor((user.points || 0) * 0.3 * progress * (0.8 + Math.random() * 0.4))
-    const seasonClassify = Math.floor((user.classifyCount || 0) * 0.3 * progress * (0.8 + Math.random() * 0.4))
-    const seasonAccuracy = Math.floor(80 + Math.random() * 18)
-    const seasonGameScore = Math.floor(150 + Math.random() * 400)
+    const seasonRatio = 0.3 * seasonProgress
+    const seasonPoints = Math.floor(totalPoints * seasonRatio)
+    const seasonClassify = Math.floor(totalClassify * seasonRatio)
+    const seasonAccuracy = totalAccuracy > 0 ? Math.min(100, Math.round(totalAccuracy * 0.95 + 2)) : 0
+    const seasonGameScore = Math.floor(totalGameScore * seasonRatio)
 
-    const weekPoints = Math.floor(seasonPoints * 0.25 * (0.8 + Math.random() * 0.4))
-    const weekClassify = Math.floor(seasonClassify * 0.25 * (0.8 + Math.random() * 0.4))
-    const weekAccuracy = Math.floor(78 + Math.random() * 20)
-    const weekGameScore = Math.floor(100 + Math.random() * 350)
+    const weekRatio = 0.3 * weekProgress
+    const weekPoints = Math.floor(totalPoints * weekRatio)
+    const weekClassify = Math.floor(totalClassify * weekRatio)
+    const weekAccuracy = totalAccuracy > 0 ? Math.min(100, Math.round(totalAccuracy * 0.93 + 3)) : 0
+    const weekGameScore = Math.floor(totalGameScore * weekRatio)
 
     const seasonStats = {}
     seasonStats[currentSeasonId] = {
@@ -2827,13 +2836,14 @@ App({
     }
 
     if (!user.seasonStats) {
-      const lastMonthSeason = this.getSeasonTimeRange()
-      const lastMonthId = lastMonthSeason.seasonId
-      seasonStats[lastMonthId] = {
-        points: Math.floor((user.points || 0) * 0.3 * (0.8 + Math.random() * 0.4)),
-        classifyCount: Math.floor((user.classifyCount || 0) * 0.3 * (0.8 + Math.random() * 0.4)),
-        accuracy: Math.floor(82 + Math.random() * 16),
-        gameScore: Math.floor(200 + Math.random() * 500)
+      const prevMonthDate = new Date(seasonRange.startTime.getTime() - 24 * 3600 * 1000)
+      const prevMonthId = `${prevMonthDate.getFullYear()}-${String(prevMonthDate.getMonth() + 1).padStart(2, '0')}`
+      const prevMonthRatio = 0.3
+      seasonStats[prevMonthId] = {
+        points: Math.floor(totalPoints * prevMonthRatio),
+        classifyCount: Math.floor(totalClassify * prevMonthRatio),
+        accuracy: totalAccuracy > 0 ? Math.min(100, Math.round(totalAccuracy * 0.95 + 1)) : 0,
+        gameScore: Math.floor(totalGameScore * prevMonthRatio)
       }
     }
 
@@ -3043,13 +3053,7 @@ App({
           gameScore: weekStats.gameScore || 0
         }
       }
-      return {
-        points: lbUser.points || 0,
-        accuracy: lbUser.accuracy || 0,
-        classifyCount: lbUser.classifyCount || 0,
-        streakDays: lbUser.streakDays || 0,
-        gameScore: lbUser.gameScore || 0
-      }
+      return { points: 0, accuracy: 0, classifyCount: 0, streakDays: 0, gameScore: 0 }
     }
 
     const inRange = (recordTime) => {
@@ -5120,16 +5124,39 @@ App({
   },
 
   _getMemberStats(group, memberId) {
-    const classifyRecords = this.getClassifyRecords()
-    const quizRecords = this.getQuizRecords()
+    const currentUserId = this.getUserId()
+    const isCurrentUser = memberId === currentUserId
 
-    const totalQ = quizRecords.reduce((s, r) => s + (r.totalQuestions || 0), 0)
-    const correctQ = quizRecords.reduce((s, r) => s + (r.correctCount || 0), 0)
+    if (isCurrentUser) {
+      const classifyRecords = this.getClassifyRecords()
+      const quizRecords = this.getQuizRecords()
+      const userInfo = this.globalData.userInfo || {}
 
+      const totalQ = quizRecords.reduce((s, r) => s + (r.totalQuestions || 0), 0)
+      const correctQ = quizRecords.reduce((s, r) => s + (r.correctCount || 0), 0)
+
+      return {
+        points: userInfo.points || 0,
+        classifyCount: classifyRecords.length,
+        correctRate: totalQ > 0 ? Math.round((correctQ / totalQ) * 100) : 0
+      }
+    }
+
+    const lbUsers = (this.globalData.leaderboardData && this.globalData.leaderboardData.users) || []
+    const lbUser = lbUsers.find(u => u.id === memberId)
+    if (lbUser) {
+      return {
+        points: lbUser.points || 0,
+        classifyCount: lbUser.classifyCount || 0,
+        correctRate: lbUser.accuracy || 0
+      }
+    }
+
+    const member = group && group.members && group.members.find(m => m.id === memberId)
     return {
-      points: 100 + Math.floor(Math.random() * 2000),
-      classifyCount: classifyRecords.length + Math.floor(Math.random() * 50),
-      correctRate: totalQ > 0 ? Math.round((correctQ / totalQ) * 100) : 85
+      points: (member && member.points) || 0,
+      classifyCount: (member && member.classifyCount) || 0,
+      correctRate: (member && member.correctRate) || 0
     }
   },
 
@@ -5939,18 +5966,40 @@ App({
             gameScore: group.memberWeekStats[m.id].gameScore || 0
           }
         } else {
-          const basePts = m.points || (1000 + Math.floor(Math.random() * 3000))
-          const baseCls = m.classifyCount || (30 + Math.floor(Math.random() * 80))
-          const baseAcc = m.correctRate || (70 + Math.random() * 25)
-          const baseGame = 100 + Math.floor(Math.random() * 400)
-
-          const elapsedRatio = period === 'week' ? 1 : period === 'month' ? 1 : 1.5
-          stats = {
-            points: Math.floor(basePts * 0.15 * elapsedRatio * (0.7 + Math.random() * 0.5)),
-            accuracy: Math.min(100, Math.max(50, Math.round(baseAcc))),
-            classifyCount: Math.floor(baseCls * 0.15 * elapsedRatio * (0.7 + Math.random() * 0.5)),
-            streakDays: 0,
-            gameScore: Math.floor(baseGame * elapsedRatio * (0.7 + Math.random() * 0.5))
+          const lbUsers = (this.globalData.leaderboardData && this.globalData.leaderboardData.users) || []
+          const lbUser = lbUsers.find(u => u.id === m.id)
+          if (lbUser) {
+            const lbSeasonStats = lbUser.seasonStats && lbUser.seasonStats[seasonId]
+            const lbWeekStats = lbUser.weekStats
+            if (period === 'month' && lbSeasonStats) {
+              stats = {
+                points: lbSeasonStats.points || 0,
+                accuracy: lbSeasonStats.accuracy || 0,
+                classifyCount: lbSeasonStats.classifyCount || 0,
+                streakDays: 0,
+                gameScore: lbSeasonStats.gameScore || 0
+              }
+            } else if (period === 'week' && lbWeekStats) {
+              stats = {
+                points: lbWeekStats.points || 0,
+                accuracy: lbWeekStats.accuracy || 0,
+                classifyCount: lbWeekStats.classifyCount || 0,
+                streakDays: 0,
+                gameScore: lbWeekStats.gameScore || 0
+              }
+            } else if (period === 'total') {
+              stats = {
+                points: lbUser.points || 0,
+                accuracy: lbUser.accuracy || 0,
+                classifyCount: lbUser.classifyCount || 0,
+                streakDays: lbUser.streakDays || 0,
+                gameScore: lbUser.gameScore || 0
+              }
+            } else {
+              stats = { points: 0, accuracy: 0, classifyCount: 0, streakDays: 0, gameScore: 0 }
+            }
+          } else {
+            stats = { points: 0, accuracy: 0, classifyCount: 0, streakDays: 0, gameScore: 0 }
           }
         }
       }
@@ -6480,8 +6529,8 @@ App({
       name: m.name || m.nickName || '成员',
       avatar: m.avatarUrl || '',
       isCurrentUser: m.isCurrentUser || false,
-      points: m.points || Math.floor(Math.random() * 2000) + 200,
-      classifyCount: m.classifyCount || Math.floor(Math.random() * 50) + 5
+      points: m.points || 0,
+      classifyCount: m.classifyCount || 0
     }))
 
     const sortedByPoints = [...memberStats].sort((a, b) => b.points - a.points)
