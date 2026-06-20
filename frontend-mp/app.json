@@ -60,7 +60,9 @@
     "pages/customer-service/customer-service",
     "pages/ticket-create/ticket-create",
     "pages/tickets/tickets",
-    "pages/ticket-detail/ticket-detail"
+    "pages/ticket-detail/ticket-detail",
+    "pages/packaging-wizard/packaging-wizard",
+    "pages/packaging-submit/packaging-submit"
   ],
   "window": {
     "backgroundTextStyle": "dark",

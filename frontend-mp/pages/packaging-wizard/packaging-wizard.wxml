@@ -1,0 +1,242 @@
+<view class="wizard-page">
+  <view class="wizard-container" wx:if="{{!showQuiz && !showResult && packaging}}">
+
+    <view class="wizard-header">
+      <view class="packaging-hero" style="--hero-color: #5BBD72;">
+        <view class="hero-emoji-wrapper">
+          <text class="hero-emoji">{{packaging.emoji}}</text>
+        </view>
+        <view class="hero-info">
+          <text class="hero-name">{{packaging.name}}</text>
+          <text class="hero-desc">{{packaging.description}}</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="step-progress">
+      <view class="progress-bar-track">
+        <view class="progress-bar-fill" style="width: {{progressPercent}}%; background: linear-gradient(90deg, #5BBD72 0%, #4AA862 100%);"></view>
+      </view>
+      <view class="progress-info">
+        <text class="progress-text">拆解步骤 {{currentStepIndex + 1}} / {{totalSteps}}</text>
+        <text class="progress-required">必拆 {{requiredCount}} 项</text>
+      </view>
+    </view>
+
+    <view class="step-timeline">
+      <view
+        wx:for="{{packaging.components}}"
+        wx:key="id"
+        class="timeline-item {{index <= currentStepIndex ? 'active' : ''}} {{index < currentStepIndex ? 'completed' : ''}} {{index === currentStepIndex ? 'current' : ''}}"
+      >
+        <view class="timeline-dot-wrapper">
+          <view class="timeline-dot" style="{{index <= currentStepIndex ? 'background: ' + item.typeColor + ';' : ''}}">
+            <text class="timeline-check" wx:if="{{index < currentStepIndex}}">✓</text>
+            <text class="timeline-step-num" wx:elif="{{index === currentStepIndex}}">{{index + 1}}</text>
+            <text class="timeline-step-num" wx:else>{{index + 1}}</text>
+          </view>
+          <view class="timeline-line" wx:if="{{index < packaging.components.length - 1}}"></view>
+        </view>
+        <view class="timeline-content">
+          <view class="timeline-label">
+            <text class="timeline-name">{{item.name}}</text>
+            <text class="timeline-required-badge" wx:if="{{item.isRequired}}">必拆</text>
+            <text class="timeline-optional-badge" wx:else>可选</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <view class="step-detail-card" wx:if="{{currentComponent}}">
+      <view class="step-detail-header" style="background: {{currentComponent.typeBgColor}};">
+        <view class="step-detail-icon-row">
+          <text class="step-detail-emoji">{{currentComponent.typeEmoji}}</text>
+          <view class="step-detail-type-tag" style="background: {{currentComponent.typeColor}};">
+            <text class="tag-text">{{currentComponent.typeName}}</text>
+          </view>
+          <text class="step-detail-required" wx:if="{{currentComponent.isRequired}}" style="color: #E85D5D;">⚠ 必须分离</text>
+          <text class="step-detail-optional" wx:else style="color: #8E8E93;">可选分离</text>
+        </view>
+        <text class="step-detail-comp-name">{{currentComponent.name}}</text>
+      </view>
+
+      <view class="step-detail-body">
+        <view class="instruction-section">
+          <view class="instruction-title">
+            <text class="instruction-icon">📝</text>
+            <text class="instruction-label">拆分说明</text>
+          </view>
+          <text class="instruction-text">{{currentComponent.instruction}}</text>
+        </view>
+
+        <view class="tip-section" wx:if="{{currentComponent.tip}}">
+          <view class="tip-banner">
+            <text class="tip-banner-icon">💡</text>
+            <text class="tip-banner-text">{{currentComponent.tip}}</text>
+          </view>
+        </view>
+
+        <view class="step-visual">
+          <view class="visual-flow">
+            <view class="visual-item from-item">
+              <view class="visual-box from-box">
+                <text class="visual-emoji">{{packaging.emoji}}</text>
+                <text class="visual-label">{{packaging.name}}</text>
+              </view>
+            </view>
+            <view class="visual-arrow">
+              <view class="arrow-line"></view>
+              <text class="arrow-icon">→</text>
+              <view class="arrow-line"></view>
+            </view>
+            <view class="visual-item to-item">
+              <view class="visual-box to-box" style="border-color: {{currentComponent.typeColor}}; background: {{currentComponent.typeBgColor}};">
+                <text class="visual-emoji">{{currentComponent.typeEmoji}}</text>
+                <text class="visual-label">{{currentComponent.name}}</text>
+                <text class="visual-type" style="color: {{currentComponent.typeColor}};">{{currentComponent.typeName}}</text>
+              </view>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <view class="step-actions">
+      <view
+        class="step-btn prev-btn"
+        wx:if="{{currentStepIndex > 0}}"
+        bindtap="onPrevStep"
+      >
+        <text class="step-btn-icon">←</text>
+        <text class="step-btn-text">上一步</text>
+      </view>
+      <view
+        class="step-btn next-btn"
+        bindtap="onNextStep"
+        style="background: linear-gradient(135deg, #5BBD72 0%, #4AA862 100%);"
+      >
+        <text class="step-btn-text">{{currentStepIndex >= totalSteps - 1 ? '开始小测' : '下一步'}}</text>
+        <text class="step-btn-icon" wx:if="{{currentStepIndex < totalSteps - 1}}">→</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="quiz-container" wx:if="{{showQuiz && currentQuizQuestion}}">
+    <view class="quiz-header">
+      <view class="quiz-progress-bar">
+        <view class="quiz-progress-fill" style="width: {{quizProgressPercent}}%; background: linear-gradient(90deg, #5BBD72 0%, #4AA862 100%);"></view>
+      </view>
+      <view class="quiz-info">
+        <text class="quiz-progress-text">拆解小测 {{quizCurrentIndex + 1}} / {{quizQuestions.length}}</text>
+        <view class="quiz-score">
+          <text class="quiz-correct">✓ {{quizCorrectCount}}</text>
+          <text class="quiz-wrong">✗ {{quizWrongCount}}</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="quiz-question-card">
+      <view class="quiz-question-label">该部件应投入哪类垃圾？</view>
+      <view class="quiz-question-display">
+        <text class="quiz-question-emoji">{{currentQuizQuestion.typeEmoji}}</text>
+        <text class="quiz-question-name">{{currentQuizQuestion.componentname}}</text>
+      </view>
+    </view>
+
+    <view class="quiz-options">
+      <view
+        wx:for="{{quizOptions}}"
+        wx:key="optTypeId"
+        class="quiz-option {{quizSelectedIndex === index ? 'selected' : ''}} {{quizIsAnswered && item.optTypeId === currentQuizQuestion.correctTypeId ? 'correct' : ''}} {{quizIsAnswered && quizSelectedIndex === index && item.optTypeId !== currentQuizQuestion.correctTypeId ? 'wrong' : ''}}"
+        data-opttypeid="{{item.optTypeId}}"
+        data-optindex="{{index}}"
+        bindtap="onQuizSelect"
+        style="--opt-color: {{item.optTypeColor}}; --opt-bg: {{item.optTypeBgColor}};"
+      >
+        <view class="quiz-option-icon-wrapper" style="background: {{item.optTypeBgColor}};">
+          <text class="quiz-option-emoji">{{item.optTypeEmoji}}</text>
+        </view>
+        <text class="quiz-option-name">{{item.optTypeName}}</text>
+        <view class="quiz-option-result" wx:if="{{quizIsAnswered}}">
+          <text wx:if="{{item.optTypeId === currentQuizQuestion.correctTypeId}}" class="result-correct">✓</text>
+          <text wx:elif="{{quizSelectedIndex === index && item.optTypeId !== currentQuizQuestion.correctTypeId}}" class="result-wrong">✗</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="quiz-explanation" wx:if="{{quizIsAnswered}}">
+      <view class="quiz-explanation-card {{quizIsCorrect ? 'correct' : 'wrong'}}">
+        <view class="explanation-title-row">
+          <text class="explanation-icon">{{quizIsCorrect ? '✅' : '💡'}}</text>
+          <text class="explanation-title">{{quizIsCorrect ? '回答正确' : '正确答案'}}</text>
+        </view>
+        <text class="explanation-text">{{currentQuizQuestion.componentname}} 属于 {{currentQuizQuestion.correctTypeName}}</text>
+        <text class="explanation-instruction" wx:if="{{!quizIsCorrect}}">{{currentQuizQuestion.instruction}}</text>
+      </view>
+    </view>
+
+    <view class="quiz-next-action" wx:if="{{quizIsAnswered}}">
+      <view
+        class="quiz-next-btn"
+        bindtap="onQuizNext"
+        style="background: linear-gradient(135deg, #5BBD72 0%, #4AA862 100%);"
+      >
+        <text class="quiz-next-text">{{quizCurrentIndex + 1 >= quizQuestions.length ? '查看结果' : '下一题'}}</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="result-container" wx:if="{{showResult}}">
+    <view class="result-header-section">
+      <text class="result-hero-emoji">{{resultEmoji}}</text>
+      <text class="result-hero-title">{{resultTitle}}</text>
+      <text class="result-hero-subtitle">拆解小测完成，获得 {{resultPoints}} 积分</text>
+    </view>
+
+    <view class="result-stats-row">
+      <view class="result-stat-item">
+        <text class="stat-value">{{resultTotal}}</text>
+        <text class="stat-label">总题数</text>
+      </view>
+      <view class="result-stat-item correct">
+        <text class="stat-value">{{resultCorrect}}</text>
+        <text class="stat-label">答对</text>
+      </view>
+      <view class="result-stat-item wrong">
+        <text class="stat-value">{{resultWrong}}</text>
+        <text class="stat-label">答错</text>
+      </view>
+      <view class="result-stat-item accuracy">
+        <text class="stat-value">{{resultAccuracy}}%</text>
+        <text class="stat-label">正确率</text>
+      </view>
+    </view>
+
+    <view class="result-points-card">
+      <text class="result-points-icon">🎁</text>
+      <view class="result-points-info">
+        <text class="result-points-title">获得积分</text>
+        <text class="result-points-value">+{{resultPoints}}</text>
+        <view class="result-points-breakdown">
+          <text class="breakdown-item">答题: +{{resultBasePoints}}</text>
+          <text class="breakdown-divider" wx:if="{{resultBonusPoints > 0}}">|</text>
+          <text class="breakdown-item bonus" wx:if="{{resultBonusPoints > 0}}">完成奖励: +{{resultBonusPoints}}</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="result-actions-row">
+      <view class="result-action-btn secondary" bindtap="onGoBack">返回</view>
+      <view class="result-action-btn primary" bindtap="onRestartWizard">再学一次</view>
+    </view>
+
+    <view class="result-submit-entry" bindtap="goToSubmitPackaging">
+      <text class="submit-entry-icon">✍️</text>
+      <view class="submit-entry-text">
+        <text class="submit-entry-title">提交新组合包装建议</text>
+        <text class="submit-entry-subtitle">帮助完善拆解数据库</text>
+      </view>
+      <text class="submit-entry-arrow">›</text>
+    </view>
+  </view>
+</view>

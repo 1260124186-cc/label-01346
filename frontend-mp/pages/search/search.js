@@ -17,6 +17,10 @@ const {
   clearSearchHistory,
   debounce
 } = require('../../utils/util')
+const {
+  searchCompositePackaging,
+  getCompositePackagingById
+} = require('../../data/packaging')
 
 Page({
   data: {
@@ -28,6 +32,7 @@ Page({
     hasSearched: false,
     showDetail: false,
     currentDetail: null,
+    currentPackaging: null,
     currentCity: 'shanghai',
     currentCityInfo: null
   },
@@ -125,17 +130,22 @@ Page({
     
     addSearchHistory(item.name)
     this.loadSearchHistory()
+
+    const packagingResults = searchCompositePackaging(item.name)
+    const matchedPackaging = packagingResults.length > 0 ? packagingResults[0] : null
     
     this.setData({
       showDetail: true,
-      currentDetail: fullItem
+      currentDetail: fullItem,
+      currentPackaging: matchedPackaging
     })
   },
 
   onCloseDetail() {
     this.setData({
       showDetail: false,
-      currentDetail: null
+      currentDetail: null,
+      currentPackaging: null
     })
   },
 
@@ -147,12 +157,26 @@ Page({
     const encyclopedia = getTrashEncyclopediaForCity(currentCity)
     const fullItem = encyclopedia.find(t => t.id === item.id)
     if (fullItem) {
+      const packagingResults = searchCompositePackaging(fullItem.name)
+      const matchedPackaging = packagingResults.length > 0 ? packagingResults[0] : null
+
       this.setData({
         currentDetail: fullItem,
+        currentPackaging: matchedPackaging,
         searchKeyword: fullItem.name
       })
       this.performSearch(fullItem.name)
     }
+  },
+
+  goToPackagingWizard(e) {
+    const { pkg } = e.currentTarget.dataset
+    if (!pkg) return
+    console.log('[Search] 跳转到拆解向导:', pkg.name)
+    this.onCloseDetail()
+    navigateTo('/pages/packaging-wizard/packaging-wizard', {
+      id: pkg.id
+    })
   },
 
   goToClassify() {

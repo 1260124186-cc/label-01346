@@ -134,6 +134,42 @@
           </view>
         </view>
 
+        <view class="detail-section" wx:if="{{currentPackaging}}">
+          <view class="section-title">
+            <text class="section-icon">🔧</text>
+            <text class="section-text">组合包装拆解</text>
+          </view>
+          <view class="section-content">
+            <view class="packaging-preview">
+              <view class="packaging-preview-desc">
+                <text class="packaging-desc-text">该物品为组合包装，包含 {{currentPackaging.components.length}} 个部件，需拆解后分别投放</text>
+              </view>
+              <view class="packaging-components-preview">
+                <view
+                  wx:for="{{currentPackaging.components}}"
+                  wx:key="id"
+                  class="packaging-comp-chip"
+                  style="background: {{item.typeBgColor}}; border-color: {{item.typeColor}};"
+                >
+                  <text class="comp-chip-emoji">{{item.typeEmoji}}</text>
+                  <text class="comp-chip-name">{{item.name}}</text>
+                  <text class="comp-chip-required" wx:if="{{item.isRequired}}">必拆</text>
+                </view>
+              </view>
+              <view class="packaging-wizard-entry" bindtap="goToPackagingWizard" data-pkg="{{currentPackaging}}">
+                <view class="wizard-entry-left">
+                  <text class="wizard-entry-icon">📖</text>
+                  <view class="wizard-entry-text">
+                    <text class="wizard-entry-title">查看拆解步骤</text>
+                    <text class="wizard-entry-subtitle">分步图示 · 完成小测 +积分</text>
+                  </view>
+                </view>
+                <view class="wizard-entry-arrow">›</view>
+              </view>
+            </view>
+          </view>
+        </view>
+
         <view class="detail-actions">
           <view
             class="action-btn primary"

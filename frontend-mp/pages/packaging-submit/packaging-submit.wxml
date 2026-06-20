@@ -1,0 +1,201 @@
+<view class="submit-page">
+  <view class="submit-container">
+
+    <view class="submit-header">
+      <view class="header-icon-wrapper">
+        <text class="header-icon">✍️</text>
+      </view>
+      <text class="header-title">提交新组合包装建议</text>
+      <text class="header-desc">帮助完善拆解数据库，您的建议将进入审核队列</text>
+    </view>
+
+    <view class="form-section">
+      <view class="form-section-title">
+        <text class="section-num">1</text>
+        <text class="section-label">包装基本信息</text>
+      </view>
+
+      <view class="form-item">
+        <text class="form-label">包装名称</text>
+        <input
+          class="form-input"
+          placeholder="如：外卖餐盒、快递包裹"
+          value="{{formData.name}}"
+          bindinput="onInputName"
+        />
+      </view>
+
+      <view class="form-item">
+        <text class="form-label">包装描述</text>
+        <textarea
+          class="form-textarea"
+          placeholder="描述该组合包装由哪些材质组成，以及为什么需要拆解分类"
+          value="{{formData.description}}"
+          bindinput="onInputDescription"
+          maxlength="200"
+          auto-height
+        />
+        <text class="form-counter">{{formData.description.length}}/200</text>
+      </view>
+
+      <view class="form-item">
+        <text class="form-label">包装类别</text>
+        <view class="category-picker">
+          <view
+            wx:for="{{categories}}"
+            wx:key="id"
+            class="category-option {{formData.category === item.id ? 'selected' : ''}}"
+            bindtap="onSelectCategory"
+            data-id="{{item.id}}"
+          >
+            <text class="category-emoji">{{item.emoji}}</text>
+            <text class="category-name">{{item.name}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <view class="form-section">
+      <view class="form-section-title">
+        <text class="section-num">2</text>
+        <text class="section-label">部件拆解信息</text>
+        <text class="section-hint">（至少添加2个部件）</text>
+      </view>
+
+      <view class="components-list">
+        <view
+          wx:for="{{formData.components}}"
+          wx:key="id"
+          class="component-card"
+        >
+          <view class="comp-card-header">
+            <text class="comp-card-index">部件 {{index + 1}}</text>
+            <view
+              class="comp-card-delete"
+              wx:if="{{formData.components.length > 2}}"
+              bindtap="onRemoveComponent"
+              data-index="{{index}}"
+            >
+              <text class="delete-icon">✕</text>
+            </view>
+          </view>
+          <view class="comp-card-body">
+            <view class="comp-field">
+              <text class="comp-field-label">部件名称</text>
+              <input
+                class="comp-field-input"
+                placeholder="如：塑料餐盒"
+                value="{{item.name}}"
+                bindinput="onCompInputName"
+                data-index="{{index}}"
+              />
+            </view>
+            <view class="comp-field">
+              <text class="comp-field-label">所属分类</text>
+              <view class="comp-type-picker">
+                <view
+                  wx:for="{{trashTypes}}"
+                  wx:for-item="type"
+                  wx:key="id"
+                  class="comp-type-option {{item.typeId === type.id ? 'selected' : ''}}"
+                  style="{{item.typeId === type.id ? 'background: ' + type.bgColor + '; border-color: ' + type.color + ';' : ''}}"
+                  bindtap="onCompSelectType"
+                  data-comp-index="{{index}}"
+                  data-type-id="{{type.id}}"
+                >
+                  <text class="comp-type-emoji">{{type.emoji}}</text>
+                  <text class="comp-type-name" style="{{item.typeId === type.id ? 'color: ' + type.color + ';' : ''}}">{{type.name}}</text>
+                </view>
+              </view>
+            </view>
+            <view class="comp-field">
+              <text class="comp-field-label">拆分说明</text>
+              <textarea
+                class="comp-field-textarea"
+                placeholder="描述如何拆分该部件"
+                value="{{item.instruction}}"
+                bindinput="onCompInputInstruction"
+                data-index="{{index}}"
+                maxlength="100"
+                auto-height
+              />
+            </view>
+            <view class="comp-field">
+              <view class="comp-switch-row">
+                <text class="comp-field-label">是否必须分离</text>
+                <view
+                  class="switch-toggle {{item.isRequired ? 'active' : ''}}"
+                  bindtap="onCompToggleRequired"
+                  data-index="{{index}}"
+                >
+                  <view class="switch-thumb"></view>
+                </view>
+              </view>
+              <text class="comp-switch-hint">{{item.isRequired ? '标记为必须拆解分离的部件' : '标记为可选拆解的部件'}}</text>
+            </view>
+          </view>
+        </view>
+      </view>
+
+      <view
+        class="add-component-btn"
+        bindtap="onAddComponent"
+        wx:if="{{formData.components.length < 8}}"
+      >
+        <text class="add-icon">+</text>
+        <text class="add-text">添加部件</text>
+      </view>
+    </view>
+
+    <view class="form-section">
+      <view class="form-section-title">
+        <text class="section-num">3</text>
+        <text class="section-label">补充说明（选填）</text>
+      </view>
+      <textarea
+        class="form-textarea full"
+        placeholder="如有额外说明，请在此填写"
+        value="{{formData.remark}}"
+        bindinput="onInputRemark"
+        maxlength="300"
+        auto-height
+      />
+    </view>
+
+    <view class="submit-tips">
+      <text class="tips-icon">📋</text>
+      <text class="tips-text">提交后进入审核队列，审核通过后将加入拆解向导数据库，贡献者可获得积分奖励</text>
+    </view>
+
+    <view class="submit-actions">
+      <view class="submit-btn secondary" bindtap="onSaveDraft">
+        <text class="submit-btn-text">保存草稿</text>
+      </view>
+      <view class="submit-btn primary" bindtap="onSubmit">
+        <text class="submit-btn-text">提交审核</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="review-queue-section" wx:if="{{reviewQueue.length > 0}}">
+    <view class="review-queue-header">
+      <text class="queue-title">📝 我的提交记录</text>
+      <text class="queue-count">{{reviewQueue.length}} 条</text>
+    </view>
+    <view class="review-queue-list">
+      <view
+        wx:for="{{reviewQueue}}"
+        wx:key="id"
+        class="queue-item"
+      >
+        <view class="queue-item-left">
+          <text class="queue-item-name">{{item.name}}</text>
+          <text class="queue-item-time">{{item.submitTime}}</text>
+        </view>
+        <view class="queue-item-status {{item.status}}">
+          <text class="status-text">{{item.statusText}}</text>
+        </view>
+      </view>
+    </view>
+  </view>
+</view>
