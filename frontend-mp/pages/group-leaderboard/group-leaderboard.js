@@ -8,11 +8,13 @@ Page({
     periods: LEADERBOARD_CONFIG.periods,
     dimensions: [
       { id: 'points', name: '积分', icon: '💰', unit: '分' },
+      { id: 'accuracy', name: '正确率', icon: '🎯', unit: '%' },
       { id: 'classifyCount', name: '分类次数', icon: '♻️', unit: '次' },
-      { id: 'accuracy', name: '正确率', icon: '🎯', unit: '%' }
+      { id: 'gameScore', name: '游戏最高分', icon: '🎮', unit: '分' }
     ],
     currentPeriod: 'week',
-    currentDimension: 'points',
+    currentDimension: 'gameScore',
+    groupGameLeaderboard: null,
     leaderboardList: [],
     myRank: 0,
     myData: null,
@@ -35,6 +37,7 @@ Page({
     const groupId = options.groupId || 'default-group'
     this.setData({ groupId })
     this.loadLeaderboard()
+    this.refreshGameLeaderboard()
     this.loadGroupTasks()
     this.loadPointsPool()
     this.loadPointsHistory()
@@ -42,6 +45,7 @@ Page({
 
   onShow() {
     this.loadLeaderboard()
+    this.refreshGameLeaderboard()
     this.loadGroupTasks()
     this.loadPointsPool()
     this.loadPointsHistory()
@@ -60,11 +64,22 @@ Page({
     this.loadLeaderboard()
   },
 
-  onDimensionTap(e) {
+  onDimensionChange(e) {
     const { id } = e.currentTarget.dataset
     if (id === this.data.currentDimension) return
     this.setData({ currentDimension: id })
-    this.loadLeaderboard()
+    if (id === 'gameScore') {
+      this.refreshGameLeaderboard()
+    } else {
+      this.loadLeaderboard()
+    }
+  },
+
+  refreshGameLeaderboard() {
+    const currentGroup = app.getCurrentGroup()
+    if (!currentGroup) return
+    const gameLB = app.getGroupGameLeaderboard(currentGroup.id, this.data.currentDimension)
+    this.setData({ groupGameLeaderboard: gameLB })
   },
 
   onPointsHistoryTabTap(e) {
@@ -253,6 +268,7 @@ Page({
 
   onPullDownRefresh() {
     this.loadLeaderboard()
+    this.refreshGameLeaderboard()
     this.loadGroupTasks()
     this.loadPointsPool()
     this.loadPointsHistory()

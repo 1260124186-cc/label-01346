@@ -51,7 +51,11 @@ Page({
       conveyor: 0,
       match: 0
     },
-    powerups: GAME_POWERUPS
+    powerups: GAME_POWERUPS,
+    userPowerups: { hint: 0, time: 0, combo: 0, shield: 0 },
+    showShopModal: false,
+    currentPowerup: null,
+    purchaseQuantity: 1
   },
 
   onLoad() {
@@ -68,6 +72,7 @@ Page({
     const userInfo = app.globalData.userInfo
     const todayPlayCount = app.getTodayGamePlayCount()
     const remainingPlays = Math.max(0, GAME_CONFIG.dailyPlayLimit - todayPlayCount)
+    const userPowerups = app.getPowerups()
 
     this.setData({
       userPoints: userInfo ? userInfo.points : 0,
@@ -77,7 +82,8 @@ Page({
         catch: app.getGameBestScore('catch'),
         conveyor: app.getGameBestScore('conveyor'),
         match: app.getGameBestScore('match')
-      }
+      },
+      userPowerups
     })
   },
 
@@ -88,7 +94,7 @@ Page({
     const playCheck = app.canPlayGame(game.id)
     if (!playCheck.canPlay) {
       if (playCheck.reason === 'daily_limit') {
-        const confirmed = await showModal({
+        await showModal({
           title: '今日次数已用完',
           content: `每日最多可游玩 ${GAME_CONFIG.dailyPlayLimit} 次小游戏，明天再来吧！`,
           confirmText: '我知道了',
@@ -114,14 +120,51 @@ Page({
   onPowerupTap(e) {
     const { powerup } = e.currentTarget.dataset
     console.log('[GameHall] 点击道具', powerup.id)
+    this.setData({
+      showShopModal: true,
+      currentPowerup: powerup,
+      purchaseQuantity: 1
+    })
+  },
 
+  onCloseShop() {
+    this.setData({ showShopModal: false, currentPowerup: null })
+  },
+
+  onQuantityChange(e) {
+    const { delta } = e.currentTarget.dataset
+    let qty = this.data.purchaseQuantity + parseInt(delta)
+    qty = Math.max(1, Math.min(10, qty))
+    this.setData({ purchaseQuantity: qty })
+  },
+
+  async onConfirmPurchase() {
+    const { currentPowerup, purchaseQuantity } = this.data
+    if (!currentPowerup) return
+
+    const totalCost = currentPowerup.cost * purchaseQuantity
     const userInfo = app.globalData.userInfo
-    if (!userInfo || userInfo.points < powerup.cost) {
-      showToast(`积分不足，需要${powerup.cost}积分`)
+    if (!userInfo || userInfo.points < totalCost) {
+      showToast(`积分不足，需要${totalCost}积分`)
       return
     }
 
-    showToast(`${powerup.name} 道具将在游戏中自动使用`)
+    const confirmResult = await showModal({
+      title: '确认购买',
+      content: `花费 ${totalCost} 积分购买 ${currentPowerup.name} x ${purchaseQuantity} ？`,
+      confirmText: '确认购买',
+      cancelText: '再想想'
+    })
+    if (!confirmResult) return
+
+    const result = app.buyPowerup(currentPowerup.id, purchaseQuantity)
+    if (result.success) {
+      this.refreshData()
+      showToast(`购买成功！当前持有 ${result.count} 个`)
+      this.setData({ showShopModal: false, currentPowerup: null })
+    } else {
+      showToast(result.message || '购买失败')
+    }
   },
 
   onShareAppMessage() {

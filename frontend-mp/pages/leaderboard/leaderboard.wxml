@@ -10,6 +10,19 @@
         </view>
       </view>
       <text class="season-date">{{seasonInfo.startDate}} ~ {{seasonInfo.endDate}}</text>
+      <view class="season-medals-row">
+        <view class="season-medal-item">
+          <text class="season-medal-icon">🎖️</text>
+          <text class="season-medal-label">本赛季徽章</text>
+          <text class="season-medal-count">{{seasonInfo.medals.length || 0}}</text>
+        </view>
+        <view class="season-medal-divider"></view>
+        <view class="season-medal-item">
+          <text class="season-medal-icon">🏅</text>
+          <text class="season-medal-label">历史徽章</text>
+          <text class="season-medal-count">{{historyMedals.length}}</text>
+        </view>
+      </view>
     </view>
   </view>
 
@@ -37,6 +50,45 @@
         <text class="dimension-tab-icon">{{item.icon}}</text>
         <text class="dimension-tab-name">{{item.name}}</text>
       </view>
+    </view>
+  </view>
+
+  <view class="month-reset-tip" wx:if="{{currentPeriod === 'month'}}">
+    <text class="month-reset-tip-text">💡 每月赛季结束自动清零，徽章永久保留</text>
+  </view>
+
+  <view class="honor-hall-section">
+    <view class="honor-hall-header">
+      <text class="honor-hall-icon">🏅</text>
+      <text class="honor-hall-title">荣誉殿堂</text>
+    </view>
+    <scroll-view wx:if="{{historyMedals.length > 0}}" class="medals-scroll" scroll-x="true" enhanced show-scrollbar="{{false}}">
+      <view class="medals-scroll-inner">
+        <view
+          class="medal-card"
+          wx:for="{{historyMedals}}"
+          wx:key="id"
+          data-medal="{{item}}"
+          bindtap="onMedalTap"
+        >
+          <view class="medal-card-icon-wrap">
+            <text class="medal-card-icon">{{item.icon}}</text>
+          </view>
+          <text class="medal-card-name">{{item.name}}</text>
+          <view class="medal-card-rank">
+            <text wx:if="{{item.rank === 1}}">🥇</text>
+            <text wx:elif="{{item.rank === 2}}">🥈</text>
+            <text wx:elif="{{item.rank === 3}}">🥉</text>
+            <text wx:else>第{{item.rank}}名</text>
+          </view>
+          <text class="medal-card-season">S{{item.seasonId}}</text>
+          <text class="medal-card-time">{{item.time}}</text>
+        </view>
+      </view>
+    </scroll-view>
+    <view wx:else class="medals-empty">
+      <text class="medals-empty-icon">🎯</text>
+      <text class="medals-empty-text">参与赛季排行榜赢取专属徽章</text>
     </view>
   </view>
 
@@ -126,6 +178,38 @@
         <text class="pk-entry-desc">与好友对战赢积分</text>
       </view>
       <text class="pk-entry-arrow">›</text>
+    </view>
+  </view>
+
+  <view wx:if="{{showMedalModal && selectedMedal}}" class="medal-modal" catchtap="onCloseMedalModal">
+    <view class="medal-modal-mask"></view>
+    <view class="medal-modal-card" catchtap="">
+      <view class="medal-modal-close" bindtap="onCloseMedalModal">
+        <text class="medal-modal-close-icon">✕</text>
+      </view>
+      <view class="medal-modal-icon-wrap">
+        <text class="medal-modal-icon">{{selectedMedal.icon}}</text>
+      </view>
+      <text class="medal-modal-name">{{selectedMedal.name}}</text>
+      <view class="medal-modal-info">
+        <view class="medal-modal-info-row">
+          <text class="medal-modal-info-label">赛季</text>
+          <text class="medal-modal-info-value">S{{selectedMedal.seasonId}}</text>
+        </view>
+        <view class="medal-modal-info-row">
+          <text class="medal-modal-info-label">排名</text>
+          <view class="medal-modal-info-value">
+            <text wx:if="{{selectedMedal.rank === 1}}">🥇 第1名</text>
+            <text wx:elif="{{selectedMedal.rank === 2}}">🥈 第2名</text>
+            <text wx:elif="{{selectedMedal.rank === 3}}">🥉 第3名</text>
+            <text wx:else>第{{selectedMedal.rank}}名</text>
+          </view>
+        </view>
+        <view class="medal-modal-info-row">
+          <text class="medal-modal-info-label">获得时间</text>
+          <text class="medal-modal-info-value">{{selectedMedal.time}}</text>
+        </view>
+      </view>
     </view>
   </view>
 </view>

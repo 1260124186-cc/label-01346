@@ -46,7 +46,7 @@
           wx:for="{{dimensions}}"
           wx:key="id"
           data-id="{{item.id}}"
-          bindtap="onDimensionTap"
+          bindtap="onDimensionChange"
         >
           <text class="dimension-tab-icon">{{item.icon}}</text>
           <text class="dimension-tab-name">{{item.name}}</text>
@@ -54,79 +54,153 @@
       </view>
     </view>
 
-    <view class="podium-section" wx:if="{{leaderboardList.length >= 3}}">
-      <view class="podium-container">
-        <view class="podium-item podium-silver">
-          <view class="podium-avatar-wrap podium-avatar-silver">
-            <text class="podium-avatar-emoji">{{leaderboardList[1].avatarEmoji || '😎'}}</text>
-          </view>
-          <text class="podium-name">{{leaderboardList[1].nickName}}</text>
-          <text class="podium-value">{{leaderboardList[1].displayValue}}</text>
-          <view class="podium-bar podium-bar-silver">
-            <text class="podium-rank-text">2</text>
-          </view>
-        </view>
-        <view class="podium-item podium-gold">
-          <view class="podium-crown">👑</view>
-          <view class="podium-avatar-wrap podium-avatar-gold">
-            <text class="podium-avatar-emoji">{{leaderboardList[0].avatarEmoji || '🥇'}}</text>
-          </view>
-          <text class="podium-name">{{leaderboardList[0].nickName}}</text>
-          <text class="podium-value">{{leaderboardList[0].displayValue}}</text>
-          <view class="podium-bar podium-bar-gold">
-            <text class="podium-rank-text">1</text>
-          </view>
-        </view>
-        <view class="podium-item podium-bronze">
-          <view class="podium-avatar-wrap podium-avatar-bronze">
-            <text class="podium-avatar-emoji">{{leaderboardList[2].avatarEmoji || '😊'}}</text>
-          </view>
-          <text class="podium-name">{{leaderboardList[2].nickName}}</text>
-          <text class="podium-value">{{leaderboardList[2].displayValue}}</text>
-          <view class="podium-bar podium-bar-bronze">
-            <text class="podium-rank-text">3</text>
-          </view>
-        </view>
+    <block wx:if="{{currentDimension === 'gameScore' && groupGameLeaderboard}}">
+      <view class="game-week-range">
+        <text class="game-week-range-icon">📅</text>
+        <text class="game-week-range-text">{{groupGameLeaderboard.weekStart}} ~ {{groupGameLeaderboard.weekEnd}}</text>
       </view>
-    </view>
 
-    <view class="rank-list" wx:if="{{leaderboardList.length > 3}}">
-      <view
-        class="rank-item"
-        wx:for="{{leaderboardList}}"
-        wx:key="id"
-        wx:if="{{index >= 3 && !item.isCurrentUser}}"
-      >
-        <view class="rank-number-wrap">
-          <text class="rank-number">{{item.rank}}</text>
-        </view>
-        <view class="rank-avatar-wrap">
-          <text class="rank-avatar-emoji">{{item.avatarEmoji || '🌱'}}</text>
-        </view>
-        <view class="rank-info">
-          <text class="rank-name">{{item.nickName}}</text>
-          <text class="rank-value">{{item.displayValue}}</text>
+      <view class="game-top3-section" wx:if="{{groupGameLeaderboard.list && groupGameLeaderboard.list.length >= 3}}">
+        <view class="game-top3-container">
+          <view class="game-top3-item game-top3-silver">
+            <view class="game-top3-medal">🥈</view>
+            <view class="game-top3-avatar">
+              <text class="game-top3-avatar-emoji">{{groupGameLeaderboard.list[1].avatarEmoji || '😎'}}</text>
+            </view>
+            <text class="game-top3-name">{{groupGameLeaderboard.list[1].nickName}}</text>
+            <text class="game-top3-score">{{groupGameLeaderboard.list[1].gameScore}}</text>
+            <text class="game-top3-score-label">最高分</text>
+          </view>
+          <view class="game-top3-item game-top3-gold">
+            <view class="game-top3-medal game-top3-medal-gold">🏆</view>
+            <view class="game-top3-avatar game-top3-avatar-gold">
+              <text class="game-top3-avatar-emoji">{{groupGameLeaderboard.list[0].avatarEmoji || '🥇'}}</text>
+            </view>
+            <text class="game-top3-name">{{groupGameLeaderboard.list[0].nickName}}</text>
+            <text class="game-top3-score game-top3-score-gold">{{groupGameLeaderboard.list[0].gameScore}}</text>
+            <text class="game-top3-score-label">最高分</text>
+          </view>
+          <view class="game-top3-item game-top3-bronze">
+            <view class="game-top3-medal">🥉</view>
+            <view class="game-top3-avatar">
+              <text class="game-top3-avatar-emoji">{{groupGameLeaderboard.list[2].avatarEmoji || '😊'}}</text>
+            </view>
+            <text class="game-top3-name">{{groupGameLeaderboard.list[2].nickName}}</text>
+            <text class="game-top3-score">{{groupGameLeaderboard.list[2].gameScore}}</text>
+            <text class="game-top3-score-label">最高分</text>
+          </view>
         </view>
       </view>
-    </view>
 
-    <view class="my-rank-card" wx:if="{{myData}}">
-      <view class="my-rank-left">
-        <view class="my-rank-badge">
-          <text class="my-rank-number">{{myRank}}</text>
-        </view>
-        <view class="my-rank-avatar">
-          <text class="my-rank-avatar-emoji">{{myData.avatarEmoji || '🌱'}}</text>
-        </view>
-        <view class="my-rank-info">
-          <text class="my-rank-name">{{myData.nickName}}</text>
-          <text class="my-rank-value">{{myData.displayValue}}</text>
+      <view class="game-rank-list">
+        <view
+          class="game-rank-item {{item.isCurrentUser ? 'game-rank-item-mine' : ''}}"
+          wx:for="{{groupGameLeaderboard.list}}"
+          wx:key="id"
+        >
+          <view class="game-rank-number-wrap">
+            <text class="game-rank-medal" wx:if="{{item.rank === 1}}">🏆</text>
+            <text class="game-rank-medal" wx:elif="{{item.rank === 2}}">🥈</text>
+            <text class="game-rank-medal" wx:elif="{{item.rank === 3}}">🥉</text>
+            <text class="game-rank-number" wx:else>{{item.rank}}</text>
+          </view>
+          <view class="game-rank-avatar">
+            <text class="game-rank-avatar-emoji">{{item.avatarEmoji || '🌱'}}</text>
+          </view>
+          <view class="game-rank-info">
+            <view class="game-rank-info-top">
+              <text class="game-rank-name">{{item.nickName}}</text>
+              <text class="game-rank-mine-tag" wx:if="{{item.isCurrentUser}}">我</text>
+            </view>
+            <view class="game-rank-stats">
+              <text class="game-rank-stat">🎮 {{item.plays || 0}} 局</text>
+              <text class="game-rank-stat-divider">·</text>
+              <text class="game-rank-stat">📊 周总分 {{item.weeklyTotal || 0}}</text>
+            </view>
+          </view>
+          <view class="game-rank-score-wrap">
+            <text class="game-rank-score">{{item.gameScore}}</text>
+            <text class="game-rank-score-unit">分</text>
+          </view>
         </view>
       </view>
-      <view class="my-rank-tag">
-        <text class="my-rank-tag-text">我的排名</text>
+    </block>
+
+    <block wx:if="{{currentDimension !== 'gameScore'}}">
+      <view class="podium-section" wx:if="{{leaderboardList.length >= 3}}">
+        <view class="podium-container">
+          <view class="podium-item podium-silver">
+            <view class="podium-avatar-wrap podium-avatar-silver">
+              <text class="podium-avatar-emoji">{{leaderboardList[1].avatarEmoji || '😎'}}</text>
+            </view>
+            <text class="podium-name">{{leaderboardList[1].nickName}}</text>
+            <text class="podium-value">{{leaderboardList[1].displayValue}}</text>
+            <view class="podium-bar podium-bar-silver">
+              <text class="podium-rank-text">2</text>
+            </view>
+          </view>
+          <view class="podium-item podium-gold">
+            <view class="podium-crown">👑</view>
+            <view class="podium-avatar-wrap podium-avatar-gold">
+              <text class="podium-avatar-emoji">{{leaderboardList[0].avatarEmoji || '🥇'}}</text>
+            </view>
+            <text class="podium-name">{{leaderboardList[0].nickName}}</text>
+            <text class="podium-value">{{leaderboardList[0].displayValue}}</text>
+            <view class="podium-bar podium-bar-gold">
+              <text class="podium-rank-text">1</text>
+            </view>
+          </view>
+          <view class="podium-item podium-bronze">
+            <view class="podium-avatar-wrap podium-avatar-bronze">
+              <text class="podium-avatar-emoji">{{leaderboardList[2].avatarEmoji || '😊'}}</text>
+            </view>
+            <text class="podium-name">{{leaderboardList[2].nickName}}</text>
+            <text class="podium-value">{{leaderboardList[2].displayValue}}</text>
+            <view class="podium-bar podium-bar-bronze">
+              <text class="podium-rank-text">3</text>
+            </view>
+          </view>
+        </view>
       </view>
-    </view>
+
+      <view class="rank-list" wx:if="{{leaderboardList.length > 3}}">
+        <view
+          class="rank-item"
+          wx:for="{{leaderboardList}}"
+          wx:key="id"
+          wx:if="{{index >= 3 && !item.isCurrentUser}}"
+        >
+          <view class="rank-number-wrap">
+            <text class="rank-number">{{item.rank}}</text>
+          </view>
+          <view class="rank-avatar-wrap">
+            <text class="rank-avatar-emoji">{{item.avatarEmoji || '🌱'}}</text>
+          </view>
+          <view class="rank-info">
+            <text class="rank-name">{{item.nickName}}</text>
+            <text class="rank-value">{{item.displayValue}}</text>
+          </view>
+        </view>
+      </view>
+
+      <view class="my-rank-card" wx:if="{{myData}}">
+        <view class="my-rank-left">
+          <view class="my-rank-badge">
+            <text class="my-rank-number">{{myRank}}</text>
+          </view>
+          <view class="my-rank-avatar">
+            <text class="my-rank-avatar-emoji">{{myData.avatarEmoji || '🌱'}}</text>
+          </view>
+          <view class="my-rank-info">
+            <text class="my-rank-name">{{myData.nickName}}</text>
+            <text class="my-rank-value">{{myData.displayValue}}</text>
+          </view>
+        </view>
+        <view class="my-rank-tag">
+          <text class="my-rank-tag-text">我的排名</text>
+        </view>
+      </view>
+    </block>
   </block>
 
   <block wx:if="{{currentMainTab === 'tasks'}}">

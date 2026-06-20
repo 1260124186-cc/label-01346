@@ -36,9 +36,12 @@ Page({
     totalItems: 0,
     processedItems: 0,
 
-    hintCount: 0,
-    timeBoostCount: 0,
+    hintRemaining: 0,
+    timeRemaining: 0,
+    comboRemaining: 0,
+    shieldRemaining: 0,
     comboBoostActive: false,
+    shieldActive: false,
     showFeedback: false,
     feedbackText: '',
     feedbackType: '',
@@ -58,7 +61,8 @@ Page({
     resultBonusPoints: 0,
     resultTotalPoints: 0,
     resultAccuracy: 0,
-    resultPassed: false
+    resultPassed: false,
+    resultFlagged: false
   },
 
   _timer: null,
@@ -66,6 +70,7 @@ Page({
   _animationFrame: null,
   _startTouchX: 0,
   _lastTime: 0,
+  _gameStartTime: 0,
 
   onLoad(options) {
     console.log('[GameCatch] 页面加载', options)
@@ -78,6 +83,8 @@ Page({
     const level = parseInt(options.level) || 1
     const levelInfo = GAME_LEVELS.catch[Math.min(level - 1, GAME_LEVELS.catch.length - 1)]
 
+    const powerups = app.getPowerups()
+
     this.setData({
       screenWidth,
       screenHeight,
@@ -88,7 +95,11 @@ Page({
       basketZone: 1,
       basketX: zoneWidth * 1 + zoneWidth / 2 - basketWidth / 2,
       timeLeft: levelInfo.timeLimit,
-      totalItems: levelInfo.itemCount
+      totalItems: levelInfo.itemCount,
+      hintRemaining: powerups.hint,
+      timeRemaining: powerups.time,
+      comboRemaining: powerups.combo,
+      shieldRemaining: powerups.shield
     })
 
     wx.setNavigationBarTitle({ title: `接垃圾 · 第${level}关` })
@@ -131,6 +142,9 @@ Page({
     }
 
     app.recordGamePlay('catch')
+    this._gameStartTime = Date.now()
+
+    const powerups = app.getPowerups()
 
     this.setData({
       gameState: GAME_STATE.PLAYING,
@@ -143,9 +157,12 @@ Page({
       missedCount: 0,
       timeLeft: this.data.levelInfo.timeLimit,
       processedItems: 0,
-      hintCount: 0,
-      timeBoostCount: 0,
-      comboBoostActive: false
+      comboBoostActive: false,
+      shieldActive: false,
+      hintRemaining: powerups.hint,
+      timeRemaining: powerups.time,
+      comboRemaining: powerups.combo,
+      shieldRemaining: powerups.shield
     })
 
     this.startTimers()
@@ -284,6 +301,7 @@ Page({
       basketX
     })
 
+    app.recordAntiCheatGameTap('catch')
     this.checkCatch(zone)
   },
 
@@ -317,13 +335,25 @@ Page({
     const newItems = [...this.data.fallingItems]
     newItems.splice(index, 1)
 
-    let newCombo = isCorrect ? this.data.combo + 1 : 0
+    let shieldUsed = false
+    let actualCorrect = isCorrect
+    let actualWrongCount = this.data.wrongCount
+    let actualCorrectCount = this.data.correctCount
+    let actualScoreDelta = 0
+
+    if (!isCorrect && this.data.shieldActive) {
+      shieldUsed = true
+      actualCorrect = true
+      this.setData({ shieldActive: false, shieldRemaining: this.data.shieldRemaining })
+    }
+
+    let newCombo = actualCorrect ? this.data.combo + 1 : 0
     if (newCombo > this.data.maxCombo) {
       this.setData({ maxCombo: newCombo })
     }
 
     let points = 0
-    if (isCorrect) {
+    if (actualCorrect) {
       const comboIndex = Math.min(newCombo - 1, GAME_CONFIG.comboMultiplier.length - 1)
       const multiplier = GAME_CONFIG.comboMultiplier[comboIndex]
       points = Math.floor(GAME_CONFIG.basePoints * multiplier)
@@ -331,18 +361,22 @@ Page({
         points *= 2
         this.setData({ comboBoostActive: false })
       }
+      actualCorrectCount = this.data.correctCount + 1
+      actualScoreDelta = points
+    } else {
+      actualWrongCount = this.data.wrongCount + 1
     }
 
     this.setData({
       fallingItems: newItems,
       combo: newCombo,
-      correctCount: isCorrect ? this.data.correctCount + 1 : this.data.correctCount,
-      wrongCount: !isCorrect ? this.data.wrongCount + 1 : this.data.wrongCount,
-      score: this.data.score + points,
+      correctCount: actualCorrectCount,
+      wrongCount: actualWrongCount,
+      score: this.data.score + actualScoreDelta,
       processedItems: this.data.processedItems + 1,
       showFeedback: true,
-      feedbackText: isCorrect ? `+${points}` : '错误',
-      feedbackType: isCorrect ? 'correct' : 'wrong',
+      feedbackText: shieldUsed ? '🛡️护盾抵消' : (actualCorrect ? `+${points}` : '错误'),
+      feedbackType: shieldUsed ? 'shield' : (actualCorrect ? 'correct' : 'wrong'),
       feedbackX: item.x,
       feedbackY: item.y
     })
@@ -351,67 +385,69 @@ Page({
       this.setData({ showFeedback: false })
     }, 600)
 
+    if (!isCorrect && !shieldUsed) {
+      const correctType = TRASH_TYPES.find(t => t.id === item.typeId)
+      const wrongType = basketType
+      this.showTrashKnowledge(item, correctType, wrongType)
+    }
+
     if (this.data.processedItems >= this.data.totalItems) {
       setTimeout(() => this.endGame(), 500)
     }
   },
 
-  useHint() {
-    if (this.data.hintCount >= 1) {
-      showToast('提示道具已使用')
-      return
-    }
-
-    const userInfo = app.globalData.userInfo
-    if (userInfo && userInfo.points < 50) {
-      showToast('积分不足')
-      return
-    }
-
-    app.updateUserPoints(-50, {
-      category: 'game_powerup',
-      title: '提示道具',
-      desc: '使用游戏提示道具',
-      emoji: '💡'
+  showTrashKnowledge(item, correctType, wrongType) {
+    if (!correctType) return
+    const examplesText = (correctType.examples || []).slice(0, 3).map(e => `${e.icon}${e.name}`).join('、')
+    showModal({
+      title: `📚 垃圾分类小知识 · ${correctType.name}`,
+      content: `【${item.emoji} ${item.name}】\n\n正确分类：${correctType.emoji} ${correctType.name}\n你选的是：${wrongType ? wrongType.emoji + ' ' + wrongType.name : '未知'}\n\n📖 ${correctType.description}\n\n✨ 同类示例：${examplesText}\n\n💡 投放提示：${correctType.tips && correctType.tips[0] ? correctType.tips[0] : ''}`,
+      showCancel: false,
+      confirmText: '我记住了'
     })
+  },
+
+  useHint() {
+    if (this.data.hintRemaining <= 0) {
+      showToast('提示道具不足，请先购买')
+      return
+    }
+    const result = app.usePowerup('hint')
+    if (!result.success) {
+      showToast(result.message || '使用失败')
+      return
+    }
 
     const items = this.data.fallingItems
     if (items.length > 0) {
       const targetItem = items[0]
       const correctZone = TRASH_TYPES.findIndex(t => t.id === targetItem.typeId)
-      const updatedItems = items.map((item, idx) => 
-        idx === 0 ? { ...item, isHinted: true, hintedZone: correctZone } : item
+      const updatedItems = items.map((it, idx) => 
+        idx === 0 ? { ...it, isHinted: true, hintedZone: correctZone } : it
       )
       this.setData({
         fallingItems: updatedItems,
-        hintCount: 1
+        hintRemaining: result.remaining
       })
       showToast(`请投到第${correctZone + 1}个桶`)
+    } else {
+      showToast('暂无可提示物品')
     }
   },
 
   useTimeBoost() {
-    if (this.data.timeBoostCount >= 2) {
-      showToast('加时道具已用完')
+    if (this.data.timeRemaining <= 0) {
+      showToast('加时道具不足，请先购买')
       return
     }
-
-    const userInfo = app.globalData.userInfo
-    if (userInfo && userInfo.points < 30) {
-      showToast('积分不足')
+    const result = app.usePowerup('time')
+    if (!result.success) {
+      showToast(result.message || '使用失败')
       return
     }
-
-    app.updateUserPoints(-30, {
-      category: 'game_powerup',
-      title: '加时道具',
-      desc: '使用游戏加时道具',
-      emoji: '⏰'
-    })
-
     this.setData({
       timeLeft: this.data.timeLeft + 10,
-      timeBoostCount: this.data.timeBoostCount + 1
+      timeRemaining: result.remaining
     })
     showSuccess('+10秒')
   },
@@ -421,22 +457,41 @@ Page({
       showToast('连击道具已激活')
       return
     }
-
-    const userInfo = app.globalData.userInfo
-    if (userInfo && userInfo.points < 80) {
-      showToast('积分不足')
+    if (this.data.comboRemaining <= 0) {
+      showToast('连击道具不足，请先购买')
       return
     }
-
-    app.updateUserPoints(-80, {
-      category: 'game_powerup',
-      title: '连击道具',
-      desc: '使用游戏连击道具',
-      emoji: '🔥'
+    const result = app.usePowerup('combo')
+    if (!result.success) {
+      showToast(result.message || '使用失败')
+      return
+    }
+    this.setData({ 
+      comboBoostActive: true,
+      comboRemaining: result.remaining
     })
-
-    this.setData({ comboBoostActive: true })
     showSuccess('下次得分翻倍')
+  },
+
+  useShield() {
+    if (this.data.shieldActive) {
+      showToast('护盾已激活')
+      return
+    }
+    if (this.data.shieldRemaining <= 0) {
+      showToast('护盾道具不足，请先购买')
+      return
+    }
+    const result = app.usePowerup('shield')
+    if (!result.success) {
+      showToast(result.message || '使用失败')
+      return
+    }
+    this.setData({
+      shieldActive: true,
+      shieldRemaining: result.remaining
+    })
+    showSuccess('护盾已激活，下次错误不扣分')
   },
 
   pauseGame() {
@@ -457,6 +512,9 @@ Page({
     const missed = this.data.missedCount
     const total = correct + wrong + missed
     const accuracy = total > 0 ? Math.round((correct / total) * 100) : 0
+    const durationSeconds = this._gameStartTime
+      ? Math.max(1, Math.floor((Date.now() - this._gameStartTime) / 1000))
+      : this.data.levelInfo.timeLimit
 
     const basePoints = this.data.score
     let bonusPoints = 0
@@ -488,8 +546,18 @@ Page({
       resultEmoji = '👍'
     }
 
+    let resultFlagged = false
     if (totalPoints > 0) {
-      app.addGamePoints(totalPoints, 'catch', '接垃圾')
+      const addResult = app.addGamePoints(totalPoints, 'catch', '接垃圾', {
+        durationSeconds,
+        correctCount: correct,
+        totalCount: total
+      })
+      resultFlagged = !!addResult.flagged
+      if (resultFlagged) {
+        resultTitle = '成绩已审核'
+        resultEmoji = '⚠️'
+      }
     }
 
     this.setData({
@@ -502,8 +570,13 @@ Page({
       resultBonusPoints: bonusPoints,
       resultTotalPoints: totalPoints,
       resultAccuracy: accuracy,
-      resultPassed: passed
+      resultPassed: passed,
+      resultFlagged
     })
+
+    if (resultFlagged) {
+      showToast({ title: '检测到异常操作，成绩已审核', icon: 'none' })
+    }
   },
 
   onRestart() {

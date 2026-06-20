@@ -176,6 +176,9 @@ App({
       const levelInfo = getUserLevel(userInfo.points || 0)
       const oldLevel = userInfo.level
       userInfo.level = levelInfo.level
+      if (!userInfo.powerups) {
+        userInfo.powerups = { hint: 0, time: 0, combo: 0, shield: 0 }
+      }
       this.globalData.userInfo = userInfo
       if (oldLevel !== levelInfo.level) {
         wx.setStorageSync('userInfo', userInfo)
@@ -189,12 +192,77 @@ App({
         nickName: '环保达人',
         points: defaultPoints,
         level: levelInfo.level,
-        joinDate: this.formatDate(new Date())
+        joinDate: this.formatDate(new Date()),
+        powerups: { hint: 2, time: 2, combo: 1, shield: 1 }
       }
       this.globalData.userInfo = defaultUserInfo
       wx.setStorageSync('userInfo', defaultUserInfo)
       console.log('[App] 已创建默认用户信息')
     }
+  },
+
+  saveUserInfo() {
+    if (this.globalData.userInfo) {
+      wx.setStorageSync('userInfo', this.globalData.userInfo)
+    }
+  },
+
+  getPowerups() {
+    const userInfo = this.globalData.userInfo
+    if (!userInfo) return { hint: 0, time: 0, combo: 0, shield: 0 }
+    return userInfo.powerups || { hint: 0, time: 0, combo: 0, shield: 0 }
+  },
+
+  getPowerupCount(powerupId) {
+    const powerups = this.getPowerups()
+    return powerups[powerupId] || 0
+  },
+
+  buyPowerup(powerupId, quantity = 1) {
+    const { GAME_POWERUPS } = require('./utils/constants')
+    const powerup = GAME_POWERUPS.find(p => p.id === powerupId)
+    if (!powerup) {
+      return { success: false, message: '道具不存在' }
+    }
+    const totalCost = powerup.cost * quantity
+    const userInfo = this.globalData.userInfo
+    if (!userInfo) return { success: false, message: '用户未登录' }
+    if ((userInfo.points || 0) < totalCost) {
+      return { success: false, message: '积分不足' }
+    }
+    const currentCount = this.getPowerupCount(powerupId)
+    const maxStack = powerup.maxStack || 99
+    if (currentCount + quantity > maxStack) {
+      return { success: false, message: `该道具最多持有${maxStack}个` }
+    }
+    this.updateUserPoints(-totalCost, {
+      category: 'shop',
+      title: `购买${powerup.name}x${quantity}`,
+      emoji: powerup.emoji
+    })
+    if (!userInfo.powerups) {
+      userInfo.powerups = { hint: 0, time: 0, combo: 0, shield: 0 }
+    }
+    userInfo.powerups[powerupId] = currentCount + quantity
+    this.saveUserInfo()
+    console.log('[App] 购买道具成功', powerupId, 'x', quantity, '花费', totalCost)
+    return { success: true, count: userInfo.powerups[powerupId] }
+  },
+
+  usePowerup(powerupId) {
+    const userInfo = this.globalData.userInfo
+    if (!userInfo) return { success: false, message: '用户未登录' }
+    if (!userInfo.powerups) {
+      userInfo.powerups = { hint: 0, time: 0, combo: 0, shield: 0 }
+    }
+    const count = userInfo.powerups[powerupId] || 0
+    if (count <= 0) {
+      return { success: false, message: '道具数量不足' }
+    }
+    userInfo.powerups[powerupId] = count - 1
+    this.saveUserInfo()
+    console.log('[App] 使用道具', powerupId, '剩余', count - 1)
+    return { success: true, remaining: count - 1 }
   },
 
   initGoodsStock() {
@@ -2788,11 +2856,22 @@ App({
     const totalCorrect = quizRecords.reduce((sum, r) => sum + (r.correctCount || 0), 0)
     const accuracy = totalQuestions > 0 ? Math.round((totalCorrect / totalQuestions) * 100) : 0
 
+    const weekStart = new Date()
+    weekStart.setHours(0, 0, 0, 0)
+    weekStart.setDate(weekStart.getDate() - weekStart.getDay())
+    const weekStartStr = formatDate(weekStart, 'YYYY-MM-DD')
+    const gameRecords = this.getGameRecords()
+    const weekGameRecords = gameRecords.filter(r => r.time && r.time >= weekStartStr)
+    const gameScore = weekGameRecords.length > 0
+      ? Math.max(...weekGameRecords.map(r => r.score || 0))
+      : 0
+
     return {
       points: userInfo ? userInfo.points : 0,
       accuracy,
       classifyCount: classifyRecords.length,
-      streakDays: this.getStreakDays()
+      streakDays: this.getStreakDays(),
+      gameScore
     }
   },
 
@@ -3020,6 +3099,8 @@ App({
     const stored = wx.getStorageSync('seasonData')
 
     if (stored && stored.seasonId) {
+      if (!stored.historyMedals) stored.historyMedals = []
+      if (!stored.historySeasons) stored.historySeasons = []
       this.globalData.seasonData = stored
     } else {
       const now = new Date()
@@ -3034,6 +3115,8 @@ App({
         endDate: `${year}-${String(month).padStart(2, '0')}-${String(new Date(year, month, 0).getDate()).padStart(2, '0')}`,
         medals: [],
         vouchers: [],
+        historyMedals: [],
+        historySeasons: [],
         resetDone: false
       }
       wx.setStorageSync('seasonData', this.globalData.seasonData)
@@ -3061,6 +3144,24 @@ App({
     const leaderboard = this.getLeaderboard('month', 'points')
     const topList = leaderboard.list.slice(0, 3)
 
+    const gameLeaderboard = this.getLeaderboard('month', 'gameScore')
+    const gameTopList = gameLeaderboard.list.slice(0, 3)
+
+    const archivedSeason = {
+      seasonId: seasonData.seasonId,
+      seasonName: seasonData.seasonName,
+      startDate: seasonData.startDate,
+      endDate: seasonData.endDate,
+      pointsRank: topList.map(u => ({ id: u.id, nickName: u.nickName, value: u.points })),
+      gameRank: gameTopList.map(u => ({ id: u.id, nickName: u.nickName, value: u.gameScore })),
+      archivedAt: formatDate(new Date(), 'YYYY-MM-DD HH:mm')
+    }
+
+    if (!this.globalData.seasonData.historySeasons) {
+      this.globalData.seasonData.historySeasons = []
+    }
+    this.globalData.seasonData.historySeasons.unshift(archivedSeason)
+
     topList.forEach((user, index) => {
       if (user.isCurrentUser) {
         const rank = index + 1
@@ -3068,7 +3169,7 @@ App({
         if (reward) {
           this.updateUserPoints(reward, {
             category: 'season',
-            title: `${seasonData.seasonName}赛季奖励`,
+            title: `${seasonData.seasonName}赛季积分榜奖励`,
             desc: `赛季排名第${rank}名`,
             emoji: '🏅'
           })
@@ -3076,13 +3177,14 @@ App({
 
         const medal = {
           id: generateId(),
-          name: `${SEASON_CONFIG.seasonMedalPrefix}·${seasonData.seasonName}`,
-          icon: '🏅',
+          name: `${SEASON_CONFIG.seasonMedalPrefix}·${seasonData.seasonName}积分榜`,
+          icon: rank === 1 ? '🥇' : rank === 2 ? '🥈' : '🥉',
           seasonId: seasonData.seasonId,
+          type: 'points',
           rank,
           time: formatDate(new Date(), 'YYYY-MM-DD HH:mm')
         }
-        this.addSeasonMedal(medal)
+        this.addSeasonMedal(medal, true)
 
         if (rank <= 3) {
           const voucher = {
@@ -3099,14 +3201,54 @@ App({
       }
     })
 
+    gameTopList.forEach((user, index) => {
+      if (user.isCurrentUser) {
+        const rank = index + 1
+        const reward = SEASON_CONFIG.seasonGameReward && SEASON_CONFIG.seasonGameReward[rank]
+        if (reward) {
+          this.updateUserPoints(reward, {
+            category: 'season',
+            title: `${seasonData.seasonName}赛季游戏榜奖励`,
+            desc: `游戏榜第${rank}名`,
+            emoji: '🎮'
+          })
+        }
+
+        const medal = {
+          id: generateId(),
+          name: `${SEASON_CONFIG.seasonMedalPrefix}·${seasonData.seasonName}游戏榜`,
+          icon: rank === 1 ? '🎮' : rank === 2 ? '🕹️' : '🎯',
+          seasonId: seasonData.seasonId,
+          type: 'gameScore',
+          rank,
+          time: formatDate(new Date(), 'YYYY-MM-DD HH:mm')
+        }
+        this.addSeasonMedal(medal, true)
+      }
+    })
+
+    const currentMedals = seasonData.medals || []
+    currentMedals.forEach(m => {
+      if (!this.globalData.seasonData.historyMedals.find(hm => hm.id === m.id)) {
+        this.globalData.seasonData.historyMedals.push(m)
+      }
+    })
+
+    wx.setStorageSync('seasonData', this.globalData.seasonData)
     console.log('[App] 赛季结算完成', seasonData.seasonId)
   },
 
-  addSeasonMedal(medal) {
+  addSeasonMedal(medal, saveToHistory = false) {
     if (!this.globalData.seasonData.medals) {
       this.globalData.seasonData.medals = []
     }
     this.globalData.seasonData.medals.push(medal)
+    if (saveToHistory) {
+      if (!this.globalData.seasonData.historyMedals) {
+        this.globalData.seasonData.historyMedals = []
+      }
+      this.globalData.seasonData.historyMedals.push(medal)
+    }
     wx.setStorageSync('seasonData', this.globalData.seasonData)
   },
 
@@ -3133,7 +3275,9 @@ App({
       endDate: seasonData.endDate,
       daysRemaining,
       medals: seasonData.medals || [],
-      vouchers: seasonData.vouchers || []
+      vouchers: seasonData.vouchers || [],
+      historyMedals: seasonData.historyMedals || [],
+      historySeasons: seasonData.historySeasons || []
     }
   },
 
@@ -3142,12 +3286,19 @@ App({
     const today = formatDate(new Date(), 'YYYY-MM-DD')
 
     if (stored && stored.date === today) {
+      if (!stored.hourlyGameScores) stored.hourlyGameScores = {}
+      if (!stored.tapTimestamps) stored.tapTimestamps = []
+      if (!stored.gameSessions) stored.gameSessions = []
+      if (!stored.flaggedActions) stored.flaggedActions = []
       this.globalData.antiCheatData = stored
     } else {
       this.globalData.antiCheatData = {
         date: today,
         hourlyScores: {},
         hourlyPKCount: {},
+        hourlyGameScores: {},
+        tapTimestamps: [],
+        gameSessions: [],
         lastMatchOpponent: null,
         lastMatchTime: 0,
         flaggedActions: []
@@ -3157,179 +3308,194 @@ App({
     console.log('[App] 防作弊数据已加载')
   },
 
-  checkAntiCheat() {
+  recordAntiCheatGameTap(gameType) {
     const { ANTI_CHEAT_CONFIG } = require('./utils/constants')
-    const cheatData = this.globalData.antiCheatData
+    if (!this.globalData.antiCheatData) return { normal: true }
+
+    const now = Date.now()
+    const data = this.globalData.antiCheatData
+    if (!data.tapTimestamps) data.tapTimestamps = []
+
+    data.tapTimestamps.push({ time: now, gameType })
+    const windowStart = now - ANTI_CHEAT_CONFIG.tapWindowMs
+    data.tapTimestamps = data.tapTimestamps.filter(t => t.time >= windowStart)
+
+    const recentTaps = data.tapTimestamps.filter(t => t.gameType === gameType || true)
+    const tapCount = recentTaps.length
+    const windowSeconds = ANTI_CHEAT_CONFIG.tapWindowMs / 1000
+    const tapsPerSecond = tapCount / windowSeconds
+
+    let normal = true
+    let reason = null
+
+    if (tapCount >= ANTI_CHEAT_CONFIG.abnormalTapThreshold) {
+      normal = false
+      reason = 'abnormal_tap_frequency'
+    } else if (tapsPerSecond >= ANTI_CHEAT_CONFIG.maxTapsPerSecond) {
+      normal = false
+      reason = 'abnormal_tap_speed'
+    }
+
+    if (!normal) {
+      if (!data.flaggedActions) data.flaggedActions = []
+      data.flaggedActions.push({
+        time: formatDate(new Date(), 'YYYY-MM-DD HH:mm:ss'),
+        type: reason,
+        gameType,
+        detail: { tapCount, tapsPerSecond: tapsPerSecond.toFixed(2) }
+      })
+    }
+
+    wx.setStorageSync('antiCheatData', data)
+    return { normal, reason, tapCount, tapsPerSecond: tapsPerSecond.toFixed(2) }
+  },
+
+  checkGameAntiCheat(gameType, gameScore, durationSeconds, correctCount, totalCount) {
+    const { ANTI_CHEAT_CONFIG } = require('./utils/constants')
+    if (!this.globalData.antiCheatData) return { passed: true }
+
+    const data = this.globalData.antiCheatData
     const now = new Date()
     const hourKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}-${String(now.getHours()).padStart(2, '0')}`
 
-    if (!cheatData || cheatData.date !== formatDate(now, 'YYYY-MM-DD')) {
-      this.initAntiCheatData()
-    }
-
-    const hourlyScore = cheatData.hourlyScores[hourKey] || 0
-    if (hourlyScore > ANTI_CHEAT_CONFIG.maxScorePerHour) {
+    if (durationSeconds < ANTI_CHEAT_CONFIG.minGameDurationSeconds && gameScore > 50) {
       return {
         passed: false,
-        reason: 'abnormal_score',
-        message: '每小时积分获取异常，请稍后再试'
+        reason: 'abnormal_game_duration',
+        message: '游戏时长异常，成绩作废'
       }
     }
 
-    const hourlyPK = cheatData.hourlyPKCount[hourKey] || 0
-    if (hourlyPK >= ANTI_CHEAT_CONFIG.maxPKPerHour) {
+    const hourlyGameScore = (data.hourlyGameScores && data.hourlyGameScores[hourKey]) || 0
+    if (hourlyGameScore + gameScore > ANTI_CHEAT_CONFIG.maxGameScorePerHour) {
       return {
         passed: false,
-        reason: 'abnormal_pk_frequency',
-        message: 'PK频率异常，请稍后再试'
+        reason: 'abnormal_game_score_hourly',
+        message: '每小时游戏得分异常，请稍后再试'
       }
     }
 
-    if (cheatData.lastMatchOpponent && cheatData.lastMatchTime) {
-      const timeSinceLastMatch = Date.now() - cheatData.lastMatchTime
-      if (timeSinceLastMatch < ANTI_CHEAT_CONFIG.sameOpponentCooldown) {
-        return {
-          passed: false,
-          reason: 'same_opponent_cooldown',
-          message: '同一对手匹配冷却中'
-        }
-      }
+    if (totalCount > 10 && correctCount === totalCount && totalCount > ANTI_CHEAT_CONFIG.maxPerfectStreakSuspicious) {
+      if (!data.flaggedActions) data.flaggedActions = []
+      data.flaggedActions.push({
+        time: formatDate(new Date(), 'YYYY-MM-DD HH:mm:ss'),
+        type: 'suspicious_perfect_score',
+        gameType,
+        detail: { totalCount, correctCount }
+      })
+      wx.setStorageSync('antiCheatData', data)
     }
 
     return { passed: true }
   },
 
-  recordAntiCheatScore(points) {
+  recordAntiCheatGameScore(points) {
     const now = new Date()
     const hourKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}-${String(now.getHours()).padStart(2, '0')}`
 
     if (!this.globalData.antiCheatData) return
-    if (!this.globalData.antiCheatData.hourlyScores) {
-      this.globalData.antiCheatData.hourlyScores = {}
+    const data = this.globalData.antiCheatData
+    if (!data.hourlyGameScores) {
+      data.hourlyGameScores = {}
     }
-    this.globalData.antiCheatData.hourlyScores[hourKey] = (this.globalData.antiCheatData.hourlyScores[hourKey] || 0) + points
-    wx.setStorageSync('antiCheatData', this.globalData.antiCheatData)
+    data.hourlyGameScores[hourKey] = (data.hourlyGameScores[hourKey] || 0) + points
+    wx.setStorageSync('antiCheatData', data)
   },
 
-  recordAntiCheatPK(opponentId) {
-    const now = new Date()
-    const hourKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}-${String(now.getHours()).padStart(2, '0')}`
+  addGamePoints(points, gameType, gameName, extra = {}) {
+    const { durationSeconds, correctCount, totalCount } = extra
+    const antiCheat = this.checkGameAntiCheat(gameType, points, durationSeconds, correctCount, totalCount)
+    let actualPoints = points
+    let flagged = false
+    let flagReason = null
 
-    if (!this.globalData.antiCheatData) return
-    if (!this.globalData.antiCheatData.hourlyPKCount) {
-      this.globalData.antiCheatData.hourlyPKCount = {}
-    }
-    this.globalData.antiCheatData.hourlyPKCount[hourKey] = (this.globalData.antiCheatData.hourlyPKCount[hourKey] || 0) + 1
-    this.globalData.antiCheatData.lastMatchOpponent = opponentId
-    this.globalData.antiCheatData.lastMatchTime = Date.now()
-    wx.setStorageSync('antiCheatData', this.globalData.antiCheatData)
-  },
-
-  getAntiCheatFlaggedActions() {
-    return (this.globalData.antiCheatData && this.globalData.antiCheatData.flaggedActions) || []
-  },
-
-  initGameRecords() {
-    const records = wx.getStorageSync('gameRecords')
-    this.globalData.gameRecords = records || []
-    console.log('[App] 游戏记录已加载', this.globalData.gameRecords.length, '条')
-  },
-
-  addGameRecord(record) {
-    const newRecord = {
-      id: generateId(),
-      ...record,
-      time: formatDate(new Date(), 'YYYY-MM-DD HH:mm')
-    }
-    this.globalData.gameRecords.unshift(newRecord)
-    wx.setStorageSync('gameRecords', this.globalData.gameRecords)
-    console.log('[App] 新增游戏记录', record.gameType, record.points + '分')
-  },
-
-  getGameRecords(gameType = null) {
-    const records = this.globalData.gameRecords || []
-    return gameType ? records.filter(r => r.gameType === gameType) : records
-  },
-
-  initDailyGamePlays() {
-    const { GAME_CONFIG } = require('./utils/constants')
-    const today = formatDate(new Date(), 'YYYY-MM-DD')
-    const stored = wx.getStorageSync('dailyGamePlays')
-
-    if (stored && stored.date === today) {
-      this.globalData.dailyGamePlays = stored
-    } else {
-      this.globalData.dailyGamePlays = {
-        date: today,
-        plays: {
-          catch: 0,
-          conveyor: 0,
-          match: 0
-        }
-      }
-      wx.setStorageSync('dailyGamePlays', this.globalData.dailyGamePlays)
-    }
-    console.log('[App] 每日游戏次数已加载', this.globalData.dailyGamePlays)
-  },
-
-  getTodayGamePlayCount(gameType) {
-    const today = formatDate(new Date(), 'YYYY-MM-DD')
-    const plays = this.globalData.dailyGamePlays
-
-    if (!plays || plays.date !== today) {
-      this.initDailyGamePlays()
+    if (!antiCheat.passed) {
+      actualPoints = Math.floor(points * 0.2)
+      flagged = true
+      flagReason = antiCheat.reason
+      console.log('[App] 反作弊触发，分数削减为', actualPoints, '原因:', antiCheat.reason)
     }
 
-    if (!gameType) {
-      const total = Object.values(this.globalData.dailyGamePlays.plays || {}).reduce((sum, n) => sum + n, 0)
-      return total
-    }
-    return (this.globalData.dailyGamePlays.plays && this.globalData.dailyGamePlays.plays[gameType]) || 0
-  },
-
-  canPlayGame(gameType) {
-    const { GAME_CONFIG } = require('./utils/constants')
-    const totalPlays = this.getTodayGamePlayCount()
-    if (totalPlays >= GAME_CONFIG.dailyPlayLimit) {
-      return { canPlay: false, reason: 'daily_limit' }
-    }
-    return { canPlay: true }
-  },
-
-  recordGamePlay(gameType) {
-    const today = formatDate(new Date(), 'YYYY-MM-DD')
-    let plays = this.globalData.dailyGamePlays
-
-    if (!plays || plays.date !== today) {
-      this.initDailyGamePlays()
-      plays = this.globalData.dailyGamePlays
-    }
-
-    if (!plays.plays) {
-      plays.plays = {}
-    }
-    plays.plays[gameType] = (plays.plays[gameType] || 0) + 1
-    this.globalData.dailyGamePlays = plays
-    wx.setStorageSync('dailyGamePlays', plays)
-    console.log('[App] 记录游戏次数', gameType, '今日累计:', plays.plays[gameType])
-  },
-
-  getGameBestScore(gameType) {
-    const records = this.getGameRecords(gameType)
-    if (records.length === 0) return 0
-    return Math.max(...records.map(r => r.score || 0))
-  },
-
-  addGamePoints(points, gameType, gameName) {
-    const actualResult = this.addPoints(points, 'game')
+    const actualResult = this.addPoints(actualPoints, 'game')
     if (actualResult.success && actualResult.points > 0) {
       this.addGameRecord({
         gameType: gameType,
         gameName: gameName,
-        score: actualResult.points
+        score: actualResult.points,
+        rawScore: points,
+        flagged,
+        flagReason,
+        durationSeconds,
+        correctCount,
+        totalCount
       })
+      this.recordAntiCheatGameScore(actualResult.points)
     }
-    return actualResult
+    return { ...actualResult, flagged, flagReason, originalPoints: points }
+  },
+
+  getGroupGameLeaderboard(groupId, dimension = 'gameScore') {
+    const { LEADERBOARD_CONFIG } = require('./utils/constants')
+    const members = this.getGroupMembers(groupId) || []
+    const groups = this.globalData.userGroups || []
+    const group = groups.find(g => g.id === groupId)
+    const myUserId = this.getUserId()
+
+    const weekStart = new Date()
+    weekStart.setHours(0, 0, 0, 0)
+    weekStart.setDate(weekStart.getDate() - weekStart.getDay())
+    const weekStartStr = formatDate(weekStart, 'YYYY-MM-DD')
+
+    const memberStats = members.map(member => {
+      const isCurrentUser = member.userId === myUserId
+      const memberRecords = isCurrentUser
+        ? this.getGameRecords()
+        : (group && group.memberGameRecords && group.memberGameRecords[member.userId]) || []
+      const weekRecords = (memberRecords || []).filter(r => r.time && r.time >= weekStartStr)
+      const gameScore = weekRecords.length > 0
+        ? Math.max(...weekRecords.map(r => r.score || 0))
+        : 0
+      const totalGameScore = (memberRecords || []).length > 0
+        ? Math.max(...(memberRecords || []).map(r => r.score || 0))
+        : 0
+      const weeklyTotal = weekRecords.reduce((s, r) => s + (r.score || 0), 0)
+      const plays = weekRecords.length
+
+      const stats = {
+        id: member.userId,
+        nickName: member.nickName || '组员',
+        avatarEmoji: member.avatarEmoji || '🌱',
+        role: member.role,
+        gameScore,
+        totalGameScore,
+        weeklyTotal,
+        plays,
+        isCurrentUser
+      }
+      if (isCurrentUser) {
+        const realStats = this.getCurrentUserStats()
+        stats.gameScore = realStats.gameScore
+      }
+      return stats
+    })
+
+    memberStats.sort((a, b) => {
+      const aVal = a[dimension] || 0
+      const bVal = b[dimension] || 0
+      if (bVal !== aVal) return bVal - aVal
+      return (b.plays || 0) - (a.plays || 0)
+    })
+
+    const ranked = memberStats.map((m, i) => ({ ...m, rank: i + 1 }))
+    const myRank = ranked.find(m => m.isCurrentUser)
+
+    return {
+      list: ranked,
+      myRank: myRank ? myRank.rank : ranked.length + 1,
+      myData: myRank || null,
+      weekStart: weekStartStr,
+      weekEnd: formatDate(new Date(), 'YYYY-MM-DD')
+    }
   },
 
   initRecycleOrders() {

@@ -66,7 +66,8 @@
   <view class="powerup-section">
     <view class="section-header">
       <view class="section-title-icon" style="background: linear-gradient(135deg, #F39C12 0%, #E67E22 100%);"></view>
-      <text class="section-title">游戏道具</text>
+      <text class="section-title">🛒 道具商店</text>
+      <text class="section-sub">（点击可购买）</text>
     </view>
     <view class="powerup-grid">
       <view
@@ -80,10 +81,49 @@
           <text class="powerup-emoji">{{item.emoji}}</text>
         </view>
         <text class="powerup-name">{{item.name}}</text>
+        <text class="powerup-desc">{{item.description}}</text>
+        <view class="powerup-owned" wx:if="{{userPowerups[item.id] > 0}}">
+          <text class="owned-label">持有</text>
+          <text class="owned-count">{{userPowerups[item.id]}}</text>
+        </view>
         <view class="powerup-cost">
           <text class="cost-emoji">💰</text>
           <text class="cost-value">{{item.cost}}</text>
         </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 商店弹窗 -->
+  <view class="shop-modal" wx:if="{{showShopModal && currentPowerup}}">
+    <view class="shop-mask" bindtap="onCloseShop"></view>
+    <view class="shop-card">
+      <view class="shop-close" bindtap="onCloseShop">✕</view>
+      <view class="shop-header">
+        <text class="shop-icon">{{currentPowerup.emoji}}</text>
+        <text class="shop-name">{{currentPowerup.name}}</text>
+      </view>
+      <text class="shop-desc">{{currentPowerup.description}}</text>
+
+      <view class="shop-quantity-row">
+        <text class="quantity-btn" bindtap="onQuantityChange" data-delta="-1">－</text>
+        <text class="quantity-value">{{purchaseQuantity}}</text>
+        <text class="quantity-btn" bindtap="onQuantityChange" data-delta="1">＋</text>
+      </view>
+
+      <view class="shop-cost-row">
+        <text class="cost-title">共需</text>
+        <text class="cost-total-emoji">💰</text>
+        <text class="cost-total-value">{{currentPowerup.cost * purchaseQuantity}}</text>
+        <text class="cost-suffix">积分</text>
+      </view>
+      <view class="shop-owned-row">
+        <text>当前持有：{{userPowerups[currentPowerup.id]}}</text>
+      </view>
+
+      <view class="shop-actions">
+        <view class="shop-btn secondary" bindtap="onCloseShop">取消</view>
+        <view class="shop-btn primary" bindtap="onConfirmPurchase">确认购买</view>
       </view>
     </view>
   </view>

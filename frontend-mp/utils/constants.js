@@ -3519,7 +3519,8 @@ const LEADERBOARD_CONFIG = {
     { id: 'points', name: '积分', icon: '💰', unit: '分' },
     { id: 'accuracy', name: '正确率', icon: '🎯', unit: '%' },
     { id: 'classifyCount', name: '分类次数', icon: '♻️', unit: '次' },
-    { id: 'streakDays', name: '连续签到', icon: '📅', unit: '天' }
+    { id: 'streakDays', name: '连续签到', icon: '📅', unit: '天' },
+    { id: 'gameScore', name: '游戏最高分', icon: '🎮', unit: '分' }
   ],
   topDisplayCount: 3,
   pageSize: 20
@@ -3557,12 +3558,14 @@ const PK_CONFIG = {
 
 const SEASON_CONFIG = {
   seasonDurationDays: 30,
-  resetDimensions: ['points', 'accuracy', 'classifyCount'],
+  resetDimensions: ['points', 'accuracy', 'classifyCount', 'gameScore'],
   keepDimensions: ['streakDays'],
   seasonMedalPrefix: '赛季勋章',
   seasonVoucherPoints: 200,
   seasonTopReward: { 1: 500, 2: 300, 3: 200 },
-  seasonResetDay: 1
+  seasonGameReward: { 1: 300, 2: 200, 3: 100 },
+  seasonResetDay: 1,
+  archiveHistory: true
 }
 
 const ANTI_CHEAT_CONFIG = {
@@ -3572,7 +3575,13 @@ const ANTI_CHEAT_CONFIG = {
   abnormalAccuracyThreshold: 98,
   abnormalSpeedThreshold: 2000,
   sameOpponentCooldown: 300000,
-  suspiciousScoreMultiplier: 3
+  suspiciousScoreMultiplier: 3,
+  maxGameScorePerHour: 800,
+  maxTapsPerSecond: 5,
+  tapWindowMs: 3000,
+  abnormalTapThreshold: 12,
+  minGameDurationSeconds: 10,
+  maxPerfectStreakSuspicious: 30
 }
 
 const GAME_CONFIG = {
@@ -3616,13 +3625,16 @@ const GAME_ITEMS = SORT_PRACTICE_ITEMS
 
 const GAME_POWERUPS = [
   {
-    id: 'hint', name: '提示道具', emoji: '💡', description: '高亮显示一个正确答案', cost: 50
+    id: 'hint', name: '提示道具', emoji: '💡', description: '高亮显示一个正确答案', cost: 50, maxStack: 99
   },
   {
-    id: 'time', name: '加时道具', emoji: '⏰', description: '增加10秒游戏时间', cost: 30
+    id: 'time', name: '加时道具', emoji: '⏰', description: '增加10秒游戏时间', cost: 30, maxStack: 99
   },
   {
-    id: 'combo', name: '连击道具', emoji: '🔥', description: '下次正确获得双倍分数', cost: 80
+    id: 'combo', name: '连击道具', emoji: '🔥', description: '下次正确获得双倍分数', cost: 80, maxStack: 99
+  },
+  {
+    id: 'shield', name: '护盾道具', emoji: '🛡️', description: '免除一次错误扣分', cost: 60, maxStack: 99
   }
 ]
 

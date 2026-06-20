@@ -11,7 +11,10 @@ Page({
     leaderboardList: [],
     myRank: 0,
     myData: null,
-    seasonInfo: null
+    seasonInfo: null,
+    historyMedals: [],
+    showMedalModal: false,
+    selectedMedal: null
   },
 
   onLoad() {
@@ -61,7 +64,10 @@ Page({
 
   loadSeasonInfo() {
     const seasonInfo = app.getSeasonInfo()
-    this.setData({ seasonInfo })
+    this.setData({
+      seasonInfo,
+      historyMedals: seasonInfo ? seasonInfo.historyMedals || [] : []
+    })
   },
 
   formatValue(value, dimension) {
@@ -74,6 +80,15 @@ Page({
 
   onPKTap() {
     navigateTo('/pages/pk-battle/pk-battle')
+  },
+
+  onMedalTap(e) {
+    const { medal } = e.currentTarget.dataset
+    this.setData({ showMedalModal: true, selectedMedal: medal })
+  },
+
+  onCloseMedalModal() {
+    this.setData({ showMedalModal: false, selectedMedal: null })
   },
 
   onPullDownRefresh() {

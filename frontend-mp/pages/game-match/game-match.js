@@ -33,10 +33,13 @@ Page({
     totalPairs: 0,
     wrongAttempts: 0,
     timeLeft: 90,
-    hintCount: 0,
-    timeBoostCount: 0,
-    comboBoostActive: false,
     matchedFlashId: null,
+
+    hintRemaining: 0,
+    timeRemaining: 0,
+    comboRemaining: 0,
+    shieldRemaining: 0,
+    shieldActive: false,
 
     showFeedback: false,
     feedbackText: '',
@@ -50,20 +53,27 @@ Page({
     resultBonusPoints: 0,
     resultTotalPoints: 0,
     resultAccuracy: 0,
-    resultPassed: false
+    resultPassed: false,
+    resultFlagged: false
   },
 
   _timer: null,
+  _gameStartTime: 0,
 
   onLoad(options) {
     console.log('[GameMatch] 页面加载', options)
     const level = parseInt(options.level) || 1
     const levelInfo = GAME_LEVELS.match[Math.min(level - 1, GAME_LEVELS.match.length - 1)]
+    const powerups = app.getPowerups()
 
     this.setData({
       currentLevel: level,
       levelInfo,
-      timeLeft: levelInfo.timeLimit
+      timeLeft: levelInfo.timeLimit,
+      hintRemaining: powerups.hint,
+      timeRemaining: powerups.time,
+      comboRemaining: powerups.combo,
+      shieldRemaining: powerups.shield
     })
 
     wx.setNavigationBarTitle({ title: `记忆配对 · 第${level}关` })
@@ -145,6 +155,8 @@ Page({
 
     app.recordGamePlay('match')
 
+    this._gameStartTime = Date.now()
+    const powerups = app.getPowerups()
     const cards = this.generateCards()
     const totalPairs = cards.length / 2
 
@@ -161,9 +173,11 @@ Page({
       firstCard: null,
       secondCard: null,
       isProcessing: false,
-      hintCount: 0,
-      timeBoostCount: 0,
-      comboBoostActive: false
+      hintRemaining: powerups.hint,
+      timeRemaining: powerups.time,
+      comboRemaining: powerups.combo,
+      shieldRemaining: powerups.shield,
+      shieldActive: false
     })
 
     this._timer = setInterval(() => {
@@ -179,6 +193,8 @@ Page({
 
   onCardTap(e) {
     if (this.data.gameState !== GAME_STATE.PLAYING || this.data.isProcessing) return
+
+    app.recordAntiCheatGameTap('match')
 
     const { cardid } = e.currentTarget.dataset
     const cardIndex = this.data.cards.findIndex(c => c.id === cardid)
@@ -260,14 +276,30 @@ Page({
       newCards[firstCard.index] = { ...card1, isFlipped: false }
       newCards[secondCard.index] = { ...card2, isFlipped: false }
 
-      this.setData({
-        cards: newCards,
-        combo: 0,
-        wrongAttempts: this.data.wrongAttempts + 1,
-        showFeedback: true,
-        feedbackText: '不匹配',
-        feedbackType: 'wrong'
-      })
+      if (this.data.shieldActive) {
+        this.setData({
+          cards: newCards,
+          shieldActive: false,
+          showFeedback: true,
+          feedbackText: '护盾已抵消',
+          feedbackType: 'correct'
+        })
+      } else {
+        const wrongCard = card1.type === 'item' ? card1 : (card2.type === 'item' ? card2 : card1)
+        const correctType = TRASH_TYPES.find(t => t.id === wrongCard.typeId)
+        if (correctType) {
+          this.showTrashKnowledge(wrongCard, correctType)
+        }
+
+        this.setData({
+          cards: newCards,
+          combo: 0,
+          wrongAttempts: this.data.wrongAttempts + 1,
+          showFeedback: true,
+          feedbackText: '不匹配',
+          feedbackType: 'wrong'
+        })
+      }
 
       setTimeout(() => {
         this.setData({
@@ -280,24 +312,27 @@ Page({
     }
   },
 
-  useHint() {
-    if (this.data.hintCount >= 1) {
-      showToast('提示道具已使用')
-      return
-    }
-
-    const userInfo = app.globalData.userInfo
-    if (userInfo && userInfo.points < 50) {
-      showToast('积分不足')
-      return
-    }
-
-    app.updateUserPoints(-50, {
-      category: 'game_powerup',
-      title: '提示道具',
-      desc: '使用游戏提示道具',
-      emoji: '💡'
+  showTrashKnowledge(card, correctType, wrongMsg) {
+    const examplesText = (correctType.examples || []).slice(0, 3).map(e => `${e.icon}${e.name}`).join('、')
+    showModal({
+      title: `📚 垃圾分类小知识 · ${correctType.name}`,
+      content: `【${card.displayEmoji} ${card.displayText || card.name || ''}】\n\n正确分类：${correctType.emoji} ${correctType.name}\n\n📖 ${correctType.description}\n\n✨ 同类示例：${examplesText}\n\n💡 ${correctType.tips && correctType.tips[0] ? correctType.tips[0] : ''}`,
+      showCancel: false,
+      confirmText: '我记住了'
     })
+  },
+
+  useHint() {
+    if (this.data.hintRemaining <= 0) {
+      showToast('道具不足，请先购买')
+      return
+    }
+
+    const result = app.usePowerup('hint')
+    if (!result.success) {
+      showToast(result.message || '使用失败')
+      return
+    }
 
     const cards = this.data.cards
     const unmatchedCards = cards.filter(c => !c.isMatched && !c.isFlipped)
@@ -324,7 +359,7 @@ Page({
       })
       this.setData({
         cards: newCards,
-        hintCount: 1
+        hintRemaining: result.remaining
       })
       showSuccess('已标记一对匹配卡片')
 
@@ -338,27 +373,20 @@ Page({
   },
 
   useTimeBoost() {
-    if (this.data.timeBoostCount >= 2) {
-      showToast('加时道具已用完')
+    if (this.data.timeRemaining <= 0) {
+      showToast('道具不足，请先购买')
       return
     }
 
-    const userInfo = app.globalData.userInfo
-    if (userInfo && userInfo.points < 30) {
-      showToast('积分不足')
+    const result = app.usePowerup('time')
+    if (!result.success) {
+      showToast(result.message || '使用失败')
       return
     }
-
-    app.updateUserPoints(-30, {
-      category: 'game_powerup',
-      title: '加时道具',
-      desc: '使用游戏加时道具',
-      emoji: '⏰'
-    })
 
     this.setData({
       timeLeft: this.data.timeLeft + 15,
-      timeBoostCount: this.data.timeBoostCount + 1
+      timeRemaining: result.remaining
     })
     showSuccess('+15秒')
   },
@@ -369,21 +397,46 @@ Page({
       return
     }
 
-    const userInfo = app.globalData.userInfo
-    if (userInfo && userInfo.points < 80) {
-      showToast('积分不足')
+    if (this.data.comboRemaining <= 0) {
+      showToast('道具不足，请先购买')
       return
     }
 
-    app.updateUserPoints(-80, {
-      category: 'game_powerup',
-      title: '连击道具',
-      desc: '使用游戏连击道具',
-      emoji: '🔥'
-    })
+    const result = app.usePowerup('combo')
+    if (!result.success) {
+      showToast(result.message || '使用失败')
+      return
+    }
 
-    this.setData({ comboBoostActive: true })
+    this.setData({
+      comboBoostActive: true,
+      comboRemaining: result.remaining
+    })
     showSuccess('下次配对得分翻倍')
+  },
+
+  useShield() {
+    if (this.data.shieldActive) {
+      showToast('护盾已激活')
+      return
+    }
+
+    if (this.data.shieldRemaining <= 0) {
+      showToast('道具不足，请先购买')
+      return
+    }
+
+    const result = app.usePowerup('shield')
+    if (!result.success) {
+      showToast(result.message || '使用失败')
+      return
+    }
+
+    this.setData({
+      shieldActive: true,
+      shieldRemaining: result.remaining
+    })
+    showSuccess('护盾已激活，下次错误不扣分')
   },
 
   pauseGame() {
@@ -407,10 +460,13 @@ Page({
   endGame() {
     this.clearTimers()
 
+    const durationSeconds = Math.floor((Date.now() - this._gameStartTime) / 1000)
     const correct = this.data.matchedPairs
     const total = this.data.totalPairs
     const wrong = this.data.wrongAttempts
-    const totalAttempts = correct + wrong
+    const correctCount = correct
+    const totalCount = correct + wrong
+    const totalAttempts = totalCount
     const accuracy = totalAttempts > 0 ? Math.round((correct / totalAttempts) * 100) : 0
 
     const basePoints = this.data.score
@@ -444,8 +500,18 @@ Page({
       resultEmoji = '👍'
     }
 
+    let flagged = false
     if (totalPoints > 0) {
-      app.addGamePoints(totalPoints, 'match', '记忆配对')
+      const addResult = app.addGamePoints(totalPoints, 'match', '记忆配对', { durationSeconds, correctCount, totalCount })
+      if (addResult && addResult.flagged) {
+        flagged = true
+      }
+    }
+
+    if (flagged) {
+      resultTitle = '成绩已审核'
+      resultEmoji = '⚠️'
+      showToast('检测到异常操作，成绩已审核')
     }
 
     this.setData({
@@ -458,7 +524,8 @@ Page({
       resultBonusPoints: bonusPoints,
       resultTotalPoints: totalPoints,
       resultAccuracy: accuracy,
-      resultPassed: passed
+      resultPassed: passed,
+      resultFlagged: flagged
     })
   },
 

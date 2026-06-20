@@ -73,14 +73,22 @@
       <view class="powerup-btn" bindtap="useHint">
         <text class="pu-emoji">💡</text>
         <text class="pu-label">提示</text>
+        <text class="pu-count">{{hintRemaining}}</text>
       </view>
       <view class="powerup-btn" bindtap="useTimeBoost">
         <text class="pu-emoji">⏰</text>
         <text class="pu-label">加时</text>
+        <text class="pu-count">{{timeRemaining}}</text>
       </view>
       <view class="powerup-btn {{comboBoostActive ? 'active' : ''}}" bindtap="useComboBoost">
         <text class="pu-emoji">🔥</text>
         <text class="pu-label">连击</text>
+        <text class="pu-count">{{comboRemaining}}</text>
+      </view>
+      <view class="powerup-btn {{shieldActive ? 'active' : ''}}" bindtap="useShield">
+        <text class="pu-emoji">🛡️</text>
+        <text class="pu-label">护盾</text>
+        <text class="pu-count">{{shieldRemaining}}</text>
       </view>
     </view>
 
