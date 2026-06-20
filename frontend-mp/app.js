@@ -59,9 +59,9 @@ App({
     this.initCommunityComments()
     this.initCommunityReports()
     this.initCommunityDailyPoints()
+    this.initSeasonData()
     this.initLeaderboardData()
     this.initPKRecords()
-    this.initSeasonData()
     this.initAntiCheatData()
     this.initGameRecords()
     this.initDailyGamePlays()
@@ -3348,49 +3348,116 @@ App({
   initSeasonData() {
     const { SEASON_CONFIG } = require('./utils/constants')
     const stored = wx.getStorageSync('seasonData')
+    const currentSeasonId = this.computeCurrentSeasonId()
 
     if (stored && stored.seasonId) {
-      if (!stored.historyMedals) stored.historyMedals = []
-      if (!stored.historySeasons) stored.historySeasons = []
-      this.globalData.seasonData = stored
-    } else {
-      const now = new Date()
-      const month = now.getMonth() + 1
-      const year = now.getFullYear()
-      const seasonId = `${year}-${String(month).padStart(2, '0')}`
+      stored.historyMedals = stored.historyMedals || []
+      stored.historySeasons = stored.historySeasons || []
 
-      this.globalData.seasonData = {
-        seasonId,
-        seasonName: `${year}年${month}月赛季`,
-        startDate: `${year}-${String(month).padStart(2, '0')}-01`,
-        endDate: `${year}-${String(month).padStart(2, '0')}-${String(new Date(year, month, 0).getDate()).padStart(2, '0')}`,
-        medals: [],
-        vouchers: [],
-        historyMedals: [],
-        historySeasons: [],
-        resetDone: false
+      if (stored.seasonId === currentSeasonId) {
+        this.globalData.seasonData = stored
+        console.log('[App] 赛季数据已加载', stored.seasonId)
+        return
       }
-      wx.setStorageSync('seasonData', this.globalData.seasonData)
+
+      console.log('[App] 检测到赛季切换:', stored.seasonId, '→', currentSeasonId)
+      this.performSeasonSwitch(stored, currentSeasonId)
+    } else {
+      const newSeason = this.createNewSeasonData(currentSeasonId, [], [])
+      this.globalData.seasonData = newSeason
+      wx.setStorageSync('seasonData', newSeason)
+      console.log('[App] 已初始化赛季数据', currentSeasonId)
     }
-    console.log('[App] 赛季数据已加载', this.globalData.seasonData.seasonId)
-    this.checkSeasonReset()
+  },
+
+  computeCurrentSeasonId() {
+    const now = new Date()
+    const year = now.getFullYear()
+    const month = now.getMonth() + 1
+    return `${year}-${String(month).padStart(2, '0')}`
+  },
+
+  createNewSeasonData(seasonId, historySeasons = [], historyMedals = []) {
+    const { SEASON_CONFIG } = require('./utils/constants')
+    const [yearStr, monthStr] = seasonId.split('-')
+    const year = parseInt(yearStr)
+    const month = parseInt(monthStr)
+    const daysInMonth = new Date(year, month, 0).getDate()
+
+    return {
+      seasonId,
+      seasonName: `${year}年${month}月赛季`,
+      startDate: `${year}-${String(month).padStart(2, '0')}-01`,
+      endDate: `${year}-${String(month).padStart(2, '0')}-${String(daysInMonth).padStart(2, '0')}`,
+      medals: [],
+      vouchers: [],
+      historyMedals: [...historyMedals],
+      historySeasons: [...historySeasons],
+      resetDone: true,
+      switchedAt: formatDate(new Date(), 'YYYY-MM-DD HH:mm:ss')
+    }
+  },
+
+  performSeasonSwitch(oldSeasonData, newSeasonId) {
+    this.globalData.seasonData = oldSeasonData
+
+    this.processSeasonEnd(oldSeasonData)
+
+    const archivedSeason = {
+      seasonId: oldSeasonData.seasonId,
+      seasonName: oldSeasonData.seasonName,
+      startDate: oldSeasonData.startDate,
+      endDate: oldSeasonData.endDate,
+      userStats: this.computeSeasonUserStats(oldSeasonData.seasonId),
+      archivedAt: formatDate(new Date(), 'YYYY-MM-DD HH:mm:ss')
+    }
+
+    const historySeasons = [archivedSeason, ...(oldSeasonData.historySeasons || [])]
+      .filter((s, i, arr) => i === arr.findIndex(t => t.seasonId === s.seasonId))
+
+    const historyMedals = [...(oldSeasonData.medals || []), ...(oldSeasonData.historyMedals || [])]
+      .filter((m, i, arr) => i === arr.findIndex(t => t.id === m.id))
+
+    const newSeason = this.createNewSeasonData(newSeasonId, historySeasons, historyMedals)
+
+    this.globalData.seasonData = newSeason
+    wx.setStorageSync('seasonData', newSeason)
+
+    this.resetLeaderboardSeasonStats(newSeasonId)
+
+    console.log('[App] ✅ 赛季切换完成（原子化）', oldSeasonData.seasonId, '→', newSeasonId,
+      '历史赛季:', historySeasons.length, '个, 历史徽章:', historyMedals.length, '枚')
+  },
+
+  computeSeasonUserStats(seasonId) {
+    const leaderboard = this.getLeaderboard('month', 'points')
+    const userStats = {}
+    leaderboard.list.forEach(u => {
+      userStats[u.id] = {
+        nickName: u.nickName,
+        points: u.points,
+        accuracy: u.accuracy,
+        classifyCount: u.classifyCount,
+        gameScore: u.gameScore
+      }
+    })
+    return userStats
   },
 
   checkSeasonReset() {
-    const { SEASON_CONFIG } = require('./utils/constants')
+    const currentSeasonId = this.computeCurrentSeasonId()
     const seasonData = this.globalData.seasonData
-    const now = new Date()
-    const month = now.getMonth() + 1
-    const year = now.getFullYear()
-    const currentSeasonId = `${year}-${String(month).padStart(2, '0')}`
+
+    if (!seasonData || !seasonData.seasonId) {
+      const newSeason = this.createNewSeasonData(currentSeasonId, [], [])
+      this.globalData.seasonData = newSeason
+      wx.setStorageSync('seasonData', newSeason)
+      return
+    }
 
     if (seasonData.seasonId !== currentSeasonId) {
-      console.log('[App] 检测到赛季切换:', seasonData.seasonId, '->', currentSeasonId)
-      this.processSeasonEnd(seasonData)
-      this.resetLeaderboardSeasonStats(currentSeasonId)
-      this.globalData.seasonData.resetDone = true
-      wx.setStorageSync('seasonData', this.globalData.seasonData)
-      this.initSeasonData()
+      console.log('[App] 触发赛季重置检测:', seasonData.seasonId, '→', currentSeasonId)
+      this.performSeasonSwitch(seasonData, currentSeasonId)
     }
   },
 
