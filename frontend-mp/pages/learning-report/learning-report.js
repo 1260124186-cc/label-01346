@@ -247,12 +247,37 @@ Page({
         weakData = this.getMockWeakCategories()
       }
 
-      // 字段映射：真实接口 recentWrongQuestions → 页面展示 recentWrong
-      const mappedData = weakData.map(item => ({
-        ...item,
-        wrongCount: item.wrongCount || 0,
-        recentWrong: item.recentWrongQuestions || item.recentWrong || []
-      }))
+      // 按类别预定义典型正确/错误答案（与 app.js 保持一致，用于页面侧兜底）
+      const typeAnswerMap = {
+        1: { correct: '蓝色垃圾桶', wrongPool: ['红色垃圾桶', '绿色垃圾桶', '灰色垃圾桶'] },
+        2: { correct: '红色垃圾桶', wrongPool: ['蓝色垃圾桶', '绿色垃圾桶', '灰色垃圾桶'] },
+        3: { correct: '绿色垃圾桶', wrongPool: ['蓝色垃圾桶', '红色垃圾桶', '灰色垃圾桶'] },
+        4: { correct: '灰色垃圾桶', wrongPool: ['蓝色垃圾桶', '红色垃圾桶', '绿色垃圾桶'] }
+      }
+
+      // 字段映射：recentWrongQuestions → recentWrong，并补齐 yourAnswer / correctAnswer
+      const mappedData = weakData.map(category => {
+        const answerMap = typeAnswerMap[category.id] || typeAnswerMap[4]
+        const rawList = category.recentWrongQuestions || category.recentWrong || []
+
+        const recentWrong = rawList.map((wrong, idx) => ({
+          id: wrong.id || `wrong_${category.id}_${idx}`,
+          question: wrong.question || '题目加载中...',
+          wrongTime: wrong.wrongTime || '',
+          wrongCount: wrong.wrongCount || 1,
+          yourAnswer: wrong.yourAnswer || answerMap.wrongPool[idx % answerMap.wrongPool.length],
+          correctAnswer: wrong.correctAnswer || answerMap.correct
+        }))
+
+        return {
+          ...category,
+          wrongCount: category.wrongCount || recentWrong.length,
+          recentWrong
+        }
+      })
+
+      console.log('[LearningReport] 薄弱类别映射完成，共', mappedData.length, '个类别，错题条目：',
+        mappedData.map(c => `${c.name}:${c.recentWrong.length}`).join(','))
 
       this.setData({
         weakCategories: mappedData

@@ -5384,9 +5384,50 @@ App({
     const { TRASH_TYPES } = require('./utils/constants')
     const records = this.getWrongQuestions()
 
+    // 按类别预定义典型的正确答案，用于兜底生成 yourAnswer / correctAnswer
+    const typeAnswerMap = {
+      1: { correct: '蓝色垃圾桶', wrongPool: ['红色垃圾桶', '绿色垃圾桶', '灰色垃圾桶'] },
+      2: { correct: '红色垃圾桶', wrongPool: ['蓝色垃圾桶', '绿色垃圾桶', '灰色垃圾桶'] },
+      3: { correct: '绿色垃圾桶', wrongPool: ['蓝色垃圾桶', '红色垃圾桶', '灰色垃圾桶'] },
+      4: { correct: '灰色垃圾桶', wrongPool: ['蓝色垃圾桶', '红色垃圾桶', '绿色垃圾桶'] }
+    }
+
     return TRASH_TYPES.map(type => {
       const wrongCount = records.filter(r => r.chapterId === type.id).length + Math.floor(Math.random() * 8)
       const accuracy = Math.max(25, 90 - wrongCount * 6)
+      const wrongPool = typeAnswerMap[type.id] || { correct: '其他垃圾桶', wrongPool: ['蓝色垃圾桶', '红色垃圾桶', '绿色垃圾桶'] }
+
+      const recentWrongQuestions = records
+        .filter(r => r.chapterId === type.id)
+        .slice(0, 5)
+        .map((q, idx) => {
+          // 优先使用原始数据自带的答案，否则根据类别兜底生成
+          const hasAnswerInfo = q.yourAnswer && q.correctAnswer
+          const wrongAnswerFromPool = wrongPool.wrongPool[idx % wrongPool.wrongPool.length]
+          return {
+            id: q.id,
+            question: q.question,
+            wrongTime: q.wrongTime,
+            wrongCount: q.wrongCount || 1,
+            yourAnswer: q.yourAnswer || wrongAnswerFromPool,
+            correctAnswer: q.correctAnswer || wrongPool.correct
+          }
+        })
+
+      // 如果错题本没有记录，生成一些模拟错题
+      let finalWrongQuestions = recentWrongQuestions
+      if (finalWrongQuestions.length === 0 && accuracy < 60) {
+        const mockQuestionPool = this._getMockQuestionsByCategory(type.id)
+        finalWrongQuestions = mockQuestionPool.slice(0, 3).map((q, idx) => ({
+          id: `mock_wrong_${type.id}_${idx}`,
+          question: q.question,
+          wrongTime: new Date(Date.now() - idx * 86400000).toISOString(),
+          wrongCount: 1,
+          yourAnswer: wrongPool.wrongPool[idx % wrongPool.wrongPool.length],
+          correctAnswer: wrongPool.correct
+        }))
+      }
+
       return {
         id: type.id,
         name: type.name,
@@ -5395,13 +5436,39 @@ App({
         accuracy,
         wrongCount,
         isWeak: accuracy < 60,
-        recentWrongQuestions: records.filter(r => r.chapterId === type.id).slice(0, 5).map(q => ({
-          id: q.id,
-          question: q.question,
-          wrongTime: q.wrongTime
-        }))
+        recentWrongQuestions: finalWrongQuestions
       }
     }).filter(c => c.isWeak).sort((a, b) => a.accuracy - b.accuracy)
+  },
+
+  _getMockQuestionsByCategory(typeId) {
+    const questionPool = {
+      1: [
+        { question: '废弃的矿泉水瓶应该投入哪个颜色的垃圾桶？' },
+        { question: '旧报纸属于什么垃圾？' },
+        { question: '易拉罐应该投入哪个垃圾桶？' },
+        { question: '纸箱属于什么垃圾？' }
+      ],
+      2: [
+        { question: '废电池应该投入哪个颜色的垃圾桶？' },
+        { question: '过期感冒药属于什么垃圾？' },
+        { question: '水银温度计破损后应如何处理？' },
+        { question: '过期化妆品属于什么垃圾？' }
+      ],
+      3: [
+        { question: '剩菜剩饭属于什么垃圾？' },
+        { question: '果皮应该投入哪个颜色的垃圾桶？' },
+        { question: '茶叶渣属于什么垃圾？' },
+        { question: '鱼骨头属于什么垃圾？' }
+      ],
+      4: [
+        { question: '使用过的餐巾纸属于什么垃圾？' },
+        { question: '破碎的陶瓷碗属于什么垃圾？' },
+        { question: '烟蒂应该投入哪个垃圾桶？' },
+        { question: '一次性筷子属于什么垃圾？' }
+      ]
+    }
+    return questionPool[typeId] || questionPool[4]
   },
 
   getMemberBadges(memberId) {
