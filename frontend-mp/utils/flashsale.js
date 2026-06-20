@@ -78,6 +78,10 @@ class FlashSaleManager {
 
       if (nowTime >= startTime && nowTime <= endTime) {
         status = FLASH_SALE_STATUS.ONGOING
+        const startTimeStr = `${String(schedule.hour).padStart(2, '0')}:${String(schedule.minute).padStart(2, '0')}`
+        const endHour = Math.floor((startTime + duration * 60 * 1000) % (24 * 3600000) / 3600000)
+        const endMinute = Math.floor(((startTime + duration * 60 * 1000) % 3600000) / 60000)
+        const endTimeStr = `${String(endHour).padStart(2, '0')}:${String(endMinute).padStart(2, '0')}`
         currentSession = {
           schedule,
           startTime,
@@ -85,10 +89,16 @@ class FlashSaleManager {
           reminderStart,
           status,
           sessionKey: this._getSessionKey(activity.id, schedule),
-          timeLabel: `${String(schedule.hour).padStart(2, '0')}:${String(schedule.minute).padStart(2, '0')}`
+          timeLabel: startTimeStr,
+          startTimeStr,
+          endTimeStr
         }
       } else if (nowTime >= reminderStart && nowTime < startTime) {
         status = FLASH_SALE_STATUS.REMINDER_WINDOW
+        const startTimeStr = `${String(schedule.hour).padStart(2, '0')}:${String(schedule.minute).padStart(2, '0')}`
+        const endHour = Math.floor((startTime + duration * 60 * 1000) % (24 * 3600000) / 3600000)
+        const endMinute = Math.floor(((startTime + duration * 60 * 1000) % 3600000) / 60000)
+        const endTimeStr = `${String(endHour).padStart(2, '0')}:${String(endMinute).padStart(2, '0')}`
         if (nextSession === null || startTime < nextSession.startTime) {
           nextSession = {
             schedule,
@@ -97,12 +107,18 @@ class FlashSaleManager {
             reminderStart,
             status,
             sessionKey: this._getSessionKey(activity.id, schedule),
-            timeLabel: `${String(schedule.hour).padStart(2, '0')}:${String(schedule.minute).padStart(2, '0')}`,
+            timeLabel: startTimeStr,
+            startTimeStr,
+            endTimeStr,
             countdownToStart: this._formatCountdown(startTime - nowTime)
           }
         }
       } else if (nowTime < reminderStart) {
         const diff = startTime - nowTime
+        const startTimeStr = `${String(schedule.hour).padStart(2, '0')}:${String(schedule.minute).padStart(2, '0')}`
+        const endHour = Math.floor((startTime + duration * 60 * 1000) % (24 * 3600000) / 3600000)
+        const endMinute = Math.floor(((startTime + duration * 60 * 1000) % 3600000) / 60000)
+        const endTimeStr = `${String(endHour).padStart(2, '0')}:${String(endMinute).padStart(2, '0')}`
         if (diff < minDiffToNext) {
           minDiffToNext = diff
           nearestSession = {
@@ -112,7 +128,9 @@ class FlashSaleManager {
             reminderStart,
             status: FLASH_SALE_STATUS.NOT_STARTED,
             sessionKey: this._getSessionKey(activity.id, schedule),
-            timeLabel: `${String(schedule.hour).padStart(2, '0')}:${String(schedule.minute).padStart(2, '0')}`,
+            timeLabel: startTimeStr,
+            startTimeStr,
+            endTimeStr,
             countdownToStart: this._formatCountdown(startTime - nowTime)
           }
         }
@@ -146,12 +164,16 @@ class FlashSaleManager {
     }
   }
 
-  getFlashGoodsList(activity, app) {
+  getFlashGoodsList(activity, app, userId = null) {
     const session = this.getFlashSession(activity, app)
     const sessionKey = session.display ? session.display.sessionKey : `default_${activity.id}`
     const goodsIds = activity.flashGoodsIds || []
     const override = activity.flashGoodsOverride || {}
     const goodsList = app.getGoodsList ? app.getGoodsList() : EXCHANGE_GOODS
+
+    if (!userId && app && app.getUserId) {
+      userId = app.getUserId()
+    }
 
     return goodsIds.map(goodsId => {
       const goods = goodsList.find(g => g.id === goodsId)
@@ -160,10 +182,19 @@ class FlashSaleManager {
       const goodsOverride = override[goodsId] || {}
       const salePoints = goodsOverride.salePoints != null ? goodsOverride.salePoints : Math.round(goods.points * 0.5)
       const limitPerUser = goodsOverride.limitPerUser != null ? goodsOverride.limitPerUser : 1
+      const maxPerUser = limitPerUser
 
       const realStock = this._getSessionStock(sessionKey, goodsId, goods.stock)
       const soldCount = this._getSessionSold(sessionKey, goodsId)
       const isSoldOut = realStock <= 0
+      const originalStock = goods.stock
+      const soldPercent = goods.stock > 0 ? Math.min(100, Math.round(soldCount / goods.stock * 100)) : 0
+      const discountPercent = Math.round((1 - salePoints / goods.points) * 100)
+
+      let userPurchasedCount = 0
+      if (userId) {
+        userPurchasedCount = this._getUserPurchasedCount(userId, activity.id, sessionKey, goodsId)
+      }
 
       return {
         id: goodsId,
@@ -173,15 +204,29 @@ class FlashSaleManager {
         originalPoints: goods.points,
         salePoints,
         discount: Math.round(salePoints / goods.points * 100) / 10,
+        discountPercent,
         stock: realStock,
         sold: soldCount,
         totalStock: goods.stock,
+        originalStock,
         limitPerUser,
+        maxPerUser,
         isSoldOut,
-        progress: goods.stock > 0 ? Math.min(100, Math.round(soldCount / goods.stock * 100)) : 0,
+        progress: soldPercent,
+        soldPercent,
+        userPurchasedCount,
         sessionKey
       }
     }).filter(Boolean)
+  }
+
+  _getUserPurchasedCount(userId, activityId, sessionKey, goodsId) {
+    return this.purchases.filter(p =>
+      p.userId === userId &&
+      p.activityId === activityId &&
+      p.sessionKey === sessionKey &&
+      p.goodsId === goodsId
+    ).length
   }
 
   _getSessionStock(sessionKey, goodsId, defaultStock) {
@@ -244,11 +289,13 @@ class FlashSaleManager {
       activityId: activity.id,
       sessionKey,
       timeLabel,
+      startTimeStr: timeLabel,
       startTime,
       userId,
       goodsIds: activity.flashGoodsIds || [],
       time: formatDate(new Date(), 'YYYY-MM-DD HH:mm'),
-      notified: false
+      notified: false,
+      status: 'upcoming'
     }
 
     this.reservations.push(reservation)
@@ -275,7 +322,16 @@ class FlashSaleManager {
     if (activityId) {
       reservations = reservations.filter(r => r.activityId === activityId)
     }
-    return reservations.sort((a, b) => b.startTime - a.startTime)
+    const now = Date.now()
+    return reservations
+      .sort((a, b) => b.startTime - a.startTime)
+      .map(r => {
+        let status = r.status || 'upcoming'
+        if (r.notified) status = 'reminded'
+        if (now > r.startTime) status = 'completed'
+        if (!r.startTimeStr) r.startTimeStr = r.timeLabel
+        return { ...r, status, startTimeStr: r.startTimeStr || r.timeLabel }
+      })
   }
 
   isReserved(activityId, sessionKey, userId) {
@@ -303,8 +359,9 @@ class FlashSaleManager {
 
       if (now >= reminderTime && !this.sentReminders.includes(reminderKey)) {
         if (messageManager && MESSAGE_TYPES) {
+          const msgType = MESSAGE_TYPES.FLASH_SALE_REMINDER || MESSAGE_TYPES.ACTIVITY
           messageManager.addMessage({
-            type: MESSAGE_TYPES.ACTIVITY,
+            type: msgType,
             title: '⚡ 秒杀即将开始',
             content: `您预约的「${activity.title}」${reservation.timeLabel} 场将于 ${reminderMinutesBefore} 分钟后开始，请准时参与！`,
             emoji: '⏰',
@@ -317,8 +374,10 @@ class FlashSaleManager {
         }
 
         reservation.notified = true
+        reservation.status = 'reminded'
         this.sentReminders.push(reminderKey)
         fired.push(reservation)
+        console.log('[FlashSaleManager] 已发送秒杀提醒:', reservation.id, reservation.timeLabel)
       }
     }
 

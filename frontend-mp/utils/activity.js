@@ -111,6 +111,7 @@ const ELIGIBILITY_META = {
     name: '新用户专享',
     description: '注册7天内的新用户',
     checkText: '新用户注册7天内',
+    passText: '您是注册7天内的新用户',
     failText: '该活动仅限新用户注册7天内参与'
   },
   [ELIGIBILITY_TYPES.LEVEL_GTE_3]: {
@@ -118,6 +119,7 @@ const ELIGIBILITY_META = {
     name: 'LV.3及以上',
     description: '用户等级达到LV.3环保达人',
     checkText: '等级≥LV.3',
+    passText: '您的等级已达到LV.3',
     failText: '该活动要求等级≥LV.3（环保达人）'
   },
   [ELIGIBILITY_TYPES.LEVEL_GTE_2]: {
@@ -125,6 +127,7 @@ const ELIGIBILITY_META = {
     name: 'LV.2及以上',
     description: '用户等级达到LV.2环保学徒',
     checkText: '等级≥LV.2',
+    passText: '您的等级已达到LV.2',
     failText: '该活动要求等级≥LV.2（环保学徒）'
   },
   [ELIGIBILITY_TYPES.LEVEL_GTE_4]: {
@@ -132,6 +135,7 @@ const ELIGIBILITY_META = {
     name: 'LV.4及以上',
     description: '用户等级达到LV.4环保专家',
     checkText: '等级≥LV.4',
+    passText: '您的等级已达到LV.4',
     failText: '该活动要求等级≥LV.4（环保专家）'
   },
   [ELIGIBILITY_TYPES.ALL_USERS]: {
@@ -139,6 +143,7 @@ const ELIGIBILITY_META = {
     name: '全体用户',
     description: '所有注册用户均可参与',
     checkText: '无限制',
+    passText: '所有用户均可参与',
     failText: ''
   },
   [ELIGIBILITY_TYPES.MIN_POINTS]: {
@@ -146,6 +151,7 @@ const ELIGIBILITY_META = {
     name: '积分门槛',
     description: '达到指定积分可参与',
     checkText: '积分达标',
+    passText: '您的积分数已达标',
     failText: '积分未达到活动要求门槛'
   },
   [ELIGIBILITY_TYPES.SIGNED_IN_DAYS]: {
@@ -153,6 +159,7 @@ const ELIGIBILITY_META = {
     name: '连续签到',
     description: '连续签到达到指定天数',
     checkText: '签到天数达标',
+    passText: '您的连续签到天数已达标',
     failText: '连续签到天数不足'
   }
 }
@@ -428,16 +435,21 @@ class ActivityManager {
         type: eligibilityType,
         meta,
         passed,
+        name: meta.name,
+        message: passed ? meta.passText : meta.failText,
         failText: passed ? '' : meta.failText
       })
     }
 
     const allPassed = results.every(r => r.passed)
     const failedItems = results.filter(r => !r.passed)
+    const passedItems = results.filter(r => r.passed)
 
     return {
       eligible: allPassed,
+      results: results,
       details: results,
+      passed: passedItems.map(p => p.name),
       failedItems,
       failSummary: failedItems.map(f => f.failText).filter(Boolean).join('；')
     }
@@ -463,6 +475,25 @@ class ActivityManager {
     return now >= start && now <= end
   }
 
+  _getCategoryLabel(category) {
+    const labels = {
+      signin: '每日签到',
+      quiz: '知识答题',
+      classify: '垃圾分类',
+      drop_point_checkin: '点位打卡',
+      exchange_invite: '邀请好友',
+      daily: '每日任务',
+      chapter: '章节任务',
+      difficulty: '难度挑战',
+      timed: '限时挑战',
+      boss: 'Boss挑战',
+      wrong: '错题重练',
+      invite: '邀请奖励',
+      '*': '全部场景'
+    }
+    return labels[category] || category
+  }
+
   getActivePointsDoubles(userContext = {}) {
     const activeActivities = this.getAllActivities()
     const pointDoubles = []
@@ -483,6 +514,7 @@ class ActivityManager {
         activityType: activity.type,
         multiplier,
         affectedCategories: typeMeta.affectedCategories || [],
+        categoryLabels: typeMeta.affectedCategories ? typeMeta.affectedCategories.map(c => this._getCategoryLabel(c)).join('、') : '全部',
         startTime: activity.startTime,
         endTime: activity.endTime
       })
@@ -520,34 +552,60 @@ class ActivityManager {
     const level = userInfo ? this._extractLevel(userInfo) : 1
     const discountRate = LEVEL_DISCOUNT_MAP[level] || 1.0
     const discountText = LEVEL_DISCOUNT_TEXT[level] || '无折扣'
+    const discountPercent = Math.round((1 - discountRate) * 100)
     return {
       level,
       discountRate,
       discountText,
+      label: discountText,
+      discountPercent,
       hasDiscount: discountRate < 1.0
     }
   }
 
   getDiscountForGoods(goods, userInfo = null, activity = null) {
     if (!activity || activity.type !== ACTIVITY_TYPES.LEVEL_DISCOUNT) {
-      return { originalPoints: goods.points, finalPoints: goods.points, discount: null }
+      return {
+        originalPoints: goods.points,
+        finalPoints: goods.points,
+        discountPoints: goods.points,
+        discount: null,
+        discountInfo: null
+      }
     }
 
     const eligibility = this.checkEligibility(activity, { userInfo })
     if (!eligibility.eligible) {
-      return { originalPoints: goods.points, finalPoints: goods.points, discount: null, reason: eligibility.failSummary }
+      return {
+        originalPoints: goods.points,
+        finalPoints: goods.points,
+        discountPoints: goods.points,
+        discount: null,
+        discountInfo: null,
+        reason: eligibility.failSummary,
+        eligible: false
+      }
     }
 
-    const { discountRate, discountText } = this.getLevelDiscount(userInfo)
+    const { discountRate, discountText, discountPercent } = this.getLevelDiscount(userInfo)
     const finalPoints = Math.round(goods.points * discountRate)
 
     return {
       originalPoints: goods.points,
       finalPoints,
+      discountPoints: finalPoints,
       discount: {
         rate: discountRate,
         text: discountText,
         saved: goods.points - finalPoints
+      },
+      discountInfo: {
+        rate: discountRate,
+        label: discountText,
+        discountPoints: finalPoints,
+        discountPercent: discountPercent,
+        originalPoints: goods.points,
+        savedPoints: goods.points - finalPoints
       },
       eligible: true
     }
@@ -575,6 +633,7 @@ class ActivityManager {
     const uniqueUsers = new Set(records.map(r => r.userId)).size
     const totalPoints = records.reduce((sum, r) => sum + (r.points || 0), 0)
     const goodsRedeemed = records.filter(r => r.action === 'redeem').length
+    const reserveCount = records.filter(r => r.action === 'reserve').length
 
     const actionBreakdown = {}
     records.forEach(r => {
@@ -588,6 +647,7 @@ class ActivityManager {
       uniqueUsers,
       totalPointsDistributed: totalPoints,
       goodsRedeemed,
+      reserveCount,
       actionBreakdown,
       records: records.slice(-50)
     }
@@ -606,13 +666,15 @@ class ActivityManager {
       activityTitle: activity.title,
       activityType: activity.type,
       generatedAt: now,
+      generatedAtStr: now,
       startDate: activity.startTime,
       endDate: activity.endTime || now,
       summary: {
         totalParticipations: stats.totalParticipations,
         uniqueUsers: stats.uniqueUsers,
         totalPointsDistributed: stats.totalPointsDistributed,
-        goodsRedeemed: stats.goodsRedeemed
+        goodsRedeemed: stats.goodsRedeemed,
+        reserveCount: stats.reserveCount
       },
       actionBreakdown: stats.actionBreakdown,
       highlights: this._generateHighlights(activity, stats)
@@ -621,6 +683,14 @@ class ActivityManager {
     this.reports.unshift(report)
     this.saveReports()
     console.log('[ActivityManager] 活动报告已生成:', report.id)
+    return report
+  }
+
+  getReportById(reportId) {
+    const report = this.reports.find(r => r.id === reportId)
+    if (report && !report.generatedAtStr) {
+      report.generatedAtStr = report.generatedAt
+    }
     return report
   }
 
@@ -635,6 +705,9 @@ class ActivityManager {
     if (stats.goodsRedeemed > 0) {
       highlights.push(`累计兑换商品 ${stats.goodsRedeemed} 件`)
     }
+    if (stats.reserveCount > 0) {
+      highlights.push(`累计预约提醒 ${stats.reserveCount} 人次`)
+    }
     if (highlights.length === 0) {
       highlights.push('活动圆满结束，感谢参与！')
     }
@@ -642,11 +715,9 @@ class ActivityManager {
   }
 
   getReports() {
-    return [...this.reports].sort((a, b) => new Date(b.generatedAt) - new Date(a.generatedAt))
-  }
-
-  getReportById(reportId) {
-    return this.reports.find(r => r.id === reportId)
+    return [...this.reports]
+      .sort((a, b) => new Date(b.generatedAt) - new Date(a.generatedAt))
+      .map(r => ({ ...r, generatedAtStr: r.generatedAtStr || r.generatedAt }))
   }
 
   checkActivityEndAndGenerateReport() {
