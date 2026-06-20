@@ -2778,12 +2778,21 @@ App({
   initLeaderboardData() {
     const { LEADERBOARD_USERS } = require('./utils/constants')
     const stored = wx.getStorageSync('leaderboardData')
+    const currentSeasonId = this.globalData.seasonData && this.globalData.seasonData.seasonId
 
     if (stored && stored.users && stored.users.length > 0) {
+      const needUpgrade = stored.users.some(u => !u.seasonStats)
+      if (needUpgrade || !stored.currentSeasonId || stored.currentSeasonId !== currentSeasonId) {
+        stored.users = stored.users.map(u => this.generateUserSeasonStats(u, currentSeasonId))
+        stored.currentSeasonId = currentSeasonId
+        wx.setStorageSync('leaderboardData', stored)
+      }
       this.globalData.leaderboardData = stored
     } else {
+      const usersWithStats = LEADERBOARD_USERS.map(u => this.generateUserSeasonStats(u, currentSeasonId))
       this.globalData.leaderboardData = {
-        users: [...LEADERBOARD_USERS],
+        users: usersWithStats,
+        currentSeasonId,
         lastUpdated: formatDate(new Date(), 'YYYY-MM-DD HH:mm')
       }
       wx.setStorageSync('leaderboardData', this.globalData.leaderboardData)
@@ -2791,15 +2800,91 @@ App({
     console.log('[App] 排行榜数据已加载', this.globalData.leaderboardData.users.length, '位用户')
   },
 
+  generateUserSeasonStats(user, currentSeasonId) {
+    if (!currentSeasonId) return user
+    const seasonRange = this.getSeasonTimeRange(currentSeasonId)
+    const daysInSeason = Math.ceil((seasonRange.endTime - seasonRange.startTime) / (24 * 3600 * 1000))
+    const now = Date.now()
+    const elapsedDays = Math.max(1, Math.min(daysInSeason, Math.ceil((now - seasonRange.startTime) / (24 * 3600 * 1000))))
+    const progress = elapsedDays / daysInSeason
+
+    const seasonPoints = Math.floor((user.points || 0) * 0.3 * progress * (0.8 + Math.random() * 0.4))
+    const seasonClassify = Math.floor((user.classifyCount || 0) * 0.3 * progress * (0.8 + Math.random() * 0.4))
+    const seasonAccuracy = Math.floor(80 + Math.random() * 18)
+    const seasonGameScore = Math.floor(150 + Math.random() * 400)
+
+    const weekPoints = Math.floor(seasonPoints * 0.25 * (0.8 + Math.random() * 0.4))
+    const weekClassify = Math.floor(seasonClassify * 0.25 * (0.8 + Math.random() * 0.4))
+    const weekAccuracy = Math.floor(78 + Math.random() * 20)
+    const weekGameScore = Math.floor(100 + Math.random() * 350)
+
+    const seasonStats = {}
+    seasonStats[currentSeasonId] = {
+      points: seasonPoints,
+      classifyCount: seasonClassify,
+      accuracy: seasonAccuracy,
+      gameScore: seasonGameScore
+    }
+
+    if (!user.seasonStats) {
+      const lastMonthSeason = this.getSeasonTimeRange()
+      const lastMonthId = lastMonthSeason.seasonId
+      seasonStats[lastMonthId] = {
+        points: Math.floor((user.points || 0) * 0.3 * (0.8 + Math.random() * 0.4)),
+        classifyCount: Math.floor((user.classifyCount || 0) * 0.3 * (0.8 + Math.random() * 0.4)),
+        accuracy: Math.floor(82 + Math.random() * 16),
+        gameScore: Math.floor(200 + Math.random() * 500)
+      }
+    }
+
+    return {
+      ...user,
+      seasonStats: { ...(user.seasonStats || {}), ...seasonStats },
+      weekStats: {
+        points: weekPoints,
+        classifyCount: weekClassify,
+        accuracy: weekAccuracy,
+        gameScore: weekGameScore
+      }
+    }
+  },
+
+  resetLeaderboardSeasonStats(newSeasonId) {
+    if (!this.globalData.leaderboardData || !this.globalData.leaderboardData.users) return
+    this.globalData.leaderboardData.users = this.globalData.leaderboardData.users.map(u => {
+      const newUser = { ...u }
+      if (!newUser.seasonStats) newUser.seasonStats = {}
+      newUser.seasonStats[newSeasonId] = {
+        points: 0,
+        classifyCount: 0,
+        accuracy: 0,
+        gameScore: 0
+      }
+      newUser.weekStats = {
+        points: 0,
+        classifyCount: 0,
+        accuracy: 0,
+        gameScore: 0
+      }
+      return newUser
+    })
+    this.globalData.leaderboardData.currentSeasonId = newSeasonId
+    this.globalData.leaderboardData.lastUpdated = formatDate(new Date(), 'YYYY-MM-DD HH:mm')
+    wx.setStorageSync('leaderboardData', this.globalData.leaderboardData)
+    console.log('[App] 排行榜赛季数据已重置', newSeasonId)
+  },
+
   getLeaderboard(period, dimension) {
     const { LEADERBOARD_CONFIG } = require('./utils/constants')
     const leaderboardData = this.globalData.leaderboardData
     const userInfo = this.globalData.userInfo
+    const seasonInfo = this.getSeasonInfo()
+    const seasonId = seasonInfo ? seasonInfo.seasonId : null
 
     let users = [...(leaderboardData.users || [])]
-
-    const currentUserStats = this.getCurrentUserStats()
     const currentUserId = this.getUserId()
+    const currentUserStats = this.getCurrentUserStats(period)
+
     const existingIndex = users.findIndex(u => u.id === currentUserId)
     if (existingIndex > -1) {
       users[existingIndex] = { ...users[existingIndex], ...currentUserStats }
@@ -2812,25 +2897,19 @@ App({
       })
     }
 
+    users = users.map(u => {
+      if (u.id === currentUserId) {
+        return { ...u, ...currentUserStats }
+      }
+      const stats = this.getUserStatsByPeriod(period, u.id, seasonId)
+      return { ...u, ...stats }
+    })
+
     users.sort((a, b) => {
       const aVal = a[dimension] || 0
       const bVal = b[dimension] || 0
       return bVal - aVal
     })
-
-    if (period === 'week') {
-      users = users.map(u => ({
-        ...u,
-        points: Math.round(u.points * 0.3),
-        classifyCount: Math.round(u.classifyCount * 0.3)
-      }))
-    } else if (period === 'month') {
-      users = users.map(u => ({
-        ...u,
-        points: Math.round(u.points * 0.6),
-        classifyCount: Math.round(u.classifyCount * 0.6)
-      }))
-    }
 
     const rankedUsers = users.map((user, index) => ({
       ...user,
@@ -2843,36 +2922,208 @@ App({
     return {
       list: rankedUsers,
       myRank: myRank ? myRank.rank : rankedUsers.length + 1,
-      myData: myRank || null
+      myData: myRank || null,
+      period,
+      dimension,
+      seasonId,
+      timeRange: this.getPeriodTimeRange(period, seasonId)
     }
   },
 
-  getCurrentUserStats() {
-    const quizRecords = this.getQuizRecords()
-    const classifyRecords = this.getClassifyRecords()
-    const userInfo = this.globalData.userInfo
+  getSeasonTimeRange(seasonId) {
+    if (!seasonId || !seasonId.includes('-')) {
+      const now = new Date()
+      const year = now.getFullYear()
+      const month = now.getMonth() + 1
+      seasonId = `${year}-${String(month).padStart(2, '0')}`
+    }
+    const [yearStr, monthStr] = seasonId.split('-')
+    const year = parseInt(yearStr)
+    const month = parseInt(monthStr)
+    const startDate = new Date(year, month - 1, 1)
+    const endDate = new Date(year, month, 0)
+    return {
+      seasonId,
+      startDate: formatDate(startDate, 'YYYY-MM-DD'),
+      endDate: formatDate(endDate, 'YYYY-MM-DD'),
+      startTime: startDate.getTime(),
+      endTime: endDate.getTime() + 24 * 60 * 60 * 1000 - 1
+    }
+  },
 
-    const totalQuestions = quizRecords.reduce((sum, r) => sum + (r.totalQuestions || 0), 0)
-    const totalCorrect = quizRecords.reduce((sum, r) => sum + (r.correctCount || 0), 0)
-    const accuracy = totalQuestions > 0 ? Math.round((totalCorrect / totalQuestions) * 100) : 0
+  getPeriodTimeRange(period, seasonId = null) {
+    const now = new Date()
+    const nowTime = now.getTime()
 
-    const weekStart = new Date()
-    weekStart.setHours(0, 0, 0, 0)
-    weekStart.setDate(weekStart.getDate() - weekStart.getDay())
-    const weekStartStr = formatDate(weekStart, 'YYYY-MM-DD')
-    const gameRecords = this.getGameRecords()
-    const weekGameRecords = gameRecords.filter(r => r.time && r.time >= weekStartStr)
-    const gameScore = weekGameRecords.length > 0
-      ? Math.max(...weekGameRecords.map(r => r.score || 0))
-      : 0
+    if (period === 'total') {
+      return {
+        period,
+        startDate: '2000-01-01',
+        endDate: formatDate(now, 'YYYY-MM-DD'),
+        startTime: 0,
+        endTime: nowTime
+      }
+    }
+
+    if (period === 'month') {
+      const seasonRange = this.getSeasonTimeRange(seasonId)
+      return {
+        period,
+        seasonId: seasonRange.seasonId,
+        startDate: seasonRange.startDate,
+        endDate: seasonRange.endDate,
+        startTime: seasonRange.startTime,
+        endTime: Math.min(seasonRange.endTime, nowTime)
+      }
+    }
+
+    if (period === 'week') {
+      const weekStart = new Date()
+      weekStart.setHours(0, 0, 0, 0)
+      weekStart.setDate(weekStart.getDate() - weekStart.getDay())
+      const weekEnd = new Date(weekStart.getTime() + 6 * 24 * 60 * 60 * 1000)
+      weekEnd.setHours(23, 59, 59, 999)
+      return {
+        period,
+        startDate: formatDate(weekStart, 'YYYY-MM-DD'),
+        endDate: formatDate(weekEnd, 'YYYY-MM-DD'),
+        startTime: weekStart.getTime(),
+        endTime: Math.min(weekEnd.getTime(), nowTime)
+      }
+    }
 
     return {
-      points: userInfo ? userInfo.points : 0,
+      period,
+      startDate: formatDate(now, 'YYYY-MM-DD'),
+      endDate: formatDate(now, 'YYYY-MM-DD'),
+      startTime: nowTime,
+      endTime: nowTime
+    }
+  },
+
+  getUserStatsByPeriod(period, userId, seasonId = null) {
+    const timeRange = this.getPeriodTimeRange(period, seasonId)
+    const isCurrentUser = !userId || userId === this.getUserId()
+
+    let pointsRecords = []
+    let classifyRecords = []
+    let quizRecords = []
+    let gameRecords = []
+    let userInfo = null
+
+    if (isCurrentUser) {
+      pointsRecords = this.getPointsRecords()
+      classifyRecords = this.getClassifyRecords()
+      quizRecords = this.getQuizRecords()
+      gameRecords = this.getGameRecords()
+      userInfo = this.globalData.userInfo
+    } else {
+      const lbUsers = (this.globalData.leaderboardData && this.globalData.leaderboardData.users) || []
+      const lbUser = lbUsers.find(u => u.id === userId)
+      if (!lbUser) {
+        return { points: 0, accuracy: 0, classifyCount: 0, streakDays: 0, gameScore: 0 }
+      }
+      const seasonStats = lbUser.seasonStats && lbUser.seasonStats[timeRange.seasonId || 'current']
+      if (seasonStats && period === 'month') {
+        return {
+          points: seasonStats.points || 0,
+          accuracy: seasonStats.accuracy || 0,
+          classifyCount: seasonStats.classifyCount || 0,
+          streakDays: lbUser.streakDays || 0,
+          gameScore: seasonStats.gameScore || 0
+        }
+      }
+      const weekStats = lbUser.weekStats
+      if (weekStats && period === 'week') {
+        return {
+          points: weekStats.points || 0,
+          accuracy: weekStats.accuracy || 0,
+          classifyCount: weekStats.classifyCount || 0,
+          streakDays: lbUser.streakDays || 0,
+          gameScore: weekStats.gameScore || 0
+        }
+      }
+      return {
+        points: lbUser.points || 0,
+        accuracy: lbUser.accuracy || 0,
+        classifyCount: lbUser.classifyCount || 0,
+        streakDays: lbUser.streakDays || 0,
+        gameScore: lbUser.gameScore || 0
+      }
+    }
+
+    const inRange = (recordTime) => {
+      if (!recordTime) return false
+      try {
+        const t = new Date(recordTime.replace(/-/g, '/')).getTime()
+        return t >= timeRange.startTime && t <= timeRange.endTime
+      } catch (e) {
+        return false
+      }
+    }
+
+    const filteredPointsRecords = pointsRecords.filter(r => {
+      if (period === 'total') return !r.expired
+      return (r.category === 'game' || r.category === 'season' || r.category === 'quiz' || r.category === 'classify' || r.category === 'signin') && inRange(r.time)
+    })
+    const points = filteredPointsRecords.reduce((sum, r) => {
+      const p = r.remainingPoints != null ? r.remainingPoints : (r.points || 0)
+      return sum + Math.max(0, p)
+    }, 0)
+
+    const filteredClassify = classifyRecords.filter(r => inRange(r.time))
+    const classifyCount = filteredClassify.length
+
+    const filteredQuiz = quizRecords.filter(r => inRange(r.time))
+    const totalQuestions = filteredQuiz.reduce((sum, r) => sum + (r.totalQuestions || 0), 0)
+    const totalCorrect = filteredQuiz.reduce((sum, r) => sum + (r.correctCount || 0), 0)
+    const accuracy = totalQuestions > 0 ? Math.round((totalCorrect / totalQuestions) * 100) : 0
+
+    const filteredGame = gameRecords.filter(r => inRange(r.time))
+    const gameScore = filteredGame.length > 0
+      ? Math.max(...filteredGame.map(r => r.score || 0))
+      : 0
+
+    const streakDays = period === 'total' ? this.getStreakDays() : (timeRange.endTime - timeRange.startTime) / (24 * 3600 * 1000) >= 6 ? Math.min(7, this.getStreakDays()) : this.getStreakDays()
+
+    return {
+      points: Math.round(points),
       accuracy,
-      classifyCount: classifyRecords.length,
-      streakDays: this.getStreakDays(),
+      classifyCount,
+      streakDays,
       gameScore
     }
+  },
+
+  getCurrentUserStats(period = 'total') {
+    if (period === 'total') {
+      const quizRecords = this.getQuizRecords()
+      const classifyRecords = this.getClassifyRecords()
+      const userInfo = this.globalData.userInfo
+
+      const totalQuestions = quizRecords.reduce((sum, r) => sum + (r.totalQuestions || 0), 0)
+      const totalCorrect = quizRecords.reduce((sum, r) => sum + (r.correctCount || 0), 0)
+      const accuracy = totalQuestions > 0 ? Math.round((totalCorrect / totalQuestions) * 100) : 0
+
+      const weekStart = new Date()
+      weekStart.setHours(0, 0, 0, 0)
+      weekStart.setDate(weekStart.getDate() - weekStart.getDay())
+      const weekStartStr = formatDate(weekStart, 'YYYY-MM-DD')
+      const gameRecords = this.getGameRecords()
+      const weekGameRecords = gameRecords.filter(r => r.time && r.time >= weekStartStr)
+      const gameScore = weekGameRecords.length > 0
+        ? Math.max(...weekGameRecords.map(r => r.score || 0))
+        : 0
+
+      return {
+        points: userInfo ? userInfo.points : 0,
+        accuracy,
+        classifyCount: classifyRecords.length,
+        streakDays: this.getStreakDays(),
+        gameScore
+      }
+    }
+    return this.getUserStatsByPeriod(period, this.getUserId())
   },
 
   initPKRecords() {
@@ -3134,26 +3385,42 @@ App({
     const currentSeasonId = `${year}-${String(month).padStart(2, '0')}`
 
     if (seasonData.seasonId !== currentSeasonId) {
+      console.log('[App] 检测到赛季切换:', seasonData.seasonId, '->', currentSeasonId)
       this.processSeasonEnd(seasonData)
+      this.resetLeaderboardSeasonStats(currentSeasonId)
+      this.globalData.seasonData.resetDone = true
+      wx.setStorageSync('seasonData', this.globalData.seasonData)
       this.initSeasonData()
     }
   },
 
   processSeasonEnd(seasonData) {
     const { SEASON_CONFIG } = require('./utils/constants')
+    const seasonRange = this.getSeasonTimeRange(seasonData.seasonId)
     const leaderboard = this.getLeaderboard('month', 'points')
     const topList = leaderboard.list.slice(0, 3)
 
     const gameLeaderboard = this.getLeaderboard('month', 'gameScore')
     const gameTopList = gameLeaderboard.list.slice(0, 3)
 
+    const seasonUserStats = {}
+    leaderboard.list.forEach(u => {
+      seasonUserStats[u.id] = {
+        points: u.points,
+        accuracy: u.accuracy,
+        classifyCount: u.classifyCount,
+        gameScore: u.gameScore
+      }
+    })
+
     const archivedSeason = {
       seasonId: seasonData.seasonId,
       seasonName: seasonData.seasonName,
-      startDate: seasonData.startDate,
-      endDate: seasonData.endDate,
-      pointsRank: topList.map(u => ({ id: u.id, nickName: u.nickName, value: u.points })),
+      startDate: seasonRange.startDate,
+      endDate: seasonRange.endDate,
+      pointsRank: topList.map(u => ({ id: u.id, nickName: u.nickName, value: u.points, accuracy: u.accuracy, classifyCount: u.classifyCount })),
       gameRank: gameTopList.map(u => ({ id: u.id, nickName: u.nickName, value: u.gameScore })),
+      userStats: seasonUserStats,
       archivedAt: formatDate(new Date(), 'YYYY-MM-DD HH:mm')
     }
 
@@ -3234,8 +3501,11 @@ App({
       }
     })
 
+    this.globalData.seasonData.medals = []
+    this.globalData.seasonData.vouchers = []
+
     wx.setStorageSync('seasonData', this.globalData.seasonData)
-    console.log('[App] 赛季结算完成', seasonData.seasonId)
+    console.log('[App] 赛季结算完成，当前赛季数据已归档清零', seasonData.seasonId)
   },
 
   addSeasonMedal(medal, saveToHistory = false) {
@@ -3434,32 +3704,67 @@ App({
     return { ...actualResult, flagged, flagReason, originalPoints: points }
   },
 
-  getGroupGameLeaderboard(groupId, dimension = 'gameScore') {
+  getGroupGameLeaderboard(groupId, period = 'week', dimension = 'gameScore') {
     const { LEADERBOARD_CONFIG } = require('./utils/constants')
     const members = this.getGroupMembers(groupId) || []
     const groups = this.globalData.userGroups || []
     const group = groups.find(g => g.id === groupId)
     const myUserId = this.getUserId()
+    const seasonInfo = this.getSeasonInfo()
 
-    const weekStart = new Date()
-    weekStart.setHours(0, 0, 0, 0)
-    weekStart.setDate(weekStart.getDate() - weekStart.getDay())
-    const weekStartStr = formatDate(weekStart, 'YYYY-MM-DD')
+    const timeRange = this.getPeriodTimeRange(period, seasonInfo ? seasonInfo.seasonId : null)
 
     const memberStats = members.map(member => {
       const isCurrentUser = member.userId === myUserId
-      const memberRecords = isCurrentUser
-        ? this.getGameRecords()
-        : (group && group.memberGameRecords && group.memberGameRecords[member.userId]) || []
-      const weekRecords = (memberRecords || []).filter(r => r.time && r.time >= weekStartStr)
-      const gameScore = weekRecords.length > 0
-        ? Math.max(...weekRecords.map(r => r.score || 0))
+      let memberRecords = []
+
+      if (isCurrentUser) {
+        memberRecords = this.getGameRecords()
+      } else if (group && group.memberGameRecords && group.memberGameRecords[member.userId]) {
+        memberRecords = group.memberGameRecords[member.userId] || []
+      }
+
+      const inRange = (recordTime) => {
+        if (!recordTime) return false
+        try {
+          const t = new Date(recordTime.replace(/-/g, '/')).getTime()
+          return t >= timeRange.startTime && t <= timeRange.endTime
+        } catch (e) { return false }
+      }
+
+      const filteredRecords = memberRecords.filter(r => inRange(r.time))
+
+      let gameScore = 0
+      let weeklyTotal = 0
+      let plays = 0
+
+      if (isCurrentUser) {
+        const periodStats = this.getCurrentUserStats(period)
+        gameScore = periodStats.gameScore || 0
+        weeklyTotal = periodStats.points || 0
+        plays = filteredRecords.length
+      } else {
+        const seasonId = timeRange.seasonId
+        if (group && group.memberSeasonStats && group.memberSeasonStats[member.userId] && group.memberSeasonStats[member.userId][seasonId] && period === 'month') {
+          const s = group.memberSeasonStats[member.userId][seasonId]
+          gameScore = s.gameScore || 0
+          weeklyTotal = s.points || 0
+          plays = s.plays || 0
+        } else if (group && group.memberWeekStats && group.memberWeekStats[member.userId] && period === 'week') {
+          const s = group.memberWeekStats[member.userId]
+          gameScore = s.gameScore || 0
+          weeklyTotal = s.points || 0
+          plays = s.plays || 0
+        } else {
+          gameScore = filteredRecords.length > 0 ? Math.max(...filteredRecords.map(r => r.score || 0)) : 0
+          weeklyTotal = filteredRecords.reduce((s, r) => s + (r.score || 0), 0)
+          plays = filteredRecords.length
+        }
+      }
+
+      const totalGameScore = memberRecords.length > 0
+        ? Math.max(...memberRecords.map(r => r.score || 0))
         : 0
-      const totalGameScore = (memberRecords || []).length > 0
-        ? Math.max(...(memberRecords || []).map(r => r.score || 0))
-        : 0
-      const weeklyTotal = weekRecords.reduce((s, r) => s + (r.score || 0), 0)
-      const plays = weekRecords.length
 
       const stats = {
         id: member.userId,
@@ -3472,10 +3777,7 @@ App({
         plays,
         isCurrentUser
       }
-      if (isCurrentUser) {
-        const realStats = this.getCurrentUserStats()
-        stats.gameScore = realStats.gameScore
-      }
+
       return stats
     })
 
@@ -3493,8 +3795,11 @@ App({
       list: ranked,
       myRank: myRank ? myRank.rank : ranked.length + 1,
       myData: myRank || null,
-      weekStart: weekStartStr,
-      weekEnd: formatDate(new Date(), 'YYYY-MM-DD')
+      period,
+      dimension,
+      startDate: timeRange.startDate,
+      endDate: timeRange.endDate,
+      seasonId: timeRange.seasonId
     }
   },
 
@@ -5536,26 +5841,86 @@ App({
     const members = this.getGroupMembers(groupId)
     if (members.length === 0) return { list: [], myRank: 0, myData: null }
 
-    const periodMultiplier = { week: 1, month: 4, all: 12 }[period] || 1
+    const groups = this.globalData.userGroups || []
+    const group = groups.find(g => g.id === groupId)
+    const currentUserId = this.getUserId()
+    const seasonInfo = this.getSeasonInfo()
+    const timeRange = this.getPeriodTimeRange(period, seasonInfo ? seasonInfo.seasonId : null)
 
-    const list = members.map((m, idx) => {
-      const base = { points: m.points, classifyCount: m.classifyCount, accuracy: m.correctRate }
+    const list = members.map((m) => {
+      const isCurrentUser = m.id === currentUserId
+      let stats = null
+
+      if (isCurrentUser) {
+        stats = this.getCurrentUserStats(period)
+      } else {
+        const seasonId = timeRange.seasonId
+        if (group && group.memberSeasonStats && group.memberSeasonStats[m.id] && group.memberSeasonStats[m.id][seasonId] && period === 'month') {
+          stats = {
+            points: group.memberSeasonStats[m.id][seasonId].points || 0,
+            accuracy: group.memberSeasonStats[m.id][seasonId].accuracy || 0,
+            classifyCount: group.memberSeasonStats[m.id][seasonId].classifyCount || 0,
+            streakDays: 0,
+            gameScore: group.memberSeasonStats[m.id][seasonId].gameScore || 0
+          }
+        } else if (group && group.memberWeekStats && group.memberWeekStats[m.id] && period === 'week') {
+          stats = {
+            points: group.memberWeekStats[m.id].points || 0,
+            accuracy: group.memberWeekStats[m.id].accuracy || 0,
+            classifyCount: group.memberWeekStats[m.id].classifyCount || 0,
+            streakDays: 0,
+            gameScore: group.memberWeekStats[m.id].gameScore || 0
+          }
+        } else {
+          const basePts = m.points || (1000 + Math.floor(Math.random() * 3000))
+          const baseCls = m.classifyCount || (30 + Math.floor(Math.random() * 80))
+          const baseAcc = m.correctRate || (70 + Math.random() * 25)
+          const baseGame = 100 + Math.floor(Math.random() * 400)
+
+          const elapsedRatio = period === 'week' ? 1 : period === 'month' ? 1 : 1.5
+          stats = {
+            points: Math.floor(basePts * 0.15 * elapsedRatio * (0.7 + Math.random() * 0.5)),
+            accuracy: Math.min(100, Math.max(50, Math.round(baseAcc))),
+            classifyCount: Math.floor(baseCls * 0.15 * elapsedRatio * (0.7 + Math.random() * 0.5)),
+            streakDays: 0,
+            gameScore: Math.floor(baseGame * elapsedRatio * (0.7 + Math.random() * 0.5))
+          }
+        }
+      }
+
       return {
         userId: m.id,
         nickName: m.nickName,
         avatarUrl: m.avatarUrl,
+        avatarEmoji: m.avatarEmoji,
         roleIcon: m.roleIcon,
-        points: Math.round(base.points * periodMultiplier * (0.8 + Math.random() * 0.4)),
-        classifyCount: Math.round(base.classifyCount * periodMultiplier * (0.8 + Math.random() * 0.4)),
-        accuracy: Math.min(100, Math.max(50, Math.round(base.accuracy + (Math.random() - 0.5) * 15)))
+        role: m.role,
+        points: stats.points,
+        classifyCount: stats.classifyCount,
+        accuracy: stats.accuracy,
+        gameScore: stats.gameScore,
+        isCurrentUser
       }
-    }).sort((a, b) => b[dimension] - a[dimension])
+    }).sort((a, b) => {
+      const aVal = a[dimension] || 0
+      const bVal = b[dimension] || 0
+      if (bVal !== aVal) return bVal - aVal
+      return (b.classifyCount || 0) - (a.classifyCount || 0)
+    }).map((item, index) => ({ ...item, rank: index + 1 }))
 
-    const userId = this.getUserId()
-    const myRank = list.findIndex(u => u.userId === userId) + 1
-    const myData = list.find(u => u.userId === userId) || null
+    const myRank = list.findIndex(u => u.userId === currentUserId) + 1
+    const myData = list.find(u => u.userId === currentUserId) || null
 
-    return { list, myRank, myData }
+    return {
+      list,
+      myRank,
+      myData,
+      period,
+      dimension,
+      seasonId: timeRange.seasonId,
+      startDate: timeRange.startDate,
+      endDate: timeRange.endDate
+    }
   },
 
   /**
