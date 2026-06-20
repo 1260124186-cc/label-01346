@@ -1,100 +1,65 @@
 const app = getApp()
-const { showToast, navigateTo, formatDate } = require('../../utils/util')
-
-const ACTIVITY_TYPES = {
-  '1': {
-    id: '1',
-    type: 'double',
-    title: '新人专享 双倍积分',
-    subtitle: '新用户首周签到答题双倍积分',
-    bannerImage: '/images/banner/exchange1.jpg',
-    bgColor: 'linear-gradient(135deg, #667eea, #764ba2)',
-    description: '新用户注册首周内，完成每日签到、知识问答等任务可获得双倍积分奖励！',
-    rules: [
-      '活动仅限新用户注册后7天内参与',
-      '每日签到、知识问答、垃圾分类均享受双倍积分',
-      '每日签到奖励上限翻倍至10积分',
-      '活动解释权归垃圾分类助手所有'
-    ],
-    startTime: '2024-01-01 00:00',
-    endTime: '长期有效',
-    status: 'active'
-  },
-  '2': {
-    id: '2',
-    type: 'flashsale',
-    title: '限时秒杀 低至5折',
-    subtitle: '每日10点、20点开抢，限量商品超值兑换',
-    bannerImage: '/images/banner/exchange2.jpg',
-    bgColor: 'linear-gradient(135deg, #f093fb, #f5576c)',
-    description: '精选热门商品限时秒杀，最低5折兑换！每天10点、20点准时开抢，数量有限，先到先得！',
-    rules: [
-      '秒杀时间：每日 10:00-10:30、20:00-20:30',
-      '每款商品每人限兑1件',
-      '秒杀商品数量有限，兑完即止',
-      '秒杀订单不支持退换，请谨慎兑换'
-    ],
-    flashGoods: [
-      { id: 1, name: '环保购物袋', originalPoints: 100, salePoints: 50, stock: 20, sold: 15, image: '/images/goods/goods1.jpg' },
-      { id: 5, name: '可降解垃圾袋', originalPoints: 80, salePoints: 40, stock: 50, sold: 32, image: '/images/goods/goods5.jpg' },
-      { id: 4, name: '竹纤维毛巾', originalPoints: 150, salePoints: 75, stock: 10, sold: 8, image: '/images/goods/goods4.jpg' }
-    ],
-    nextFlashTime: '20:00',
-    status: 'active'
-  },
-  '3': {
-    id: '3',
-    type: 'discount',
-    title: '环保达人 专属福利',
-    subtitle: '等级越高，折扣越大，最高享8折优惠',
-    bannerImage: '/images/banner/exchange3.jpg',
-    bgColor: 'linear-gradient(135deg, #4facfe, #00f2fe)',
-    description: '环保达人专属福利来袭！根据用户等级享受不同折扣优惠，等级越高折扣越大，最高可享8折！',
-    rules: [
-      'LV.2 环保学徒：9.5折优惠',
-      'LV.3 环保达人：9折优惠',
-      'LV.4 环保专家：8.5折优惠',
-      'LV.5 环保大师：8折优惠',
-      '折扣商品不与其他优惠叠加',
-      '活动解释权归垃圾分类助手所有'
-    ],
-    discountGoods: [
-      { id: 3, name: '保温杯', originalPoints: 500, discountPoints: 450, discount: '9折', image: '/images/goods/goods3.jpg' },
-      { id: 6, name: '多肉植物盆栽', originalPoints: 300, discountPoints: 270, discount: '9折', image: '/images/goods/goods6.jpg' },
-      { id: 2, name: '便携餐具套装', originalPoints: 200, discountPoints: 180, discount: '9折', image: '/images/goods/goods2.jpg' }
-    ],
-    userDiscount: '9折',
-    userLevel: 'LV.3 环保达人',
-    status: 'active'
-  }
-}
+const { showToast, showSuccess, navigateTo, formatDate, showModal } = require('../../utils/util')
+const {
+  ACTIVITY_TYPES,
+  ELIGIBILITY_META
+} = require('../../utils/activity')
+const { FLASH_SALE_STATUS } = require('../../utils/flashsale')
 
 Page({
   data: {
     activityId: '',
     activity: null,
+    activityTypeMeta: null,
     userPoints: 0,
     userLevel: '',
+    userLevelNum: 1,
+    joinDate: '',
     countdown: {
       hours: '00',
       minutes: '00',
       seconds: '00'
     },
-    timer: null
+    timer: null,
+    eligibilityResult: null,
+    flashSession: null,
+    flashGoodsList: [],
+    isReserved: false,
+    reservations: [],
+    flashPurchases: [],
+    activeDoubles: [],
+    discountGoodsList: [],
+    userDiscount: null,
+    activityReport: null,
+    participationStats: null,
+    inDateRange: true
   },
 
   onLoad(options) {
-    const id = options.id || '1'
+    const id = options.id || 'act_double_new'
     this.setData({ activityId: id })
     this.loadActivity(id)
     this.refreshUserInfo()
+    this.refreshActiveDoubles()
   },
 
   onShow() {
     this.refreshUserInfo()
-    if (this.data.activity && this.data.activity.type === 'flashsale') {
+    this.refreshActiveDoubles()
+
+    const { activity } = this.data
+    if (!activity) return
+
+    if (activity.type === ACTIVITY_TYPES.FLASH_SALE) {
       this.startCountdown()
+      this.refreshFlashGoods()
+      this.checkReservationStatus()
+    } else if (activity.type === ACTIVITY_TYPES.LEVEL_DISCOUNT) {
+      this.refreshDiscountGoods()
     }
+
+    this.refreshParticipationStats()
+    this.checkActivityReport()
   },
 
   onHide() {
@@ -105,16 +70,44 @@ Page({
     this.stopCountdown()
   },
 
+  onPullDownRefresh() {
+    const { activityId } = this.data
+    this.loadActivity(activityId)
+    this.refreshUserInfo()
+    this.refreshActiveDoubles()
+    setTimeout(() => {
+      wx.stopPullDownRefresh()
+    }, 500)
+  },
+
   loadActivity(id) {
-    const activity = ACTIVITY_TYPES[id]
-    if (activity) {
-      this.setData({ activity })
-      wx.setNavigationBarTitle({ title: activity.title })
-      
-      if (activity.type === 'flashsale') {
-        this.startCountdown()
-      }
+    const activity = app.getActivityById(id)
+    if (!activity) {
+      showToast('活动不存在')
+      return
     }
+
+    const { ACTIVITY_TYPE_META } = require('../../utils/activity')
+    const activityTypeMeta = ACTIVITY_TYPE_META[activity.type] || null
+    const inDateRange = app.getActivityManager().isActivityInDateRange(activity)
+    const eligibilityResult = app.checkActivityEligibility(activity)
+
+    this.setData({
+      activity,
+      activityTypeMeta,
+      inDateRange,
+      eligibilityResult
+    })
+
+    wx.setNavigationBarTitle({ title: activity.title })
+
+    if (activity.type === ACTIVITY_TYPES.FLASH_SALE) {
+      this.initFlashSale()
+    } else if (activity.type === ACTIVITY_TYPES.LEVEL_DISCOUNT) {
+      this.refreshDiscountGoods()
+    }
+
+    this.refreshParticipationStats()
   },
 
   refreshUserInfo() {
@@ -127,12 +120,111 @@ Page({
           levelInfo = level
         }
       }
-      
+
+      const userDiscount = app.getUserLevelDiscount()
+
       this.setData({
         userPoints: userInfo.points || 0,
-        userLevel: 'LV.' + levelInfo.level + ' ' + levelInfo.name
+        userLevel: 'LV.' + levelInfo.level + ' ' + levelInfo.name,
+        userLevelNum: levelInfo.level,
+        joinDate: userInfo.joinDate || '',
+        userDiscount
       })
+
+      if (this.data.activity) {
+        const eligibilityResult = app.checkActivityEligibility(this.data.activity)
+        this.setData({ eligibilityResult })
+      }
     }
+  },
+
+  refreshActiveDoubles() {
+    const activeDoubles = app.getActivePointsDoubles()
+    this.setData({ activeDoubles })
+  },
+
+  initFlashSale() {
+    const { activity } = this.data
+    const flashSaleMgr = app.getFlashSaleManager()
+    const session = flashSaleMgr.getFlashSession(activity, app)
+
+    this.setData({ flashSession: session })
+
+    flashSaleMgr.refreshGoodsStockFromApp(activity, app)
+
+    this.refreshFlashGoods()
+    this.checkReservationStatus()
+    this.loadUserPurchases()
+    this.startCountdown()
+  },
+
+  refreshFlashGoods() {
+    const { activity } = this.data
+    if (!activity) return
+    const flashSaleMgr = app.getFlashSaleManager()
+    const goodsList = flashSaleMgr.getFlashGoodsList(activity, app)
+    this.setData({ flashGoodsList: goodsList })
+  },
+
+  refreshDiscountGoods() {
+    const { activity } = this.data
+    if (!activity) return
+
+    const goodsIds = activity.discountGoodsIds || []
+    const goodsList = app.getGoodsList()
+    const activityMgr = app.getActivityManager()
+    const userInfo = app.globalData.userInfo
+
+    const discountGoodsList = goodsIds.map(gid => {
+      const goods = goodsList.find(g => g.id === gid)
+      if (!goods) return null
+      const discountInfo = activityMgr.getDiscountForGoods(goods, userInfo, activity)
+      return {
+        ...goods,
+        discountInfo
+      }
+    }).filter(Boolean)
+
+    this.setData({ discountGoodsList })
+  },
+
+  checkReservationStatus() {
+    const { activity, flashSession } = this.data
+    if (!activity || !flashSession || !flashSession.display) return
+
+    const userId = app.getUserId()
+    const flashSaleMgr = app.getFlashSaleManager()
+    const isReserved = flashSaleMgr.isReserved(
+      activity.id,
+      flashSession.display.sessionKey,
+      userId
+    )
+    const reservations = flashSaleMgr.getUserReservations(userId, activity.id)
+
+    this.setData({ isReserved, reservations })
+  },
+
+  loadUserPurchases() {
+    const { activity } = this.data
+    if (!activity) return
+    const userId = app.getUserId()
+    const flashSaleMgr = app.getFlashSaleManager()
+    const stats = flashSaleMgr.getUserPurchaseStats(userId, activity.id)
+    this.setData({ flashPurchases: stats.purchases })
+  },
+
+  refreshParticipationStats() {
+    const { activity } = this.data
+    if (!activity) return
+    const stats = app.getActivityManager().getParticipationStats(activity.id)
+    this.setData({ participationStats: stats })
+  },
+
+  checkActivityReport() {
+    const { activity } = this.data
+    if (!activity || !activity.reportGenerated || !activity.reportId) return
+    const report = app.getActivityManager().getReportById(activity.reportId)
+    this.setData({ activityReport: report })
   },
 
   startCountdown() {
@@ -140,6 +232,7 @@ Page({
     this.updateCountdown()
     const timer = setInterval(() => {
       this.updateCountdown()
+      this.refreshFlashGoodsTick()
     }, 1000)
     this.setData({ timer })
   },
@@ -151,36 +244,157 @@ Page({
     }
   },
 
+  refreshFlashGoodsTick() {
+    const { activity } = this.data
+    if (!activity || activity.type !== ACTIVITY_TYPES.FLASH_SALE) return
+    const flashSaleMgr = app.getFlashSaleManager()
+    const session = flashSaleMgr.getFlashSession(activity, app)
+
+    const oldSession = this.data.flashSession
+    const sessionChanged =
+      (!oldSession && session.display) ||
+      (oldSession && oldSession.display && session.display &&
+        oldSession.display.sessionKey !== session.display.sessionKey) ||
+      (oldSession && session.isActive !== oldSession.isActive)
+
+    this.setData({ flashSession: session })
+
+    if (sessionChanged) {
+      this.refreshFlashGoods()
+      this.checkReservationStatus()
+      this.loadUserPurchases()
+    }
+  },
+
   updateCountdown() {
-    const now = new Date()
-    const hours = now.getHours()
-    let targetHour = 20
-    
-    if (hours < 10) {
-      targetHour = 10
-    } else if (hours < 20) {
-      targetHour = 20
+    const { activity, flashSession } = this.data
+    if (!activity || activity.type !== ACTIVITY_TYPES.FLASH_SALE) return
+
+    const now = Date.now()
+    let diffMs = 0
+
+    if (flashSession && flashSession.current) {
+      diffMs = Math.max(0, flashSession.current.endTime - now)
+    } else if (flashSession && flashSession.next) {
+      diffMs = Math.max(0, flashSession.next.startTime - now)
     } else {
-      targetHour = 10
+      return
     }
-    
-    const target = new Date()
-    if (hours >= 20) {
-      target.setDate(target.getDate() + 1)
-    }
-    target.setHours(targetHour, 0, 0, 0)
-    
-    const diff = target.getTime() - now.getTime()
-    const h = Math.floor(diff / (1000 * 60 * 60))
-    const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
-    const s = Math.floor((diff % (1000 * 60)) / 1000)
-    
+
+    const totalSeconds = Math.floor(diffMs / 1000)
+    const h = Math.floor(totalSeconds / 3600)
+    const m = Math.floor((totalSeconds % 3600) / 60)
+    const s = totalSeconds % 60
+
     this.setData({
       countdown: {
         hours: String(h).padStart(2, '0'),
         minutes: String(m).padStart(2, '0'),
         seconds: String(s).padStart(2, '0')
       }
+    })
+  },
+
+  onReserve() {
+    const { activity, eligibilityResult } = this.data
+
+    if (!eligibilityResult || !eligibilityResult.eligible) {
+      showToast(eligibilityResult?.failSummary || '您不满足活动参与条件')
+      return
+    }
+
+    const userId = app.getUserId()
+    const flashSaleMgr = app.getFlashSaleManager()
+    const result = flashSaleMgr.makeReservation(activity, userId, app)
+
+    if (result.success) {
+      showSuccess('预约成功')
+      this.checkReservationStatus()
+      app.recordActivityParticipation(activity.id, 'reserve', {
+        extra: { sessionKey: result.reservation.sessionKey }
+      })
+    } else if (result.alreadyReserved) {
+      showToast('已预约过该场次')
+    } else {
+      showToast(result.message || '预约失败')
+    }
+  },
+
+  onCancelReserve(e) {
+    const { reservationId } = e.currentTarget.dataset
+    const userId = app.getUserId()
+    const flashSaleMgr = app.getFlashSaleManager()
+    const result = flashSaleMgr.cancelReservation(reservationId, userId)
+    if (result.success) {
+      showSuccess('已取消预约')
+      this.checkReservationStatus()
+    } else {
+      showToast(result.message || '取消失败')
+    }
+  },
+
+  onFlashPurchase(e) {
+    const { goodsId, goodsName } = e.currentTarget.dataset
+    const { activity, eligibilityResult, flashSession } = this.data
+
+    if (!flashSession || !flashSession.isActive) {
+      showToast('当前不在秒杀时间段内')
+      return
+    }
+
+    if (!eligibilityResult || !eligibilityResult.eligible) {
+      showToast(eligibilityResult?.failSummary || '您不满足活动参与条件')
+      return
+    }
+
+    const flashGoods = this.data.flashGoodsList.find(g => g.id === goodsId)
+    if (!flashGoods) {
+      showToast('商品不存在')
+      return
+    }
+
+    showModal({
+      title: '确认秒杀',
+      content: `确定使用 ${flashGoods.salePoints} 积分秒杀「${goodsName}」吗？\n原价 ${flashGoods.originalPoints} 积分，省 ${flashGoods.originalPoints - flashGoods.salePoints} 积分！`,
+      confirmText: '立即秒杀',
+      confirmColor: '#E85D5D'
+    }).then(confirmed => {
+      if (!confirmed) return
+
+      wx.showLoading({ title: '秒杀中...', mask: true })
+
+      setTimeout(() => {
+        const userId = app.getUserId()
+        const flashSaleMgr = app.getFlashSaleManager()
+        const result = flashSaleMgr.purchaseFlashGoods(activity, goodsId, userId, app)
+
+        wx.hideLoading()
+
+        if (result.success) {
+          showSuccess('秒杀成功！')
+          this.refreshFlashGoods()
+          this.loadUserPurchases()
+          this.refreshUserInfo()
+
+          app.recordActivityParticipation(activity.id, 'redeem', {
+            points: flashGoods.salePoints,
+            goodsId,
+            extra: {
+              originalPoints: flashGoods.originalPoints,
+              savedPoints: flashGoods.originalPoints - flashGoods.salePoints
+            }
+          })
+
+          setTimeout(() => {
+            wx.navigateTo({ url: '/pages/orders/orders' })
+          }, 1500)
+        } else {
+          showToast(result.message || '秒杀失败')
+          if (result.soldOut) {
+            this.refreshFlashGoods()
+          }
+        }
+      }, 500)
     })
   },
 
@@ -191,6 +405,18 @@ Page({
 
   onGoExchange() {
     wx.switchTab({ url: '/pages/exchange/exchange' })
+  },
+
+  onGoMessages() {
+    navigateTo('/pages/messages/messages')
+  },
+
+  onGoSignin() {
+    navigateTo('/pages/signin/signin')
+  },
+
+  onGoQuiz() {
+    navigateTo('/pages/quiz/quiz')
   },
 
   onShareAppMessage() {

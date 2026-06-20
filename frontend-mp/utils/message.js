@@ -6,6 +6,8 @@ const SUBSCRIPTION_KEY = 'subscriptionSettings'
 const MESSAGE_TYPES = {
   SYSTEM: 'system',
   ACTIVITY: 'activity',
+  ACTIVITY_REPORT: 'activity_report',
+  FLASH_SALE_REMINDER: 'flash_sale_reminder',
   ORDER: 'order',
   SIGNIN: 'signin',
   QUIZ: 'quiz',
@@ -94,6 +96,20 @@ const MESSAGE_TYPE_CONFIG = {
     emoji: '🎉',
     color: '#5BBD72',
     bgColor: 'rgba(91, 189, 114, 0.1)'
+  },
+  [MESSAGE_TYPES.ACTIVITY_REPORT]: {
+    id: MESSAGE_TYPES.ACTIVITY_REPORT,
+    name: '活动报告',
+    emoji: '📊',
+    color: '#3498DB',
+    bgColor: 'rgba(52, 152, 219, 0.1)'
+  },
+  [MESSAGE_TYPES.FLASH_SALE_REMINDER]: {
+    id: MESSAGE_TYPES.FLASH_SALE_REMINDER,
+    name: '秒杀提醒',
+    emoji: '⚡',
+    color: '#E85D5D',
+    bgColor: 'rgba(232, 93, 93, 0.1)'
   }
 }
 
@@ -127,6 +143,16 @@ const SUBSCRIPTION_TEMPLATES = {
     name: '作业完成通知',
     tmplIds: [],
     description: '组作业全部完成时通知发布者'
+  },
+  FLASH_SALE_RESERVE: {
+    name: '秒杀预约提醒',
+    tmplIds: [],
+    description: '开抢前提醒已预约的用户'
+  },
+  ACTIVITY_REPORT_NOTICE: {
+    name: '活动报告通知',
+    tmplIds: [],
+    description: '活动结束后生成参与报告时通知'
   }
 }
 
@@ -255,6 +281,8 @@ class MessageManager {
         signinReminder: true,
         shipmentNotice: true,
         activityStart: true,
+        flashSaleReserve: true,
+        activityReportNotice: true,
         homeworkAssigned: true,
         homeworkDue: true,
         homeworkComplete: true,

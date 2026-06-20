@@ -13,6 +13,8 @@ Page({
       { id: 'all', name: '全部' },
       { id: MESSAGE_TYPES.SYSTEM, name: '系统通知' },
       { id: MESSAGE_TYPES.ACTIVITY, name: '活动提醒' },
+      { id: MESSAGE_TYPES.ACTIVITY_REPORT, name: '活动报告' },
+      { id: MESSAGE_TYPES.FLASH_SALE_REMINDER, name: '秒杀提醒' },
       { id: MESSAGE_TYPES.ORDER, name: '订单物流' },
       { id: MESSAGE_TYPES.TICKET, name: '工单通知' },
       { id: MESSAGE_TYPES.SIGNIN, name: '签到提醒' },
@@ -63,6 +65,8 @@ Page({
     let emptyTip = '暂无消息，保持关注哦~'
     if (currentTab === MESSAGE_TYPES.SYSTEM) emptyTip = '暂无系统通知'
     else if (currentTab === MESSAGE_TYPES.ACTIVITY) emptyTip = '暂无活动提醒'
+    else if (currentTab === MESSAGE_TYPES.ACTIVITY_REPORT) emptyTip = '暂无活动报告，活动结束后会生成报告哦~'
+    else if (currentTab === MESSAGE_TYPES.FLASH_SALE_REMINDER) emptyTip = '暂无秒杀提醒，预约秒杀后会收到提醒'
     else if (currentTab === MESSAGE_TYPES.ORDER) emptyTip = '暂无订单物流消息'
     else if (currentTab === MESSAGE_TYPES.TICKET) emptyTip = '暂无工单通知'
     else if (currentTab === MESSAGE_TYPES.SIGNIN) emptyTip = '暂无签到提醒'

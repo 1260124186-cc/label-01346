@@ -18,6 +18,13 @@ const {
   MESSAGE_TYPES,
   messageManager
 } = require('./utils/message')
+const {
+  activityManager,
+  ACTIVITY_TYPES
+} = require('./utils/activity')
+const {
+  flashSaleManager
+} = require('./utils/flashsale')
 
 App({
   globalData: {
@@ -28,7 +35,10 @@ App({
     expireCheckTimer: null,
     currentCity: 'shanghai',
     currentCityInfo: null,
-    hasUpcomingStandard: false
+    hasUpcomingStandard: false,
+    activityManager: null,
+    flashSaleManager: null,
+    activePointsDoubles: []
   },
 
   /**
@@ -77,6 +87,7 @@ App({
     this.initChildMode()
     this.initUserGroups()
     this.initGroupHomework()
+    this.initActivitySystem()
     this.checkPushStrategies()
 
     this.startExpireCheckInterval()
@@ -160,6 +171,9 @@ App({
     this.checkAndExpirePoints()
     this.simulateAutoShipping()
     this.simulateRecycleProgress()
+    this.refreshActivePointsDoubles()
+    this.checkActivityEndAndReports()
+    this.checkFlashSaleReminders()
     this.checkPushStrategies()
   },
 
@@ -1610,34 +1624,61 @@ App({
 
   updateUserPoints(points, recordInfo = null) {
     const userInfo = this.globalData.userInfo
-    userInfo.points = Math.max(0, userInfo.points + points)
+    let finalPoints = points
+    let multiplierInfo = { isDoubled: false, multiplier: 1, bonusPoints: 0, appliedActivities: [] }
+
+    if (points > 0 && recordInfo && recordInfo.category) {
+      multiplierInfo = this.applyPointsMultiplier(points, recordInfo.category)
+      finalPoints = multiplierInfo.points
+
+      if (multiplierInfo.isDoubled && recordInfo) {
+        const activityTitles = multiplierInfo.appliedActivities.map(a => a.activityTitle).join('、')
+        recordInfo.desc = (recordInfo.desc ? recordInfo.desc + '；' : '') +
+          `${activityTitles}x${multiplierInfo.multiplier}，基础${points}分，额外+${multiplierInfo.bonusPoints}分`
+        recordInfo.bonusPoints = multiplierInfo.bonusPoints
+        recordInfo.appliedActivities = multiplierInfo.appliedActivities
+        recordInfo.originalPoints = points
+      }
+    }
+
+    userInfo.points = Math.max(0, userInfo.points + finalPoints)
     const levelInfo = getUserLevel(userInfo.points)
     userInfo.level = levelInfo.level
     this.globalData.userInfo = userInfo
     wx.setStorageSync('userInfo', userInfo)
-    console.log('[App] 用户积分已更新', userInfo.points, '等级:', userInfo.level)
+    console.log('[App] 用户积分已更新', userInfo.points, '等级:', userInfo.level,
+      multiplierInfo.isDoubled ? `(双倍x${multiplierInfo.multiplier})` : '')
 
     if (recordInfo) {
       const now = new Date()
       const timeStr = formatDate(now, 'YYYY-MM-DD HH:mm')
       const record = {
         id: generateId(),
-        type: points >= 0 ? 'earn' : 'spend',
+        type: finalPoints >= 0 ? 'earn' : 'spend',
         category: recordInfo.category || 'other',
-        title: recordInfo.title || (points >= 0 ? '积分获取' : '积分消费'),
+        title: recordInfo.title || (finalPoints >= 0 ? '积分获取' : '积分消费'),
         desc: recordInfo.desc || '',
-        emoji: recordInfo.emoji || (points >= 0 ? '💰' : '💸'),
-        points: Math.abs(points),
+        emoji: recordInfo.emoji || (finalPoints >= 0 ? '💰' : '💸'),
+        points: Math.abs(finalPoints),
         time: timeStr
       }
       this.addPointsRecord(record)
 
-      if (points < 0) {
-        this.consumePointsFIFO(Math.abs(points), record.id)
+      if (finalPoints < 0) {
+        this.consumePointsFIFO(Math.abs(finalPoints), record.id)
       }
     }
 
     this.checkAchievements()
+
+    if (multiplierInfo.isDoubled && recordInfo && recordInfo.category) {
+      for (const act of multiplierInfo.appliedActivities) {
+        this.recordActivityParticipation(act.activityId, 'points_earn', {
+          points: multiplierInfo.bonusPoints,
+          extra: { category: recordInfo.category, original: points }
+        })
+      }
+    }
   },
 
   /**
@@ -6601,5 +6642,166 @@ App({
           ? '做得很好，继续加油哦！'
           : '多多分类，收集更多星星吧！'
     }
+  },
+
+  initActivitySystem() {
+    this.globalData.activityManager = activityManager
+    this.globalData.flashSaleManager = flashSaleManager
+    this.refreshActivePointsDoubles()
+    console.log('[App] 活动系统初始化完成')
+  },
+
+  getActivityManager() {
+    return this.globalData.activityManager || activityManager
+  },
+
+  getFlashSaleManager() {
+    return this.globalData.flashSaleManager || flashSaleManager
+  },
+
+  refreshActivePointsDoubles() {
+    const userInfo = this.globalData.userInfo
+    const userContext = {
+      userInfo,
+      joinDate: userInfo ? userInfo.joinDate : null,
+      streakDays: this.getStreakDays()
+    }
+    this.globalData.activePointsDoubles = activityManager.getActivePointsDoubles(userContext)
+    console.log('[App] 活动积分倍率已刷新，生效活动:', this.globalData.activePointsDoubles.length)
+    return this.globalData.activePointsDoubles
+  },
+
+  getActivePointsDoubles() {
+    if (!this.globalData.activePointsDoubles || this.globalData.activePointsDoubles.length === 0) {
+      this.refreshActivePointsDoubles()
+    }
+    return this.globalData.activePointsDoubles || []
+  },
+
+  getPointsMultiplier(category) {
+    const userInfo = this.globalData.userInfo
+    const userContext = {
+      userInfo,
+      joinDate: userInfo ? userInfo.joinDate : null,
+      streakDays: this.getStreakDays()
+    }
+    const result = activityManager.getPointsMultiplierForCategory(category, userContext)
+
+    if (result.isDoubled) {
+      console.log(`[App] 积分双倍生效 [${category}]: ${result.multiplier}x, 活动:`, result.appliedActivities)
+    }
+
+    return result
+  },
+
+  applyPointsMultiplier(points, category) {
+    const { multiplier, isDoubled, appliedActivities } = this.getPointsMultiplier(category)
+    if (!isDoubled || multiplier <= 1) {
+      return { points, isDoubled: false, multiplier: 1, bonusPoints: 0, appliedActivities: [] }
+    }
+    const originalPoints = points
+    const finalPoints = Math.round(points * multiplier)
+    const bonusPoints = finalPoints - originalPoints
+
+    return {
+      points: finalPoints,
+      isDoubled,
+      multiplier,
+      bonusPoints,
+      appliedActivities
+    }
+  },
+
+  checkActivityEndAndReports() {
+    const generated = activityManager.checkActivityEndAndGenerateReport()
+    if (generated.length === 0) return
+
+    const userId = this.getUserId()
+
+    for (const { activity, report } of generated) {
+      console.log('[App] 活动结束，生成报告:', activity.title, report.id)
+
+      const stats = activityManager.getParticipationStats(activity.id)
+      const userParticipated = stats.records.some(r => r.userId === userId)
+
+      if (messageManager.getSubscriptionSetting('activityReportNotice')) {
+        let content = `「${activity.title}」活动已圆满结束！`
+        if (userParticipated) {
+          const userRecords = stats.records.filter(r => r.userId === userId)
+          const myPoints = userRecords.reduce((sum, r) => sum + (r.points || 0), 0)
+          content += `\n\n您在本活动中：\n• 参与次数：${userRecords.length}次\n• 获得积分：${myPoints}分`
+        } else {
+          content += '\n\n您未参与本次活动，下次记得来哦~'
+        }
+        content += `\n\n活动总览：\n• 参与用户：${stats.uniqueUsers}人\n• 发放积分：${stats.totalPointsDistributed}分`
+        if (stats.goodsRedeemed > 0) {
+          content += `\n• 商品兑换：${stats.goodsRedeemed}件`
+        }
+
+        messageManager.addMessage({
+          type: MESSAGE_TYPES.ACTIVITY_REPORT,
+          title: '📊 活动报告已生成',
+          content,
+          emoji: '📊',
+          data: {
+            activityId: activity.id,
+            reportId: report.id,
+            report,
+            link: `/pages/messages/messages?tab=${MESSAGE_TYPES.ACTIVITY_REPORT}`
+          }
+        })
+      }
+
+      activityManager.recordParticipation(activity.id, 'report_generated', {
+        userId,
+        reportId: report.id,
+        extra: { userParticipated }
+      })
+    }
+  },
+
+  checkFlashSaleReminders() {
+    const userId = this.getUserId()
+    const flashSaleActivities = activityManager.getActivitiesByType(ACTIVITY_TYPES.FLASH_SALE)
+
+    for (const activity of flashSaleActivities) {
+      if (messageManager.getSubscriptionSetting('flashSaleReserve')) {
+        flashSaleManager.checkPendingReminders(userId, activity, messageManager, MESSAGE_TYPES)
+      }
+    }
+  },
+
+  getAllActivities(includeExpired = false) {
+    return activityManager.getAllActivities(includeExpired)
+  },
+
+  getActivityById(activityId) {
+    return activityManager.getActivityById(activityId)
+  },
+
+  checkActivityEligibility(activity) {
+    const userInfo = this.globalData.userInfo
+    const userContext = {
+      userInfo,
+      joinDate: userInfo ? userInfo.joinDate : null,
+      streakDays: this.getStreakDays()
+    }
+    return activityManager.checkEligibility(activity, userContext)
+  },
+
+  getUserLevelDiscount() {
+    return activityManager.getLevelDiscount(this.globalData.userInfo)
+  },
+
+  getActivityReports() {
+    return activityManager.getReports()
+  },
+
+  recordActivityParticipation(activityId, action, data = {}) {
+    const userId = this.getUserId()
+    return activityManager.recordParticipation(activityId, action, {
+      userId,
+      ...data
+    })
   }
 })
