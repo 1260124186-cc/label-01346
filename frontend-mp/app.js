@@ -979,13 +979,18 @@ App({
 
   addClassifyRecord(record) {
     record.source = record.source || 'manual'
+    if (!record.memberId) {
+      record.memberId = this.getUserId()
+    }
     this.globalData.classifyRecords.unshift(record)
     wx.setStorageSync('classifyRecords', this.globalData.classifyRecords)
-    console.log('[App] 新增分类记录', record.trashName, 'source:', record.source)
+    console.log('[App] 新增分类记录', record.trashName, 'memberId:', record.memberId, 'source:', record.source)
   },
 
-  getClassifyRecords() {
-    return this.globalData.classifyRecords || []
+  getClassifyRecords(memberId) {
+    const all = this.globalData.classifyRecords || []
+    if (!memberId) return all
+    return all.filter(r => r.memberId === memberId || r.memberId === undefined)
   },
 
   /**
@@ -1048,18 +1053,39 @@ App({
     console.log('[App] 签到记录已加载', this.globalData.signInRecords.length, '条')
   },
 
-  addSignInRecord(dateStr) {
+  addSignInRecord(dateStr, memberId) {
     const records = this.globalData.signInRecords || []
-    if (!records.includes(dateStr)) {
-      records.push(dateStr)
+    const ownerId = memberId || this.getUserId()
+
+    const alreadySigned = records.some(r => {
+      const d = typeof r === 'string' ? r : r.date
+      const o = typeof r === 'string' ? null : r.memberId
+      return d === dateStr && (o === ownerId || o === null || o === undefined)
+    })
+
+    if (!alreadySigned) {
+      records.push({
+        date: dateStr,
+        memberId: ownerId
+      })
       this.globalData.signInRecords = records
       wx.setStorageSync('signInRecords', records)
-      console.log('[App] 新增签到记录', dateStr)
+      console.log('[App] 新增签到记录', dateStr, 'memberId:', ownerId)
     }
   },
 
-  getSignInRecords() {
-    return this.globalData.signInRecords || []
+  getSignInRecords(memberId) {
+    const all = this.globalData.signInRecords || []
+    const normalized = all.map(r => {
+      if (typeof r === 'string') {
+        return { date: r, memberId: this.getUserId() }
+      }
+      return r
+    })
+    if (!memberId) return normalized.map(r => r.date)
+    return normalized
+      .filter(r => r.memberId === memberId || r.memberId === undefined || r.memberId === this.getUserId())
+      .map(r => r.date)
   },
 
   /**
@@ -1299,19 +1325,20 @@ App({
    * 检查今日是否已签到
    * @returns {boolean} 是否已签到
    */
-  isTodaySignedIn() {
+  isTodaySignedIn(memberId) {
     const today = formatDate(new Date(), 'YYYY-MM-DD')
-    const records = this.getSignInRecords()
+    const records = this.getSignInRecords(memberId)
     return records.includes(today)
   },
 
   /**
    * 获取连续打卡天数（统一逻辑：签到 + 每日一练合并计算）
    * 一天内任意完成签到或答题都算当天打卡
+   * @param {string} memberId - 可选，指定成员（不传则用当前用户）
    * @returns {number} 连续天数
    */
-  getStreakDays() {
-    const signInRecords = this.getSignInRecords()
+  getStreakDays(memberId) {
+    const signInRecords = this.getSignInRecords(memberId)
     const dailyQuizRecords = this.getDailyQuizRecords()
     const mergedRecords = Array.from(new Set([...signInRecords, ...dailyQuizRecords]))
     return this.calculateContinuousDays(mergedRecords)
@@ -1319,22 +1346,24 @@ App({
 
   /**
    * 执行签到
+   * @param {string} memberId - 可选，指定签到成员，默认当前用户
    * @returns {Object} { success, points, bonus, streakDays, alreadySigned }
    */
-  doSignIn() {
+  doSignIn(memberId) {
     const today = formatDate(new Date(), 'YYYY-MM-DD')
+    const ownerId = memberId || this.getUserId()
 
-    if (this.isTodaySignedIn()) {
+    if (this.isTodaySignedIn(ownerId)) {
       return {
         success: false,
         alreadySigned: true,
         points: 0,
         bonus: 0,
-        streakDays: this.getStreakDays()
+        streakDays: this.getStreakDays(ownerId)
       }
     }
 
-    this.addSignInRecord(today)
+    this.addSignInRecord(today, ownerId)
 
     const basePoints = 5
     this.updateUserPoints(basePoints, {
@@ -1344,7 +1373,7 @@ App({
       emoji: '📅'
     })
 
-    const streakDays = this.getStreakDays()
+    const streakDays = this.getStreakDays(ownerId)
     let bonus = 0
 
     if (streakDays > 0 && streakDays % 7 === 0) {
@@ -4954,18 +4983,42 @@ App({
     const group = this._findGroup(homework.groupId)
     if (!group) return []
 
+    const allGroupMemberIds = (group.members || []).map(m => m.id)
     const memberIds = homework.memberIds && homework.memberIds.length > 0
       ? homework.memberIds
-      : group.members.map(m => m.id)
+      : allGroupMemberIds
 
     return memberIds.map(memberId => {
-      const member = group.members.find(m => m.id === memberId)
+      const member = group.members.find(m => m.id === memberId) || {
+        id: memberId,
+        nickName: '未知成员',
+        name: '未知成员',
+        role: 'member',
+        emoji: '🌱',
+        avatarEmoji: '🌱',
+        avatarUrl: ''
+      }
       const progress = this._calculateMemberHomeworkProgress(homework, memberId)
+
+      const memberName = member.nickName || member.name || '未知成员'
+      const memberEmoji = member.emoji || member.avatarEmoji || '🌱'
+
       return {
         memberId,
-        nickName: member ? member.nickName : '未知成员',
-        avatarUrl: member ? member.avatarUrl : '',
-        role: member ? member.role : 'member',
+        member: {
+          id: memberId,
+          name: memberName,
+          nickName: memberName,
+          emoji: memberEmoji,
+          avatarEmoji: memberEmoji,
+          avatarUrl: member.avatarUrl || member.avatar || '',
+          role: member.role || 'member'
+        },
+        nickName: memberName,
+        memberName,
+        memberEmoji,
+        avatarUrl: member.avatarUrl || member.avatar || '',
+        role: member.role || 'member',
         ...progress
       }
     }).sort((a, b) => b.completionRate - a.completionRate)
@@ -5044,7 +5097,7 @@ App({
       }
 
       case 'signin': {
-        const signInRecords = this.getSignInRecords()
+        const signInRecords = this.getSignInRecords(memberId)
         const target = task.days || 5
         const now = new Date()
         let consecutiveDays = 0
@@ -5065,13 +5118,14 @@ App({
       }
 
       case 'classify': {
-        const classifyRecords = this.getClassifyRecords()
+        const memberClassifyRecords = this.getClassifyRecords(memberId)
         const target = task.count || 10
+        const current = memberClassifyRecords.length
         return {
-          current: classifyRecords.length,
+          current,
           target,
-          progress: Math.min(100, Math.round((classifyRecords.length / target) * 100)),
-          completed: classifyRecords.length >= target
+          progress: Math.min(100, Math.round((current / target) * 100)),
+          completed: current >= target
         }
       }
 
@@ -5220,56 +5274,79 @@ App({
     const homeworkList = this.getGroupHomeworks(groupId, 'all')
     const group = this._findGroup(groupId)
     if (!group) return []
-
-    const members = group.members || []
     const currentUserId = this.getUserId()
 
-    const rawRanking = members.map(member => {
-      const memberHomework = homeworkList.filter(hw =>
-        hw.memberIds.includes(member.id) || hw.memberIds.length === 0
-      )
+    // 和 _getAllMemberProgress 完全一致的成员集合收集逻辑：
+    // 先从所有作业中合并 memberIds（每个作业如果自己有指定就用，否则 fallback 到全组）
+    const allGroupMemberIds = (group.members || []).map(m => m.id)
+    const mergedMemberIds = []
+    homeworkList.forEach(hw => {
+      const homeworkMemberIds = hw.memberIds && hw.memberIds.length > 0
+        ? hw.memberIds
+        : allGroupMemberIds
+      homeworkMemberIds.forEach(id => {
+        if (!mergedMemberIds.includes(id) && allGroupMemberIds.includes(id)) {
+          mergedMemberIds.push(id)
+        }
+      })
+    })
+    // 如果没有作业，使用全组成员
+    const finalMemberIds = mergedMemberIds.length > 0 ? mergedMemberIds : allGroupMemberIds
+
+    // 统计每个成员在所有其被分配的作业上的进度（统一调用 _calculateMemberHomeworkProgress）
+    const rawRanking = finalMemberIds.map(memberId => {
+      const member = group.members.find(m => m.id === memberId)
+
+      // 使用和 _getAllMemberProgress 相同的分配规则筛选作业
+      const memberHomework = homeworkList.filter(hw => {
+        const assigned = hw.memberIds && hw.memberIds.length > 0
+          ? hw.memberIds.includes(memberId)
+          : true
+        return assigned
+      })
 
       const totalCount = memberHomework.length
-      const completedCount = memberHomework.filter(hw => {
-        const progress = this._calculateMemberHomeworkProgress(hw, member.id)
-        return progress.completed
-      }).length
+      const totalTasks = memberHomework.reduce((sum, hw) =>
+        sum + (hw.tasks || []).filter(t => t.required).length, 0)
 
-      const totalTasks = memberHomework.reduce((sum, hw) => {
-        return sum + hw.tasks.filter(t => t.required).length
-      }, 0)
+      // 遍历计算，避免对同一 homework 多次调用 _calculateMemberHomeworkProgress
+      let completedHomework = 0
+      let completedTasks = 0
+      memberHomework.forEach(hw => {
+        const progress = this._calculateMemberHomeworkProgress(hw, memberId)
+        if (progress.completed) completedHomework++
+        completedTasks += (progress.tasks || []).filter(t => t.required && t.completed).length
+      })
 
-      const completedTasks = memberHomework.reduce((sum, hw) => {
-        const progress = this._calculateMemberHomeworkProgress(hw, member.id)
-        return sum + progress.tasks.filter(t => t.required && t.completed).length
-      }, 0)
-
-      const completionRate = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0
+      const completionRate = totalCount > 0 ? Math.round((completedHomework / totalCount) * 100) : 0
       const taskCompletionRate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0
 
-      // 兼容不同的成员字段命名：nickName / name，emoji / avatar
-      const memberName = member.nickName || member.name || '成员'
-      const memberEmoji = member.emoji || member.avatarEmoji || '🌱'
-      const avatarUrl = member.avatarUrl || member.avatar || ''
+      const memberName = member ? (member.nickName || member.name || '成员') : '未知成员'
+      const memberEmoji = member ? (member.emoji || member.avatarEmoji || '🌱') : '🌱'
+      const avatarUrl = member ? (member.avatarUrl || member.avatar || '') : ''
+      const role = member ? member.role : 'member'
 
       return {
-        memberId: member.id,
+        memberId,
         memberName,
         memberEmoji,
         avatarUrl,
         nickName: memberName,
-        role: member.role,
+        role,
         totalHomework: totalCount,
-        completedHomework: completedCount,
+        completedHomework,
         totalTasks,
         completedTasks,
         completionRate,
         taskCompletionRate,
-        isCurrentUser: member.id === currentUserId
+        isCurrentUser: memberId === currentUserId
       }
-    }).sort((a, b) => b.completionRate - a.completionRate || b.taskCompletionRate - a.taskCompletionRate)
+    }).sort((a, b) => {
+      if (b.completionRate !== a.completionRate) return b.completionRate - a.completionRate
+      if (b.taskCompletionRate !== a.taskCompletionRate) return b.taskCompletionRate - a.taskCompletionRate
+      return b.completedTasks - a.completedTasks
+    })
 
-    // 添加排名字段 rank
     return rawRanking.map((item, index) => ({
       ...item,
       rank: index + 1

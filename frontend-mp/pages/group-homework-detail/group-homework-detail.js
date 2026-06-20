@@ -64,14 +64,23 @@ Page({
           tasks: []
         }
 
-        const memberProgressList = homework.memberIds.map(memberId => {
-          const member = homework.members?.find(m => m.id === memberId) || { id: memberId, name: '成员', role: 'member' }
-          const progress = memberProgress.find(m => m.memberId === memberId) || {
-            memberId,
-            completionRate: 0,
-            completed: false,
-            completedAt: null,
-            tasks: []
+        // 直接复用 app._getAllMemberProgress 返回的统一数据（成员集合与排名完全一致）
+        const memberProgressList = memberProgress.map(item => {
+          const member = item.member || {
+            id: item.memberId,
+            name: item.nickName || item.memberName || '成员',
+            nickName: item.nickName || item.memberName || '成员',
+            emoji: item.memberEmoji || '🌱',
+            avatarEmoji: item.memberEmoji || '🌱',
+            avatarUrl: item.avatarUrl || '',
+            role: item.role || 'member'
+          }
+          const progress = {
+            memberId: item.memberId,
+            completionRate: item.completionRate || 0,
+            completed: item.completed || false,
+            completedAt: item.completedAt || null,
+            tasks: item.tasks || []
           }
           return {
             member,
