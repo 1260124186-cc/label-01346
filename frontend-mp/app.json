@@ -62,7 +62,10 @@
     "pages/tickets/tickets",
     "pages/ticket-detail/ticket-detail",
     "pages/packaging-wizard/packaging-wizard",
-    "pages/packaging-submit/packaging-submit"
+    "pages/packaging-submit/packaging-submit",
+    "pages/correction-submit/correction-submit",
+    "pages/correction-review/correction-review",
+    "pages/correction-leaderboard/correction-leaderboard"
   ],
   "window": {
     "backgroundTextStyle": "dark",

@@ -25,6 +25,10 @@ const {
 const {
   flashSaleManager
 } = require('./utils/flashsale')
+const {
+  correctionManager,
+  CONTRIBUTOR_TIERS
+} = require('./utils/correction')
 
 App({
   globalData: {
@@ -88,6 +92,7 @@ App({
     this.initUserGroups()
     this.initGroupHomework()
     this.initActivitySystem()
+    this.initCorrectionSystem()
     this.checkPushStrategies()
 
     this.startExpireCheckInterval()
@@ -6803,5 +6808,30 @@ App({
       userId,
       ...data
     })
+  },
+
+  initCorrectionSystem() {
+    correctionManager.init()
+    console.log('[App] 纠错系统已初始化')
+  },
+
+  getCorrectionManager() {
+    return correctionManager
+  },
+
+  getContributorTier(userId) {
+    return correctionManager.getUserContributorTier(userId || 'current_user')
+  },
+
+  getContributorTiers() {
+    return CONTRIBUTOR_TIERS
+  },
+
+  getCorrectionStats(userId) {
+    return correctionManager.getUserCorrectionStats(userId || 'current_user')
+  },
+
+  getPendingCorrectionCount() {
+    return correctionManager.getPendingCorrections().length
   }
 })

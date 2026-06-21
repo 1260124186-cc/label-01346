@@ -1,0 +1,146 @@
+<view class="review-page">
+  <view class="tab-section">
+    <view
+      class="tab-item {{currentTab === 'pending' ? 'tab-active' : ''}}"
+      bindtap="onTabTap"
+      data-tab="pending"
+    >
+      <text class="tab-text">待审核</text>
+      <view class="tab-badge" wx:if="{{pendingCount > 0}}">
+        <text class="badge-text">{{pendingCount > 99 ? '99+' : pendingCount}}</text>
+      </view>
+    </view>
+    <view
+      class="tab-item {{currentTab === 'approved' ? 'tab-active' : ''}}"
+      bindtap="onTabTap"
+      data-tab="approved"
+    >
+      <text class="tab-text">已采纳</text>
+    </view>
+    <view
+      class="tab-item {{currentTab === 'rejected' ? 'tab-active' : ''}}"
+      bindtap="onTabTap"
+      data-tab="rejected"
+    >
+      <text class="tab-text">已驳回</text>
+    </view>
+  </view>
+
+  <view class="correction-list" wx:if="{{filteredList.length > 0}}">
+    <view
+      wx:for="{{filteredList}}"
+      wx:key="id"
+      class="correction-card"
+    >
+      <view class="card-header">
+        <view class="card-item-info">
+          <text class="card-item-emoji">{{item.itemEmoji}}</text>
+          <text class="card-item-name">{{item.itemName}}</text>
+        </view>
+        <view class="card-status status-{{item.status}}">
+          <text class="status-text">{{item.status === 'pending' ? '待审核' : item.status === 'approved' ? '已采纳' : '已驳回'}}</text>
+        </view>
+      </view>
+
+      <view class="card-body">
+        <view class="info-row">
+          <text class="info-label">纠错原因</text>
+          <text class="info-value">{{item.reasonName}}</text>
+        </view>
+        <view class="info-row" wx:if="{{item.correctTypeName}}">
+          <text class="info-label">修正分类</text>
+          <view class="type-change">
+            <text class="type-old">{{item.originalTypeName}}</text>
+            <text class="type-arrow">→</text>
+            <text class="type-new">{{item.correctTypeName}}</text>
+          </view>
+        </view>
+        <view class="info-row">
+          <text class="info-label">补充说明</text>
+          <text class="info-value description">{{item.description}}</text>
+        </view>
+        <view class="image-preview" wx:if="{{item.images && item.images.length > 0}}">
+          <image
+            wx:for="{{item.images}}"
+            wx:key="index"
+            wx:for-item="img"
+            class="preview-image"
+            src="{{img}}"
+            mode="aspectFill"
+            bindtap="onPreviewImage"
+            data-url="{{img}}"
+            data-urls="{{item.images}}"
+          />
+        </view>
+        <view class="info-row">
+          <text class="info-label">提交人</text>
+          <text class="info-value">{{item.submitterName}}</text>
+        </view>
+        <view class="info-row">
+          <text class="info-label">提交时间</text>
+          <text class="info-value time">{{item.createTime}}</text>
+        </view>
+        <view class="info-row" wx:if="{{item.status === 'approved'}}">
+          <text class="info-label">奖励积分</text>
+          <text class="info-value reward">+{{item.rewardPoints}}</text>
+        </view>
+        <view class="info-row" wx:if="{{item.status === 'rejected' && item.rejectReason}}">
+          <text class="info-label">驳回原因</text>
+          <text class="info-value reject-reason">{{item.rejectReason}}</text>
+        </view>
+      </view>
+
+      <view class="card-actions" wx:if="{{item.status === 'pending'}}">
+        <view class="action-btn btn-reject" bindtap="onReject" data-id="{{item.id}}">
+          <text class="btn-text">驳回</text>
+        </view>
+        <view class="action-btn btn-approve" bindtap="onApprove" data-id="{{item.id}}">
+          <text class="btn-icon">✓</text>
+          <text class="btn-text">采纳并奖励{{pointsReward}}积分</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view class="empty-state" wx:if="{{filteredList.length === 0}}">
+    <text class="empty-icon">{{currentTab === 'pending' ? '📭' : '✅'}}</text>
+    <text class="empty-text">{{currentTab === 'pending' ? '暂无待审核纠错' : currentTab === 'approved' ? '暂无已采纳纠错' : '暂无已驳回纠错'}}</text>
+  </view>
+
+  <view class="reject-modal" wx:if="{{showRejectModal}}" catchtap="onCloseRejectModal">
+    <view class="reject-modal-content" catchtap="">
+      <view class="reject-modal-header">
+        <text class="reject-modal-title">驳回纠错</text>
+        <view class="reject-modal-close" bindtap="onCloseRejectModal">
+          <text class="close-icon">✕</text>
+        </view>
+      </view>
+      <view class="reject-reason-list">
+        <view
+          wx:for="{{rejectReasons}}"
+          wx:key="id"
+          class="reject-reason-item {{selectedRejectReason === item.id ? 'reject-reason-active' : ''}}"
+          bindtap="onSelectRejectReason"
+          data-id="{{item.id}}"
+        >
+          <text class="reject-reason-text">{{item.text}}</text>
+        </view>
+      </view>
+      <textarea
+        class="reject-textarea"
+        placeholder="补充驳回原因（选填）"
+        value="{{rejectCustomReason}}"
+        bindinput="onRejectReasonInput"
+        maxlength="200"
+      />
+      <view class="reject-modal-actions">
+        <view class="modal-btn modal-btn-cancel" bindtap="onCloseRejectModal">
+          <text class="modal-btn-text">取消</text>
+        </view>
+        <view class="modal-btn modal-btn-confirm" bindtap="onConfirmReject">
+          <text class="modal-btn-text">确认驳回</text>
+        </view>
+      </view>
+    </view>
+  </view>
+</view>

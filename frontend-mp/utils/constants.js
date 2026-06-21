@@ -237,6 +237,8 @@ const PROFILE_MENUS = [
       { id: 'recycle', icon: 'recycle', emoji: '🚛', title: '上门回收', desc: '预约家电家具等上门回收', link: '/pages/recycle-book/recycle-book' },
       { id: 'recycleOrders', icon: 'order', emoji: '📦', title: '回收订单', desc: '查看上门回收订单记录', link: '/pages/recycle-orders/recycle-orders' },
       { id: 'invite', icon: 'invite', emoji: '👥', title: '我的邀请', desc: '邀请好友得积分奖励', link: '/pages/invite/invite' },
+      { id: 'correctionReview', icon: 'correction', emoji: '✏️', title: '纠错审核', desc: '审核百科纠错，采纳奖励积分', link: '/pages/correction-review/correction-review', badge: 'NEW', hasBadge: true },
+      { id: 'correctionLeaderboard', icon: 'leaderboard', emoji: '🏆', title: '纠错排行榜', desc: '查看纠错贡献排名和勋章', link: '/pages/correction-leaderboard/correction-leaderboard' },
       { id: 'address', icon: 'address', emoji: '📍', title: '收货地址', desc: '管理收货地址信息', link: '/pages/address-list/address-list' }
     ]
   },

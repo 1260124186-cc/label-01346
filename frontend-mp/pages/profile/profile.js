@@ -55,7 +55,10 @@ Page({
     hasReportPermission: false,
     // 成就勋章
     achievements: [],
-    unlockedAchievementCount: 0
+    unlockedAchievementCount: 0,
+    // 百科贡献者
+    contributorTier: null,
+    correctionStats: null
   },
 
   /**
@@ -66,6 +69,7 @@ Page({
     this.initUserInfo()
     this.loadChildModeAndGroupData()
     this.loadAchievements()
+    this.loadContributorData()
   },
 
   /**
@@ -76,6 +80,7 @@ Page({
     this.refreshUserInfo()
     this.loadChildModeAndGroupData()
     this.loadAchievements()
+    this.loadContributorData()
   },
 
   /**
@@ -155,6 +160,18 @@ Page({
       achievements,
       unlockedAchievementCount: unlockedCount
     })
+  },
+
+  loadContributorData() {
+    if (app.getContributorTier) {
+      const contributorTier = app.getContributorTier()
+      const correctionStats = app.getCorrectionStats ? app.getCorrectionStats() : null
+      this.setData({ contributorTier, correctionStats })
+    }
+  },
+
+  goToCorrectionLeaderboard() {
+    navigateTo('/pages/correction-leaderboard/correction-leaderboard')
   },
 
   /**

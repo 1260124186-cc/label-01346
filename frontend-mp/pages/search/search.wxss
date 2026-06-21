@@ -512,6 +512,16 @@
   background: var(--bg-page);
 }
 
+.action-btn.correction {
+  background: linear-gradient(135deg, #F39C12 0%, #E67E22 100%);
+  box-shadow: 0 8rpx 24rpx rgba(243, 156, 18, 0.3);
+}
+
+.action-btn.correction .action-icon,
+.action-btn.correction .action-text {
+  color: #fff;
+}
+
 .action-icon {
   font-size: 28rpx;
 }

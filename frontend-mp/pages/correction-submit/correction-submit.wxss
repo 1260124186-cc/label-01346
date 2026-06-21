@@ -1,0 +1,356 @@
+.correction-submit-page {
+  min-height: 100vh;
+  background: var(--bg-page);
+  padding-bottom: 180rpx;
+}
+
+.item-info-card {
+  display: flex;
+  align-items: center;
+  background: #fff;
+  margin: 24rpx;
+  padding: 28rpx;
+  border-radius: 20rpx;
+  gap: 20rpx;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.04);
+}
+
+.item-icon-wrapper {
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: 20rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.item-emoji {
+  font-size: 40rpx;
+}
+
+.item-info-text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+}
+
+.item-name {
+  font-size: 32rpx;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.item-original-type {
+  font-size: 24rpx;
+  color: var(--text-tertiary);
+}
+
+.form-section {
+  background: #fff;
+  margin: 0 24rpx 24rpx;
+  padding: 28rpx;
+  border-radius: 20rpx;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.04);
+}
+
+.form-section-header {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  margin-bottom: 24rpx;
+}
+
+.form-section-icon {
+  font-size: 32rpx;
+}
+
+.form-section-title {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.form-section-required {
+  font-size: 24rpx;
+  color: #E85D5D;
+}
+
+.form-section-optional {
+  font-size: 24rpx;
+  color: var(--text-tertiary);
+}
+
+.reason-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+}
+
+.reason-item {
+  display: flex;
+  align-items: center;
+  padding: 24rpx;
+  background: var(--bg-page);
+  border-radius: 16rpx;
+  gap: 16rpx;
+  border: 2rpx solid transparent;
+  transition: all 0.2s ease;
+}
+
+.reason-item.reason-active {
+  background: rgba(91, 189, 114, 0.08);
+  border-color: var(--color-primary);
+}
+
+.reason-emoji {
+  font-size: 36rpx;
+  flex-shrink: 0;
+}
+
+.reason-text-wrap {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4rpx;
+}
+
+.reason-name {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.reason-desc {
+  font-size: 24rpx;
+  color: var(--text-tertiary);
+}
+
+.reason-check {
+  width: 40rpx;
+  height: 40rpx;
+  border-radius: 50%;
+  background: var(--color-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.check-icon {
+  font-size: 24rpx;
+  color: #fff;
+  font-weight: 700;
+}
+
+.category-list {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16rpx;
+}
+
+.category-item {
+  display: flex;
+  align-items: center;
+  padding: 20rpx 16rpx;
+  background: var(--bg-page);
+  border-radius: 16rpx;
+  gap: 12rpx;
+  border: 2rpx solid transparent;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.category-item.category-active {
+  background: rgba(91, 189, 114, 0.08);
+  border-color: var(--color-primary);
+}
+
+.category-item.category-original {
+  opacity: 0.5;
+}
+
+.category-emoji {
+  font-size: 32rpx;
+}
+
+.category-name {
+  flex: 1;
+  font-size: 26rpx;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.category-original-tag {
+  font-size: 20rpx;
+  color: var(--text-tertiary);
+  background: rgba(0, 0, 0, 0.06);
+  padding: 4rpx 12rpx;
+  border-radius: 8rpx;
+}
+
+.category-check {
+  width: 36rpx;
+  height: 36rpx;
+  border-radius: 50%;
+  background: var(--color-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.textarea-wrapper {
+  position: relative;
+  background: var(--bg-page);
+  border-radius: 16rpx;
+  padding: 20rpx;
+}
+
+.correction-textarea {
+  width: 100%;
+  min-height: 200rpx;
+  font-size: 28rpx;
+  color: var(--text-primary);
+  line-height: 1.6;
+}
+
+.textarea-count {
+  display: block;
+  text-align: right;
+  font-size: 22rpx;
+  color: var(--text-tertiary);
+  margin-top: 8rpx;
+}
+
+.image-upload-area {
+  margin-top: 8rpx;
+}
+
+.image-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16rpx;
+}
+
+.image-item {
+  width: 180rpx;
+  height: 180rpx;
+  border-radius: 16rpx;
+  overflow: hidden;
+  position: relative;
+}
+
+.uploaded-image {
+  width: 100%;
+  height: 100%;
+}
+
+.image-delete {
+  position: absolute;
+  top: 8rpx;
+  right: 8rpx;
+  width: 40rpx;
+  height: 40rpx;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.image-delete .delete-icon {
+  font-size: 22rpx;
+  color: #fff;
+}
+
+.image-add-btn {
+  width: 180rpx;
+  height: 180rpx;
+  border-radius: 16rpx;
+  border: 2rpx dashed var(--text-tertiary);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8rpx;
+  background: var(--bg-page);
+}
+
+.add-icon {
+  font-size: 48rpx;
+  color: var(--text-tertiary);
+  font-weight: 300;
+}
+
+.add-text {
+  font-size: 22rpx;
+  color: var(--text-tertiary);
+}
+
+.reward-hint {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  margin: 0 24rpx 24rpx;
+  padding: 20rpx 24rpx;
+  background: linear-gradient(135deg, rgba(91, 189, 114, 0.08) 0%, rgba(243, 156, 18, 0.08) 100%);
+  border-radius: 16rpx;
+  border-left: 6rpx solid var(--color-primary);
+}
+
+.reward-icon {
+  font-size: 32rpx;
+}
+
+.reward-text {
+  font-size: 26rpx;
+  color: var(--text-secondary);
+}
+
+.reward-points {
+  font-size: 28rpx;
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+.submit-section {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 20rpx 24rpx;
+  padding-bottom: calc(20rpx + env(safe-area-inset-bottom));
+  background: #fff;
+  box-shadow: 0 -4rpx 16rpx rgba(0, 0, 0, 0.06);
+  z-index: 100;
+}
+
+.submit-btn {
+  width: 100%;
+  padding: 28rpx;
+  border-radius: 48rpx;
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+  text-align: center;
+  box-shadow: 0 8rpx 24rpx rgba(91, 189, 114, 0.3);
+  transition: all 0.2s ease;
+}
+
+.submit-btn:active {
+  transform: scale(0.97);
+}
+
+.submit-btn.submit-disabled {
+  background: var(--text-tertiary);
+  box-shadow: none;
+  opacity: 0.6;
+}
+
+.submit-text {
+  font-size: 32rpx;
+  font-weight: 700;
+  color: #fff;
+}
+
+.safe-area-bottom {
+  height: env(safe-area-inset-bottom);
+}

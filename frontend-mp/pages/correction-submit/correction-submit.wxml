@@ -1,0 +1,121 @@
+<view class="correction-submit-page">
+  <view class="item-info-card">
+    <view class="item-icon-wrapper" style="background: {{itemData.itemBgColor || 'rgba(142, 142, 147, 0.1)'}};">
+      <text class="item-emoji">{{itemData.itemEmoji}}</text>
+    </view>
+    <view class="item-info-text">
+      <text class="item-name">{{itemData.itemName}}</text>
+      <text class="item-original-type">当前分类：{{itemData.originalTypeName}}</text>
+    </view>
+  </view>
+
+  <view class="form-section">
+    <view class="form-section-header">
+      <text class="form-section-icon">🔀</text>
+      <text class="form-section-title">选择纠错原因</text>
+    </view>
+    <view class="reason-list">
+      <view
+        wx:for="{{reasons}}"
+        wx:key="id"
+        class="reason-item {{selectedReason === item.id ? 'reason-active' : ''}}"
+        bindtap="onReasonTap"
+        data-id="{{item.id}}"
+      >
+        <text class="reason-emoji">{{item.emoji}}</text>
+        <view class="reason-text-wrap">
+          <text class="reason-name">{{item.name}}</text>
+          <text class="reason-desc">{{item.desc}}</text>
+        </view>
+        <view class="reason-check" wx:if="{{selectedReason === item.id}}">
+          <text class="check-icon">✓</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view class="form-section" wx:if="{{selectedReason && showCategorySelect}}">
+    <view class="form-section-header">
+      <text class="form-section-icon">📂</text>
+      <text class="form-section-title">选择正确分类</text>
+    </view>
+    <view class="category-list">
+      <view
+        wx:for="{{categoryOptions}}"
+        wx:key="id"
+        class="category-item {{selectedCategoryId === item.id ? 'category-active' : ''}} {{item.id === itemData.originalTypeId ? 'category-original' : ''}}"
+        bindtap="onCategoryTap"
+        data-id="{{item.id}}"
+      >
+        <text class="category-emoji">{{item.emoji}}</text>
+        <text class="category-name">{{item.name}}</text>
+        <text class="category-original-tag" wx:if="{{item.id === itemData.originalTypeId}}">当前</text>
+        <view class="category-check" wx:if="{{selectedCategoryId === item.id}}">
+          <text class="check-icon">✓</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view class="form-section" wx:if="{{selectedReason}}">
+    <view class="form-section-header">
+      <text class="form-section-icon">📝</text>
+      <text class="form-section-title">补充说明</text>
+      <text class="form-section-required">（必填）</text>
+    </view>
+    <view class="textarea-wrapper">
+      <textarea
+        class="correction-textarea"
+        placeholder="请描述您发现的问题，帮助我们更好地修正..."
+        value="{{description}}"
+        bindinput="onDescriptionInput"
+        maxlength="500"
+        auto-height
+      />
+      <text class="textarea-count">{{description.length}}/500</text>
+    </view>
+  </view>
+
+  <view class="form-section" wx:if="{{selectedReason}}">
+    <view class="form-section-header">
+      <text class="form-section-icon">📷</text>
+      <text class="form-section-title">上传图片</text>
+      <text class="form-section-optional">（选填，最多3张）</text>
+    </view>
+    <view class="image-upload-area">
+      <view class="image-list">
+        <view
+          wx:for="{{images}}"
+          wx:key="index"
+          class="image-item"
+        >
+          <image class="uploaded-image" src="{{item}}" mode="aspectFill" />
+          <view class="image-delete" catchtap="onDeleteImage" data-index="{{index}}">
+            <text class="delete-icon">✕</text>
+          </view>
+        </view>
+        <view
+          class="image-add-btn"
+          wx:if="{{images.length < 3}}"
+          bindtap="onChooseImage"
+        >
+          <text class="add-icon">+</text>
+          <text class="add-text">添加图片</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view class="reward-hint" wx:if="{{selectedReason}}">
+    <text class="reward-icon">🎁</text>
+    <text class="reward-text">纠错被采纳后可获得 <text class="reward-points">{{pointsReward}}</text> 积分奖励</text>
+  </view>
+
+  <view class="submit-section">
+    <view class="submit-btn {{canSubmit ? '' : 'submit-disabled'}}" bindtap="onSubmit">
+      <text class="submit-text">提交纠错</text>
+    </view>
+  </view>
+
+  <view class="safe-area-bottom"></view>
+</view>

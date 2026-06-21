@@ -1,0 +1,127 @@
+<view class="leaderboard-page">
+  <view class="header-section">
+    <view class="header-card">
+      <view class="header-icon">🏆</view>
+      <text class="header-title">纠错贡献榜</text>
+      <text class="header-desc">为百科纠错，共建更准确的垃圾分类知识库</text>
+    </view>
+  </view>
+
+  <view class="contributor-tier-section">
+    <view class="tier-header">
+      <text class="tier-title">🏅 贡献者等级</text>
+    </view>
+    <scroll-view class="tier-scroll" scroll-x="true" enhanced show-scrollbar="{{false}}">
+      <view class="tier-list">
+        <view
+          wx:for="{{contributorTiers}}"
+          wx:key="id"
+          class="tier-card {{myTier && myTier.id === item.id ? 'tier-current' : ''}}"
+        >
+          <text class="tier-emoji">{{item.emoji}}</text>
+          <text class="tier-name">{{item.name}}</text>
+          <text class="tier-requirement">{{item.minCount}}条纠错</text>
+        </view>
+      </view>
+    </scroll-view>
+  </view>
+
+  <view class="my-stats-section" wx:if="{{myStats}}">
+    <view class="my-stats-card">
+      <view class="my-stats-tier" wx:if="{{myTier}}">
+        <text class="my-tier-emoji">{{myTier.emoji}}</text>
+        <text class="my-tier-name" style="color: {{myTier.color}};">{{myTier.name}}</text>
+      </view>
+      <view class="my-stats-tier" wx:else>
+        <text class="my-tier-emoji">🌱</text>
+        <text class="my-tier-name">尚未获得勋章</text>
+      </view>
+      <view class="my-stats-grid">
+        <view class="stats-item">
+          <text class="stats-value">{{myStats.total}}</text>
+          <text class="stats-label">提交总数</text>
+        </view>
+        <view class="stats-item">
+          <text class="stats-value stats-approved">{{myStats.approved}}</text>
+          <text class="stats-label">已采纳</text>
+        </view>
+        <view class="stats-item">
+          <text class="stats-value stats-pending">{{myStats.pending}}</text>
+          <text class="stats-label">审核中</text>
+        </view>
+        <view class="stats-item">
+          <text class="stats-value stats-points">+{{myStats.totalPoints}}</text>
+          <text class="stats-label">获得积分</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view class="podium-section" wx:if="{{leaderboard.length >= 3}}">
+    <view class="podium-container">
+      <view class="podium-item podium-silver">
+        <view class="podium-avatar-wrap">
+          <text class="podium-avatar-emoji">{{leaderboard[1].avatarEmoji}}</text>
+        </view>
+        <text class="podium-name">{{leaderboard[1].nickName}}</text>
+        <text class="podium-count">{{leaderboard[1].approvedCount}}条</text>
+        <view class="podium-bar podium-bar-silver">
+          <text class="podium-rank-text">🥈</text>
+        </view>
+      </view>
+      <view class="podium-item podium-gold">
+        <view class="podium-crown">👑</view>
+        <view class="podium-avatar-wrap podium-avatar-gold">
+          <text class="podium-avatar-emoji">{{leaderboard[0].avatarEmoji}}</text>
+        </view>
+        <text class="podium-name">{{leaderboard[0].nickName}}</text>
+        <text class="podium-count">{{leaderboard[0].approvedCount}}条</text>
+        <view class="podium-bar podium-bar-gold">
+          <text class="podium-rank-text">🥇</text>
+        </view>
+      </view>
+      <view class="podium-item podium-bronze">
+        <view class="podium-avatar-wrap">
+          <text class="podium-avatar-emoji">{{leaderboard[2].avatarEmoji}}</text>
+        </view>
+        <text class="podium-name">{{leaderboard[2].nickName}}</text>
+        <text class="podium-count">{{leaderboard[2].approvedCount}}条</text>
+        <view class="podium-bar podium-bar-bronze">
+          <text class="podium-rank-text">🥉</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view class="rank-list">
+    <view
+      class="rank-item"
+      wx:for="{{leaderboard}}"
+      wx:key="userId"
+      wx:if="{{index >= 3}}"
+    >
+      <text class="rank-number">{{item.rank}}</text>
+      <view class="rank-avatar">
+        <text class="rank-avatar-emoji">{{item.avatarEmoji}}</text>
+      </view>
+      <view class="rank-info">
+        <text class="rank-name">{{item.nickName}}</text>
+        <text class="rank-count">采纳 {{item.approvedCount}} 条</text>
+      </view>
+      <text class="rank-points">+{{item.totalPoints}}分</text>
+    </view>
+  </view>
+
+  <view class="empty-state" wx:if="{{leaderboard.length === 0}}">
+    <text class="empty-icon">🎯</text>
+    <text class="empty-text">暂无贡献者，快来成为第一个！</text>
+  </view>
+
+  <view class="action-entry" bindtap="goToMyCorrections">
+    <view class="action-entry-content">
+      <text class="action-icon">📋</text>
+      <text class="action-text">我的纠错记录</text>
+    </view>
+    <text class="action-arrow">›</text>
+  </view>
+</view>

@@ -21,6 +21,7 @@ const {
   searchCompositePackaging,
   getCompositePackagingById
 } = require('../../data/packaging')
+const { correctionManager } = require('../../utils/correction')
 
 Page({
   data: {
@@ -43,6 +44,7 @@ Page({
     const currentCityInfo = app.getCurrentCityInfo()
     this.setData({ currentCity, currentCityInfo })
     this.loadSearchHistory()
+    this.loadMergedHotWords()
 
     if (options.keyword) {
       const keyword = decodeURIComponent(options.keyword)
@@ -244,7 +246,7 @@ Page({
   onFeedback() {
     const { searchKeyword } = this.data
     console.log('[Search] 反馈垃圾:', searchKeyword)
-    
+
     showModal({
       title: '感谢反馈',
       content: `您反馈的"${searchKeyword}"我们已记录，将尽快完善数据库。`,
@@ -254,6 +256,27 @@ Page({
     }).then(() => {
       showToast('反馈成功，感谢您的帮助！', 'success')
     })
+  },
+
+  loadMergedHotWords() {
+    const merged = correctionManager.getMergedHotSearchWords(HOT_SEARCH_WORDS)
+    this.setData({ hotSearchWords: merged })
+  },
+
+  onCorrectionTap() {
+    const { currentDetail } = this.data
+    if (!currentDetail) return
+    console.log('[Search] 点击纠错:', currentDetail.name)
+    this.onCloseDetail()
+
+    const params = encodeURIComponent(JSON.stringify({
+      itemId: currentDetail.id,
+      itemName: currentDetail.name,
+      itemEmoji: currentDetail.emoji,
+      originalTypeId: currentDetail.typeId,
+      originalTypeName: currentDetail.typeName
+    }))
+    navigateTo('/pages/correction-submit/correction-submit', { data: params })
   },
 
   goBack() {

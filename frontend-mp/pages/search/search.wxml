@@ -180,10 +180,11 @@
             <text class="action-text">查看分类详情</text>
           </view>
           <view
-            class="action-btn secondary"
-            bindtap="onCloseDetail"
+            class="action-btn correction"
+            bindtap="onCorrectionTap"
           >
-            <text class="action-text">关闭</text>
+            <text class="action-icon">✏️</text>
+            <text class="action-text">这条不对</text>
           </view>
         </view>
       </view>
