@@ -18,7 +18,9 @@ Page({
     showWXAuthOption: true,
     isAuthorizing: false,
     targetEnabled: true,
-    isUnlockMode: false
+    isUnlockMode: false,
+    activePIN: '',
+    activePINLength: 0
   },
 
   onLoad(options) {
@@ -63,9 +65,19 @@ Page({
       remainAttempts: CHILD_PIN_CONFIG.maxAttempts
     })
 
+    this.updateActivePIN()
+
     if (!hasPIN && mode === 'verify') {
       this.enterSetMode()
     }
+  },
+
+  updateActivePIN() {
+    const activePIN = this.data.step === 1 ? this.data.currentPIN : this.data.confirmPIN
+    this.setData({
+      activePIN,
+      activePINLength: activePIN.length
+    })
   },
 
   enterSetMode() {
@@ -78,6 +90,7 @@ Page({
       confirmPIN: '',
       showWXAuthOption: false
     })
+    this.updateActivePIN()
   },
 
   onInputPIN(e) {
@@ -108,6 +121,7 @@ Page({
         [field]: current.slice(0, -1),
         errorMessage: ''
       })
+      this.updateActivePIN()
       return
     }
 
@@ -118,6 +132,7 @@ Page({
       [field]: newValue,
       errorMessage: ''
     })
+    this.updateActivePIN()
 
     if (this.data.mode === 'set') {
       if (this.data.step === 1 && newValue.length >= CHILD_PIN_CONFIG.minLength) {
@@ -145,6 +160,7 @@ Page({
       confirmPIN: '',
       errorMessage: ''
     })
+    this.updateActivePIN()
   },
 
   onConfirmSecondPIN() {
@@ -158,6 +174,7 @@ Page({
         title: '设置家长PIN',
         subtitle: '设置4-6位数字PIN作为家长验证'
       })
+      this.updateActivePIN()
       return
     }
 

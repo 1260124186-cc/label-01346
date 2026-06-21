@@ -17,8 +17,8 @@
 
     <view class="pin-display-section">
       <view class="pin-dots">
-        <view wx:for="{{pinLength}}" wx:key="index" class="pin-dot {{(step === 1 ? currentPIN : confirmPIN).length > index ? 'filled' : ''}} {{errorMessage ? 'error' : ''}}">
-          <text class="dot-inner" wx:if="{{(step === 1 ? currentPIN : confirmPIN).length > index}}">●</text>
+        <view wx:for="{{pinLength}}" wx:key="index" class="pin-dot {{activePINLength > index ? 'filled' : ''}} {{errorMessage ? 'error' : ''}}">
+          <text class="dot-inner" wx:if="{{activePINLength > index}}">●</text>
         </view>
       </view>
 
