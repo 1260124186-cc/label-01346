@@ -71,6 +71,9 @@ class FlashSaleManager {
       const sessionEnd = new Date(startTime + duration * 60 * 1000)
       const endTime = sessionEnd.getTime()
 
+      const startTimeStr = `${String(schedule.hour).padStart(2, '0')}:${String(schedule.minute).padStart(2, '0')}`
+      const endTimeStr = `${String(sessionEnd.getHours()).padStart(2, '0')}:${String(sessionEnd.getMinutes()).padStart(2, '0')}`
+
       const reminderMinutesBefore = activity.reminderMinutesBefore || 5
       const reminderStart = startTime - reminderMinutesBefore * 60 * 1000
 
@@ -78,10 +81,6 @@ class FlashSaleManager {
 
       if (nowTime >= startTime && nowTime <= endTime) {
         status = FLASH_SALE_STATUS.ONGOING
-        const startTimeStr = `${String(schedule.hour).padStart(2, '0')}:${String(schedule.minute).padStart(2, '0')}`
-        const endHour = Math.floor((startTime + duration * 60 * 1000) % (24 * 3600000) / 3600000)
-        const endMinute = Math.floor(((startTime + duration * 60 * 1000) % 3600000) / 60000)
-        const endTimeStr = `${String(endHour).padStart(2, '0')}:${String(endMinute).padStart(2, '0')}`
         currentSession = {
           schedule,
           startTime,
@@ -95,10 +94,6 @@ class FlashSaleManager {
         }
       } else if (nowTime >= reminderStart && nowTime < startTime) {
         status = FLASH_SALE_STATUS.REMINDER_WINDOW
-        const startTimeStr = `${String(schedule.hour).padStart(2, '0')}:${String(schedule.minute).padStart(2, '0')}`
-        const endHour = Math.floor((startTime + duration * 60 * 1000) % (24 * 3600000) / 3600000)
-        const endMinute = Math.floor(((startTime + duration * 60 * 1000) % 3600000) / 60000)
-        const endTimeStr = `${String(endHour).padStart(2, '0')}:${String(endMinute).padStart(2, '0')}`
         if (nextSession === null || startTime < nextSession.startTime) {
           nextSession = {
             schedule,
@@ -115,10 +110,6 @@ class FlashSaleManager {
         }
       } else if (nowTime < reminderStart) {
         const diff = startTime - nowTime
-        const startTimeStr = `${String(schedule.hour).padStart(2, '0')}:${String(schedule.minute).padStart(2, '0')}`
-        const endHour = Math.floor((startTime + duration * 60 * 1000) % (24 * 3600000) / 3600000)
-        const endMinute = Math.floor(((startTime + duration * 60 * 1000) % 3600000) / 60000)
-        const endTimeStr = `${String(endHour).padStart(2, '0')}:${String(endMinute).padStart(2, '0')}`
         if (diff < minDiffToNext) {
           minDiffToNext = diff
           nearestSession = {
