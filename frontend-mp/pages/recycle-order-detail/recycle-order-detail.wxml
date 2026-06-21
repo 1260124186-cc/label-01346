@@ -16,6 +16,57 @@
     </view>
   </view>
 
+  <view class="dispatch-mode-card">
+    <view class="mode-row">
+      <view class="mode-info">
+        <text class="mode-icon" wx:if="{{dispatchModeInfo}}">{{dispatchModeInfo.icon}}</text>
+        <view class="mode-text-wrapper">
+          <text class="mode-name" wx:if="{{dispatchModeInfo}}" style="color: {{dispatchModeInfo.color}}">{{dispatchModeInfo.name}}</text>
+          <text class="mode-desc" wx:if="{{dispatchModeInfo}}">{{dispatchModeInfo.desc}}</text>
+        </view>
+      </view>
+      <view class="mode-switch" bindtap="onSwitchDispatchMode" wx:if="{{order.status === 'pending'}}">
+        <text class="switch-text">切换</text>
+        <text class="switch-arrow">></text>
+      </view>
+    </view>
+    
+    <view class="dispatch-status-row" wx:if="{{dispatchStatusInfo && order.dispatchMode === 'real'}}">
+      <text class="dispatch-label">派单状态：</text>
+      <text class="dispatch-status" style="color: {{dispatchStatusInfo.color}}">{{dispatchStatusInfo.text}}</text>
+      <text class="dispatch-desc">{{dispatchStatusInfo.desc}}</text>
+    </view>
+    
+    <view class="dispatch-attempts" wx:if="{{order.dispatchMode === 'real' && order.dispatchAttempts > 0}}">
+      <text class="attempts-text">已尝试派单 {{order.dispatchAttempts}} 次</text>
+    </view>
+  </view>
+
+  <view class="dispatch-actions-card" wx:if="{{order.dispatchMode === 'real' && order.status !== 'completed' && order.status !== 'cancelled'}}">
+    <view class="action-row">
+      <view class="dispatch-btn primary" bindtap="onDispatch" wx:if="{{canDispatch}}">
+        <text class="btn-icon">📤</text>
+        <text class="btn-label">发起派单</text>
+      </view>
+      <view class="dispatch-btn success" bindtap="onAcceptDispatch" wx:if="{{canAccept}}">
+        <text class="btn-icon">✅</text>
+        <text class="btn-label">模拟接单</text>
+      </view>
+      <view class="dispatch-btn danger" bindtap="onRejectDispatch" wx:if="{{canReject}}">
+        <text class="btn-icon">❌</text>
+        <text class="btn-label">模拟拒单</text>
+      </view>
+      <view class="dispatch-btn warning" bindtap="onRetryDispatch" wx:if="{{canRetryDispatch}}">
+        <text class="btn-icon">🔄</text>
+        <text class="btn-label">重新派单</text>
+      </view>
+      <view class="dispatch-btn disabled" wx:if="{{order.dispatchStatus === 'failed'}}">
+        <text class="btn-icon">⚠️</text>
+        <text class="btn-label">派单失败</text>
+      </view>
+    </view>
+  </view>
+
   <view class="progress-section" wx:if="{{order.status !== 'cancelled'}}">
     <view class="progress-bar">
       <block wx:for="{{statusSteps}}" wx:key="key">
@@ -215,8 +266,11 @@
         <view class="primary-btn" bindtap="onMarkComplete" wx:if="{{canMarkComplete}}">
           <text class="btn-text">完成回收</text>
         </view>
-        <view class="primary-btn disabled" wx:if="{{!canMarkVisiting && !canMarkComplete && !canCancel}}">
+        <view class="primary-btn disabled" wx:if="{{!canMarkVisiting && !canMarkComplete && !canCancel && order.dispatchMode === 'simulate'}}">
           <text class="btn-text">等待系统处理</text>
+        </view>
+        <view class="primary-btn disabled" wx:if="{{!canMarkVisiting && !canMarkComplete && !canCancel && order.dispatchMode === 'real'}}">
+          <text class="btn-text">等待回收员处理</text>
         </view>
       </view>
     </view>
@@ -226,6 +280,121 @@
     <view class="btn-wrapper">
       <view class="full-btn secondary" bindtap="onGoBack">
         <text class="btn-text">返回</text>
+      </view>
+    </view>
+  </view>
+</view>
+
+<view class="modal-mask" wx:if="{{showDispatchModal}}" catchtap="onCloseDispatchModal">
+  <view class="dispatch-modal" catchtap="">
+    <view class="modal-header">
+      <text class="modal-title">选择派单方式</text>
+      <view class="modal-close" catchtap="onCloseDispatchModal">
+        <text class="close-icon">×</text>
+      </view>
+    </view>
+    <view class="modal-body">
+      <view class="dispatch-option" bindtap="onConfirmAutoDispatch">
+        <view class="option-icon-wrapper" style="background: #e3f2fd">
+          <text class="option-icon">🎲</text>
+        </view>
+        <view class="option-info">
+          <text class="option-title">智能派单</text>
+          <text class="option-desc">系统自动匹配最优回收员，推荐使用</text>
+        </view>
+        <text class="option-arrow">></text>
+      </view>
+      <view class="dispatch-option" bindtap="onOpenCollectorSelect">
+        <view class="option-icon-wrapper" style="background: #e8f5e9">
+          <text class="option-icon">👤</text>
+        </view>
+        <view class="option-info">
+          <text class="option-title">指定回收员</text>
+          <text class="option-desc">手动选择指定回收员进行派单</text>
+        </view>
+        <text class="option-arrow">></text>
+      </view>
+    </view>
+  </view>
+</view>
+
+<view class="modal-mask" wx:if="{{showCollectorSelectModal}}" catchtap="onCloseCollectorSelect">
+  <view class="collector-select-modal" catchtap="">
+    <view class="modal-header">
+      <text class="modal-title">选择回收员</text>
+      <view class="modal-close" catchtap="onCloseCollectorSelect">
+        <text class="close-icon">×</text>
+      </view>
+    </view>
+    <scroll-view scroll-y class="collector-list">
+      <view 
+        wx:for="{{availableCollectors}}" 
+        wx:key="id"
+        class="collector-select-item"
+        bindtap="onSelectCollector"
+        data-id="{{item.id}}"
+      >
+        <view class="collector-avatar-sm">
+          <text class="avatar-emoji-sm">👷</text>
+        </view>
+        <view class="collector-select-info">
+          <view class="collector-select-name-row">
+            <text class="collector-select-name">{{item.name}}</text>
+            <text class="collector-select-level" wx:if="{{item.level}}">{{item.level}}</text>
+          </view>
+          <view class="collector-select-stats">
+            <text class="stat-item" wx:if="{{item.rating}}">⭐ {{item.rating}}</text>
+            <text class="stat-item">{{item.ordersCompleted || 0}} 单</text>
+            <text class="stat-item">{{item.experienceYears || 0}}年经验</text>
+          </view>
+          <view class="collector-specialties" wx:if="{{item.specialties && item.specialties.length > 0}}">
+            <text class="specialty-tag" wx:for="{{item.specialties}}" wx:for-item="sp" wx:key="*this">{{sp}}</text>
+          </view>
+        </view>
+        <text class="select-arrow">></text>
+      </view>
+      <view class="empty-collectors" wx:if="{{availableCollectors.length === 0}}">
+        <text class="empty-text">暂无可用回收员</text>
+      </view>
+    </scroll-view>
+  </view>
+</view>
+
+<view class="modal-mask" wx:if="{{canReject}}" catchtap="">
+  <view class="reject-modal" catchtap="">
+    <view class="modal-header">
+      <text class="modal-title">选择拒单原因</text>
+    </view>
+    <view class="modal-body">
+      <view class="reasons-list">
+        <view 
+          wx:for="{{rejectReasons}}" 
+          wx:key="*this"
+          class="reason-item {{selectedRejectReason === item ? 'active' : ''}}"
+          bindtap="onSelectRejectReason"
+          data-reason="{{item}}"
+        >
+          <text class="reason-text">{{item}}</text>
+          <text class="reason-check" wx:if="{{selectedRejectReason === item}}">✓</text>
+        </view>
+      </view>
+      <view class="custom-reason-section" wx:if="{{selectedRejectReason === '其他原因'}}">
+        <textarea 
+          class="reason-input" 
+          placeholder="请填写具体拒单原因"
+          placeholder-class="input-placeholder"
+          value="{{customRejectReason}}"
+          bindinput="onCustomRejectReasonInput"
+          maxlength="100"
+        />
+      </view>
+    </view>
+    <view class="modal-footer">
+      <view class="modal-btn secondary" catchtap="onRejectDispatch">
+        <text class="btn-text">取消</text>
+      </view>
+      <view class="modal-btn danger" catchtap="onConfirmReject">
+        <text class="btn-text">确认拒单</text>
       </view>
     </view>
   </view>

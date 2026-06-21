@@ -4472,6 +4472,36 @@ const RECYCLE_PHOTO_CONFIG = {
   ]
 }
 
+const RECYCLE_DISPATCH_MODE = {
+  SIMULATE: { id: 'simulate', name: '模拟派单', desc: '系统自动分配回收员，自动推进状态（测试用）', icon: '🤖', color: '#3498DB' },
+  REAL: { id: 'real', name: '真实派单', desc: '人工派发订单，真实回收员接单履约', icon: '👨‍🔧', color: '#27AE60' }
+}
+
+const RECYCLE_DISPATCH_STATUS = {
+  PENDING: { key: 'pending', text: '待派单', color: '#F39C12', desc: '订单已提交，等待派单' },
+  DISPATCHING: { key: 'dispatching', text: '派单中', color: '#3498DB', desc: '正在向回收员派发订单' },
+  ACCEPTED: { key: 'accepted', text: '已接单', color: '#27AE60', desc: '回收员已接单，准备上门' },
+  REJECTED: { key: 'rejected', text: '已拒单', color: '#E74C3C', desc: '回收员拒单，需要重新派单' },
+  TIMEOUT: { key: 'timeout', text: '派单超时', color: '#E67E22', desc: '回收员未及时接单' },
+  FAILED: { key: 'failed', text: '派单失败', color: '#95A5A6', desc: '无可用回收员，派单失败' }
+}
+
+const RECYCLE_DISPATCH_CONFIG = {
+  defaultMode: 'simulate',
+  autoAcceptSeconds: 30,
+  dispatchTimeoutSeconds: 120,
+  maxDispatchAttempts: 3,
+  dispatchIntervalSeconds: 30,
+  notificationChannels: ['wechat', 'sms', 'app'],
+  rejectReasons: [
+    '当前时段已约满',
+    '距离太远无法接单',
+    '品类不符无法处理',
+    '临时有事无法接单',
+    '其他原因'
+  ]
+}
+
 const GROUP_TYPES = {
   family: { id: 'family', name: '家庭组', icon: '👨‍👩‍👧‍👦', color: '#5BBD72', maxMembers: 8, desc: '与家人一起学习垃圾分类' },
   class: { id: 'class', name: '班级组', icon: '🏫', color: '#4A90D9', maxMembers: 60, desc: '老师带领全班同学一起学习' }
@@ -4872,6 +4902,9 @@ module.exports = {
   RECYCLE_COLLECTORS,
   RECYCLE_POINTS_CONFIG,
   RECYCLE_PHOTO_CONFIG,
+  RECYCLE_DISPATCH_MODE,
+  RECYCLE_DISPATCH_STATUS,
+  RECYCLE_DISPATCH_CONFIG,
   GROUP_TYPES,
   GROUP_ROLES,
   GROUP_TASKS,

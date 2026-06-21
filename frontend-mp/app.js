@@ -43,7 +43,9 @@ App({
     hasUpcomingStandard: false,
     activityManager: null,
     flashSaleManager: null,
-    activePointsDoubles: []
+    activePointsDoubles: [],
+    recycleDispatchMode: 'simulate',
+    recycleDispatchTimers: {}
   },
 
   /**
@@ -4172,13 +4174,16 @@ App({
   },
 
   addRecycleOrder(orderData) {
-    const { RECYCLE_ORDER_STATUS } = require('./utils/constants')
+    const { RECYCLE_ORDER_STATUS, RECYCLE_DISPATCH_CONFIG, RECYCLE_DISPATCH_STATUS } = require('./utils/constants')
     const points = this.calculateRecyclePoints(orderData.categoryId, orderData.quantity || 1, {
       hasPhoto: orderData.photos && orderData.photos.length > 0
     })
     const pointsBreakdown = this.getPointsBreakdown(orderData.categoryId, orderData.quantity || 1, {
       hasPhoto: orderData.photos && orderData.photos.length > 0
     })
+
+    const dispatchMode = orderData.dispatchMode || this.globalData.recycleDispatchMode || RECYCLE_DISPATCH_CONFIG.defaultMode
+    const dispatchStatus = dispatchMode === 'simulate' ? 'accepted' : 'pending'
 
     const newOrder = {
       id: 'recycle_' + generateId(),
@@ -4206,15 +4211,31 @@ App({
       collector: null,
       cancelReason: '',
       cancelPenalty: 0,
+      dispatchMode: dispatchMode,
+      dispatchStatus: dispatchStatus,
+      dispatchStatusText: RECYCLE_DISPATCH_STATUS[dispatchStatus.toUpperCase()] ? RECYCLE_DISPATCH_STATUS[dispatchStatus.toUpperCase()].text : '待派单',
+      dispatchAttempts: 0,
+      dispatchHistory: [],
       createTime: formatDate(new Date(), 'YYYY-MM-DD HH:mm'),
       statusHistory: [
         { status: 'pending', time: formatDate(new Date(), 'YYYY-MM-DD HH:mm'), desc: '订单已提交，等待工作人员确认' }
       ]
     }
 
+    if (dispatchMode === 'simulate') {
+      newOrder.collector = this.assignCollector(orderData.categoryId)
+      newOrder.dispatchHistory.push({
+        status: 'accepted',
+        time: formatDate(new Date(), 'YYYY-MM-DD HH:mm'),
+        collectorId: newOrder.collector.id,
+        collectorName: newOrder.collector.name,
+        desc: '模拟派单：系统自动分配回收员'
+      })
+    }
+
     this.globalData.recycleOrders.unshift(newOrder)
     this.saveRecycleOrders()
-    console.log('[App] 新增回收订单', newOrder.orderNo, '预估积分:', points)
+    console.log('[App] 新增回收订单', newOrder.orderNo, '派单模式:', dispatchMode, '预估积分:', points)
     return newOrder
   },
 
@@ -4355,6 +4376,177 @@ App({
     this.saveRecycleOrders()
     console.log('[App] 回收订单照片已更新', orderId, photos ? photos.length : 0, '张')
     return true
+  },
+
+  setRecycleDispatchMode(mode) {
+    const { RECYCLE_DISPATCH_MODE } = require('./utils/constants')
+    const validModes = Object.keys(RECYCLE_DISPATCH_MODE).map(k => RECYCLE_DISPATCH_MODE[k].id)
+    if (!validModes.includes(mode)) {
+      console.warn('[App] 无效的派单模式:', mode)
+      return false
+    }
+    this.globalData.recycleDispatchMode = mode
+    wx.setStorageSync('recycleDispatchMode', mode)
+    console.log('[App] 派单模式已切换为:', mode)
+    return true
+  },
+
+  getRecycleDispatchMode() {
+    if (!this.globalData.recycleDispatchMode) {
+      const savedMode = wx.getStorageSync('recycleDispatchMode')
+      if (savedMode) {
+        this.globalData.recycleDispatchMode = savedMode
+      }
+    }
+    return this.globalData.recycleDispatchMode
+  },
+
+  getAvailableCollectors(categoryId) {
+    const { RECYCLE_COLLECTORS } = require('./utils/constants')
+    const onlineCollectors = RECYCLE_COLLECTORS.filter(c => c.isOnline)
+    if (onlineCollectors.length === 0) {
+      return []
+    }
+    const matchingCollectors = onlineCollectors.filter(c =>
+      !c.specialties || c.specialties.length === 0 || c.specialties.includes(categoryId)
+    )
+    const result = matchingCollectors.length > 0 ? matchingCollectors : onlineCollectors
+    console.log('[App] 获取可接单回收员', result.length, '人，品类:', categoryId)
+    return result
+  },
+
+  dispatchRecycleOrder(orderId, collectorId) {
+    const { RECYCLE_DISPATCH_STATUS, RECYCLE_DISPATCH_CONFIG, RECYCLE_COLLECTORS } = require('./utils/constants')
+    const order = this.getRecycleOrderById(orderId)
+    if (!order) {
+      return { success: false, message: '订单不存在' }
+    }
+    if (order.dispatchMode !== 'real') {
+      return { success: false, message: '非真实派单模式，无需手动派单' }
+    }
+    if (order.dispatchAttempts >= RECYCLE_DISPATCH_CONFIG.maxDispatchAttempts) {
+      return { success: false, message: `已达最大派单次数(${RECYCLE_DISPATCH_CONFIG.maxDispatchAttempts}次)` }
+    }
+
+    let collector = null
+    if (collectorId) {
+      collector = RECYCLE_COLLECTORS.find(c => c.id === collectorId)
+      if (!collector) {
+        return { success: false, message: '指定的回收员不存在' }
+      }
+    } else {
+      const available = this.getAvailableCollectors(order.categoryId)
+      if (available.length === 0) {
+        this.updateDispatchStatus(order, 'failed', null, '无可用回收员')
+        return { success: false, message: '暂无可用回收员' }
+      }
+      collector = available[Math.floor(Math.random() * available.length)]
+    }
+
+    order.dispatchAttempts += 1
+    order.collector = collector
+    this.updateDispatchStatus(order, 'dispatching', collector, `正在向${collector.name}派单`)
+
+    this.clearDispatchTimer(orderId)
+    const timer = setTimeout(() => {
+      const currentOrder = this.getRecycleOrderById(orderId)
+      if (currentOrder && currentOrder.dispatchStatus === 'dispatching') {
+        this.updateDispatchStatus(currentOrder, 'timeout', collector, '回收员未及时接单，派单超时')
+        console.log('[App] 派单超时', orderId, '回收员:', collector.id)
+      }
+    }, RECYCLE_DISPATCH_CONFIG.dispatchTimeoutSeconds * 1000)
+    this.globalData.recycleDispatchTimers[orderId] = timer
+
+    this.saveRecycleOrders()
+    console.log('[App] 订单派单成功', orderId, '回收员:', collector.id, '尝试次数:', order.dispatchAttempts)
+    return { success: true, collector, attempts: order.dispatchAttempts }
+  },
+
+  acceptRecycleDispatch(orderId) {
+    const order = this.getRecycleOrderById(orderId)
+    if (!order) {
+      return { success: false, message: '订单不存在' }
+    }
+    if (order.dispatchStatus !== 'dispatching') {
+      return { success: false, message: '当前订单不在派单中' }
+    }
+    if (!order.collector) {
+      return { success: false, message: '未分配回收员' }
+    }
+
+    this.clearDispatchTimer(orderId)
+    this.updateDispatchStatus(order, 'accepted', order.collector, `${order.collector.name}已接单`)
+
+    if (order.status === 'pending') {
+      this.updateRecycleOrderStatus(orderId, 'appointed', {
+        desc: `回收员${order.collector.name}已接单，等待上门`
+      })
+    }
+
+    this.saveRecycleOrders()
+    console.log('[App] 回收员接单成功', orderId, order.collector.id)
+    return { success: true }
+  },
+
+  rejectRecycleDispatch(orderId, reason = '') {
+    const { RECYCLE_DISPATCH_CONFIG } = require('./utils/constants')
+    const order = this.getRecycleOrderById(orderId)
+    if (!order) {
+      return { success: false, message: '订单不存在' }
+    }
+    if (order.dispatchStatus !== 'dispatching') {
+      return { success: false, message: '当前订单不在派单中' }
+    }
+
+    this.clearDispatchTimer(orderId)
+    const rejectReason = reason || RECYCLE_DISPATCH_CONFIG.rejectReasons[0]
+    this.updateDispatchStatus(order, 'rejected', order.collector, `${order.collector.name}拒单：${rejectReason}`)
+
+    const collector = order.collector
+    order.collector = null
+    this.saveRecycleOrders()
+
+    console.log('[App] 回收员拒单', orderId, '原因:', rejectReason)
+    return { success: true, reason: rejectReason, canRetry: order.dispatchAttempts < RECYCLE_DISPATCH_CONFIG.maxDispatchAttempts }
+  },
+
+  retryDispatchRecycleOrder(orderId) {
+    const { RECYCLE_DISPATCH_CONFIG } = require('./utils/constants')
+    const order = this.getRecycleOrderById(orderId)
+    if (!order) {
+      return { success: false, message: '订单不存在' }
+    }
+    if (order.dispatchAttempts >= RECYCLE_DISPATCH_CONFIG.maxDispatchAttempts) {
+      this.updateDispatchStatus(order, 'failed', null, `超过最大派单次数(${RECYCLE_DISPATCH_CONFIG.maxDispatchAttempts}次)，派单失败`)
+      return { success: false, message: '已达最大派单次数' }
+    }
+    return this.dispatchRecycleOrder(orderId)
+  },
+
+  updateDispatchStatus(order, status, collector, desc = '') {
+    const { RECYCLE_DISPATCH_STATUS } = require('./utils/constants')
+    const statusInfo = RECYCLE_DISPATCH_STATUS[status.toUpperCase()]
+    if (!statusInfo) return
+
+    order.dispatchStatus = status
+    order.dispatchStatusText = statusInfo.text
+
+    const nowStr = formatDate(new Date(), 'YYYY-MM-DD HH:mm')
+    order.dispatchHistory.push({
+      status,
+      time: nowStr,
+      collectorId: collector ? collector.id : null,
+      collectorName: collector ? collector.name : null,
+      desc: desc || statusInfo.desc
+    })
+  },
+
+  clearDispatchTimer(orderId) {
+    const timer = this.globalData.recycleDispatchTimers[orderId]
+    if (timer) {
+      clearTimeout(timer)
+      delete this.globalData.recycleDispatchTimers[orderId]
+    }
   },
 
   cancelRecycleOrder(orderId, reason = '') {

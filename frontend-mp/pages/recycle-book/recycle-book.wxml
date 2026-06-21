@@ -225,6 +225,35 @@
       </view>
     </view>
 
+    <view class="form-section">
+      <view class="section-header">
+        <text class="section-title">派单模式</text>
+        <text class="optional">（选择回收员分配方式）</text>
+      </view>
+      <view class="dispatch-mode-list">
+        <view 
+          wx:for="{{dispatchModes}}" 
+          wx:key="id"
+          class="dispatch-mode-item {{selectedDispatchMode === item.id ? 'active' : ''}}"
+          bindtap="onDispatchModeSelect"
+          data-id="{{item.id}}"
+        >
+          <view class="mode-icon-wrapper" style="background: {{item.color}}20">
+            <text class="mode-icon">{{item.icon}}</text>
+          </view>
+          <view class="mode-content">
+            <view class="mode-header">
+              <text class="mode-name" style="color: {{item.color}}">{{item.name}}</text>
+              <view class="mode-check" wx:if="{{selectedDispatchMode === item.id}}">
+                <text class="check-icon">✓</text>
+              </view>
+            </view>
+            <text class="mode-desc">{{item.desc}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
     <view class="points-section" wx:if="{{selectedCategoryId}}">
       <view class="points-info">
         <text class="points-label">预估积分</text>

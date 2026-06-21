@@ -1,5 +1,5 @@
 const app = getApp()
-const { RECYCLE_ORDER_STATUS, RECYCLE_CANCEL_RULES, RECYCLE_PHOTO_CONFIG, RECYCLE_CATEGORIES } = require('../../utils/constants')
+const { RECYCLE_ORDER_STATUS, RECYCLE_CANCEL_RULES, RECYCLE_PHOTO_CONFIG, RECYCLE_CATEGORIES, RECYCLE_DISPATCH_MODE, RECYCLE_DISPATCH_STATUS, RECYCLE_DISPATCH_CONFIG } = require('../../utils/constants')
 const { showToast, showSuccess, showModal, formatDate, navigateTo, redirectTo, showLoading, hideLoading } = require('../../utils/util')
 
 Page({
@@ -7,6 +7,8 @@ Page({
     orderId: '',
     order: null,
     statusList: RECYCLE_ORDER_STATUS,
+    dispatchModeList: RECYCLE_DISPATCH_MODE,
+    dispatchStatusList: RECYCLE_DISPATCH_STATUS,
     cancelRules: RECYCLE_CANCEL_RULES.rules || [],
     photoConfig: RECYCLE_PHOTO_CONFIG,
     photos: [],
@@ -17,6 +19,18 @@ Page({
     canCancel: false,
     canMarkVisiting: false,
     canMarkComplete: false,
+    canDispatch: false,
+    canAccept: false,
+    canReject: false,
+    canRetryDispatch: false,
+    dispatchModeInfo: null,
+    dispatchStatusInfo: null,
+    availableCollectors: [],
+    showDispatchModal: false,
+    showCollectorSelectModal: false,
+    rejectReasons: RECYCLE_DISPATCH_CONFIG.rejectReasons,
+    selectedRejectReason: '',
+    customRejectReason: '',
     showCancelModal: false,
     cancelReasons: [
       '时间安排不合适',
@@ -40,6 +54,12 @@ Page({
   onShow() {
     if (this.data.orderId) {
       this.loadOrderDetail()
+    }
+  },
+
+  onUnload() {
+    if (this.data.orderId) {
+      app.clearDispatchTimer(this.data.orderId)
     }
   },
 
@@ -70,6 +90,22 @@ Page({
 
     const statusSteps = this.buildStatusSteps(order.status)
 
+    const dispatchModeInfo = RECYCLE_DISPATCH_MODE[order.dispatchMode.toUpperCase()] || null
+    const dispatchStatusInfo = RECYCLE_DISPATCH_STATUS[order.dispatchStatus.toUpperCase()] || null
+
+    const isRealMode = order.dispatchMode === 'real'
+    const isPendingOrAppointed = order.status === 'pending' || order.status === 'appointed'
+    const notTerminal = order.status !== 'completed' && order.status !== 'cancelled'
+
+    const canDispatch = isRealMode && notTerminal && order.dispatchStatus === 'pending'
+    const canAccept = isRealMode && order.dispatchStatus === 'dispatching'
+    const canReject = isRealMode && order.dispatchStatus === 'dispatching'
+    const canRetryDispatch = isRealMode && notTerminal && 
+      (order.dispatchStatus === 'rejected' || order.dispatchStatus === 'timeout') &&
+      order.dispatchAttempts < RECYCLE_DISPATCH_CONFIG.maxDispatchAttempts
+
+    const availableCollectors = isRealMode && canDispatch ? app.getAvailableCollectors(order.categoryId) : []
+
     this.setData({
       order,
       estimatedPoints,
@@ -77,10 +113,17 @@ Page({
       canCancel: canTransition('cancelled'),
       canMarkVisiting: canTransition('visiting'),
       canMarkComplete: canTransition('completed'),
+      canDispatch,
+      canAccept,
+      canReject,
+      canRetryDispatch,
       cancelPenalty: cancelPenalty.penaltyPoints,
       cancelPenaltyDesc,
       photos: order.photos || [],
-      statusSteps
+      statusSteps,
+      dispatchModeInfo,
+      dispatchStatusInfo,
+      availableCollectors
     })
   },
 
@@ -105,6 +148,205 @@ Page({
     }
 
     return steps
+  },
+
+  onDispatch() {
+    this.setData({ showDispatchModal: true })
+  },
+
+  onCloseDispatchModal() {
+    this.setData({ showDispatchModal: false })
+  },
+
+  onConfirmAutoDispatch() {
+    const { orderId } = this.data
+    showLoading('派单中...')
+    
+    setTimeout(() => {
+      const result = app.dispatchRecycleOrder(orderId)
+      hideLoading()
+
+      if (result.success) {
+        showSuccess('派单成功，等待回收员接单')
+        this.setData({ showDispatchModal: false })
+        this.loadOrderDetail()
+      } else {
+        showToast(result.message || '派单失败')
+      }
+    }, 500)
+  },
+
+  onOpenCollectorSelect() {
+    this.setData({ 
+      showDispatchModal: false,
+      showCollectorSelectModal: true 
+    })
+  },
+
+  onCloseCollectorSelect() {
+    this.setData({ showCollectorSelectModal: false })
+  },
+
+  onSelectCollector(e) {
+    const { id } = e.currentTarget.dataset
+    const { orderId, availableCollectors } = this.data
+    const collector = availableCollectors.find(c => c.id === id)
+    
+    if (!collector) {
+      showToast('回收员信息错误')
+      return
+    }
+
+    showModal({
+      title: '确认派单',
+      content: `确认将订单派给 ${collector.name} 吗？`,
+      showCancel: true,
+      success: (res) => {
+        if (res.confirm) {
+          showLoading('派单中...')
+          setTimeout(() => {
+            const result = app.dispatchRecycleOrder(orderId, id)
+            hideLoading()
+            if (result.success) {
+              showSuccess(`已派单给 ${collector.name}`)
+              this.setData({ showCollectorSelectModal: false })
+              this.loadOrderDetail()
+            } else {
+              showToast(result.message || '派单失败')
+            }
+          }, 500)
+        }
+      }
+    })
+  },
+
+  onAcceptDispatch() {
+    showModal({
+      title: '确认接单',
+      content: '确认回收员已接单？',
+      showCancel: true,
+      success: (res) => {
+        if (res.confirm) {
+          showLoading('处理中...')
+          setTimeout(() => {
+            const result = app.acceptRecycleDispatch(this.data.orderId)
+            hideLoading()
+            if (result.success) {
+              showSuccess('接单成功')
+              this.loadOrderDetail()
+            } else {
+              showToast(result.message || '操作失败')
+            }
+          }, 500)
+        }
+      }
+    })
+  },
+
+  onRejectDispatch() {
+    this.setData({ 
+      selectedRejectReason: '',
+      customRejectReason: '' 
+    })
+  },
+
+  onSelectRejectReason(e) {
+    const { reason } = e.currentTarget.dataset
+    this.setData({ selectedRejectReason: reason })
+  },
+
+  onCustomRejectReasonInput(e) {
+    this.setData({ customRejectReason: e.detail.value })
+  },
+
+  onConfirmReject() {
+    const { selectedRejectReason, customRejectReason, orderId } = this.data
+    let finalReason = selectedRejectReason
+
+    if (!finalReason) {
+      showToast('请选择拒单原因')
+      return
+    }
+
+    if (finalReason === '其他原因') {
+      if (!customRejectReason.trim()) {
+        showToast('请填写具体拒单原因')
+        return
+      }
+      finalReason = customRejectReason.trim()
+    }
+
+    showLoading('处理中...')
+    setTimeout(() => {
+      const result = app.rejectRecycleDispatch(orderId, finalReason)
+      hideLoading()
+      if (result.success) {
+        showSuccess('已拒单')
+        this.loadOrderDetail()
+      } else {
+        showToast(result.message || '操作失败')
+      }
+    }, 500)
+  },
+
+  onRetryDispatch() {
+    showModal({
+      title: '重新派单',
+      content: '确认重新派发此订单吗？',
+      showCancel: true,
+      success: (res) => {
+        if (res.confirm) {
+          showLoading('派单中...')
+          setTimeout(() => {
+            const result = app.retryDispatchRecycleOrder(this.data.orderId)
+            hideLoading()
+            if (result.success) {
+              showSuccess('重新派单成功')
+              this.loadOrderDetail()
+            } else {
+              showToast(result.message || '派单失败')
+            }
+          }, 500)
+        }
+      }
+    })
+  },
+
+  onSwitchDispatchMode() {
+    const { order } = this.data
+    if (!order || order.status !== 'pending') {
+      showToast('仅待确认订单可切换派单模式')
+      return
+    }
+
+    const modes = Object.values(RECYCLE_DISPATCH_MODE)
+    const modeNames = modes.map(m => `${m.icon} ${m.name}\n${m.desc}`)
+
+    wx.showActionSheet({
+      itemList: modeNames,
+      success: (res) => {
+        const selectedMode = modes[res.tapIndex]
+        showModal({
+          title: '切换派单模式',
+          content: `确认将派单模式切换为「${selectedMode.name}」吗？`,
+          showCancel: true,
+          success: (modalRes) => {
+            if (modalRes.confirm) {
+              app.setRecycleDispatchMode(selectedMode.id)
+              
+              const updatedOrder = app.getRecycleOrderById(this.data.orderId)
+              if (updatedOrder) {
+                updatedOrder.dispatchMode = selectedMode.id
+                app.saveRecycleOrders()
+              }
+              
+              showSuccess(`已切换为${selectedMode.name}`)
+              this.loadOrderDetail()
+            }
+          }
+        })
+      }
+    })
   },
 
   onChoosePhoto() {
@@ -267,6 +509,7 @@ Page({
   doCancelOrder(reason) {
     showLoading('处理中...')
     setTimeout(() => {
+      app.clearDispatchTimer(this.data.orderId)
       const result = app.cancelRecycleOrder(this.data.orderId, reason)
       hideLoading()
 

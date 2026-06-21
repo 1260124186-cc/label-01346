@@ -1,5 +1,5 @@
 const app = getApp()
-const { RECYCLE_CATEGORIES, RECYCLE_TIME_PERIODS, RECYCLE_TIME_SLOTS, RECYCLE_PHOTO_CONFIG } = require('../../utils/constants')
+const { RECYCLE_CATEGORIES, RECYCLE_TIME_PERIODS, RECYCLE_TIME_SLOTS, RECYCLE_PHOTO_CONFIG, RECYCLE_DISPATCH_MODE, RECYCLE_DISPATCH_CONFIG } = require('../../utils/constants')
 const { showToast, showSuccess, navigateTo, formatDate, showLoading, hideLoading } = require('../../utils/util')
 
 Page({
@@ -29,7 +29,9 @@ Page({
     estimatedPoints: 0,
     estimatedPointsBreakdown: [],
     submitting: false,
-    requirePhoto: false
+    requirePhoto: false,
+    dispatchModes: Object.values(RECYCLE_DISPATCH_MODE),
+    selectedDispatchMode: RECYCLE_DISPATCH_CONFIG.defaultMode
   },
 
   onLoad() {
@@ -37,6 +39,11 @@ Page({
     this.initDefaultData()
     this.loadDefaultAddress()
     this.calculatePoints()
+    
+    const currentMode = app.getRecycleDispatchMode()
+    if (currentMode) {
+      this.setData({ selectedDispatchMode: currentMode })
+    }
   },
 
   initDefaultData() {
@@ -220,6 +227,19 @@ Page({
     })
   },
 
+  onDispatchModeSelect(e) {
+    const { id } = e.currentTarget.dataset
+    console.log('[RecycleBook] 选择派单模式', id)
+    
+    const mode = RECYCLE_DISPATCH_MODE[id.toUpperCase()]
+    if (!mode) return
+    
+    this.setData({ selectedDispatchMode: id })
+    app.setRecycleDispatchMode(id)
+    
+    showToast(`已选择${mode.name}`)
+  },
+
   onChooseAddress() {
     navigateTo('/pages/address-list/address-list', { selectMode: '1' })
   },
@@ -325,7 +345,8 @@ Page({
       contactName: contactName,
       contactPhone: contactPhone,
       remark: remark,
-      photos: photos
+      photos: photos,
+      dispatchMode: selectedDispatchMode
     }
 
     setTimeout(() => {
