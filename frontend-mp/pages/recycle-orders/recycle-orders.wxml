@@ -5,18 +5,20 @@
 <view class="page-container">
   <!-- 状态筛选 Tab -->
   <view class="tabs-section">
-    <view class="tabs-list">
-      <view 
-        wx:for="{{tabs}}" 
-        wx:key="id"
-        class="tab-item {{currentTab === item.id ? 'active' : ''}}"
-        bindtap="onTabChange"
-        data-id="{{item.id}}"
-      >
-        <text class="tab-text">{{item.name}}</text>
-        <view class="tab-indicator" wx:if="{{currentTab === item.id}}"></view>
+    <scroll-view scroll-x class="tabs-scroll" enhanced="{{true}}" show-scrollbar="{{false}}">
+      <view class="tabs-list">
+        <view 
+          wx:for="{{tabs}}" 
+          wx:key="id"
+          class="tab-item {{currentTab === item.id ? 'active' : ''}}"
+          bindtap="onTabChange"
+          data-id="{{item.id}}"
+        >
+          <text class="tab-text">{{item.name}}</text>
+          <view class="tab-indicator" wx:if="{{currentTab === item.id}}"></view>
+        </view>
       </view>
-    </view>
+    </scroll-view>
   </view>
 
   <!-- 订单列表 -->
@@ -24,7 +26,7 @@
     <view 
       wx:for="{{orderList}}" 
       wx:key="id"
-      class="order-card"
+      class="order-card {{item.status === 'cancelled' ? 'cancelled' : ''}}"
       bindtap="onOrderTap"
       data-id="{{item.id}}"
     >
@@ -50,9 +52,30 @@
           </view>
         </view>
         <view class="points-info">
-          <text class="points-label">{{item.pointsLabel}}</text>
-          <text class="points-value">{{item.points}}积分</text>
+          <text class="points-label" wx:if="{{item.status !== 'cancelled'}}">{{item.pointsLabel}}</text>
+          <text class="points-label" wx:else>扣除积分</text>
+          <text class="points-value" wx:if="{{item.status !== 'cancelled'}}">{{item.points}}积分</text>
+          <text class="points-value cancelled" wx:elif="{{item.cancelPenalty > 0}}">-{{item.cancelPenalty}}积分</text>
+          <text class="points-value cancelled" wx:else>--</text>
         </view>
+      </view>
+
+      <!-- 回收员信息预览 -->
+      <view class="collector-preview" wx:if="{{item.collector && item.status !== 'pending' && item.status !== 'cancelled'}}">
+        <view class="collector-avatar-sm">
+          <text class="avatar-emoji-sm">👷</text>
+        </view>
+        <view class="collector-brief">
+          <text class="collector-name-sm">{{item.collector.name}}</text>
+          <text class="collector-level-sm" wx:if="{{item.collector.level}}">{{item.collector.level}}</text>
+        </view>
+        <text class="collector-phone-sm">{{item.collector.phone}}</text>
+      </view>
+
+      <!-- 取消信息 -->
+      <view class="cancel-preview" wx:if="{{item.status === 'cancelled'}}">
+        <text class="cancel-icon">⚠️</text>
+        <text class="cancel-reason">{{item.cancelReason || '用户取消订单'}}</text>
       </view>
     </view>
 

@@ -17,10 +17,22 @@
             <text class="category-emoji">{{item.emoji}}</text>
           </view>
           <text class="category-name">{{item.name}}</text>
+          <text class="category-points">最高{{item.basePoints + item.pointsPerItem * 5}}积分</text>
           <view class="category-check" wx:if="{{selectedCategoryId === item.id}}">
             <text class="check-icon">✓</text>
           </view>
+          <view class="large-tag" wx:if="{{item.isLargeItem}}">
+            <text class="tag-text">大件</text>
+          </view>
         </view>
+      </view>
+      <view class="category-tip" wx:if="{{selectedCategory && selectedCategory.description}}">
+        <text class="tip-icon">💡</text>
+        <text class="tip-text">{{selectedCategory.description}}</text>
+      </view>
+      <view class="photo-hint" wx:if="{{requirePhoto}}">
+        <text class="hint-icon">📷</text>
+        <text class="hint-text">该品类需要上传物品照片以辅助估价</text>
       </view>
     </view>
 
@@ -67,16 +79,69 @@
         </view>
       </picker>
 
-      <view class="time-slots">
-        <view 
-          wx:for="{{timeSlots}}" 
-          wx:key="id"
-          class="time-slot-item {{selectedTimeSlotId === item.id ? 'active' : ''}}"
-          bindtap="onTimeSlotSelect"
-          data-id="{{item.id}}"
-        >
-          <text class="slot-text">{{item.name}}</text>
+      <view class="period-section">
+        <text class="sub-label">选择时段</text>
+        <view class="period-list">
+          <view 
+            wx:for="{{timePeriods}}" 
+            wx:key="id"
+            class="period-item {{selectedPeriodId === item.id ? 'active' : ''}}"
+            bindtap="onPeriodSelect"
+            data-id="{{item.id}}"
+          >
+            <text class="period-icon">{{item.icon}}</text>
+            <text class="period-name">{{item.name}}</text>
+            <text class="period-range">{{item.timeRange}}</text>
+          </view>
         </view>
+      </view>
+
+      <view class="time-slots" wx:if="{{selectedPeriodId && timeSlots.length > 0}}">
+        <text class="sub-label">选择具体时间（2小时窗口）</text>
+        <view class="slot-list">
+          <view 
+            wx:for="{{timeSlots}}" 
+            wx:key="id"
+            class="time-slot-item {{selectedTimeSlotId === item.id ? 'active' : ''}}"
+            bindtap="onTimeSlotSelect"
+            data-id="{{item.id}}"
+          >
+            <text class="slot-text">{{item.name}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <view class="form-section" wx:if="{{selectedCategoryId}}">
+      <view class="section-header">
+        <text class="section-title">上传照片</text>
+        <text class="required" wx:if="{{requirePhoto}}">*</text>
+        <text class="optional" wx:else>（选填，上传可额外获得{{photoConfig.photoBonus || 30}}积分补贴）</text>
+      </view>
+      <view class="photo-grid">
+        <view 
+          wx:for="{{photos}}" 
+          wx:key="*this"
+          class="photo-item"
+          bindtap="onPreviewPhoto"
+          data-index="{{index}}"
+        >
+          <image class="photo-img" src="{{item}}" mode="aspectFill" />
+          <view class="photo-remove" catchtap="onRemovePhoto" data-index="{{index}}">
+            <text class="remove-icon">×</text>
+          </view>
+        </view>
+        <view 
+          class="photo-add" 
+          wx:if="{{photos.length < maxPhotos}}"
+          bindtap="onChoosePhoto"
+        >
+          <text class="add-icon">+</text>
+          <text class="add-text">添加照片</text>
+        </view>
+      </view>
+      <view class="photo-tips">
+        <text class="tips-text">建议拍摄：物品全景、品牌标识、成新度细节</text>
       </view>
     </view>
 
@@ -160,12 +225,25 @@
       </view>
     </view>
 
-    <view class="points-section">
+    <view class="points-section" wx:if="{{selectedCategoryId}}">
       <view class="points-info">
         <text class="points-label">预估积分</text>
         <view class="points-value-wrapper">
           <text class="points-value">{{estimatedPoints}}</text>
           <text class="points-unit">积分</text>
+        </view>
+      </view>
+      <view class="points-breakdown" wx:if="{{estimatedPointsBreakdown.length > 0}}">
+        <view 
+          wx:for="{{estimatedPointsBreakdown}}" 
+          wx:key="label"
+          class="breakdown-item"
+        >
+          <view class="breakdown-left">
+            <text class="breakdown-emoji">{{item.emoji}}</text>
+            <text class="breakdown-label">{{item.label}}</text>
+          </view>
+          <text class="breakdown-points">+{{item.points}}</text>
         </view>
       </view>
       <text class="points-tip">完成回收后实际发放，以现场确认为准</text>

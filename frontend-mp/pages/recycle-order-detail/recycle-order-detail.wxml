@@ -1,165 +1,279 @@
 <view class="page-container" wx:if="{{order}}">
-  <view class="status-section status-{{order.status}}">
-    <view class="status-icon">
-      <text class="icon-emoji">{{order.statusIcon}}</text>
+  <view class="status-card {{order.status === 'cancelled' ? 'cancelled' : ''}}">
+    <view class="status-left" wx:if="{{order.status !== 'cancelled'}}">
+      <text class="status-icon">📋</text>
+      <view class="status-info">
+        <text class="status-text" style="color: {{statusList[order.status].color}}">{{statusList[order.status].text}}</text>
+        <text class="status-desc">{{statusList[order.status].desc}}</text>
+      </view>
     </view>
-    <view class="status-info">
-      <text class="status-title">{{order.statusText}}</text>
-      <text class="status-desc" wx:if="{{order.status === 'pending'}}">订单已提交，等待工作人员接单</text>
-      <text class="status-desc" wx:elif="{{order.status === 'appointed'}}">订单已确认，请在预约时间等候上门</text>
-      <text class="status-desc" wx:elif="{{order.status === 'visiting'}}">回收人员已出发，请保持电话畅通</text>
-      <text class="status-desc" wx:else>回收已完成，感谢您对环保的支持</text>
-    </view>
-  </view>
-
-  <view class="progress-section">
-    <view class="progress-steps">
-      <view class="step-item {{order.status === 'pending' || order.status === 'appointed' || order.status === 'visiting' || order.status === 'completed' ? 'done' : ''}}">
-        <view class="step-dot"></view>
-        <text class="step-text">待接单</text>
-        <text class="step-time" wx:if="{{order.statusHistory && order.statusHistory[0]}}">{{order.statusHistory[0].time}}</text>
-      </view>
-      <view class="step-line {{order.status === 'appointed' || order.status === 'visiting' || order.status === 'completed' ? 'done' : ''}}"></view>
-      <view class="step-item {{order.status === 'appointed' || order.status === 'visiting' || order.status === 'completed' ? 'done' : ''}}">
-        <view class="step-dot"></view>
-        <text class="step-text">已预约</text>
-        <text class="step-time" wx:if="{{order.appointTime}}">{{order.appointTime}}</text>
-      </view>
-      <view class="step-line {{order.status === 'visiting' || order.status === 'completed' ? 'done' : ''}}"></view>
-      <view class="step-item {{order.status === 'visiting' || order.status === 'completed' ? 'done' : ''}}">
-        <view class="step-dot"></view>
-        <text class="step-text">上门中</text>
-        <text class="step-time" wx:if="{{order.visitTime}}">{{order.visitTime}}</text>
-      </view>
-      <view class="step-line {{order.status === 'completed' ? 'done' : ''}}"></view>
-      <view class="step-item {{order.status === 'completed' ? 'done' : ''}}">
-        <view class="step-dot"></view>
-        <text class="step-text">已完成</text>
-        <text class="step-time" wx:if="{{order.completeTime}}">{{order.completeTime}}</text>
+    <view class="status-left" wx:else>
+      <text class="status-icon">❌</text>
+      <view class="status-info">
+        <text class="status-text" style="color: #95A5A6">已取消</text>
+        <text class="status-desc">订单已取消，如有疑问请联系客服</text>
       </view>
     </view>
   </view>
 
-  <view class="goods-card">
-    <view class="card-header">
-      <text class="card-title">回收物品</text>
+  <view class="progress-section" wx:if="{{order.status !== 'cancelled'}}">
+    <view class="progress-bar">
+      <block wx:for="{{statusSteps}}" wx:key="key">
+        <view class="progress-step {{item.active ? 'active' : ''}} {{item.current ? 'current' : ''}}">
+          <view class="step-dot" style="{{item.current ? 'background: ' + item.color + '; border-color: ' + item.color : ''}}">
+            <text class="step-check" wx:if="{{item.active && !item.current}}">✓</text>
+          </view>
+          <text class="step-text" wx:if="{{item.active}}" style="{{item.current ? 'color: ' + item.color : ''}}">{{item.text}}</text>
+          <text class="step-text disabled" wx:else>{{item.text}}</text>
+        </view>
+        <view class="progress-line {{index < statusSteps.length - 1 && statusSteps[index + 1].active ? 'active' : ''}}" wx:if="{{index < statusSteps.length - 1}}"></view>
+      </block>
     </view>
-    <view class="goods-item">
-      <view class="goods-icon">
-        <text class="icon-emoji">{{order.categoryEmoji || '♻️'}}</text>
+  </view>
+
+  <view class="cancel-info-card" wx:if="{{order.status === 'cancelled'}}">
+    <view class="cancel-row">
+      <text class="cancel-label">取消原因</text>
+      <text class="cancel-value">{{order.cancelReason || '用户取消'}}</text>
+    </view>
+    <view class="cancel-row" wx:if="{{order.cancelPenalty > 0}}">
+      <text class="cancel-label">扣除积分</text>
+      <text class="cancel-value penalty">-{{order.cancelPenalty}} 积分</text>
+    </view>
+    <view class="cancel-row">
+      <text class="cancel-label">取消时间</text>
+      <text class="cancel-value">{{order.cancelTime || '--'}}</text>
+    </view>
+  </view>
+
+  <view class="collector-card" wx:if="{{order.collector && order.status !== 'pending'}}">
+    <view class="collector-header">
+      <text class="collector-title">回收员信息</text>
+      <text class="collector-level" wx:if="{{order.collector.level}}">{{order.collector.level}}</text>
+    </view>
+    <view class="collector-body">
+      <view class="collector-avatar">
+        <text class="avatar-emoji">👷</text>
       </view>
-      <view class="goods-info">
-        <text class="goods-name">{{order.categoryName}}</text>
-        <text class="goods-desc">共 {{order.quantity}} 件</text>
-        <view class="goods-bottom">
-          <text class="goods-points">预估 {{order.estimatedPoints}} 积分</text>
+      <view class="collector-info">
+        <view class="collector-name-row">
+          <text class="collector-name">{{order.collector.name}}</text>
+          <view class="collector-rating" wx:if="{{order.collector.rating}}">
+            <text class="star">⭐</text>
+            <text class="rating">{{order.collector.rating}}</text>
+          </view>
+        </view>
+        <text class="collector-phone">{{order.collector.phone}}</text>
+        <text class="collector-orders" wx:if="{{order.collector.ordersCompleted}}">已完成 {{order.collector.ordersCompleted}} 单</text>
+      </view>
+    </view>
+    <view class="collector-actions">
+      <view class="action-btn primary" bindtap="onCallCollector">
+        <text class="action-icon">📞</text>
+        <text class="action-text">拨打电话</text>
+      </view>
+      <view class="action-btn" bindtap="onContactService">
+        <text class="action-icon">💬</text>
+        <text class="action-text">联系客服</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="info-card">
+    <view class="info-header">
+      <text class="info-title">回收信息</text>
+    </view>
+    <view class="category-row">
+      <view class="category-badge">
+        <text class="category-emoji">{{order.categoryEmoji}}</text>
+      </view>
+      <view class="category-info">
+        <text class="category-name">{{order.categoryName}}</text>
+        <text class="category-quantity">共 {{order.quantity}} 件</text>
+      </view>
+    </view>
+    <view class="info-row">
+      <text class="info-label">上门日期</text>
+      <text class="info-value">{{order.appointmentDate}}</text>
+    </view>
+    <view class="info-row">
+      <text class="info-label">上门时段</text>
+      <text class="info-value">{{order.appointmentPeriodName}} {{order.appointmentTimeName || ''}}</text>
+    </view>
+    <view class="info-row">
+      <text class="info-label">回收地址</text>
+      <text class="info-value">{{order.address}}</text>
+    </view>
+    <view class="info-row">
+      <text class="info-label">联系人</text>
+      <text class="info-value">{{order.contactName}} {{order.contactPhone}}</text>
+    </view>
+    <view class="info-row" wx:if="{{order.remark}}">
+      <text class="info-label">备注</text>
+      <text class="info-value">{{order.remark}}</text>
+    </view>
+  </view>
+
+  <view class="photo-card" wx:if="{{order.categoryId === 'appliance' || order.categoryId === 'furniture' || photos.length > 0}}">
+    <view class="info-header">
+      <text class="info-title">现场照片</text>
+      <text class="photo-bonus" wx:if="{{order.status !== 'completed'}}">上传可额外获得{{photoConfig.photoBonus || 30}}积分</text>
+    </view>
+    <view class="photo-grid">
+      <view 
+        wx:for="{{photos}}" 
+        wx:key="*this"
+        class="photo-item"
+        bindtap="onPreviewPhoto"
+        data-index="{{index}}"
+      >
+        <image class="photo-img" src="{{item}}" mode="aspectFill" />
+        <view class="photo-remove" catchtap="onRemovePhoto" data-index="{{index}}" wx:if="{{order.status !== 'completed'}}">
+          <text class="remove-icon">×</text>
+        </view>
+      </view>
+      <view 
+        class="photo-add" 
+        wx:if="{{photos.length < photoConfig.maxPhotos && order.status !== 'completed' && order.status !== 'cancelled'}}"
+        bindtap="onChoosePhoto"
+      >
+        <text class="add-icon">+</text>
+        <text class="add-text">添加照片</text>
+      </view>
+    </view>
+    <text class="photo-tip" wx:if="{{photos.length === 0}}">建议上传物品全景、品牌标识、成新度细节</text>
+  </view>
+
+  <view class="points-card" wx:if="{{order.status === 'completed' || estimatedPoints > 0}}">
+    <view class="info-header">
+      <text class="info-title">{{order.status === 'completed' ? '已获积分' : '预估积分'}}</text>
+    </view>
+    <view class="points-summary">
+      <text class="points-value" wx:if="{{order.status === 'completed'}}">{{order.actualPoints || order.estimatedPoints}}</text>
+      <text class="points-value" wx:else>{{estimatedPoints}}</text>
+      <text class="points-unit">积分</text>
+    </view>
+    <view class="points-breakdown" wx:if="{{order.status === 'completed' && order.actualPointsBreakdown && order.actualPointsBreakdown.length > 0}}">
+      <view wx:for="{{order.actualPointsBreakdown}}" wx:key="label" class="breakdown-item">
+        <view class="breakdown-left">
+          <text class="breakdown-emoji">{{item.emoji}}</text>
+          <text class="breakdown-label">{{item.label}}</text>
+        </view>
+        <text class="breakdown-points">+{{item.points}}</text>
+      </view>
+    </view>
+    <view class="points-breakdown" wx:elif="{{estimatedPointsBreakdown.length > 0}}">
+      <view wx:for="{{estimatedPointsBreakdown}}" wx:key="label" class="breakdown-item">
+        <view class="breakdown-left">
+          <text class="breakdown-emoji">{{item.emoji}}</text>
+          <text class="breakdown-label">{{item.label}}</text>
+        </view>
+        <text class="breakdown-points">+{{item.points}}</text>
+      </view>
+    </view>
+    <text class="points-tip" wx:if="{{order.status !== 'completed'}}">完成回收后实际发放，以现场确认为准</text>
+  </view>
+
+  <view class="cancel-rules-card" wx:if="{{canCancel}}">
+    <view class="info-header">
+      <text class="info-title">取消规则</text>
+    </view>
+    <view class="cancel-penalty-info">
+      <text class="penalty-desc">{{cancelPenaltyDesc}}</text>
+    </view>
+    <view class="rules-list">
+      <view wx:for="{{cancelRules}}" wx:key="title" class="rule-item">
+        <view class="rule-dot"></view>
+        <view class="rule-content">
+          <text class="rule-title">{{item.title}}</text>
+          <text class="rule-desc">{{item.desc}}</text>
         </view>
       </view>
     </view>
-    <view class="actual-points-row" wx:if="{{order.status === 'completed'}}">
-      <text class="points-label">实际获得</text>
-      <text class="points-value">{{order.actualPoints}} 积分</text>
+  </view>
+
+  <view class="order-meta">
+    <view class="meta-row">
+      <text class="meta-label">订单编号</text>
+      <text class="meta-value">{{order.id}}</text>
+    </view>
+    <view class="meta-row">
+      <text class="meta-label">创建时间</text>
+      <text class="meta-value">{{order.createTime}}</text>
     </view>
   </view>
 
-  <view class="appointment-card">
-    <view class="card-header">
-      <text class="card-title">预约信息</text>
-    </view>
-    <view class="info-list">
-      <view class="info-row">
-        <text class="info-label">预约日期</text>
-        <text class="info-value">{{order.appointmentDate || '—'}}</text>
+  <view class="bottom-bar" wx:if="{{order.status !== 'completed' && order.status !== 'cancelled'}}">
+    <view class="btn-wrapper">
+      <view class="cancel-btn" bindtap="onCancelOrder" wx:if="{{canCancel}}">
+        <text class="cancel-btn-text">取消订单</text>
       </view>
-      <view class="info-row">
-        <text class="info-label">时间段</text>
-        <text class="info-value">{{order.appointmentTimeName || '—'}}</text>
-      </view>
-    </view>
-  </view>
-
-  <view class="address-card">
-    <view class="card-header">
-      <text class="card-title">取件地址</text>
-    </view>
-    <view class="address-info">
-      <view class="address-top">
-        <text class="address-name">{{order.contactName}}</text>
-        <text class="address-phone">{{order.contactPhone}}</text>
-      </view>
-      <view class="address-detail">
-        <text class="detail-text">{{order.address}}</text>
-      </view>
-    </view>
-  </view>
-
-  <view class="remark-card" wx:if="{{order.remark}}">
-    <view class="card-header">
-      <text class="card-title">备注信息</text>
-    </view>
-    <view class="remark-content">
-      <text class="remark-text">{{order.remark}}</text>
-    </view>
-  </view>
-
-  <view class="order-info-card">
-    <view class="card-header">
-      <text class="card-title">订单信息</text>
-    </view>
-    <view class="info-list">
-      <view class="info-row" bindtap="onCopyOrderNo">
-        <text class="info-label">订单编号</text>
-        <view class="order-no-wrapper">
-          <text class="info-value">{{order.orderNo}}</text>
-          <text class="copy-btn">复制</text>
+      <view class="action-btn-wrapper">
+        <view class="secondary-btn" bindtap="onMarkVisiting" wx:if="{{canMarkVisiting}}">
+          <text class="btn-text">标记上门</text>
+        </view>
+        <view class="primary-btn" bindtap="onMarkComplete" wx:if="{{canMarkComplete}}">
+          <text class="btn-text">完成回收</text>
+        </view>
+        <view class="primary-btn disabled" wx:if="{{!canMarkVisiting && !canMarkComplete && !canCancel}}">
+          <text class="btn-text">等待系统处理</text>
         </view>
       </view>
-      <view class="info-row">
-        <text class="info-label">创建时间</text>
-        <text class="info-value">{{order.createTime}}</text>
+    </view>
+  </view>
+
+  <view class="bottom-bar" wx:if="{{order.status === 'completed' || order.status === 'cancelled'}}">
+    <view class="btn-wrapper">
+      <view class="full-btn secondary" bindtap="onGoBack">
+        <text class="btn-text">返回</text>
       </view>
-      <view class="info-row">
-        <text class="info-label">订单状态</text>
-        <text class="info-value status-text">{{order.statusText}}</text>
+    </view>
+  </view>
+</view>
+
+<view class="cancel-modal-mask" wx:if="{{showCancelModal}}" catchtap="onCloseCancelModal">
+  <view class="cancel-modal" catchtap="">
+    <view class="modal-header">
+      <text class="modal-title">取消订单</text>
+      <view class="modal-close" catchtap="onCloseCancelModal">
+        <text class="close-icon">×</text>
       </view>
     </view>
-  </view>
-
-  <view class="bottom-space"></view>
-
-  <view class="bottom-bar" wx:if="{{order.status === 'pending' || order.status === 'appointed'}}">
-    <view class="bar-btn secondary" bindtap="onContactService">
-      <text class="btn-text">联系客服</text>
+    <view class="modal-penalty" wx:if="{{cancelPenalty > 0}}">
+      <text class="penalty-warning">⚠️ {{cancelPenaltyDesc}}</text>
     </view>
-    <view class="bar-btn danger" bindtap="onCancelOrder">
-      <text class="btn-text">取消订单</text>
+    <view class="modal-section">
+      <text class="modal-label">请选择取消原因</text>
+      <view class="reasons-list">
+        <view 
+          wx:for="{{cancelReasons}}" 
+          wx:key="*this"
+          class="reason-item {{selectedCancelReason === item ? 'active' : ''}}"
+          bindtap="onSelectCancelReason"
+          data-reason="{{item}}"
+        >
+          <text class="reason-text">{{item}}</text>
+          <text class="reason-check" wx:if="{{selectedCancelReason === item}}">✓</text>
+        </view>
+      </view>
     </view>
-  </view>
-
-  <view class="bottom-bar" wx:elif="{{order.status === 'visiting'}}">
-    <view class="bar-btn secondary" bindtap="onContactService">
-      <text class="btn-text">联系客服</text>
+    <view class="modal-section" wx:if="{{selectedCancelReason === '其他原因'}}">
+      <textarea 
+        class="reason-input" 
+        placeholder="请填写具体取消原因"
+        placeholder-class="input-placeholder"
+        value="{{customCancelReason}}"
+        bindinput="onCustomReasonInput"
+        maxlength="100"
+      />
     </view>
-    <view class="bar-btn primary disabled">
-      <text class="btn-text">上门中</text>
-    </view>
-  </view>
-
-  <view class="bottom-bar" wx:elif="{{order.status === 'completed'}}">
-    <view class="bar-btn secondary" bindtap="onContactService">
-      <text class="btn-text">联系客服</text>
-    </view>
-    <view class="bar-btn primary" bindtap="onReorder">
-      <text class="btn-text">再次预约</text>
-    </view>
-  </view>
-
-  <view class="bottom-bar" wx:else>
-    <view class="bar-btn secondary" bindtap="onContactService">
-      <text class="btn-text">联系客服</text>
-    </view>
-    <view class="bar-btn primary" bindtap="onReorder">
-      <text class="btn-text">再次预约</text>
+    <view class="modal-footer">
+      <view class="modal-btn secondary" catchtap="onCloseCancelModal">
+        <text class="btn-text">再想想</text>
+      </view>
+      <view class="modal-btn primary" catchtap="onConfirmCancel">
+        <text class="btn-text">确认取消</text>
+      </view>
     </view>
   </view>
 </view>

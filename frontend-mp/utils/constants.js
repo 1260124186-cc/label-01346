@@ -4205,14 +4205,31 @@ const GAME_POWERUPS = [
 const RECYCLE_CATEGORIES = [
   {
     id: 'appliance',
-    name: '家电',
+    name: '大家电',
     emoji: '📺',
     color: '#3498DB',
     bgColor: 'rgba(52, 152, 219, 0.1)',
-    description: '旧电视、冰箱、洗衣机、空调等',
-    basePoints: 100,
-    pointsPerItem: 50,
-    examples: ['旧电视', '冰箱', '洗衣机', '空调', '电脑']
+    description: '旧电视、冰箱、洗衣机、空调等大件家电',
+    basePoints: 200,
+    pointsPerItem: 100,
+    bonusMultiplier: 1.5,
+    requirePhoto: true,
+    isLargeItem: true,
+    examples: ['旧电视', '双门冰箱', '滚筒洗衣机', '柜式空调', '台式电脑']
+  },
+  {
+    id: 'small_appliance',
+    name: '小家电',
+    emoji: '🔌',
+    color: '#2ECC71',
+    bgColor: 'rgba(46, 204, 113, 0.1)',
+    description: '电饭煲、微波炉、电风扇等小型家电',
+    basePoints: 80,
+    pointsPerItem: 40,
+    bonusMultiplier: 1.0,
+    requirePhoto: false,
+    isLargeItem: false,
+    examples: ['电饭煲', '微波炉', '电风扇', '电水壶', '吹风机']
   },
   {
     id: 'furniture',
@@ -4220,10 +4237,55 @@ const RECYCLE_CATEGORIES = [
     emoji: '🛋️',
     color: '#E67E22',
     bgColor: 'rgba(230, 126, 34, 0.1)',
-    description: '旧沙发、桌椅、衣柜、床垫等',
-    basePoints: 80,
-    pointsPerItem: 40,
-    examples: ['沙发', '桌椅', '衣柜', '床垫', '书架']
+    description: '旧沙发、桌椅、衣柜、床垫等大件家具',
+    basePoints: 150,
+    pointsPerItem: 75,
+    bonusMultiplier: 1.3,
+    requirePhoto: true,
+    isLargeItem: true,
+    examples: ['三人沙发', '实木餐桌', '大衣柜', '双人床垫', '实木书架']
+  },
+  {
+    id: 'metal',
+    name: '废金属',
+    emoji: '⚙️',
+    color: '#7F8C8D',
+    bgColor: 'rgba(127, 140, 141, 0.1)',
+    description: '废铁、铜、铝等金属物品',
+    basePoints: 100,
+    pointsPerItem: 50,
+    bonusMultiplier: 1.2,
+    requirePhoto: false,
+    isLargeItem: false,
+    examples: ['废铁丝', '铜电线', '铝制品', '不锈钢锅', '旧自行车']
+  },
+  {
+    id: 'paper',
+    name: '废纸品',
+    emoji: '📦',
+    color: '#D4A574',
+    bgColor: 'rgba(212, 165, 116, 0.1)',
+    description: '旧报纸、书籍、纸箱等纸制品',
+    basePoints: 50,
+    pointsPerItem: 20,
+    bonusMultiplier: 1.0,
+    requirePhoto: false,
+    isLargeItem: false,
+    examples: ['旧报纸', '旧书籍', '快递纸箱', '办公废纸', '杂志']
+  },
+  {
+    id: 'plastic',
+    name: '废塑料',
+    emoji: '🧴',
+    color: '#1ABC9C',
+    bgColor: 'rgba(26, 188, 156, 0.1)',
+    description: '塑料瓶、桶、玩具等塑料制品',
+    basePoints: 40,
+    pointsPerItem: 15,
+    bonusMultiplier: 1.0,
+    requirePhoto: false,
+    isLargeItem: false,
+    examples: ['大塑料瓶', '塑料桶', '塑料玩具', '塑料盆', '塑料整理箱']
   },
   {
     id: 'medicine',
@@ -4232,8 +4294,11 @@ const RECYCLE_CATEGORIES = [
     color: '#E74C3C',
     bgColor: 'rgba(231, 76, 60, 0.1)',
     description: '过期药片、胶囊、口服液等',
-    basePoints: 50,
-    pointsPerItem: 20,
+    basePoints: 80,
+    pointsPerItem: 25,
+    bonusMultiplier: 1.1,
+    requirePhoto: false,
+    isLargeItem: false,
     examples: ['感冒药', '抗生素', '维生素片', '口服液', '药膏']
   },
   {
@@ -4243,29 +4308,168 @@ const RECYCLE_CATEGORIES = [
     color: '#9B59B6',
     bgColor: 'rgba(155, 89, 182, 0.1)',
     description: '充电电池、纽扣电池、蓄电池等',
-    basePoints: 60,
-    pointsPerItem: 15,
+    basePoints: 100,
+    pointsPerItem: 30,
+    bonusMultiplier: 1.2,
+    requirePhoto: false,
+    isLargeItem: false,
     examples: ['5号电池', '7号电池', '纽扣电池', '手机电池', '电动车电池']
   }
 ]
 
 const RECYCLE_ORDER_STATUS = {
-  pending: { key: 'pending', text: '待接单', icon: '⏳', color: '#F39C12' },
-  appointed: { key: 'appointed', text: '已预约', icon: '✅', color: '#3498DB' },
-  visiting: { key: 'visiting', text: '上门中', icon: '🚚', color: '#9B59B6' },
-  completed: { key: 'completed', text: '已完成', icon: '🎉', color: '#5BBD72' }
+  pending: { key: 'pending', text: '待确认', icon: '⏳', color: '#F39C12', desc: '订单已提交，等待工作人员确认' },
+  appointed: { key: 'appointed', text: '已预约', icon: '✅', color: '#3498DB', desc: '订单已确认，回收员已分配，等待上门' },
+  visiting: { key: 'visiting', text: '上门中', icon: '🚚', color: '#9B59B6', desc: '回收人员已出发，请保持电话畅通' },
+  completed: { key: 'completed', text: '已完成', icon: '🎉', color: '#5BBD72', desc: '回收完成，积分已发放到账' },
+  cancelled: { key: 'cancelled', text: '已取消', icon: '❌', color: '#95A5A6', desc: '订单已取消' }
 }
 
-const RECYCLE_TIME_SLOTS = [
-  { id: 'morning', name: '上午 09:00-12:00' },
-  { id: 'afternoon', name: '下午 14:00-17:00' },
-  { id: 'evening', name: '晚间 18:00-20:00' }
+const RECYCLE_ORDER_STATUS_FLOW = {
+  pending: ['appointed', 'cancelled'],
+  appointed: ['visiting', 'cancelled'],
+  visiting: ['completed', 'cancelled'],
+  completed: [],
+  cancelled: []
+}
+
+const RECYCLE_TIME_PERIODS = [
+  { id: 'morning', name: '上午', timeRange: '09:00-12:00', icon: '🌅' },
+  { id: 'afternoon', name: '下午', timeRange: '14:00-17:00', icon: '☀️' },
+  { id: 'evening', name: '晚间', timeRange: '18:00-20:00', icon: '🌙' }
+]
+
+const RECYCLE_TIME_SLOTS = {
+  morning: [
+    { id: 'morning_09_11', name: '09:00-11:00', period: 'morning', startHour: 9, endHour: 11 },
+    { id: 'morning_10_12', name: '10:00-12:00', period: 'morning', startHour: 10, endHour: 12 }
+  ],
+  afternoon: [
+    { id: 'afternoon_14_16', name: '14:00-16:00', period: 'afternoon', startHour: 14, endHour: 16 },
+    { id: 'afternoon_15_17', name: '15:00-17:00', period: 'afternoon', startHour: 15, endHour: 17 }
+  ],
+  evening: [
+    { id: 'evening_18_20', name: '18:00-20:00', period: 'evening', startHour: 18, endHour: 20 }
+  ]
+}
+
+const RECYCLE_CANCEL_RULES = {
+  freeCancelHours: 24,
+  lateCancelPenaltyRate: 0.3,
+  visitingCancelPenaltyRate: 0.5,
+  maxPointsDeduction: 500,
+  minPointsDeduction: 20,
+  rules: [
+    {
+      condition: '预约时间前24小时以上',
+      desc: '免费取消，不扣除积分',
+      penaltyRate: 0,
+      allowed: true
+    },
+    {
+      condition: '预约时间前2-24小时内',
+      desc: '扣除预估积分的30%作为违约金',
+      penaltyRate: 0.3,
+      allowed: true
+    },
+    {
+      condition: '预约时间前2小时内或已上门中',
+      desc: '扣除预估积分的50%作为违约金',
+      penaltyRate: 0.5,
+      allowed: true
+    },
+    {
+      condition: '订单已完成',
+      desc: '已完成订单不可取消',
+      penaltyRate: 1,
+      allowed: false
+    }
+  ]
+}
+
+const RECYCLE_COLLECTORS = [
+  {
+    id: 'col_001',
+    name: '张师傅',
+    avatar: '',
+    phone: '138****1234',
+    rating: 4.9,
+    ordersCompleted: 1256,
+    serviceArea: '浦东新区、徐汇区',
+    specialties: ['appliance', 'furniture', 'metal'],
+    isOnline: true,
+    level: '金牌回收员',
+    experienceYears: 5
+  },
+  {
+    id: 'col_002',
+    name: '李师傅',
+    avatar: '',
+    phone: '139****5678',
+    rating: 4.8,
+    ordersCompleted: 986,
+    serviceArea: '黄浦区、静安区、虹口区',
+    specialties: ['appliance', 'small_appliance', 'battery'],
+    isOnline: true,
+    level: '银牌回收员',
+    experienceYears: 3
+  },
+  {
+    id: 'col_003',
+    name: '王师傅',
+    avatar: '',
+    phone: '137****9012',
+    rating: 4.7,
+    ordersCompleted: 720,
+    serviceArea: '杨浦区、宝山区',
+    specialties: ['furniture', 'paper', 'plastic', 'metal'],
+    isOnline: false,
+    level: '银牌回收员',
+    experienceYears: 2
+  },
+  {
+    id: 'col_004',
+    name: '赵师傅',
+    avatar: '',
+    phone: '136****3456',
+    rating: 4.9,
+    ordersCompleted: 1580,
+    serviceArea: '长宁区、普陀区',
+    specialties: ['appliance', 'furniture', 'medicine', 'battery'],
+    isOnline: true,
+    level: '金牌回收员',
+    experienceYears: 6
+  }
 ]
 
 const RECYCLE_POINTS_CONFIG = {
   minPoints: 50,
-  maxPoints: 200,
-  completeBonus: 30
+  maxPoints: 1000,
+  completeBonus: 50,
+  photoBonus: 30,
+  largeItemBonus: 50,
+  categoryBonus: {
+    appliance: 100,
+    furniture: 80,
+    metal: 50,
+    battery: 40,
+    medicine: 30,
+    small_appliance: 20,
+    paper: 10,
+    plastic: 10
+  }
+}
+
+const RECYCLE_PHOTO_CONFIG = {
+  maxPhotos: 6,
+  minPhotos: 1,
+  maxSizeMB: 5,
+  allowedTypes: ['jpg', 'jpeg', 'png'],
+  photoTypes: [
+    { id: 'overall', name: '物品全景照', required: true, desc: '拍摄物品整体外观' },
+    { id: 'detail', name: '物品细节照', required: false, desc: '品牌标识、成新度细节' },
+    { id: 'damage', name: '瑕疵损坏照', required: false, desc: '如有损坏请拍摄说明' }
+  ]
 }
 
 const GROUP_TYPES = {
@@ -4661,8 +4865,13 @@ module.exports = {
   GAME_POWERUPS,
   RECYCLE_CATEGORIES,
   RECYCLE_ORDER_STATUS,
+  RECYCLE_ORDER_STATUS_FLOW,
+  RECYCLE_TIME_PERIODS,
   RECYCLE_TIME_SLOTS,
+  RECYCLE_CANCEL_RULES,
+  RECYCLE_COLLECTORS,
   RECYCLE_POINTS_CONFIG,
+  RECYCLE_PHOTO_CONFIG,
   GROUP_TYPES,
   GROUP_ROLES,
   GROUP_TASKS,

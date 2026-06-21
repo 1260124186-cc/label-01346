@@ -11,7 +11,8 @@ Page({
       { id: 'pending', name: '待接单' },
       { id: 'appointed', name: '已预约' },
       { id: 'visiting', name: '上门中' },
-      { id: 'completed', name: '已完成' }
+      { id: 'completed', name: '已完成' },
+      { id: 'cancelled', name: '已取消' }
     ]
   },
 
@@ -43,6 +44,7 @@ Page({
         categoryName: category.name || order.categoryName || '',
         categoryEmoji: category.emoji || order.categoryEmoji || '📦',
         categoryColor: category.color || '#999',
+        statusText: order.statusText || statusInfo.text || '',
         statusColor: statusInfo.color || '#999',
         points,
         pointsLabel,

@@ -4101,19 +4101,84 @@ App({
     return this.globalData.recycleOrders.find(o => o.id === orderId)
   },
 
-  calculateRecyclePoints(categoryId, quantity) {
+  calculateRecyclePoints(categoryId, quantity, options = {}) {
     const { RECYCLE_CATEGORIES, RECYCLE_POINTS_CONFIG } = require('./utils/constants')
     const category = RECYCLE_CATEGORIES.find(c => c.id === categoryId)
     if (!category) return RECYCLE_POINTS_CONFIG.minPoints
 
     let points = category.basePoints + category.pointsPerItem * Math.max(0, quantity - 1)
+    points = Math.floor(points * (category.bonusMultiplier || 1))
+
+    if (options.hasPhoto) {
+      points += RECYCLE_POINTS_CONFIG.photoBonus || 0
+    }
+    if (category.isLargeItem) {
+      points += RECYCLE_POINTS_CONFIG.largeItemBonus || 0
+    }
+    if (RECYCLE_POINTS_CONFIG.categoryBonus && RECYCLE_POINTS_CONFIG.categoryBonus[categoryId]) {
+      points += RECYCLE_POINTS_CONFIG.categoryBonus[categoryId]
+    }
+
     points = Math.max(RECYCLE_POINTS_CONFIG.minPoints, Math.min(RECYCLE_POINTS_CONFIG.maxPoints, points))
     return points
   },
 
+  getPointsBreakdown(categoryId, quantity, options = {}) {
+    const { RECYCLE_CATEGORIES, RECYCLE_POINTS_CONFIG } = require('./utils/constants')
+    const category = RECYCLE_CATEGORIES.find(c => c.id === categoryId)
+    if (!category) return []
+
+    const breakdown = []
+    const base = category.basePoints + category.pointsPerItem * Math.max(0, quantity - 1)
+    breakdown.push({ label: '基础积分', points: base, emoji: '💰' })
+
+    if (category.bonusMultiplier && category.bonusMultiplier > 1) {
+      const multiplierBonus = Math.floor(base * (category.bonusMultiplier - 1))
+      if (multiplierBonus > 0) {
+        breakdown.push({ label: `${category.name}品类加成(${category.bonusMultiplier}x)`, points: multiplierBonus, emoji: '✨' })
+      }
+    }
+
+    if (category.isLargeItem && RECYCLE_POINTS_CONFIG.largeItemBonus) {
+      breakdown.push({ label: '大件搬运补贴', points: RECYCLE_POINTS_CONFIG.largeItemBonus, emoji: '🚛' })
+    }
+
+    if (RECYCLE_POINTS_CONFIG.categoryBonus && RECYCLE_POINTS_CONFIG.categoryBonus[categoryId]) {
+      breakdown.push({ label: '高额品类奖励', points: RECYCLE_POINTS_CONFIG.categoryBonus[categoryId], emoji: '🎁' })
+    }
+
+    if (options.hasPhoto && RECYCLE_POINTS_CONFIG.photoBonus) {
+      breakdown.push({ label: '照片估价补贴', points: RECYCLE_POINTS_CONFIG.photoBonus, emoji: '📷' })
+    }
+
+    if (options.isCompleted && RECYCLE_POINTS_CONFIG.completeBonus) {
+      breakdown.push({ label: '完成履约奖励', points: RECYCLE_POINTS_CONFIG.completeBonus, emoji: '✅' })
+    }
+
+    return breakdown
+  },
+
+  assignCollector(categoryId) {
+    const { RECYCLE_COLLECTORS } = require('./utils/constants')
+    const onlineCollectors = RECYCLE_COLLECTORS.filter(c => c.isOnline)
+    if (onlineCollectors.length === 0) return RECYCLE_COLLECTORS[0]
+
+    const matchingCollectors = onlineCollectors.filter(c =>
+      !c.specialties || c.specialties.length === 0 || c.specialties.includes(categoryId)
+    )
+
+    const pool = matchingCollectors.length > 0 ? matchingCollectors : onlineCollectors
+    return pool[Math.floor(Math.random() * pool.length)]
+  },
+
   addRecycleOrder(orderData) {
     const { RECYCLE_ORDER_STATUS } = require('./utils/constants')
-    const points = this.calculateRecyclePoints(orderData.categoryId, orderData.quantity || 1)
+    const points = this.calculateRecyclePoints(orderData.categoryId, orderData.quantity || 1, {
+      hasPhoto: orderData.photos && orderData.photos.length > 0
+    })
+    const pointsBreakdown = this.getPointsBreakdown(orderData.categoryId, orderData.quantity || 1, {
+      hasPhoto: orderData.photos && orderData.photos.length > 0
+    })
 
     const newOrder = {
       id: 'recycle_' + generateId(),
@@ -4123,19 +4188,27 @@ App({
       categoryEmoji: orderData.categoryEmoji,
       quantity: orderData.quantity || 1,
       appointmentDate: orderData.appointmentDate,
+      appointmentPeriodId: orderData.appointmentPeriodId,
+      appointmentPeriodName: orderData.appointmentPeriodName,
       appointmentTimeSlot: orderData.appointmentTimeSlot,
       appointmentTimeName: orderData.appointmentTimeName,
       address: orderData.address,
       contactName: orderData.contactName,
       contactPhone: orderData.contactPhone,
       remark: orderData.remark || '',
+      photos: orderData.photos || [],
       estimatedPoints: points,
+      estimatedPointsBreakdown: pointsBreakdown,
       actualPoints: 0,
+      actualPointsBreakdown: [],
       status: 'pending',
       statusText: RECYCLE_ORDER_STATUS.pending.text,
+      collector: null,
+      cancelReason: '',
+      cancelPenalty: 0,
       createTime: formatDate(new Date(), 'YYYY-MM-DD HH:mm'),
       statusHistory: [
-        { status: 'pending', time: formatDate(new Date(), 'YYYY-MM-DD HH:mm'), desc: '订单已提交，等待接单' }
+        { status: 'pending', time: formatDate(new Date(), 'YYYY-MM-DD HH:mm'), desc: '订单已提交，等待工作人员确认' }
       ]
     }
 
@@ -4145,10 +4218,21 @@ App({
     return newOrder
   },
 
+  canTransitionStatus(currentStatus, targetStatus) {
+    const { RECYCLE_ORDER_STATUS_FLOW } = require('./utils/constants')
+    const allowed = RECYCLE_ORDER_STATUS_FLOW[currentStatus] || []
+    return allowed.includes(targetStatus)
+  },
+
   updateRecycleOrderStatus(orderId, status, extra = {}) {
     const { RECYCLE_ORDER_STATUS, RECYCLE_POINTS_CONFIG } = require('./utils/constants')
     const order = this.getRecycleOrderById(orderId)
     if (!order) return false
+
+    if (!this.canTransitionStatus(order.status, status)) {
+      console.warn('[App] 非法状态转换:', order.status, '->', status)
+      return false
+    }
 
     const statusInfo = RECYCLE_ORDER_STATUS[status]
     if (!statusInfo) return false
@@ -4158,10 +4242,11 @@ App({
 
     const nowStr = formatDate(new Date(), 'YYYY-MM-DD HH:mm')
     const statusDescs = {
-      pending: '订单已提交，等待接单',
-      appointed: '订单已确认，等待上门回收',
-      visiting: '回收人员已出发，正在上门',
-      completed: '回收完成，积分已发放'
+      pending: '订单已提交，等待工作人员确认',
+      appointed: '订单已确认，回收员已分配，等待上门回收',
+      visiting: '回收人员已出发，正在上门途中',
+      completed: '回收完成，积分已发放到账',
+      cancelled: '订单已取消'
     }
 
     order.statusHistory.push({
@@ -4172,14 +4257,26 @@ App({
 
     if (status === 'appointed') {
       order.appointTime = nowStr
+      if (!order.collector) {
+        order.collector = this.assignCollector(order.categoryId)
+      }
     }
     if (status === 'visiting') {
       order.visitTime = nowStr
     }
     if (status === 'completed') {
       order.completeTime = nowStr
-      const bonusPoints = order.estimatedPoints + RECYCLE_POINTS_CONFIG.completeBonus
+      const hasPhoto = order.photos && order.photos.length > 0
+      const bonusPoints = this.calculateRecyclePoints(order.categoryId, order.quantity || 1, {
+        hasPhoto,
+        isCompleted: true
+      })
+      const breakdown = this.getPointsBreakdown(order.categoryId, order.quantity || 1, {
+        hasPhoto,
+        isCompleted: true
+      })
       order.actualPoints = bonusPoints
+      order.actualPointsBreakdown = breakdown
 
       this.updateUserPoints(bonusPoints, {
         category: 'recycle',
@@ -4194,6 +4291,110 @@ App({
     return true
   },
 
+  calculateCancelPenalty(order) {
+    const { RECYCLE_CANCEL_RULES } = require('./utils/constants')
+    if (order.status === 'completed') {
+      return { allowed: false, penaltyPoints: 0, rule: RECYCLE_CANCEL_RULES.rules[3] }
+    }
+
+    const now = Date.now()
+    let appointmentTimestamp = null
+
+    if (order.appointmentDate && order.appointmentTimeSlot) {
+      const { RECYCLE_TIME_SLOTS } = require('./utils/constants')
+      let slotInfo = null
+      for (const period in RECYCLE_TIME_SLOTS) {
+        const slot = RECYCLE_TIME_SLOTS[period].find(s => s.id === order.appointmentTimeSlot)
+        if (slot) { slotInfo = slot; break }
+      }
+      if (slotInfo) {
+        const dateStr = order.appointmentDate
+        const [y, m, d] = dateStr.split('-').map(Number)
+        appointmentTimestamp = new Date(y, m - 1, d, slotInfo.startHour, 0, 0).getTime()
+      }
+    }
+
+    let hoursDiff = 25
+    if (appointmentTimestamp) {
+      hoursDiff = (appointmentTimestamp - now) / (1000 * 60 * 60)
+    }
+
+    let rule
+    let penaltyRate = 0
+    let allowed = true
+
+    if (order.status === 'visiting') {
+      rule = RECYCLE_CANCEL_RULES.rules[2]
+      penaltyRate = RECYCLE_CANCEL_RULES.visitingCancelPenaltyRate
+      allowed = true
+    } else if (hoursDiff >= RECYCLE_CANCEL_RULES.freeCancelHours) {
+      rule = RECYCLE_CANCEL_RULES.rules[0]
+      penaltyRate = 0
+      allowed = true
+    } else if (hoursDiff >= 2) {
+      rule = RECYCLE_CANCEL_RULES.rules[1]
+      penaltyRate = RECYCLE_CANCEL_RULES.lateCancelPenaltyRate
+      allowed = true
+    } else {
+      rule = RECYCLE_CANCEL_RULES.rules[2]
+      penaltyRate = RECYCLE_CANCEL_RULES.visitingCancelPenaltyRate
+      allowed = true
+    }
+
+    let penaltyPoints = Math.floor(order.estimatedPoints * penaltyRate)
+    penaltyPoints = Math.max(RECYCLE_CANCEL_RULES.minPointsDeduction, Math.min(RECYCLE_CANCEL_RULES.maxPointsDeduction, penaltyPoints))
+    if (penaltyRate === 0) penaltyPoints = 0
+
+    return { allowed, penaltyPoints, rule, hoursDiff, rate: penaltyRate }
+  },
+
+  updateRecycleOrderPhotos(orderId, photos) {
+    const order = this.getRecycleOrderById(orderId)
+    if (!order) return false
+    order.photos = photos || []
+    this.saveRecycleOrders()
+    console.log('[App] 回收订单照片已更新', orderId, photos ? photos.length : 0, '张')
+    return true
+  },
+
+  cancelRecycleOrder(orderId, reason = '') {
+    const order = this.getRecycleOrderById(orderId)
+    if (!order) return { success: false, message: '订单不存在' }
+
+    const { allowed, penaltyPoints, rule } = this.calculateCancelPenalty(order)
+    if (!allowed) {
+      return { success: false, message: rule ? rule.desc : '该订单不可取消' }
+    }
+
+    order.status = 'cancelled'
+    order.statusText = '已取消'
+    order.cancelTime = formatDate(new Date(), 'YYYY-MM-DD HH:mm')
+    order.cancelReason = reason || '用户主动取消'
+    order.cancelPenalty = penaltyPoints
+    order.statusHistory.push({
+      status: 'cancelled',
+      time: formatDate(new Date(), 'YYYY-MM-DD HH:mm'),
+      desc: `订单已取消，原因: ${order.cancelReason}${penaltyPoints > 0 ? `，扣除${penaltyPoints}积分违约金` : ''}`
+    })
+
+    if (penaltyPoints > 0) {
+      const currentPoints = this.getUserPoints()
+      const actualDeduction = Math.min(currentPoints, penaltyPoints)
+      if (actualDeduction > 0) {
+        this.updateUserPoints(-actualDeduction, {
+          category: 'recycle_cancel',
+          title: '回收订单取消违约金',
+          desc: `${order.categoryName}订单号${order.orderNo}取消`,
+          emoji: '❌'
+        })
+      }
+    }
+
+    this.saveRecycleOrders()
+    console.log('[App] 回收订单已取消', orderId, '违约金:', penaltyPoints)
+    return { success: true, penaltyPoints, rule }
+  },
+
   simulateRecycleProgress() {
     const pendingOrders = this.getRecycleOrdersByStatus('pending')
     const appointedOrders = this.getRecycleOrdersByStatus('appointed')
@@ -4205,7 +4406,9 @@ App({
       const timeDiff = now - orderTime
       const minutesDiff = timeDiff / (1000 * 60)
       if (minutesDiff >= 1) {
-        this.updateRecycleOrderStatus(order.id, 'appointed')
+        this.updateRecycleOrderStatus(order.id, 'appointed', {
+          desc: '系统自动确认订单，已为您分配回收员'
+        })
       }
     })
 
@@ -4215,7 +4418,9 @@ App({
         const timeDiff = now - appointTime
         const minutesDiff = timeDiff / (1000 * 60)
         if (minutesDiff >= 2) {
-          this.updateRecycleOrderStatus(order.id, 'visiting')
+          this.updateRecycleOrderStatus(order.id, 'visiting', {
+            desc: `${order.collector ? order.collector.name : '回收员'}已出发，正在前往您的地址`
+          })
         }
       }
     })
@@ -4226,29 +4431,12 @@ App({
         const timeDiff = now - visitTime
         const minutesDiff = timeDiff / (1000 * 60)
         if (minutesDiff >= 3) {
-          this.updateRecycleOrderStatus(order.id, 'completed')
+          this.updateRecycleOrderStatus(order.id, 'completed', {
+            desc: '回收完成，积分已发放至您的账户'
+          })
         }
       }
     })
-  },
-
-  cancelRecycleOrder(orderId) {
-    const order = this.getRecycleOrderById(orderId)
-    if (!order) return false
-    if (order.status === 'completed') return false
-
-    order.status = 'cancelled'
-    order.statusText = '已取消'
-    order.cancelTime = formatDate(new Date(), 'YYYY-MM-DD HH:mm')
-    order.statusHistory.push({
-      status: 'cancelled',
-      time: formatDate(new Date(), 'YYYY-MM-DD HH:mm'),
-      desc: '用户已取消订单'
-    })
-
-    this.saveRecycleOrders()
-    console.log('[App] 回收订单已取消', orderId)
-    return true
   },
 
   initLearningProgress() {

@@ -1,24 +1,35 @@
 const app = getApp()
-const { RECYCLE_CATEGORIES, RECYCLE_TIME_SLOTS } = require('../../utils/constants')
-const { showToast, showSuccess, navigateTo, formatDate } = require('../../utils/util')
+const { RECYCLE_CATEGORIES, RECYCLE_TIME_PERIODS, RECYCLE_TIME_SLOTS, RECYCLE_PHOTO_CONFIG } = require('../../utils/constants')
+const { showToast, showSuccess, navigateTo, formatDate, showLoading, hideLoading } = require('../../utils/util')
 
 Page({
   data: {
     categories: RECYCLE_CATEGORIES,
-    timeSlots: RECYCLE_TIME_SLOTS,
+    timePeriods: RECYCLE_TIME_PERIODS,
+    allTimeSlots: RECYCLE_TIME_SLOTS,
+    photoConfig: RECYCLE_PHOTO_CONFIG,
     selectedCategoryId: '',
+    selectedCategory: null,
     quantity: 1,
     minQuantity: 1,
     maxQuantity: 99,
     appointmentDate: '',
     minDate: '',
+    selectedPeriodId: '',
+    selectedPeriodName: '',
     selectedTimeSlotId: '',
+    selectedTimeSlotName: '',
+    timeSlots: [],
     address: '',
     contactName: '',
     contactPhone: '',
     remark: '',
+    photos: [],
+    maxPhotos: RECYCLE_PHOTO_CONFIG.maxPhotos,
     estimatedPoints: 0,
-    submitting: false
+    estimatedPointsBreakdown: [],
+    submitting: false,
+    requirePhoto: false
   },
 
   onLoad() {
@@ -35,7 +46,8 @@ Page({
 
     this.setData({
       appointmentDate: formatDate(tomorrow),
-      minDate: minDateStr
+      minDate: minDateStr,
+      timeSlots: RECYCLE_TIME_SLOTS.morning || []
     })
   },
 
@@ -54,8 +66,12 @@ Page({
     const { id } = e.currentTarget.dataset
     console.log('[RecycleBook] 选择品类', id)
 
+    const category = RECYCLE_CATEGORIES.find(c => c.id === id)
+
     this.setData({
-      selectedCategoryId: id
+      selectedCategoryId: id,
+      selectedCategory: category,
+      requirePhoto: category ? category.requirePhoto : false
     })
 
     this.calculatePoints()
@@ -111,12 +127,72 @@ Page({
     })
   },
 
-  onTimeSlotSelect(e) {
+  onPeriodSelect(e) {
     const { id } = e.currentTarget.dataset
-    console.log('[RecycleBook] 选择时间段', id)
+    const period = RECYCLE_TIME_PERIODS.find(p => p.id === id)
+    const slots = RECYCLE_TIME_SLOTS[id] || []
 
     this.setData({
-      selectedTimeSlotId: id
+      selectedPeriodId: id,
+      selectedPeriodName: period ? period.name : '',
+      selectedTimeSlotId: '',
+      selectedTimeSlotName: '',
+      timeSlots: slots
+    })
+  },
+
+  onTimeSlotSelect(e) {
+    const { id } = e.currentTarget.dataset
+    const period = this.data.timePeriods.find(p => p.id === this.data.selectedPeriodId)
+    const slot = this.data.timeSlots.find(s => s.id === id)
+
+    this.setData({
+      selectedTimeSlotId: id,
+      selectedTimeSlotName: slot ? slot.name : ''
+    })
+  },
+
+  onChoosePhoto() {
+    const { photos, maxPhotos } = this.data
+    const remainCount = maxPhotos - photos.length
+    if (remainCount <= 0) {
+      showToast(`最多上传${maxPhotos}张照片`)
+      return
+    }
+
+    wx.chooseMedia({
+      count: remainCount,
+      mediaType: ['image'],
+      sourceType: ['album', 'camera'],
+      sizeType: ['compressed'],
+      success: (res) => {
+        const newPhotos = res.tempFiles.map(f => f.tempFilePath)
+        const updatedPhotos = [...photos, ...newPhotos].slice(0, maxPhotos)
+        this.setData({
+          photos: updatedPhotos
+        })
+        this.calculatePoints()
+        console.log('[RecycleBook] 上传照片成功', updatedPhotos.length, '张')
+      },
+      fail: (err) => {
+        console.warn('[RecycleBook] 上传照片失败', err)
+      }
+    })
+  },
+
+  onRemovePhoto(e) {
+    const { index } = e.currentTarget.dataset
+    const photos = [...this.data.photos]
+    photos.splice(index, 1)
+    this.setData({ photos })
+    this.calculatePoints()
+  },
+
+  onPreviewPhoto(e) {
+    const { index } = e.currentTarget.dataset
+    wx.previewImage({
+      urls: this.data.photos,
+      current: this.data.photos[index]
     })
   },
 
@@ -149,19 +225,25 @@ Page({
   },
 
   calculatePoints() {
-    const { selectedCategoryId, quantity } = this.data
+    const { selectedCategoryId, quantity, photos } = this.data
 
     if (!selectedCategoryId) {
-      this.setData({ estimatedPoints: 0 })
+      this.setData({ estimatedPoints: 0, estimatedPointsBreakdown: [] })
       return
     }
 
-    const points = app.calculateRecyclePoints(selectedCategoryId, quantity)
-    this.setData({ estimatedPoints: points })
+    const hasPhoto = photos && photos.length > 0
+    const points = app.calculateRecyclePoints(selectedCategoryId, quantity, { hasPhoto })
+    const breakdown = app.getPointsBreakdown(selectedCategoryId, quantity, { hasPhoto })
+
+    this.setData({
+      estimatedPoints: points,
+      estimatedPointsBreakdown: breakdown
+    })
   },
 
   validateForm() {
-    const { selectedCategoryId, quantity, appointmentDate, selectedTimeSlotId, address, contactName, contactPhone } = this.data
+    const { selectedCategoryId, quantity, appointmentDate, selectedTimeSlotId, address, contactName, contactPhone, photos, requirePhoto } = this.data
 
     if (!selectedCategoryId) {
       showToast('请选择回收品类')
@@ -179,7 +261,12 @@ Page({
     }
 
     if (!selectedTimeSlotId) {
-      showToast('请选择上门时间段')
+      showToast('请选择具体上门时段')
+      return false
+    }
+
+    if (requirePhoto && (!photos || photos.length === 0)) {
+      showToast('该品类需要上传物品照片')
       return false
     }
 
@@ -209,14 +296,20 @@ Page({
   onSubmit() {
     if (!this.validateForm()) return
 
-    const { selectedCategoryId, quantity, appointmentDate, selectedTimeSlotId, address, contactName, contactPhone, remark, submitting } = this.data
+    const {
+      selectedCategoryId, selectedCategory, quantity,
+      appointmentDate, selectedPeriodId, selectedPeriodName,
+      selectedTimeSlotId, selectedTimeSlotName,
+      address, contactName, contactPhone, remark,
+      photos, submitting
+    } = this.data
 
     if (submitting) return
 
     this.setData({ submitting: true })
+    showLoading('提交中...')
 
-    const category = RECYCLE_CATEGORIES.find(c => c.id === selectedCategoryId)
-    const timeSlot = RECYCLE_TIME_SLOTS.find(t => t.id === selectedTimeSlotId)
+    const category = selectedCategory || RECYCLE_CATEGORIES.find(c => c.id === selectedCategoryId)
 
     const orderData = {
       categoryId: selectedCategoryId,
@@ -224,25 +317,31 @@ Page({
       categoryEmoji: category ? category.emoji : '',
       quantity: quantity,
       appointmentDate: appointmentDate,
+      appointmentPeriodId: selectedPeriodId,
+      appointmentPeriodName: selectedPeriodName,
       appointmentTimeSlot: selectedTimeSlotId,
-      appointmentTimeName: timeSlot ? timeSlot.name : '',
+      appointmentTimeName: selectedTimeSlotName,
       address: address,
       contactName: contactName,
       contactPhone: contactPhone,
-      remark: remark
+      remark: remark,
+      photos: photos
     }
 
-    const newOrder = app.addRecycleOrder(orderData)
+    setTimeout(() => {
+      const newOrder = app.addRecycleOrder(orderData)
+      hideLoading()
 
-    if (newOrder) {
-      showSuccess('预约提交成功')
+      if (newOrder) {
+        showSuccess('预约提交成功')
 
-      setTimeout(() => {
-        navigateTo('/pages/recycle-order-detail/recycle-order-detail', { id: newOrder.id })
-      }, 1500)
-    } else {
-      showToast('预约提交失败，请重试')
-      this.setData({ submitting: false })
-    }
+        setTimeout(() => {
+          navigateTo('/pages/recycle-order-detail/recycle-order-detail', { id: newOrder.id })
+        }, 1500)
+      } else {
+        showToast('预约提交失败，请重试')
+        this.setData({ submitting: false })
+      }
+    }, 500)
   }
 })
