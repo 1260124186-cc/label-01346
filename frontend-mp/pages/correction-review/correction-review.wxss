@@ -173,6 +173,45 @@
   font-weight: 700;
 }
 
+.reward-info {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  flex-wrap: wrap;
+}
+
+.reward-info .info-value.reward {
+  flex: none;
+}
+
+.reward-status {
+  display: flex;
+  align-items: center;
+  gap: 4rpx;
+  padding: 4rpx 14rpx;
+  background: rgba(91, 189, 114, 0.1);
+  border-radius: 12rpx;
+}
+
+.reward-status-icon {
+  font-size: 22rpx;
+  color: #5BBD72;
+  font-weight: 700;
+}
+
+.reward-status-text {
+  font-size: 22rpx;
+  color: #5BBD72;
+  font-weight: 500;
+}
+
+.info-value.total-points {
+  color: var(--text-primary);
+  font-weight: 700;
+  font-size: 28rpx;
+}
+
 .info-value.reject-reason {
   color: #E85D5D;
 }

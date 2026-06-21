@@ -33,12 +33,20 @@ Page({
     const approved = correctionManager.getApprovedCorrections()
     const rejected = correctionManager.getCorrections({ status: CORRECTION_STATUS.REJECTED })
 
+    const approvedWithPoints = approved.map(c => {
+      const userPoints = correctionManager.getUserPoints(c.submitterId)
+      return {
+        ...c,
+        submitterTotalPoints: userPoints.points || 0
+      }
+    })
+
     this.setData({ pendingCount: pending.length })
 
     const { currentTab } = this.data
     let filteredList = []
     if (currentTab === 'pending') filteredList = pending
-    else if (currentTab === 'approved') filteredList = approved
+    else if (currentTab === 'approved') filteredList = approvedWithPoints
     else filteredList = rejected
 
     this.setData({ filteredList })
@@ -63,23 +71,21 @@ Page({
       const result = correctionManager.approveCorrection(id, 'admin')
       if (result.success) {
         const c = result.correction
-        if (result.rewardPoints > 0) {
-          app.awardCorrectionPoints(
-            c.submitterId,
-            c.submitterName,
-            result.rewardPoints,
-            {
-              category: 'correction',
-              title: '纠错采纳奖励',
-              desc: `纠错"${c.itemName}"被采纳`,
-              emoji: '✅'
-            }
-          )
+
+        if (c.submitterId === 'current_user') {
+          app.updateUserPoints(result.rewardPoints, {
+            category: 'correction',
+            title: '纠错采纳奖励',
+            desc: `纠错"${c.itemName}"被采纳`,
+            emoji: '✅'
+          })
         }
-        showToast('已采纳，积分已发放给' + c.submitterName, 'success')
+
         app.globalData.encyclopediaNeedsRefresh = true
         app.globalData.hotWordsNeedsRefresh = true
         app.globalData.leaderboardNeedsRefresh = true
+
+        showToast(`已采纳，${c.submitterName} +${result.rewardPoints}积分`, 'success')
         this.loadCorrections()
       } else {
         showToast(result.message, 'none')

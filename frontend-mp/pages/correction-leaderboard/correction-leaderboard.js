@@ -7,7 +7,10 @@ Page({
     leaderboard: [],
     myStats: null,
     myTier: null,
-    contributorTiers: CONTRIBUTOR_TIERS
+    contributorTiers: CONTRIBUTOR_TIERS,
+    showPointsModal: false,
+    selectedUser: null,
+    selectedUserPoints: { totalPoints: 0, records: [] }
   },
 
   onLoad() {
@@ -31,5 +34,23 @@ Page({
 
   goToMyCorrections() {
     navigateTo('/pages/correction-review/correction-review')
+  },
+
+  onUserTap(e) {
+    const { user } = e.currentTarget.dataset
+    const userPoints = correctionManager.getUserPoints(user.userId)
+
+    this.setData({
+      showPointsModal: true,
+      selectedUser: user,
+      selectedUserPoints: {
+        totalPoints: userPoints.points || 0,
+        records: userPoints.records || []
+      }
+    })
+  },
+
+  onClosePointsModal() {
+    this.setData({ showPointsModal: false })
   }
 })

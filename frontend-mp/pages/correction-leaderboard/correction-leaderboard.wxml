@@ -59,7 +59,7 @@
 
   <view class="podium-section" wx:if="{{leaderboard.length >= 3}}">
     <view class="podium-container">
-      <view class="podium-item podium-silver">
+      <view class="podium-item podium-silver" bindtap="onUserTap" data-user="{{leaderboard[1]}}">
         <view class="podium-avatar-wrap">
           <text class="podium-avatar-emoji">{{leaderboard[1].avatarEmoji}}</text>
         </view>
@@ -69,7 +69,7 @@
           <text class="podium-rank-text">🥈</text>
         </view>
       </view>
-      <view class="podium-item podium-gold">
+      <view class="podium-item podium-gold" bindtap="onUserTap" data-user="{{leaderboard[0]}}">
         <view class="podium-crown">👑</view>
         <view class="podium-avatar-wrap podium-avatar-gold">
           <text class="podium-avatar-emoji">{{leaderboard[0].avatarEmoji}}</text>
@@ -80,7 +80,7 @@
           <text class="podium-rank-text">🥇</text>
         </view>
       </view>
-      <view class="podium-item podium-bronze">
+      <view class="podium-item podium-bronze" bindtap="onUserTap" data-user="{{leaderboard[2]}}">
         <view class="podium-avatar-wrap">
           <text class="podium-avatar-emoji">{{leaderboard[2].avatarEmoji}}</text>
         </view>
@@ -99,6 +99,8 @@
       wx:for="{{leaderboard}}"
       wx:key="userId"
       wx:if="{{index >= 3}}"
+      bindtap="onUserTap"
+      data-user="{{item}}"
     >
       <text class="rank-number">{{item.rank}}</text>
       <view class="rank-avatar">
@@ -123,5 +125,55 @@
       <text class="action-text">我的纠错记录</text>
     </view>
     <text class="action-arrow">›</text>
+  </view>
+
+  <view class="points-modal" wx:if="{{showPointsModal}}" catchtap="onClosePointsModal">
+    <view class="points-modal-content" catchtap="">
+      <view class="points-modal-header">
+        <view class="points-user-info">
+          <view class="points-user-avatar">
+            <text class="points-user-emoji">{{selectedUser.avatarEmoji}}</text>
+          </view>
+          <view class="points-user-text">
+            <text class="points-user-name">{{selectedUser.nickName}}</text>
+            <text class="points-user-sub">第 {{selectedUser.rank}} 名 · 采纳 {{selectedUser.approvedCount}} 条</text>
+          </view>
+        </view>
+        <view class="points-modal-close" bindtap="onClosePointsModal">
+          <text class="close-icon">✕</text>
+        </view>
+      </view>
+      <view class="points-total-card">
+        <text class="points-total-label">累计获得积分</text>
+        <text class="points-total-value">+{{selectedUserPoints.totalPoints}}</text>
+      </view>
+      <view class="points-records-title">
+        <text class="points-records-title-text">📜 积分明细</text>
+        <text class="points-records-count">共 {{selectedUserPoints.records.length}} 笔</text>
+      </view>
+      <scroll-view class="points-records-list" scroll-y="true" enhanced show-scrollbar="{{false}}">
+        <view
+          wx:for="{{selectedUserPoints.records}}"
+          wx:key="id"
+          class="points-record-item"
+        >
+          <view class="record-left">
+            <view class="record-icon">
+              <text class="record-emoji">{{item.emoji}}</text>
+            </view>
+            <view class="record-info">
+              <text class="record-title">{{item.title}}</text>
+              <text class="record-desc">{{item.desc}}</text>
+              <text class="record-time">{{item.time}}</text>
+            </view>
+          </view>
+          <text class="record-points">+{{item.points}}</text>
+        </view>
+        <view class="empty-records" wx:if="{{selectedUserPoints.records.length === 0}}">
+          <text class="empty-records-icon">📭</text>
+          <text class="empty-records-text">暂无积分记录</text>
+        </view>
+      </scroll-view>
+    </view>
   </view>
 </view>
