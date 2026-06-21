@@ -3908,13 +3908,6 @@ const CHILD_BLOCKED_PAGES = [
 
 const CHILD_ALLOWED_PAGES_WHEN_LOCKED = [
   'pages/classify/classify',
-  'pages/learning-center/learning-center',
-  'pages/course-detail/course-detail',
-  'pages/chapter-detail/chapter-detail',
-  'pages/quiz-chapter/quiz-chapter',
-  'pages/quiz-play/quiz-play',
-  'pages/profile/profile',
-  'pages/settings/settings',
   'pages/child-pin-verify/child-pin-verify'
 ]
 

@@ -5274,9 +5274,9 @@ App({
       try {
         wx.showModal({
           title: '⏰ 今日使用时长已达上限',
-          content: '请家长输入PIN解锁，或明日继续使用。\n\n分类学习功能仍可正常使用。',
+          content: '今日使用时长已达上限，请家长输入PIN解锁。\n\n锁定后仅「分类学习」单页可使用，其他功能均已禁用。',
           confirmText: '家长解锁',
-          cancelText: '去学习',
+          cancelText: '分类学习',
           confirmColor: '#5BBD72',
           success: (res) => {
             if (res.confirm) {
@@ -5410,7 +5410,7 @@ App({
     if (this.isChildModeLocked()) {
       const allowed = CHILD_ALLOWED_PAGES_WHEN_LOCKED.some(p => normalizedPath.indexOf(p) === 0)
       if (!allowed) {
-        return { blocked: true, reason: 'locked', message: '今日使用时长已达上限，仅可使用分类学习功能' }
+        return { blocked: true, reason: 'locked', message: '已超时锁定，仅可使用分类学习，请家长PIN解锁' }
       }
       return { blocked: false }
     }

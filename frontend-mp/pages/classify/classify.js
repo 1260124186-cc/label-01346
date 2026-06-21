@@ -211,7 +211,7 @@ Page({
     const { classifyId, classifyData } = this.data
     console.log('[Classify] 开始练习', classifyData.name)
 
-    navigateTo('/pages/sort-practice/sort-practice', {
+    app.safeNavigateTo('/pages/sort-practice/sort-practice', {
       mode: 'category',
       typeId: classifyId,
       typeName: classifyData.name
@@ -259,7 +259,7 @@ Page({
     const { item } = e.currentTarget.dataset
     console.log('[Classify] 点击相关题目', item.question)
 
-    navigateTo('/pages/quiz-play/quiz-play', {
+    app.safeNavigateTo('/pages/quiz-play/quiz-play', {
       type: 'chapter',
       chapterId: this.data.classifyId,
       chapterName: this.data.classifyData.name
@@ -270,7 +270,7 @@ Page({
     const { classifyId, classifyData } = this.data
     console.log('[Classify] 去答题', classifyData.name)
 
-    navigateTo('/pages/quiz-play/quiz-play', {
+    app.safeNavigateTo('/pages/quiz-play/quiz-play', {
       type: 'chapter',
       chapterId: classifyId,
       chapterName: classifyData.name
