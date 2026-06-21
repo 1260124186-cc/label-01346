@@ -143,6 +143,38 @@
   white-space: nowrap;
 }
 
+.export-entry-section {
+  padding: 0 32rpx 24rpx;
+}
+
+.export-entry-btn {
+  display: flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(20rpx);
+  -webkit-backdrop-filter: blur(20rpx);
+  border-radius: 20rpx;
+  padding: 24rpx 28rpx;
+  box-shadow: 0 4rpx 20rpx rgba(91, 189, 114, 0.08);
+}
+
+.export-entry-icon {
+  font-size: 36rpx;
+  margin-right: 16rpx;
+}
+
+.export-entry-text {
+  flex: 1;
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #2D3436;
+}
+
+.export-entry-arrow {
+  font-size: 32rpx;
+  color: #B2BEC3;
+}
+
 .overview-section {
   padding: 0 32rpx 24rpx;
 }

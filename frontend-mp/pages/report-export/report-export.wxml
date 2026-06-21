@@ -1,0 +1,286 @@
+<view class="page-container">
+  <view class="header-decoration"></view>
+
+  <view class="period-section">
+    <view class="section-header">
+      <text class="section-title">选择报告周期</text>
+    </view>
+    <view class="period-tabs">
+      <view
+        class="period-tab {{periodType === 'week' ? 'active' : ''}}"
+        bindtap="onSelectPeriod"
+        data-period="week"
+      >
+        <text>本周</text>
+      </view>
+      <view
+        class="period-tab {{periodType === 'month' ? 'active' : ''}}"
+        bindtap="onSelectPeriod"
+        data-period="month"
+      >
+        <text>本月</text>
+      </view>
+      <view
+        class="period-tab {{periodType === 'custom' ? 'active' : ''}}"
+        bindtap="onSelectPeriod"
+        data-period="custom"
+      >
+        <text>自定义</text>
+      </view>
+    </view>
+    <view class="period-range" wx:if="{{periodType === 'custom'}}">
+      <picker mode="date" value="{{customStartDate}}" bindchange="onStartDateChange">
+        <view class="date-picker">
+          <text class="date-label">开始</text>
+          <text class="date-value">{{customStartDate || '请选择'}}</text>
+        </view>
+      </picker>
+      <text class="date-separator">至</text>
+      <picker mode="date" value="{{customEndDate}}" bindchange="onEndDateChange">
+        <view class="date-picker">
+          <text class="date-label">结束</text>
+          <text class="date-value">{{customEndDate || '请选择'}}</text>
+        </view>
+      </picker>
+    </view>
+    <view class="period-display" wx:else>
+      <text class="period-text">{{periodLabel}}</text>
+    </view>
+  </view>
+
+  <view class="member-section" wx:if="{{isTeacher}}">
+    <view class="section-header">
+      <text class="section-title">选择成员</text>
+      <view class="batch-toggle" bindtap="onToggleBatch">
+        <text class="batch-toggle-text">{{isBatchMode ? '取消批量' : '批量导出'}}</text>
+      </view>
+    </view>
+    <view class="member-grid" wx:if="{{isBatchMode}}">
+      <view
+        wx:for="{{members}}"
+        wx:key="id"
+        class="member-chip {{selectedMemberIds.indexOf(item.id) > -1 ? 'selected' : ''}}"
+        bindtap="onToggleMember"
+        data-id="{{item.id}}"
+      >
+        <text class="member-chip-emoji">{{item.emoji || '🌱'}}</text>
+        <text class="member-chip-name">{{item.nickName}}</text>
+        <view class="member-chip-check" wx:if="{{selectedMemberIds.indexOf(item.id) > -1}}">✓</view>
+      </view>
+    </view>
+    <scroll-view class="member-scroll" scroll-x="{{true}}" enhanced="{{true}}" show-scrollbar="{{false}}" wx:else>
+      <view class="member-list">
+        <view
+          wx:for="{{members}}"
+          wx:key="id"
+          class="member-item {{currentMemberId === item.id ? 'active' : ''}}"
+          bindtap="onMemberSelect"
+          data-member="{{item}}"
+        >
+          <view class="member-avatar-wrapper">
+            <view class="member-avatar-placeholder">
+              <text class="member-avatar-emoji">{{item.emoji || '🌱'}}</text>
+            </view>
+            <view wx:if="{{currentMemberId === item.id}}" class="member-active-ring"></view>
+          </view>
+          <text class="member-nickname">{{item.nickName}}</text>
+        </view>
+      </view>
+    </scroll-view>
+  </view>
+
+  <view class="preview-section">
+    <view class="section-header">
+      <text class="section-title">报告预览</text>
+      <text class="section-subtitle">内容已根据所选周期生成</text>
+    </view>
+
+    <view class="report-card">
+      <view class="report-header">
+        <view class="report-title-row">
+          <text class="report-emoji">📊</text>
+          <view class="report-title-info">
+            <text class="report-title">学习报告</text>
+            <text class="report-subtitle">{{reportMemberName}} · {{periodLabel}}</text>
+          </view>
+        </view>
+        <text class="report-date">{{reportGeneratedAt}}</text>
+      </view>
+
+      <view class="report-block">
+        <view class="block-title">
+          <text class="block-icon">📋</text>
+          <text>数据概览</text>
+        </view>
+        <view class="overview-grid">
+          <view class="overview-item">
+            <text class="overview-value">{{reportData.totalDays}}</text>
+            <text class="overview-unit">天</text>
+            <text class="overview-label">学习天数</text>
+          </view>
+          <view class="overview-item">
+            <text class="overview-value">{{reportData.classifyCount}}</text>
+            <text class="overview-unit">次</text>
+            <text class="overview-label">分类次数</text>
+          </view>
+          <view class="overview-item">
+            <text class="overview-value">{{reportData.quizCount}}</text>
+            <text class="overview-unit">道</text>
+            <text class="overview-label">答题数</text>
+          </view>
+          <view class="overview-item">
+            <text class="overview-value">{{reportData.accuracy}}</text>
+            <text class="overview-unit">%</text>
+            <text class="overview-label">正确率</text>
+          </view>
+        </view>
+      </view>
+
+      <view class="report-block">
+        <view class="block-title">
+          <text class="block-icon">📂</text>
+          <text>分类次数统计</text>
+        </view>
+        <view class="category-stats">
+          <view
+            wx:for="{{reportData.categoryStats}}"
+            wx:key="id"
+            class="category-stat-row"
+          >
+            <view class="category-stat-icon" style="background: {{item.bgColor}};">
+              <text>{{item.emoji}}</text>
+            </view>
+            <text class="category-stat-name">{{item.name}}</text>
+            <view class="category-stat-bar-wrapper">
+              <view class="category-stat-bar" style="width: {{item.percent}}%; background: {{item.color}};"></view>
+            </view>
+            <text class="category-stat-count">{{item.count}}次</text>
+          </view>
+        </view>
+      </view>
+
+      <view class="report-block">
+        <view class="block-title">
+          <text class="block-icon">📚</text>
+          <text>课程进度</text>
+        </view>
+        <view class="course-progress-list">
+          <view
+            wx:for="{{reportData.courseProgress}}"
+            wx:key="id"
+            class="course-progress-item"
+          >
+            <text class="course-name">{{item.name}}</text>
+            <view class="course-bar-wrapper">
+              <view class="course-bar" style="width: {{item.progress}}%; background: {{item.progress >= 80 ? '#5BBD72' : item.progress >= 50 ? '#F39C12' : '#E85D5D'}};"></view>
+            </view>
+            <text class="course-percent">{{item.progress}}%</text>
+          </view>
+        </view>
+      </view>
+
+      <view class="report-block">
+        <view class="block-title">
+          <text class="block-icon">📝</text>
+          <text>组任务完成情况</text>
+        </view>
+        <view class="homework-stats">
+          <view class="hw-stat-item">
+            <text class="hw-stat-value">{{reportData.homeworkCompleted}}</text>
+            <text class="hw-stat-label">已完成</text>
+          </view>
+          <view class="hw-stat-item">
+            <text class="hw-stat-value">{{reportData.homeworkTotal}}</text>
+            <text class="hw-stat-label">总任务</text>
+          </view>
+          <view class="hw-stat-item">
+            <text class="hw-stat-value hw-accent">{{reportData.homeworkRate}}%</text>
+            <text class="hw-stat-label">完成率</text>
+          </view>
+        </view>
+      </view>
+
+      <view class="report-block">
+        <view class="block-title">
+          <text class="block-icon">⚠️</text>
+          <text>薄弱分类 TOP3</text>
+        </view>
+        <view class="weak-top-list">
+          <view
+            wx:for="{{reportData.weakTop3}}"
+            wx:key="id"
+            class="weak-top-item"
+          >
+            <view class="weak-top-rank">{{index + 1}}</view>
+            <view class="weak-top-icon" style="background: {{item.bgColor}};">
+              <text>{{item.emoji}}</text>
+            </view>
+            <view class="weak-top-info">
+              <text class="weak-top-name">{{item.name}}</text>
+              <text class="weak-top-accuracy">正确率 {{item.accuracy}}%</text>
+            </view>
+            <view class="weak-top-bar-wrapper">
+              <view class="weak-top-bar" style="width: {{item.accuracy}}%; background: {{item.accuracy >= 50 ? '#F39C12' : '#E85D5D'}};"></view>
+            </view>
+          </view>
+        </view>
+        <view class="weak-empty" wx:if="{{reportData.weakTop3.length === 0}}">
+          <text class="weak-empty-icon">🎉</text>
+          <text class="weak-empty-text">暂无薄弱分类，表现优秀！</text>
+        </view>
+      </view>
+
+      <view class="report-block plan-block">
+        <view class="block-title">
+          <text class="block-icon">🎯</text>
+          <text>下周建议学习计划</text>
+        </view>
+        <view class="plan-list">
+          <view
+            wx:for="{{reportData.nextWeekPlan}}"
+            wx:key="id"
+            class="plan-item"
+          >
+            <view class="plan-day-tag">{{item.day}}</view>
+            <view class="plan-content">
+              <text class="plan-task">{{item.task}}</text>
+              <text class="plan-goal">{{item.goal}}</text>
+            </view>
+          </view>
+        </view>
+      </view>
+
+      <view class="report-footer">
+        <text class="report-footer-text">由垃圾分类助手自动生成</text>
+        <text class="report-footer-date">{{reportGeneratedAt}}</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="export-actions">
+    <view class="export-btn export-image-btn" bindtap="onExportImage">
+      <text class="export-btn-icon">🖼️</text>
+      <text class="export-btn-text">导出长图</text>
+    </view>
+    <view class="export-btn export-share-btn" bindtap="onShareToWeChat">
+      <text class="export-btn-icon">💬</text>
+      <text class="export-btn-text">分享给家长群</text>
+    </view>
+  </view>
+
+  <view class="batch-export-action" wx:if="{{isBatchMode && selectedMemberIds.length > 0}}">
+    <view class="batch-export-btn" bindtap="onBatchExport">
+      <text class="batch-export-icon">📦</text>
+      <text class="batch-export-text">批量导出 ({{selectedMemberIds.length}}人)</text>
+    </view>
+  </view>
+
+  <canvas
+    type="2d"
+    id="reportCanvas"
+    class="report-canvas"
+    style="width: {{canvasWidth}}px; height: {{canvasHeight}}px;"
+  ></canvas>
+
+  <view class="safe-area-bottom"></view>
+</view>

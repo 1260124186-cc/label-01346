@@ -65,7 +65,8 @@
     "pages/packaging-submit/packaging-submit",
     "pages/correction-submit/correction-submit",
     "pages/correction-review/correction-review",
-    "pages/correction-leaderboard/correction-leaderboard"
+    "pages/correction-leaderboard/correction-leaderboard",
+    "pages/report-export/report-export"
   ],
   "window": {
     "backgroundTextStyle": "dark",

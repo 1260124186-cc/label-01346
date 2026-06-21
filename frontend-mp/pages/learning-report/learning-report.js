@@ -533,6 +533,11 @@ Page({
     navigateTo('/pages/group-homework/group-homework')
   },
 
+  goToExportReport() {
+    const { currentMemberId } = this.data
+    navigateTo('/pages/report-export/report-export', { memberId: currentMemberId || '' })
+  },
+
   goToPractice(e) {
     const { category } = e.currentTarget.dataset
     console.log('[LearningReport] 跳转练习类别:', category.name)

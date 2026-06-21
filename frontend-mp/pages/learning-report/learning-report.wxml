@@ -36,6 +36,14 @@
       </scroll-view>
     </view>
 
+    <view class="export-entry-section">
+      <view class="export-entry-btn" bindtap="goToExportReport">
+        <text class="export-entry-icon">📤</text>
+        <text class="export-entry-text">导出学习报告</text>
+        <text class="export-entry-arrow">›</text>
+      </view>
+    </view>
+
     <view class="overview-section">
       <view class="section-header">
         <text class="section-title">数据概览</text>
