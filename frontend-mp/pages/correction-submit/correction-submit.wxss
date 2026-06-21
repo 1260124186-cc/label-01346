@@ -47,6 +47,27 @@
   color: var(--text-tertiary);
 }
 
+.item-type-row {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  margin-top: 4rpx;
+}
+
+.item-type-label {
+  font-size: 22rpx;
+  color: var(--text-tertiary);
+  padding: 4rpx 12rpx;
+  background: var(--bg-page);
+  border-radius: 8rpx;
+}
+
+.item-type-value {
+  font-size: 26rpx;
+  font-weight: 600;
+  color: var(--color-primary);
+}
+
 .form-section {
   background: #fff;
   margin: 0 24rpx 24rpx;
@@ -167,7 +188,8 @@
 }
 
 .category-item.category-original {
-  opacity: 0.5;
+  border: 2rpx dashed rgba(142, 142, 147, 0.5);
+  background: rgba(142, 142, 147, 0.05);
 }
 
 .category-emoji {
@@ -183,10 +205,11 @@
 
 .category-original-tag {
   font-size: 20rpx;
-  color: var(--text-tertiary);
-  background: rgba(0, 0, 0, 0.06);
-  padding: 4rpx 12rpx;
-  border-radius: 8rpx;
+  color: #fff;
+  background: linear-gradient(135deg, #8E8E93 0%, #636366 100%);
+  padding: 4rpx 14rpx;
+  border-radius: 12rpx;
+  font-weight: 500;
 }
 
 .category-check {
@@ -323,6 +346,7 @@
   background: #fff;
   box-shadow: 0 -4rpx 16rpx rgba(0, 0, 0, 0.06);
   z-index: 100;
+  box-sizing: border-box;
 }
 
 .submit-btn {
@@ -333,6 +357,7 @@
   text-align: center;
   box-shadow: 0 8rpx 24rpx rgba(91, 189, 114, 0.3);
   transition: all 0.2s ease;
+  box-sizing: border-box;
 }
 
 .submit-btn:active {
