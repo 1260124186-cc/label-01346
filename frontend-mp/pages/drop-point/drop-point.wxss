@@ -921,3 +921,302 @@
   width: 0;
   height: 0;
 }
+
+/* ==================== 扫码按钮 ==================== */
+.scan-btn {
+  background: linear-gradient(135deg, #5BBD72 0%, #4AA862 100%);
+  margin-right: 8rpx;
+}
+
+.scan-btn .toggle-icon {
+  color: #fff;
+}
+
+/* ==================== 列表设备状态标签 ==================== */
+.device-status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4rpx 12rpx;
+  border-radius: 12rpx;
+  font-size: 20rpx;
+  font-weight: 500;
+}
+
+.device-status-text {
+  font-size: 20rpx;
+  line-height: 1;
+}
+
+/* ==================== 设备状态卡片 ==================== */
+.device-status-card {
+  padding: 24rpx;
+  border-radius: 16rpx;
+  margin-top: 16rpx;
+}
+
+.device-status-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20rpx;
+}
+
+.status-info {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+}
+
+.status-emoji {
+  font-size: 40rpx;
+  line-height: 1;
+}
+
+.status-name {
+  font-size: 30rpx;
+  font-weight: 600;
+}
+
+.smart-device-tag {
+  padding: 6rpx 16rpx;
+  background: rgba(91, 189, 114, 0.2);
+  border-radius: 20rpx;
+}
+
+.smart-device-tag .tag-text {
+  font-size: 22rpx;
+  color: #5BBD72;
+  font-weight: 500;
+}
+
+.fill-level-section {
+  margin-bottom: 16rpx;
+}
+
+.fill-level-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10rpx;
+}
+
+.fill-label-text {
+  font-size: 24rpx;
+  color: var(--text-secondary);
+}
+
+.fill-value {
+  font-size: 24rpx;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.fill-progress-bar {
+  height: 12rpx;
+  background: rgba(0, 0, 0, 0.08);
+  border-radius: 6rpx;
+  overflow: hidden;
+}
+
+.fill-progress {
+  height: 100%;
+  border-radius: 6rpx;
+  transition: width 0.3s ease;
+}
+
+.last-update {
+  text-align: right;
+}
+
+.update-text {
+  font-size: 22rpx;
+  color: var(--text-tertiary);
+}
+
+/* ==================== 上报入口 ==================== */
+.report-section {
+  margin-top: 8rpx;
+}
+
+.report-entry {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24rpx;
+  background: linear-gradient(135deg, #FFF8E1 0%, #FFECB3 100%);
+  border-radius: 16rpx;
+}
+
+.report-entry:active {
+  opacity: 0.8;
+}
+
+.report-entry-left {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+}
+
+.report-icon {
+  font-size: 36rpx;
+  line-height: 1;
+}
+
+.report-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4rpx;
+}
+
+.report-title {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #F57C00;
+}
+
+.report-desc {
+  font-size: 22rpx;
+  color: #FF9800;
+}
+
+.report-arrow {
+  font-size: 32rpx;
+  color: #FF9800;
+}
+
+.report-history-entry {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20rpx 0 0 0;
+  margin-top: 16rpx;
+  border-top: 1rpx solid rgba(255, 152, 0, 0.2);
+}
+
+.report-history-entry:active {
+  opacity: 0.7;
+}
+
+.history-text {
+  font-size: 24rpx;
+  color: #F57C00;
+}
+
+.history-arrow {
+  font-size: 28rpx;
+  color: #FF9800;
+}
+
+/* ==================== 上报弹窗 ==================== */
+.report-modal .modal-content {
+  max-height: 80vh;
+}
+
+.report-content {
+  display: flex;
+  flex-direction: column;
+}
+
+.report-point-name {
+  font-size: 24rpx;
+  color: var(--text-secondary);
+  margin-top: 8rpx;
+}
+
+.report-section {
+  margin-bottom: 32rpx;
+}
+
+.report-section-title {
+  font-size: 26rpx;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 16rpx;
+  display: block;
+}
+
+.report-type-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12rpx;
+}
+
+.report-type-item {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  padding: 20rpx;
+  background: var(--bg-light);
+  border-radius: 12rpx;
+  border: 2rpx solid transparent;
+  transition: all 0.2s ease;
+}
+
+.report-type-item:active {
+  transform: scale(0.98);
+}
+
+.report-type-item.selected {
+  background: rgba(91, 189, 114, 0.08);
+  border-color: #5BBD72;
+}
+
+.type-item-emoji {
+  font-size: 36rpx;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.type-item-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4rpx;
+}
+
+.type-item-name {
+  font-size: 26rpx;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.type-item-desc {
+  font-size: 22rpx;
+  color: var(--text-tertiary);
+}
+
+.type-item-check {
+  width: 40rpx;
+  height: 40rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #5BBD72;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.type-item-check .check-icon {
+  color: #fff;
+  font-size: 24rpx;
+  font-weight: bold;
+}
+
+.report-textarea {
+  width: 100%;
+  min-height: 160rpx;
+  padding: 20rpx;
+  background: var(--bg-light);
+  border-radius: 12rpx;
+  font-size: 26rpx;
+  color: var(--text-primary);
+  box-sizing: border-box;
+}
+
+.textarea-count {
+  display: block;
+  text-align: right;
+  font-size: 22rpx;
+  color: var(--text-tertiary);
+  margin-top: 8rpx;
+}

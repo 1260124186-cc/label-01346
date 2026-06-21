@@ -3397,6 +3397,76 @@ const SUPPORTED_CATEGORIES = [
   { id: 'electronic', name: '电子废弃物', emoji: '💻', color: '#F39C12' }
 ]
 
+const DEVICE_STATUS = {
+  NORMAL: {
+    id: 'normal',
+    name: '正常运行',
+    emoji: '✅',
+    color: '#5BBD72',
+    bgColor: 'rgba(91, 189, 114, 0.1)'
+  },
+  FULL: {
+    id: 'full',
+    name: '满溢',
+    emoji: '📦',
+    color: '#F39C12',
+    bgColor: 'rgba(243, 156, 18, 0.1)'
+  },
+  FAULT: {
+    id: 'fault',
+    name: '设备故障',
+    emoji: '⚠️',
+    color: '#E85D5D',
+    bgColor: 'rgba(232, 93, 93, 0.1)'
+  },
+  TEMP_CLOSED: {
+    id: 'temp_closed',
+    name: '临时关闭',
+    emoji: '🚫',
+    color: '#8E8E93',
+    bgColor: 'rgba(142, 142, 147, 0.1)'
+  }
+}
+
+const REPORT_TYPES = {
+  NO_SUCH_POINT: {
+    id: 'no_such_point',
+    name: '此处无此站点',
+    emoji: '❓',
+    description: '该位置不存在投放点'
+  },
+  RELOCATED: {
+    id: 'relocated',
+    name: '已搬迁',
+    emoji: '🚚',
+    description: '投放点已搬迁至其他位置'
+  },
+  TEMP_CLOSED: {
+    id: 'temp_closed',
+    name: '临时关闭',
+    emoji: '🚫',
+    description: '投放点临时关闭，无法使用'
+  },
+  DEVICE_FAULT: {
+    id: 'device_fault',
+    name: '设备故障',
+    emoji: '🔧',
+    description: '智能设备出现故障'
+  },
+  OVERFLOW: {
+    id: 'overflow',
+    name: '垃圾满溢',
+    emoji: '📦',
+    description: '垃圾桶已满，需要清运'
+  },
+  OTHER: {
+    id: 'other',
+    name: '其他问题',
+    emoji: '💬',
+    description: '其他需要反馈的问题'
+  }
+}
+
 const DROP_POINTS = [
   {
     id: 'dp001',
@@ -3417,7 +3487,12 @@ const DROP_POINTS = [
     checkinCount: 256,
     description: '示范级垃圾分类站，配备智能分类设备，专人值守指导分类',
     contactPhone: '010-12345678',
-    createTime: '2024-01-15'
+    createTime: '2024-01-15',
+    deviceStatus: 'normal',
+    fillLevel: 35,
+    lastStatusUpdate: '2024-06-21 08:30',
+    hasSmartDevice: true,
+    qrCode: 'drop_point_dp001'
   },
   {
     id: 'dp002',
@@ -3438,7 +3513,12 @@ const DROP_POINTS = [
     checkinCount: 189,
     description: '专业可回收物处理中心，提供上门回收服务，累计积分可兑换礼品',
     contactPhone: '010-87654321',
-    createTime: '2024-02-20'
+    createTime: '2024-02-20',
+    deviceStatus: 'normal',
+    fillLevel: 60,
+    lastStatusUpdate: '2024-06-21 09:00',
+    hasSmartDevice: true,
+    qrCode: 'drop_point_dp002'
   },
   {
     id: 'dp003',
@@ -3459,7 +3539,12 @@ const DROP_POINTS = [
     checkinCount: 78,
     description: '官方指定有害垃圾收集站，配备专业存储设备，确保有害垃圾安全处理',
     contactPhone: '010-11112222',
-    createTime: '2023-11-10'
+    createTime: '2023-11-10',
+    deviceStatus: 'full',
+    fillLevel: 95,
+    lastStatusUpdate: '2024-06-21 07:45',
+    hasSmartDevice: true,
+    qrCode: 'drop_point_dp003'
   },
   {
     id: 'dp004',
@@ -3480,7 +3565,12 @@ const DROP_POINTS = [
     checkinCount: 423,
     description: '24小时智能垃圾分类站，AI智能识别垃圾类型，投放即可获得积分',
     contactPhone: '010-33334444',
-    createTime: '2024-03-01'
+    createTime: '2024-03-01',
+    deviceStatus: 'fault',
+    fillLevel: 25,
+    lastStatusUpdate: '2024-06-21 06:00',
+    hasSmartDevice: true,
+    qrCode: 'drop_point_dp004'
   },
   {
     id: 'dp005',
@@ -3501,7 +3591,12 @@ const DROP_POINTS = [
     checkinCount: 312,
     description: '社区示范投放点，常年有志愿者提供分类指导，定期开展环保宣传活动',
     contactPhone: '010-55556666',
-    createTime: '2023-08-15'
+    createTime: '2023-08-15',
+    deviceStatus: 'normal',
+    fillLevel: 50,
+    lastStatusUpdate: '2024-06-21 08:00',
+    hasSmartDevice: false,
+    qrCode: 'drop_point_dp005'
   },
   {
     id: 'dp006',
@@ -3522,7 +3617,12 @@ const DROP_POINTS = [
     checkinCount: 156,
     description: '专业旧物回收点，回收价格透明，支持以旧换新，现场结算',
     contactPhone: '010-77778888',
-    createTime: '2023-09-20'
+    createTime: '2023-09-20',
+    deviceStatus: 'normal',
+    fillLevel: 45,
+    lastStatusUpdate: '2024-06-21 08:30',
+    hasSmartDevice: false,
+    qrCode: 'drop_point_dp006'
   },
   {
     id: 'dp007',
@@ -3543,7 +3643,12 @@ const DROP_POINTS = [
     checkinCount: 198,
     description: '标准化社区垃圾分类站，设备齐全，环境整洁',
     contactPhone: '010-99990000',
-    createTime: '2023-07-10'
+    createTime: '2023-07-10',
+    deviceStatus: 'temp_closed',
+    fillLevel: 0,
+    lastStatusUpdate: '2024-06-20 18:00',
+    hasSmartDevice: false,
+    qrCode: 'drop_point_dp007'
   },
   {
     id: 'dp008',
@@ -3564,7 +3669,12 @@ const DROP_POINTS = [
     checkinCount: 67,
     description: '集有害垃圾收集、环保宣传、咨询服务于一体的综合性环保驿站',
     contactPhone: '010-12121212',
-    createTime: '2023-12-01'
+    createTime: '2023-12-01',
+    deviceStatus: 'normal',
+    fillLevel: 30,
+    lastStatusUpdate: '2024-06-21 09:30',
+    hasSmartDevice: true,
+    qrCode: 'drop_point_dp008'
   },
   {
     id: 'dp009',
@@ -3585,7 +3695,12 @@ const DROP_POINTS = [
     checkinCount: 234,
     description: '大型再生资源回收点，支持大批量可回收物回收，配备专业设备',
     contactPhone: '010-34343434',
-    createTime: '2023-06-15'
+    createTime: '2023-06-15',
+    deviceStatus: 'normal',
+    fillLevel: 70,
+    lastStatusUpdate: '2024-06-21 07:00',
+    hasSmartDevice: true,
+    qrCode: 'drop_point_dp009'
   },
   {
     id: 'dp010',
@@ -3606,13 +3721,21 @@ const DROP_POINTS = [
     checkinCount: 567,
     description: '交通枢纽配套分类站，容量大，清运频率高，满足大流量需求',
     contactPhone: '010-56565656',
-    createTime: '2023-05-20'
+    createTime: '2023-05-20',
+    deviceStatus: 'full',
+    fillLevel: 88,
+    lastStatusUpdate: '2024-06-21 08:15',
+    hasSmartDevice: true,
+    qrCode: 'drop_point_dp010'
   }
 ]
 
 const DROP_POINT_STORAGE_KEYS = {
   FAVORITES: 'drop_point_favorites',
-  CHECKINS: 'drop_point_checkins'
+  CHECKINS: 'drop_point_checkins',
+  REPORTS: 'drop_point_reports',
+  STATUS_HISTORY: 'drop_point_status_history',
+  SCAN_HISTORY: 'drop_point_scan_history'
 }
 
 const COMMUNITY_POST_TYPES = [
@@ -4511,6 +4634,8 @@ module.exports = {
   SUPPORTED_CATEGORIES,
   DROP_POINTS,
   DROP_POINT_STORAGE_KEYS,
+  DEVICE_STATUS,
+  REPORT_TYPES,
   COMMUNITY_POST_TYPES,
   COMMUNITY_TOPICS,
   OFFICIAL_ACCOUNT,

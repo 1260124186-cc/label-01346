@@ -45,6 +45,9 @@
 
     <!-- 视图切换 -->
     <view class="view-toggle">
+      <view class="toggle-btn scan-btn" bindtap="onScanCode">
+        <text class="toggle-icon">📷</text>
+      </view>
       <view
         class="toggle-btn {{viewMode === 'map' ? 'active' : ''}}"
         bindtap="onViewModeChange"
@@ -116,13 +119,13 @@
               <text class="meta-icon">{{selectedPoint.isOpenNow ? '🟢' : '🔴'}}</text>
               <text class="meta-text {{selectedPoint.isOpenNow ? 'open' : 'closed'}}">{{selectedPoint.isOpenNow ? '营业中' : '已休息'}}</text>
             </view>
+            <view class="meta-item" style="color: {{DEVICE_STATUS[selectedPoint.deviceStatus === 'normal' ? 'NORMAL' : selectedPoint.deviceStatus === 'full' ? 'FULL' : selectedPoint.deviceStatus === 'fault' ? 'FAULT' : 'TEMP_CLOSED'].color}};">
+              <text class="meta-icon">{{DEVICE_STATUS[selectedPoint.deviceStatus === 'normal' ? 'NORMAL' : selectedPoint.deviceStatus === 'full' ? 'FULL' : selectedPoint.deviceStatus === 'fault' ? 'FAULT' : 'TEMP_CLOSED'].emoji}}</text>
+              <text class="meta-text">{{DEVICE_STATUS[selectedPoint.deviceStatus === 'normal' ? 'NORMAL' : selectedPoint.deviceStatus === 'full' ? 'FULL' : selectedPoint.deviceStatus === 'fault' ? 'FAULT' : 'TEMP_CLOSED'].name}}</text>
+            </view>
             <view class="meta-item">
               <text class="meta-icon">📏</text>
               <text class="meta-text">{{formatDistance(selectedPoint.distance)}}</text>
-            </view>
-            <view class="meta-item">
-              <text class="meta-icon">⭐</text>
-              <text class="meta-text">{{selectedPoint.rating}}</text>
             </view>
           </view>
         </view>
@@ -204,9 +207,8 @@
                 <text class="status-dot"></text>
                 <text class="status-text">{{item.isOpenNow ? '营业中' : '已休息'}}</text>
               </view>
-              <view class="rating-badge">
-                <text class="rating-icon">⭐</text>
-                <text class="rating-text">{{item.rating}}</text>
+              <view class="device-status-badge" style="background: {{item.deviceStatus === 'normal' ? 'rgba(91, 189, 114, 0.1)' : item.deviceStatus === 'full' ? 'rgba(243, 156, 18, 0.1)' : item.deviceStatus === 'fault' ? 'rgba(232, 93, 93, 0.1)' : 'rgba(142, 142, 147, 0.1)'}}; color: {{item.deviceStatus === 'normal' ? '#5BBD72' : item.deviceStatus === 'full' ? '#F39C12' : item.deviceStatus === 'fault' ? '#E85D5D' : '#8E8E93'}};">
+                <text class="device-status-text">{{item.deviceStatus === 'normal' ? '✅ 正常' : item.deviceStatus === 'full' ? '📦 满溢' : item.deviceStatus === 'fault' ? '⚠️ 故障' : '🚫 关闭'}}</text>
               </view>
             </view>
             <view class="footer-right">
@@ -318,6 +320,53 @@
           <text class="section-desc">{{detailPoint.description}}</text>
         </view>
 
+        <view class="detail-section">
+          <view class="section-label">
+            <text class="label-icon">📡</text>
+            <text class="label-text">设备状态</text>
+          </view>
+          <view class="device-status-card" style="background: {{DEVICE_STATUS[detailPoint.deviceStatus === 'normal' ? 'NORMAL' : detailPoint.deviceStatus === 'full' ? 'FULL' : detailPoint.deviceStatus === 'fault' ? 'FAULT' : 'TEMP_CLOSED'].bgColor}};">
+            <view class="device-status-header">
+              <view class="status-info">
+                <text class="status-emoji">{{DEVICE_STATUS[detailPoint.deviceStatus === 'normal' ? 'NORMAL' : detailPoint.deviceStatus === 'full' ? 'FULL' : detailPoint.deviceStatus === 'fault' ? 'FAULT' : 'TEMP_CLOSED'].emoji}}</text>
+                <text class="status-name" style="color: {{DEVICE_STATUS[detailPoint.deviceStatus === 'normal' ? 'NORMAL' : detailPoint.deviceStatus === 'full' ? 'FULL' : detailPoint.deviceStatus === 'fault' ? 'FAULT' : 'TEMP_CLOSED'].color}};">{{DEVICE_STATUS[detailPoint.deviceStatus === 'normal' ? 'NORMAL' : detailPoint.deviceStatus === 'full' ? 'FULL' : detailPoint.deviceStatus === 'fault' ? 'FAULT' : 'TEMP_CLOSED'].name}}</text>
+              </view>
+              <view class="smart-device-tag" wx:if="{{detailPoint.hasSmartDevice}}">
+                <text class="tag-text">智能设备</text>
+              </view>
+            </view>
+            <view class="fill-level-section" wx:if="{{detailPoint.deviceStatus !== 'temp_closed'}}">
+              <view class="fill-level-label">
+                <text class="fill-label-text">容量使用</text>
+                <text class="fill-value">{{detailPoint.fillLevel}}%</text>
+              </view>
+              <view class="fill-progress-bar">
+                <view class="fill-progress" style="width: {{detailPoint.fillLevel}}%; background: {{detailPoint.fillLevel >= 90 ? '#E85D5D' : detailPoint.fillLevel >= 70 ? '#F39C12' : '#5BBD72'}};"></view>
+              </view>
+            </view>
+            <view class="last-update">
+              <text class="update-text">最后更新：{{detailPoint.lastStatusUpdate}}</text>
+            </view>
+          </view>
+        </view>
+
+        <view class="detail-section report-section">
+          <view class="report-entry" bindtap="onOpenReport" data-point="{{detailPoint}}">
+            <view class="report-entry-left">
+              <text class="report-icon">📢</text>
+              <view class="report-info">
+                <text class="report-title">问题反馈</text>
+                <text class="report-desc">无此站点？已搬迁？设备故障？一键上报</text>
+              </view>
+            </view>
+            <text class="report-arrow">›</text>
+          </view>
+          <view class="report-history-entry" bindtap="onGoToReports">
+            <text class="history-text">查看我的上报记录</text>
+            <text class="history-arrow">›</text>
+          </view>
+        </view>
+
         <view class="detail-stats">
           <view class="stat-item">
             <text class="stat-value">{{detailPoint.rating}}</text>
@@ -348,6 +397,68 @@
         <view class="footer-btn primary" bindtap="onNavigate" data-point="{{detailPoint}}">
           <text class="btn-icon">🧭</text>
           <text class="btn-text">导航前往</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 上报弹窗 -->
+  <view class="report-modal {{showReportModal ? 'show' : ''}}" wx:if="{{showReportModal}}" catchtap="onCloseReport">
+    <view class="modal-mask" catchtap="onCloseReport"></view>
+    <view class="modal-content report-content" catchtap="">
+      <view class="modal-header">
+        <view class="modal-title-row">
+          <text class="modal-title">问题上报</text>
+          <view class="modal-close" catchtap="onCloseReport">
+            <text class="close-icon">✕</text>
+          </view>
+        </view>
+        <text class="report-point-name">{{reportPoint.name}}</text>
+      </view>
+
+      <scroll-view class="modal-body" scroll-y="{{true}}">
+        <view class="report-section">
+          <text class="report-section-title">选择问题类型</text>
+          <view class="report-type-list">
+            <view
+              class="report-type-item {{selectedReportType === item.id ? 'selected' : ''}}"
+              wx:for="{{reportTypes}}"
+              wx:key="id"
+              bindtap="onSelectReportType"
+              data-type="{{item.id}}"
+            >
+              <text class="type-item-emoji">{{item.emoji}}</text>
+              <view class="type-item-info">
+                <text class="type-item-name">{{item.name}}</text>
+                <text class="type-item-desc">{{item.description}}</text>
+              </view>
+              <view class="type-item-check" wx:if="{{selectedReportType === item.id}}">
+                <text class="check-icon">✓</text>
+              </view>
+            </view>
+          </view>
+        </view>
+
+        <view class="report-section">
+          <text class="report-section-title">补充说明（选填）</text>
+          <textarea
+            class="report-textarea"
+            placeholder="请详细描述您遇到的问题，帮助我们更好地改进..."
+            value="{{reportDescription}}"
+            bindinput="onReportDescriptionInput"
+            maxlength="200"
+            auto-height="{{false}}"
+          ></textarea>
+          <text class="textarea-count">{{reportDescription.length}}/200</text>
+        </view>
+      </scroll-view>
+
+      <view class="modal-footer">
+        <view class="footer-btn secondary" catchtap="onCloseReport">
+          <text class="btn-text">取消</text>
+        </view>
+        <view class="footer-btn primary" catchtap="onSubmitReport">
+          <text class="btn-text">提交上报</text>
         </view>
       </view>
     </view>

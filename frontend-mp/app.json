@@ -32,6 +32,7 @@
     "pages/photo-recognize/photo-recognize",
     "pages/recognize-result/recognize-result",
     "pages/drop-point/drop-point",
+    "pages/drop-point-reports/drop-point-reports",
     "pages/leaderboard/leaderboard",
     "pages/group-leaderboard/group-leaderboard",
     "pages/pk-battle/pk-battle",

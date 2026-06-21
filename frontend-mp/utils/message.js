@@ -16,7 +16,8 @@ const MESSAGE_TYPES = {
   POINTS_EXPIRE: 'points_expire',
   HOMEWORK: 'homework',
   HOMEWORK_REMINDER: 'homework_reminder',
-  HOMEWORK_COMPLETED: 'homework_completed'
+  HOMEWORK_COMPLETED: 'homework_completed',
+  DROP_POINT: 'drop_point'
 }
 
 const MESSAGE_TYPE_CONFIG = {
@@ -110,6 +111,13 @@ const MESSAGE_TYPE_CONFIG = {
     emoji: '⚡',
     color: '#E85D5D',
     bgColor: 'rgba(232, 93, 93, 0.1)'
+  },
+  [MESSAGE_TYPES.DROP_POINT]: {
+    id: MESSAGE_TYPES.DROP_POINT,
+    name: '投放点通知',
+    emoji: '🗑️',
+    color: '#5BBD72',
+    bgColor: 'rgba(91, 189, 114, 0.1)'
   }
 }
 

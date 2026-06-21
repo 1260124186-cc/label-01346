@@ -1,0 +1,8 @@
+{
+  "navigationBarTitleText": "我的上报",
+  "navigationBarBackgroundColor": "#ffffff",
+  "navigationBarTextStyle": "black",
+  "enablePullDownRefresh": true,
+  "backgroundColor": "#F7FAF8",
+  "backgroundTextStyle": "dark"
+}

@@ -8,7 +8,9 @@ const {
   DROP_POINT_TYPES,
   SUPPORTED_CATEGORIES,
   DROP_POINTS,
-  DROP_POINT_STORAGE_KEYS
+  DROP_POINT_STORAGE_KEYS,
+  DEVICE_STATUS,
+  REPORT_TYPES
 } = require('../../utils/constants')
 const {
   showToast,
@@ -18,6 +20,7 @@ const {
   setStorage,
   navigateTo
 } = require('../../utils/util')
+const { messageManager, MESSAGE_TYPES } = require('../../utils/message')
 
 Page({
   data: {
@@ -37,16 +40,32 @@ Page({
     detailPoint: null,
     favorites: [],
     checkins: [],
+    showReportModal: false,
+    reportPoint: null,
+    reportTypes: [],
+    selectedReportType: '',
+    reportDescription: '',
+    scanHistory: [],
+    DEVICE_STATUS: DEVICE_STATUS,
     DROP_POINT_TYPES: DROP_POINT_TYPES,
     SUPPORTED_CATEGORIES: SUPPORTED_CATEGORIES
   },
 
-  onLoad() {
-    console.log('[DropPoint] 页面加载')
+  onLoad(options) {
+    console.log('[DropPoint] 页面加载', options)
     this.loadLocalData()
     this.initMarkers()
     this.filterPoints()
     this.getUserLocation()
+    this.initReportTypes()
+
+    if (options.pointId) {
+      this.showPointDetailById(options.pointId)
+    }
+
+    if (options.scan === '1' && options.pointId) {
+      this.handleScanCheckIn(options.pointId)
+    }
   },
 
   onShow() {
@@ -68,10 +87,56 @@ Page({
   loadLocalData() {
     const favorites = getStorage(DROP_POINT_STORAGE_KEYS.FAVORITES, [])
     const checkins = getStorage(DROP_POINT_STORAGE_KEYS.CHECKINS, [])
+    const scanHistory = getStorage(DROP_POINT_STORAGE_KEYS.SCAN_HISTORY, [])
     this.setData({
       favorites,
-      checkins
+      checkins,
+      scanHistory
     })
+  },
+
+  initReportTypes() {
+    const reportTypes = Object.values(REPORT_TYPES)
+    this.setData({ reportTypes })
+  },
+
+  showPointDetailById(pointId) {
+    const point = this.data.points.find(p => p.id === pointId)
+    if (point) {
+      this.setData({
+        showDetail: true,
+        detailPoint: point
+      })
+    }
+  },
+
+  handleScanCheckIn(pointId) {
+    const point = this.data.points.find(p => p.id === pointId)
+    if (!point) {
+      showToast('未找到该投放点')
+      return
+    }
+
+    const deviceStatus = this.getDeviceStatus(point.deviceStatus)
+    if (deviceStatus.id === 'fault' || deviceStatus.id === 'temp_closed') {
+      showToast(`${deviceStatus.name}，无法打卡`)
+      return
+    }
+
+    this.doCheckIn(pointId, 'scan')
+
+    const scanHistory = [...this.data.scanHistory]
+    scanHistory.unshift({
+      pointId,
+      pointName: point.name,
+      time: new Date().toISOString(),
+      type: 'checkin'
+    })
+    if (scanHistory.length > 20) {
+      scanHistory.pop()
+    }
+    setStorage(DROP_POINT_STORAGE_KEYS.SCAN_HISTORY, scanHistory)
+    this.setData({ scanHistory })
   },
 
   getUserLocation() {
@@ -245,50 +310,56 @@ Page({
     })
   },
 
-  onToggleFavorite(e) {
-    const { id } = e.currentTarget.dataset
-    console.log('[DropPoint] 切换收藏', id)
-
-    let favorites = [...this.data.favorites]
-    const isFavorited = favorites.includes(id)
-
-    if (isFavorited) {
-      favorites = favorites.filter(fid => fid !== id)
-      showToast('已取消收藏')
-    } else {
-      favorites.push(id)
-      showToast('收藏成功', 'success')
-    }
-
-    setStorage(DROP_POINT_STORAGE_KEYS.FAVORITES, favorites)
-    this.setData({ favorites })
-
-    if (this.data.activeFilter === 'favorite') {
-      this.filterPoints()
-    }
-  },
-
   onCheckIn(e) {
     const { id } = e.currentTarget.dataset
     console.log('[DropPoint] 打卡', id)
+    this.doCheckIn(id, 'normal')
+  },
 
+  doCheckIn(pointId, type = 'normal') {
     const today = new Date().toDateString()
     let checkins = [...this.data.checkins]
-    const existingIndex = checkins.findIndex(c => c.id === id && c.date === today)
+    const existingIndex = checkins.findIndex(c => c.id === pointId && c.date === today)
 
     if (existingIndex >= 0) {
       showToast('今日已在此打卡')
       return
     }
 
+    const point = this.data.points.find(p => p.id === pointId)
+    if (!point) {
+      showToast('未找到投放点')
+      return
+    }
+
+    const deviceStatus = this.getDeviceStatus(point.deviceStatus)
+    if (deviceStatus.id === 'fault' || deviceStatus.id === 'temp_closed') {
+      showToast(`${deviceStatus.name}，无法打卡`)
+      return
+    }
+
+    if (type === 'scan') {
+      const distance = this.calculateDistance(
+        this.data.userLocation.latitude,
+        this.data.userLocation.longitude,
+        point.latitude,
+        point.longitude
+      )
+      if (distance > 500) {
+        showToast('距离投放点太远，无法打卡')
+        return
+      }
+    }
+
     checkins.push({
-      id,
+      id: pointId,
       date: today,
-      time: new Date().toISOString()
+      time: new Date().toISOString(),
+      type: type
     })
 
     const points = this.data.points.map(p => {
-      if (p.id === id) {
+      if (p.id === pointId) {
         return { ...p, checkinCount: p.checkinCount + 1 }
       }
       return p
@@ -296,11 +367,12 @@ Page({
 
     setStorage(DROP_POINT_STORAGE_KEYS.CHECKINS, checkins)
 
-    const result = app.addPoints(5, 'drop_point_checkin')
+    const pointsReward = type === 'scan' ? 10 : 5
+    const result = app.addPoints(pointsReward, 'drop_point_checkin')
     if (result.success) {
-      showToast(`打卡成功 +${result.points}积分`, 'success')
+      showToast(`${type === 'scan' ? '扫码' : ''}打卡成功 +${result.points}积分`, 'success')
     } else {
-      showToast('打卡成功', 'success')
+      showToast(`${type === 'scan' ? '扫码' : ''}打卡成功`, 'success')
     }
 
     this.setData({ checkins, points })
@@ -371,5 +443,186 @@ Page({
     } else {
       return `${(distance / 1000).toFixed(1)}km`
     }
+  },
+
+  getDeviceStatus(statusId) {
+    const statusMap = {
+      'normal': DEVICE_STATUS.NORMAL,
+      'full': DEVICE_STATUS.FULL,
+      'fault': DEVICE_STATUS.FAULT,
+      'temp_closed': DEVICE_STATUS.TEMP_CLOSED
+    }
+    return statusMap[statusId] || DEVICE_STATUS.NORMAL
+  },
+
+  onScanCode() {
+    console.log('[DropPoint] 扫码')
+    wx.scanCode({
+      onlyFromCamera: false,
+      scanType: ['qrCode', 'barCode'],
+      success: (res) => {
+        console.log('[DropPoint] 扫码成功', res)
+        const result = res.result
+        this.handleScanResult(result)
+      },
+      fail: (err) => {
+        console.error('[DropPoint] 扫码失败', err)
+        showToast('扫码失败，请重试')
+      }
+    })
+  },
+
+  handleScanResult(result) {
+    console.log('[DropPoint] 处理扫码结果', result)
+    
+    if (result.startsWith('drop_point_')) {
+      const pointId = result.replace('drop_point_', '')
+      const point = this.data.points.find(p => p.id === pointId)
+      
+      if (point) {
+        this.showPointDetailById(pointId)
+        this.handleScanCheckIn(pointId)
+        
+        const scanHistory = [...this.data.scanHistory]
+        scanHistory.unshift({
+          pointId,
+          pointName: point.name,
+          time: new Date().toISOString(),
+          type: 'scan'
+        })
+        if (scanHistory.length > 20) {
+          scanHistory.pop()
+        }
+        setStorage(DROP_POINT_STORAGE_KEYS.SCAN_HISTORY, scanHistory)
+        this.setData({ scanHistory })
+      } else {
+        showToast('未找到该投放点')
+      }
+    } else {
+      showToast('无效的投放点二维码')
+    }
+  },
+
+  onOpenReport(e) {
+    const { point } = e.currentTarget.dataset
+    console.log('[DropPoint] 打开上报弹窗', point.name)
+    this.setData({
+      showReportModal: true,
+      reportPoint: point,
+      selectedReportType: '',
+      reportDescription: ''
+    })
+  },
+
+  onCloseReport() {
+    console.log('[DropPoint] 关闭上报弹窗')
+    this.setData({
+      showReportModal: false,
+      reportPoint: null,
+      selectedReportType: '',
+      reportDescription: ''
+    })
+  },
+
+  onGoToReports() {
+    console.log('[DropPoint] 跳转到上报记录')
+    navigateTo('/pages/drop-point-reports/drop-point-reports')
+  },
+
+  onSelectReportType(e) {
+    const { type } = e.currentTarget.dataset
+    console.log('[DropPoint] 选择上报类型', type)
+    this.setData({ selectedReportType: type })
+  },
+
+  onReportDescriptionInput(e) {
+    this.setData({ reportDescription: e.detail.value })
+  },
+
+  onSubmitReport() {
+    const { reportPoint, selectedReportType, reportDescription } = this.data
+    
+    if (!selectedReportType) {
+      showToast('请选择上报类型')
+      return
+    }
+
+    const reportTypeInfo = this.getReportType(selectedReportType)
+    
+    const report = {
+      id: `report_${Date.now()}`,
+      pointId: reportPoint.id,
+      pointName: reportPoint.name,
+      pointAddress: reportPoint.address,
+      type: selectedReportType,
+      typeName: reportTypeInfo.name,
+      description: reportDescription,
+      status: 'pending',
+      createTime: new Date().toISOString()
+    }
+
+    const reports = getStorage(DROP_POINT_STORAGE_KEYS.REPORTS, [])
+    reports.unshift(report)
+    setStorage(DROP_POINT_STORAGE_KEYS.REPORTS, reports)
+
+    showToast('上报成功，等待审核', 'success')
+    this.onCloseReport()
+
+    messageManager.addMessage({
+      type: MESSAGE_TYPES.SYSTEM,
+      title: '上报提交成功',
+      content: `您提交的「${reportPoint.name}」${reportTypeInfo.name}上报已受理，我们将尽快审核。`,
+      data: { reportId: report.id, pointId: reportPoint.id },
+      read: false
+    })
+  },
+
+  getReportType(typeId) {
+    const typeMap = {}
+    Object.values(REPORT_TYPES).forEach(type => {
+      typeMap[type.id] = type
+    })
+    return typeMap[typeId] || REPORT_TYPES.OTHER
+  },
+
+  sendFavoriteStatusNotification(point, isFavorited) {
+    if (isFavorited) {
+      messageManager.addMessage({
+        type: MESSAGE_TYPES.DROP_POINT,
+        title: '已收藏投放点',
+        content: `您已收藏「${point.name}」，我们会及时通知您该投放点的状态变更。`,
+        data: { pointId: point.id, action: 'favorite' },
+        read: false
+      })
+    }
+  },
+
+  onToggleFavorite(e) {
+    const { id } = e.currentTarget.dataset
+    console.log('[DropPoint] 切换收藏', id)
+
+    let favorites = [...this.data.favorites]
+    const isFavorited = favorites.includes(id)
+
+    if (isFavorited) {
+      favorites = favorites.filter(fid => fid !== id)
+      showToast('已取消收藏')
+    } else {
+      favorites.push(id)
+      showToast('收藏成功', 'success')
+      
+      const point = this.data.points.find(p => p.id === id)
+      if (point) {
+        this.sendFavoriteStatusNotification(point, true)
+      }
+    }
+
+    setStorage(DROP_POINT_STORAGE_KEYS.FAVORITES, favorites)
+    this.setData({ favorites })
+
+    if (this.data.activeFilter === 'favorite') {
+      this.filterPoints()
+    }
   }
 })
+
