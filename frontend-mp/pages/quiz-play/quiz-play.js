@@ -17,7 +17,8 @@ const {
   QUIZ_TIMED_CONFIG,
   QUIZ_BOSS_CONFIG,
   QUIZ_POINTS_CONFIG,
-  isQuestionCorrect
+  isQuestionCorrect,
+  getChildImageQuestions
 } = require('../../utils/constants')
 const {
   navigateTo,
@@ -77,7 +78,9 @@ Page({
       office: '办公室',
       campus: '校园'
     },
-    TRASH_TYPE_MAP: {}
+    TRASH_TYPE_MAP: {},
+    useImageQuestions: false,
+    isChildMode: false
   },
 
   onLoad(options) {
@@ -104,8 +107,23 @@ Page({
     let quizType = type || 'chapter'
     let isTimedMode = isTimed === 'true'
     let isBossMode = isBoss === 'true'
+    const useImageQuestions = app.shouldUseImageQuestions()
+    const isChildMode = app.isChildModeEnabled()
 
-    if (isWrongReview === 'true') {
+    if (useImageQuestions) {
+      const ageGroup = app.getChildAgeGroup()
+      const chId = chapterId ? parseInt(chapterId, 10) : null
+      questions = getChildImageQuestions(chId, ageGroup)
+      if (questions.length === 0) {
+        questions = getChildImageQuestions()
+      }
+      questions = questions.map(q => ({
+        ...q,
+        isDaily: false,
+        difficulty: q.difficulty || 'easy',
+        scenes: []
+      }))
+    } else if (isWrongReview === 'true') {
       quizType = 'wrong'
       const wrongQuestions = app.getWrongQuestions()
       const processed = wrongQuestions.map(q => {
@@ -172,7 +190,9 @@ Page({
       totalPoints: 0,
       showResult: false,
       progressPercent: 0,
-      timeLeft: isTimedMode ? QUIZ_TIMED_CONFIG.timePerQuestion : 0
+      timeLeft: isTimedMode ? QUIZ_TIMED_CONFIG.timePerQuestion : 0,
+      useImageQuestions,
+      isChildMode
     })
 
     this.updateNavigationTitle()
@@ -192,15 +212,29 @@ Page({
     let options = q.options
     let correctIndex = q.correctIndex
     let correctIndexes = q.correctIndexes || []
+    let imageOptions = q.imageOptions || null
+
+    if (type === 'image-single' && imageOptions) {
+      options = imageOptions.map(opt => opt.label)
+    }
 
     if (type === 'judge' && (!options || options.length === 0)) {
       options = ['正确', '错误']
     }
 
-    const optionsWithLabel = options.map((opt, idx) => ({
-      text: opt,
-      label: type === 'judge' ? (idx === 0 ? '✓' : '✗') : String.fromCharCode(65 + idx)
-    }))
+    let optionsWithLabel = []
+    if (type === 'image-single' && imageOptions) {
+      optionsWithLabel = imageOptions.map((opt, idx) => ({
+        text: opt.label,
+        label: String.fromCharCode(65 + idx),
+        emoji: opt.emoji
+      }))
+    } else {
+      optionsWithLabel = options.map((opt, idx) => ({
+        text: opt,
+        label: type === 'judge' ? (idx === 0 ? '✓' : '✗') : String.fromCharCode(65 + idx)
+      }))
+    }
 
     let correctAnswerLabel = ''
     if (type === 'multiple') {
@@ -223,6 +257,7 @@ Page({
       ...q,
       type,
       options,
+      imageOptions,
       optionsWithLabel,
       correctIndex,
       correctIndexes,
@@ -387,6 +422,10 @@ Page({
       ...questions[currentIndex],
       userAnswer: this.data.userAnswer,
       isCorrect
+    }
+
+    if (app.isChildModeEnabled()) {
+      app.recordChildQuiz(isCorrect)
     }
 
     if (isCorrect) {

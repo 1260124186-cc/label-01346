@@ -1,0 +1,7 @@
+{
+  "navigationBarTitleText": "家长监控",
+  "navigationBarBackgroundColor": "#5BBD72",
+  "navigationBarTextStyle": "white",
+  "backgroundColor": "#F7FAF8",
+  "enablePullDownRefresh": false
+}

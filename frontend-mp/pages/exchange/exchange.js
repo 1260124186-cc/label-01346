@@ -196,6 +196,17 @@ Page({
   switchBadgeTab(e) {
     const { tab } = e.currentTarget.dataset
     console.log('[Exchange] 切换tab:', tab)
+
+    if (this.data.childModeEnabled && tab === 'goods') {
+      wx.showToast({
+        title: '儿童模式下仅支持虚拟勋章',
+        icon: 'none',
+        duration: 1800
+      })
+      this.setData({ currentBadgeTab: 'badges' })
+      return
+    }
+
     this.setData({ currentBadgeTab: tab })
   },
 

@@ -4,7 +4,8 @@
  */
 const app = getApp()
 const { showToast, showSuccess, showModal, showLoading, hideLoading, navigateTo } = require('../../utils/util')
-const { CITY_STANDARDS, getCityInfo, hasUpcomingStandard } = require('../../utils/constants')
+const { CITY_STANDARDS, getCityInfo, hasUpcomingStandard,
+  CHILD_TIME_LIMIT_OPTIONS, CHILD_AGE_GROUPS } = require('../../utils/constants')
 
 Page({
   data: {
@@ -33,19 +34,33 @@ Page({
       child: '🧒',
       student: '🎒'
     },
-    currentRoleDisplay: '👤 成员'
+    currentRoleDisplay: '👤 成员',
+
+    hasChildPIN: false,
+    childTimeLimit: 60,
+    childTimeLimitOptions: CHILD_TIME_LIMIT_OPTIONS,
+    childAgeGroup: '6to8',
+    childAgeGroups: CHILD_AGE_GROUPS,
+    childAgeGroupText: '6-8岁',
+    usageTimeText: '0分钟',
+    usageRemainingText: '60分钟',
+    usagePercent: 0,
+    isChildLocked: false,
+    showTimePicker: false,
+    showAgePicker: false
   },
 
   onLoad() {
     console.log('[Settings] 页面加载')
     this.loadSettings()
     this.calculateCacheSize()
-    const childModeEnabled = wx.getStorageSync('childModeEnabled') || false
+    this.loadChildModeState()
+
     const userRole = wx.getStorageSync('userRole') || 'member'
     const currentCity = app.getCurrentCity()
     const currentCityInfo = app.getCurrentCityInfo()
     const hasUpcoming = app.hasCityUpcomingStandard()
-    this.setData({ childModeEnabled, userRole, currentCity, currentCityInfo, hasUpcomingStandard: hasUpcoming })
+    this.setData({ userRole, currentCity, currentCityInfo, hasUpcomingStandard: hasUpcoming })
     this.updateRoleDisplay(userRole)
   },
 
@@ -55,6 +70,31 @@ Page({
     const currentCityInfo = app.getCurrentCityInfo()
     const hasUpcoming = app.hasCityUpcomingStandard()
     this.setData({ currentCity, currentCityInfo, hasUpcomingStandard: hasUpcoming })
+    this.loadChildModeState()
+  },
+
+  loadChildModeState() {
+    const childModeEnabled = app.isChildModeEnabled()
+    const hasChildPIN = app.hasChildModePIN()
+    const childTimeLimit = app.getChildTimeLimit()
+    const ageGroupId = app.getChildAgeGroup()
+    const ageGroupInfo = app.getChildAgeGroupInfo()
+    const usedSec = app.getChildUsageTime()
+    const remainingSec = app.getChildRemainingTime()
+    const usagePercent = app.getChildUsagePercent()
+    const isLocked = app.isChildModeLocked()
+
+    this.setData({
+      childModeEnabled,
+      hasChildPIN,
+      childTimeLimit,
+      childAgeGroup: ageGroupId,
+      childAgeGroupText: ageGroupInfo ? ageGroupInfo.name : '6-8岁',
+      usageTimeText: app.formatUsageTime(usedSec),
+      usageRemainingText: app.formatUsageTime(remainingSec),
+      usagePercent,
+      isChildLocked: isLocked
+    })
   },
 
   updateRoleDisplay(roleId) {
@@ -64,10 +104,6 @@ Page({
     const emoji = roleEmojiMap[roleId] || '👤'
     const name = role ? role.name : '成员'
     this.setData({ currentRoleDisplay: `${emoji} ${name}` })
-  },
-
-  onShow() {
-    console.log('[Settings] 页面显示')
   },
 
   loadSettings() {
@@ -210,42 +246,70 @@ Page({
   onChildModeChange(e) {
     const enabled = e.detail.value
     console.log('[Settings] 儿童模式开关:', enabled)
-    this.toggleChildModeWithPassword(enabled)
+
+    if (enabled) {
+      navigateTo('/pages/child-pin-verify/child-pin-verify?mode=verify&enabled=true')
+    } else {
+      navigateTo('/pages/child-pin-verify/child-pin-verify?mode=verify&enabled=false')
+    }
+
+    setTimeout(() => {
+      const actual = app.isChildModeEnabled()
+      this.setData({ childModeEnabled: actual })
+    }, 50)
   },
 
-  toggleChildModeWithPassword(targetEnabled) {
-    if (targetEnabled) {
-      this.setData({ childModeEnabled: true })
-      wx.setStorageSync('childModeEnabled', true)
-      app.setChildModeEnabled(true)
-      showSuccess('儿童模式已开启')
-    } else {
-      wx.showModal({
-        title: '关闭儿童模式',
-        content: '请输入密码以关闭儿童模式',
-        editable: true,
-        placeholderText: '请输入密码',
-        confirmText: '确认',
-        confirmColor: '#5BBD72',
-        success: (res) => {
-          if (res.confirm) {
-            const password = (res.content || '').trim()
-            if (password === '1234') {
-              this.setData({ childModeEnabled: false })
-              wx.setStorageSync('childModeEnabled', false)
-              app.setChildModeEnabled(false)
-              showToast('儿童模式已关闭')
-            } else {
-              this.setData({ childModeEnabled: true })
-              showToast('密码错误，儿童模式未关闭')
-            }
-          } else {
-            this.setData({ childModeEnabled: true })
-          }
-        }
-      })
+  onChangePIN() {
+    if (!app.hasChildModePIN()) {
+      navigateTo('/pages/child-pin-verify/child-pin-verify?mode=set')
+      return
     }
+    navigateTo('/pages/child-pin-verify/child-pin-verify?mode=change')
   },
+
+  onGoDashboard() {
+    const canAccess = app.hasChildModePIN() || app.isChildModeEnabled()
+    if (!canAccess) {
+      showToast('请先开启儿童模式')
+      return
+    }
+    navigateTo('/pages/parent-dashboard/parent-dashboard')
+  },
+
+  onSelectTimeLimit() {
+    this.setData({ showTimePicker: true })
+  },
+
+  onConfirmTimeLimit(e) {
+    const minutes = parseInt(e.currentTarget.dataset.minutes)
+    app.setChildTimeLimit(minutes)
+    showSuccess(`已设置${minutes}分钟`)
+    this.setData({ showTimePicker: false })
+    this.loadChildModeState()
+  },
+
+  onSelectAgeGroup() {
+    this.setData({ showAgePicker: true })
+  },
+
+  onConfirmAgeGroup(e) {
+    const ageId = e.currentTarget.dataset.ageId
+    app.setChildAgeGroup(ageId)
+    const info = app.getChildAgeGroupInfo()
+    showSuccess(`已设置为${info.name}`)
+    this.setData({ showAgePicker: false })
+    this.loadChildModeState()
+  },
+
+  onCloseTimePicker() {
+    this.setData({ showTimePicker: false })
+  },
+
+  onCloseAgePicker() {
+    this.setData({ showAgePicker: false })
+  },
+
+  preventMaskClose() {},
 
   onRoleSelect() {
     console.log('[Settings] 点击选择角色')

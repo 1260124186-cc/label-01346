@@ -3867,6 +3867,175 @@ const CHILD_MODE_CONFIG = {
   hideRealNameInput: true
 }
 
+const CHILD_PIN_CONFIG = {
+  minLength: 4,
+  maxLength: 6,
+  storageKey: 'childModePIN',
+  defaultPIN: '1234',
+  maxAttempts: 5,
+  lockDurationMinutes: 5
+}
+
+const CHILD_TIME_LIMIT_OPTIONS = [
+  { id: 30, name: '30分钟', desc: '适合低龄儿童' },
+  { id: 60, name: '60分钟', desc: '推荐标准时长' },
+  { id: 90, name: '90分钟', desc: '适合较长学习' }
+]
+
+const CHILD_AGE_GROUPS = [
+  { id: 'under6', name: '6岁以下', minAge: 0, maxAge: 5, useImageQuestions: true, hideTextQuestions: true, desc: '图片选择题为主' },
+  { id: '6to8', name: '6-8岁', minAge: 6, maxAge: 8, useImageQuestions: false, hideTextQuestions: false, desc: '图文混合题目' },
+  { id: '9to12', name: '9-12岁', minAge: 9, maxAge: 12, useImageQuestions: false, hideTextQuestions: false, desc: '标准文字题目' },
+  { id: 'over12', name: '12岁以上', minAge: 13, maxAge: 100, useImageQuestions: false, hideTextQuestions: false, desc: '进阶难度题目' }
+]
+
+const CHILD_BLOCKED_PAGES = [
+  'pages/community/community',
+  'pages/community-publish/community-publish',
+  'pages/community-detail/community-detail',
+  'pages/invite/invite',
+  'pages/address-list/address-list',
+  'pages/address-edit/address-edit',
+  'pages/goods-detail/goods-detail',
+  'pages/orders/orders',
+  'pages/order-detail/order-detail',
+  'pages/recycle-book/recycle-book',
+  'pages/recycle-orders/recycle-orders',
+  'pages/recycle-order-detail/recycle-order-detail',
+  'pages/pk-battle/pk-battle',
+  'pages/pk-result/pk-result'
+]
+
+const CHILD_ALLOWED_PAGES_WHEN_LOCKED = [
+  'pages/classify/classify',
+  'pages/learning-center/learning-center',
+  'pages/course-detail/course-detail',
+  'pages/chapter-detail/chapter-detail',
+  'pages/quiz-chapter/quiz-chapter',
+  'pages/quiz-play/quiz-play',
+  'pages/profile/profile',
+  'pages/settings/settings',
+  'pages/child-pin-verify/child-pin-verify'
+]
+
+const CHILD_IMAGE_QUIZ_QUESTIONS = [
+  {
+    id: 'img_1', type: 'image-single', chapterId: 1, difficulty: 'easy', ageGroup: 'under6',
+    question: '哪个是可回收垃圾？',
+    imageOptions: [
+      { id: 0, emoji: '🧴', label: '塑料瓶' },
+      { id: 1, emoji: '🍌', label: '香蕉皮' },
+      { id: 2, emoji: '🔋', label: '废电池' },
+      { id: 3, emoji: '🧻', label: '卫生纸' }
+    ],
+    correctIndex: 0,
+    explanation: '塑料瓶可以回收再利用，属于可回收垃圾。',
+    relatedTrash: [{ name: '塑料瓶', typeId: 1, emoji: '🧴' }]
+  },
+  {
+    id: 'img_2', type: 'image-single', chapterId: 3, difficulty: 'easy', ageGroup: 'under6',
+    question: '吃剩的苹果核是什么垃圾？',
+    imageOptions: [
+      { id: 0, emoji: '🍎', label: '厨余垃圾' },
+      { id: 1, emoji: '📰', label: '可回收垃圾' },
+      { id: 2, emoji: '🔋', label: '有害垃圾' },
+      { id: 3, emoji: '🗑️', label: '其他垃圾' }
+    ],
+    correctIndex: 0,
+    explanation: '苹果核是厨房产生的易腐烂垃圾，属于厨余垃圾。',
+    relatedTrash: [{ name: '果皮', typeId: 3, emoji: '🍎' }]
+  },
+  {
+    id: 'img_3', type: 'image-single', chapterId: 2, difficulty: 'easy', ageGroup: 'under6',
+    question: '用完的电池应该扔在哪里？',
+    imageOptions: [
+      { id: 0, emoji: '🔴', label: '有害垃圾桶' },
+      { id: 1, emoji: '🔵', label: '可回收桶' },
+      { id: 2, emoji: '🟢', label: '厨余桶' },
+      { id: 3, emoji: '⚫', label: '其他垃圾桶' }
+    ],
+    correctIndex: 0,
+    explanation: '废电池含有重金属，属于有害垃圾，要扔红色桶。',
+    relatedTrash: [{ name: '废电池', typeId: 2, emoji: '🔋' }]
+  },
+  {
+    id: 'img_4', type: 'image-single', chapterId: 4, difficulty: 'easy', ageGroup: 'under6',
+    question: '用过的擦嘴纸巾是什么垃圾？',
+    imageOptions: [
+      { id: 0, emoji: '🧻', label: '其他垃圾' },
+      { id: 1, emoji: '📰', label: '可回收垃圾' },
+      { id: 2, emoji: '🍂', label: '厨余垃圾' },
+      { id: 3, emoji: '☣️', label: '有害垃圾' }
+    ],
+    correctIndex: 0,
+    explanation: '用过的纸巾吸水性太强，无法回收，属于其他垃圾。',
+    relatedTrash: [{ name: '卫生纸', typeId: 4, emoji: '🧻' }]
+  },
+  {
+    id: 'img_5', type: 'image-single', chapterId: 1, difficulty: 'easy', ageGroup: 'under6',
+    question: '喝完的易拉罐应该扔哪个桶？',
+    imageOptions: [
+      { id: 0, emoji: '🔵', label: '蓝色可回收桶' },
+      { id: 1, emoji: '🟢', label: '绿色厨余桶' },
+      { id: 2, emoji: '🔴', label: '红色有害桶' },
+      { id: 3, emoji: '⚫', label: '黑色其他桶' }
+    ],
+    correctIndex: 0,
+    explanation: '易拉罐是金属做的，可以回收再利用，扔蓝色桶。',
+    relatedTrash: [{ name: '易拉罐', typeId: 1, emoji: '🥫' }]
+  },
+  {
+    id: 'img_6', type: 'image-single', chapterId: 3, difficulty: 'easy', ageGroup: 'under6',
+    question: '下面哪个是厨余垃圾？',
+    imageOptions: [
+      { id: 0, emoji: '🍗', label: '剩菜剩饭' },
+      { id: 1, emoji: '📦', label: '快递纸箱' },
+      { id: 2, emoji: '💡', label: '废灯管' },
+      { id: 3, emoji: '🚬', label: '烟蒂' }
+    ],
+    correctIndex: 0,
+    explanation: '剩菜剩饭是厨房产生的易腐烂食物，属于厨余垃圾。',
+    relatedTrash: [{ name: '剩菜剩饭', typeId: 3, emoji: '🍚' }]
+  },
+  {
+    id: 'img_7', type: 'image-single', chapterId: 2, difficulty: 'easy', ageGroup: 'under6',
+    question: '打碎的水银温度计怎么处理？',
+    imageOptions: [
+      { id: 0, emoji: '☣️', label: '有害垃圾' },
+      { id: 1, emoji: '♻️', label: '可回收垃圾' },
+      { id: 2, emoji: '🍂', label: '厨余垃圾' },
+      { id: 3, emoji: '🗑️', label: '其他垃圾' }
+    ],
+    correctIndex: 0,
+    explanation: '水银温度计含有毒水银，属于有害垃圾，要小心处理。',
+    relatedTrash: [{ name: '水银温度计', typeId: 2, emoji: '🌡️' }]
+  },
+  {
+    id: 'img_8', type: 'image-single', chapterId: 1, difficulty: 'easy', ageGroup: 'under6',
+    question: '看完的旧报纸是什么垃圾？',
+    imageOptions: [
+      { id: 0, emoji: '📰', label: '可回收垃圾' },
+      { id: 1, emoji: '🍂', label: '厨余垃圾' },
+      { id: 2, emoji: '🔋', label: '有害垃圾' },
+      { id: 3, emoji: '🗑️', label: '其他垃圾' }
+    ],
+    correctIndex: 0,
+    explanation: '旧报纸是废纸，可以回收做成新纸，属于可回收垃圾。',
+    relatedTrash: [{ name: '旧报纸', typeId: 1, emoji: '📰' }]
+  }
+]
+
+const getChildImageQuestions = (chapterId, ageGroup) => {
+  let questions = [...CHILD_IMAGE_QUIZ_QUESTIONS]
+  if (chapterId) {
+    questions = questions.filter(q => q.chapterId === chapterId)
+  }
+  if (ageGroup) {
+    questions = questions.filter(q => q.ageGroup === ageGroup || q.ageGroup === 'under6')
+  }
+  return questions
+}
+
 module.exports = {
   TRASH_TYPES,
   QUIZ_SCENES,
@@ -3963,5 +4132,12 @@ module.exports = {
   HOMEWORK_REWARD_TYPES,
   HOMEWORK_REMINDER_CONFIG,
   VIRTUAL_BADGES,
-  CHILD_MODE_CONFIG
+  CHILD_MODE_CONFIG,
+  CHILD_PIN_CONFIG,
+  CHILD_TIME_LIMIT_OPTIONS,
+  CHILD_AGE_GROUPS,
+  CHILD_BLOCKED_PAGES,
+  CHILD_ALLOWED_PAGES_WHEN_LOCKED,
+  CHILD_IMAGE_QUIZ_QUESTIONS,
+  getChildImageQuestions
 }

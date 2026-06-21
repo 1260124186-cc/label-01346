@@ -1,0 +1,233 @@
+<view class="page-container">
+  <view class="header-section">
+    <view class="header-top">
+      <view class="back-btn" bindtap="onBack">
+        <text class="back-icon">←</text>
+      </view>
+      <text class="header-title">学习监控中心</text>
+      <view class="refresh-btn" bindtap="onRefresh">
+        <text class="refresh-icon">🔄</text>
+      </view>
+    </view>
+
+    <scroll-view wx:if="{{familyMembers.length > 1}}" scroll-x="true" class="member-scroll">
+      <view class="member-tabs">
+        <view wx:for="{{familyMembers}}" wx:key="memberId"
+              class="member-tab {{currentMemberId === item.memberId ? 'active' : ''}}"
+              bindtap="onSwitchMember" data-member-id="{{item.memberId}}">
+          <image wx:if="{{item.avatarUrl}}" src="{{item.avatarUrl}}" class="tab-avatar"/>
+          <view wx:else class="tab-avatar-placeholder">👦</view>
+          <text class="tab-name">{{item.nickname || '小朋友'}}</text>
+        </view>
+      </view>
+    </scroll-view>
+
+    <view class="profile-card">
+      <view class="profile-info">
+        <image wx:if="{{memberAvatar}}" src="{{memberAvatar}}" class="member-avatar"/>
+        <view wx:else class="member-avatar-placeholder">👦</view>
+        <view class="member-info-text">
+          <text class="member-name">{{memberNickname}}</text>
+          <view class="status-row">
+            <view class="status-dot {{isLocked ? 'locked' : 'active'}}"></view>
+            <text class="status-text">{{isLocked ? '已锁定' : '使用中'}}</text>
+          </view>
+        </view>
+      </view>
+      <view class="quick-action" bindtap="onGoSettings">
+        <text class="settings-icon">⚙️</text>
+        <text class="action-text">设置管控</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="loading-mask" wx:if="{{isLoading}}">
+    <view class="loading-spinner"></view>
+    <text class="loading-text">加载中...</text>
+  </view>
+
+  <view class="content-section" wx:if="{{!isLoading}}">
+    <view class="card time-card">
+      <view class="card-header">
+        <text class="card-title">⏱️ 今日使用时长</text>
+        <view class="time-limit-btn" bindtap="onTapTimeLimit">
+          <text class="limit-text">{{todayStats.timeLimitMinutes}}分钟</text>
+          <text class="chevron">▾</text>
+        </view>
+      </view>
+
+      <view class="time-progress-section">
+        <view class="progress-ring">
+          <view class="ring-bg"></view>
+          <view class="ring-progress" style="--percent: {{usagePercent}};"></view>
+          <view class="ring-center">
+            <text class="percent-text">{{usagePercent}}%</text>
+            <text class="percent-label">已使用</text>
+          </view>
+        </view>
+
+        <view class="time-stats">
+          <view class="time-stat-item">
+            <text class="stat-value primary">{{usageText}}</text>
+            <text class="stat-label">使用情况</text>
+          </view>
+          <view class="time-stat-item">
+            <text class="stat-value {{usagePercent >= 100 ? 'warn' : 'success'}}">{{remainingText}}</text>
+            <text class="stat-label">今日{{usagePercent >= 100 ? '' : '剩余'}}</text>
+          </view>
+        </view>
+      </view>
+
+      <view class="progress-bar">
+        <view class="progress-fill {{usagePercent >= 100 ? 'full' : ''}}" style="width: {{usagePercent}}%;"></view>
+      </view>
+
+      <view class="time-actions">
+        <view class="action-btn extend-btn" bindtap="onExtendTime">
+          <text class="action-icon">＋</text>
+          <text class="action-label">延长时长</text>
+        </view>
+        <view class="action-btn lock-btn {{isLocked ? 'unlock' : ''}}" bindtap="onToggleLock">
+          <text class="action-icon">{{isLocked ? '🔓' : '🔒'}}</text>
+          <text class="action-label">{{isLocked ? '立即解锁' : '立即锁定'}}</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="stats-grid">
+      <view class="stat-card">
+        <view class="stat-icon-wrap blue">📝</view>
+        <view class="stat-info">
+          <text class="stat-num">{{todayStats.quizTotal}}</text>
+          <text class="stat-desc">答题总数</text>
+        </view>
+      </view>
+
+      <view class="stat-card">
+        <view class="stat-icon-wrap green">✅</view>
+        <view class="stat-info">
+          <text class="stat-num">{{todayStats.quizCorrect}}</text>
+          <text class="stat-desc">正确数</text>
+        </view>
+      </view>
+
+      <view class="stat-card">
+        <view class="stat-icon-wrap orange">🎯</view>
+        <view class="stat-info">
+          <text class="stat-num">{{accuracyText}}</text>
+          <text class="stat-desc">正确率</text>
+        </view>
+      </view>
+
+      <view class="stat-card">
+        <view class="stat-icon-wrap purple">🎮</view>
+        <view class="stat-info">
+          <text class="stat-num">{{todayStats.gameCount}}</text>
+          <text class="stat-desc">游戏次数</text>
+        </view>
+      </view>
+
+      <view class="stat-card">
+        <view class="stat-icon-wrap teal">🗑️</view>
+        <view class="stat-info">
+          <text class="stat-num">{{todayStats.classifyCount}}</text>
+          <text class="stat-desc">分类练习</text>
+        </view>
+      </view>
+
+      <view class="stat-card">
+        <view class="stat-icon-wrap yellow">🏆</view>
+        <view class="stat-info">
+          <text class="stat-num">{{todayStats.badgesEarned}}</text>
+          <text class="stat-desc">获得勋章</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="card week-card">
+      <view class="card-header">
+        <text class="card-title">📊 最近7天学习趋势</text>
+      </view>
+
+      <view class="chart-container">
+        <view class="chart-bars">
+          <view wx:for="{{weekData}}" wx:key="index" class="bar-item">
+            <view class="bar-wrapper">
+              <view class="bar-value-label" wx:if="{{item.value > 0}}">{{item.value}}'</view>
+              <view class="bar-column {{item.isToday ? 'today' : ''}}" style="height: {{item.height}}rpx;"></view>
+            </view>
+            <text class="bar-label">{{weekLabels[index]}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <view class="tips-card">
+      <view class="tips-header">
+        <text class="tips-icon">💡</text>
+        <text class="tips-title">健康使用建议</text>
+      </view>
+      <view class="tips-list">
+        <view class="tip-row">
+          <text class="tip-bullet">•</text>
+          <text class="tip-text">连续使用20分钟建议休息10分钟</text>
+        </view>
+        <view class="tip-row">
+          <text class="tip-bullet">•</text>
+          <text class="tip-text">每日学习30-60分钟效果最佳</text>
+        </view>
+        <view class="tip-row">
+          <text class="tip-bullet">•</text>
+          <text class="tip-text">睡前1小时避免使用电子设备</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view class="picker-mask" wx:if="{{showTimeLimitPicker}}" bindtap="onClosePicker">
+    <view class="picker-panel" catchtap="preventMaskClose">
+      <view class="picker-header">
+        <text class="picker-title">设置每日使用时长</text>
+        <view class="picker-close" bindtap="onClosePicker">✕</view>
+      </view>
+      <view class="picker-options">
+        <view wx:for="{{timeLimitOptions}}" wx:key="id"
+              class="picker-option {{todayStats.timeLimitMinutes === item.id ? 'selected' : ''}}"
+              bindtap="onSelectTimeLimit" data-minutes="{{item.id}}">
+          <view class="option-main">
+            <text class="option-name">{{item.name}}</text>
+            <text class="option-desc">{{item.desc}}</text>
+          </view>
+          <view class="option-check" wx:if="{{todayStats.timeLimitMinutes === item.id}}">✓</view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view class="picker-mask" wx:if="{{showExtendDialog}}" bindtap="onCloseExtendDialog">
+    <view class="extend-panel" catchtap="preventMaskClose">
+      <view class="extend-header">
+        <text class="extend-icon">⏰</text>
+        <text class="extend-title">延长今日使用时长</text>
+      </view>
+
+      <view class="extend-selector">
+        <view class="extend-btn minus" bindtap="onExtendMinus">−</view>
+        <view class="extend-value-box">
+          <text class="extend-value">{{extendMinutes}}</text>
+          <text class="extend-unit">分钟</text>
+        </view>
+        <view class="extend-btn plus" bindtap="onExtendPlus">+</view>
+      </view>
+
+      <view class="extend-tip">
+        <text class="tip-text">延长时间仅对今日有效，次日自动恢复原设置</text>
+      </view>
+
+      <view class="extend-actions">
+        <view class="dialog-btn cancel" bindtap="onCloseExtendDialog">取消</view>
+        <view class="dialog-btn confirm" bindtap="onConfirmExtend">确认延长</view>
+      </view>
+    </view>
+  </view>
+</view>

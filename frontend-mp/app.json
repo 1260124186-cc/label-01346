@@ -66,7 +66,9 @@
     "pages/correction-submit/correction-submit",
     "pages/correction-review/correction-review",
     "pages/correction-leaderboard/correction-leaderboard",
-    "pages/report-export/report-export"
+    "pages/report-export/report-export",
+    "pages/child-pin-verify/child-pin-verify",
+    "pages/parent-dashboard/parent-dashboard"
   ],
   "window": {
     "backgroundTextStyle": "dark",

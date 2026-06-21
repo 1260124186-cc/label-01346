@@ -29,11 +29,14 @@
     <view class="question-card">
       <view class="question-tags">
         <view class="tag type-tag type-{{currentQuestion.type}}">
-          <text class="tag-icon">{{QUESTION_TYPE_MAP[currentQuestion.type].icon}}</text>
-          <text>{{QUESTION_TYPE_MAP[currentQuestion.type].name}}</text>
+          <text class="tag-icon">{{currentQuestion.type === 'image-single' ? '🖼️' : QUESTION_TYPE_MAP[currentQuestion.type].icon}}</text>
+          <text>{{currentQuestion.type === 'image-single' ? '图片选择' : QUESTION_TYPE_MAP[currentQuestion.type].name}}</text>
         </view>
         <view class="diff-tag diff-{{currentQuestion.difficulty}}">
           {{currentQuestion.difficultyName}}
+        </view>
+        <view class="child-mode-tag" wx:if="{{useImageQuestions}}">
+          👶 适龄
         </view>
         <view class="scene-tag" wx:for="{{currentQuestion.sceneLabels}}" wx:key="*this">
           {{item}}
@@ -48,7 +51,29 @@
   </view>
 
   <view class="options-section">
-    <view class="options-list {{currentQuestion.type === 'judge' ? 'judge-options' : ''}}">
+    <!-- 图片选择题（emoji大图标） -->
+    <view class="image-options-grid" wx:if="{{currentQuestion.type === 'image-single'}}">
+      <view
+        class="image-option {{selectedIndex === index ? 'selected' : ''}} {{isAnswered && index === currentQuestion.correctIndex ? 'correct' : ''}} {{isAnswered && selectedIndex === index && !isCorrect ? 'wrong' : ''}}"
+        wx:for="{{currentQuestion.optionsWithLabel}}"
+        wx:key="index"
+        data-index="{{index}}"
+        bindtap="onSelectOption"
+      >
+        <view class="image-emoji-wrap">
+          <text class="image-emoji">{{item.emoji}}</text>
+        </view>
+        <view class="image-label">{{item.text}}</view>
+        <view class="image-letter">{{item.label}}</view>
+        <view class="option-icon big" wx:if="{{isAnswered}}">
+          <text wx:if="{{index === currentQuestion.correctIndex}}" class="icon-correct">✓</text>
+          <text wx:elif="{{selectedIndex === index && !isCorrect}}" class="icon-wrong">✗</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 普通选项 -->
+    <view class="options-list {{currentQuestion.type === 'judge' ? 'judge-options' : ''}}" wx:else>
       <view
         class="option-item {{currentQuestion.type === 'judge' ? 'judge-item' : ''}} {{currentQuestion.type !== 'judge' && selectedIndexes.indexOf(index) > -1 ? 'selected' : ''}} {{selectedIndex === index && currentQuestion.type !== 'multiple' ? 'selected' : ''}} {{isAnswered && currentQuestion.type !== 'multiple' && index === currentQuestion.correctIndex ? 'correct' : ''}} {{isAnswered && currentQuestion.type === 'multiple' && currentQuestion.correctIndexes.indexOf(index) > -1 ? 'correct' : ''}} {{isAnswered && selectedIndex === index && !isCorrect && currentQuestion.type !== 'multiple' ? 'wrong' : ''}} {{isAnswered && currentQuestion.type === 'multiple' && selectedIndexes.indexOf(index) > -1 && currentQuestion.correctIndexes.indexOf(index) === -1 ? 'wrong' : ''}}"
         wx:for="{{currentQuestion.optionsWithLabel}}"

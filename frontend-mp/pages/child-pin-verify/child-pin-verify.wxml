@@ -1,0 +1,79 @@
+<view class="page-container">
+  <view class="verify-card">
+    <view class="icon-wrapper {{isUnlockMode ? 'warn' : ''}}">
+      <text class="lock-icon">{{isUnlockMode ? '⏰' : '🔒'}}</text>
+    </view>
+
+    <view class="title-section">
+      <text class="main-title">{{title}}</text>
+      <text class="subtitle" wx:if="{{subtitle}}">{{subtitle}}</text>
+    </view>
+
+    <view class="step-indicator" wx:if="{{mode === 'set'}}">
+      <view class="step-dot {{step >= 1 ? 'active' : ''}}">1</view>
+      <view class="step-line {{step >= 2 ? 'active' : ''}}"></view>
+      <view class="step-dot {{step >= 2 ? 'active' : ''}}">2</view>
+    </view>
+
+    <view class="pin-display-section">
+      <view class="pin-dots">
+        <view wx:for="{{pinLength}}" wx:key="index" class="pin-dot {{(step === 1 ? currentPIN : confirmPIN).length > index ? 'filled' : ''}} {{errorMessage ? 'error' : ''}}">
+          <text class="dot-inner" wx:if="{{(step === 1 ? currentPIN : confirmPIN).length > index}}">●</text>
+        </view>
+      </view>
+
+      <view class="error-tip" wx:if="{{errorMessage}}">
+        <text class="error-text">{{errorMessage}}</text>
+      </view>
+
+      <view class="attempts-tip" wx:if="{{remainAttempts < 5 && !isLocked}}">
+        <text class="attempts-text">剩余尝试次数：{{remainAttempts}}</text>
+      </view>
+    </view>
+
+    <view class="keypad-section">
+      <view class="keypad-grid">
+        <view class="key" bindtap="onKeyTap" data-key="1"><text class="key-text">1</text></view>
+        <view class="key" bindtap="onKeyTap" data-key="2"><text class="key-text">2</text><text class="key-sub">ABC</text></view>
+        <view class="key" bindtap="onKeyTap" data-key="3"><text class="key-text">3</text><text class="key-sub">DEF</text></view>
+
+        <view class="key" bindtap="onKeyTap" data-key="4"><text class="key-text">4</text><text class="key-sub">GHI</text></view>
+        <view class="key" bindtap="onKeyTap" data-key="5"><text class="key-text">5</text><text class="key-sub">JKL</text></view>
+        <view class="key" bindtap="onKeyTap" data-key="6"><text class="key-text">6</text><text class="key-sub">MNO</text></view>
+
+        <view class="key" bindtap="onKeyTap" data-key="7"><text class="key-text">7</text><text class="key-sub">PQRS</text></view>
+        <view class="key" bindtap="onKeyTap" data-key="8"><text class="key-text">8</text><text class="key-sub">TUV</text></view>
+        <view class="key" bindtap="onKeyTap" data-key="9"><text class="key-text">9</text><text class="key-sub">WXYZ</text></view>
+
+        <view class="key empty-key"></view>
+        <view class="key" bindtap="onKeyTap" data-key="0"><text class="key-text">0</text></view>
+        <view class="key delete-key" bindtap="onKeyTap" data-key="delete">
+          <text class="delete-icon">⌫</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="alt-auth-section" wx:if="{{showWXAuthOption && !isLocked}}">
+      <view class="divider-line">
+        <view class="line"></view>
+        <text class="divider-text">或使用</text>
+        <view class="line"></view>
+      </view>
+
+      <view class="wx-auth-btn {{isAuthorizing ? 'loading' : ''}}" bindtap="onWXAuth">
+        <view class="wx-icon-wrapper">
+          <text class="wx-icon">💬</text>
+        </view>
+        <text class="wx-auth-text">{{isAuthorizing ? '授权中...' : '微信授权验证'}}</text>
+        <view class="wx-loading" wx:if="{{isAuthorizing}}"></view>
+      </view>
+    </view>
+
+    <view class="tips-section">
+      <view class="tip-item">
+        <text class="tip-icon">💡</text>
+        <text class="tip-text">PIN为4-6位数字，请妥善保管</text>
+      </view>
+    </view>
+  </view>
+</view>

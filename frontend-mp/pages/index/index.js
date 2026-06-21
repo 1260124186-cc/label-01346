@@ -72,12 +72,12 @@ Page({
 
   goToPoints() {
     console.log('[Index] 点击积分即将过期提示')
-    navigateTo('/pages/points/points?tab=expiring')
+    app.safeNavigateTo('/pages/points/points?tab=expiring')
   },
 
   goToSignIn() {
     console.log('[Index] 点击每日签到')
-    navigateTo('/pages/signin/signin')
+    app.safeNavigateTo('/pages/signin/signin')
   },
 
   /**
@@ -104,18 +104,18 @@ Page({
 
     switch (item.linkType) {
       case 'activity':
-        navigateTo('/pages/activity/activity', { id: item.linkId || '1' })
+        app.safeNavigateTo('/pages/activity/activity', { id: item.linkId || '1' })
         break
       case 'quiz':
-        navigateTo('/pages/quiz/quiz')
+        app.safeNavigateTo('/pages/quiz/quiz')
         break
       case 'learning':
-        navigateTo('/pages/learning-center/learning-center')
+        app.safeNavigateTo('/pages/learning-center/learning-center')
         break
       case 'classify':
         if (item.linkId) {
           const trashType = TRASH_TYPES.find(t => t.id === parseInt(item.linkId))
-          navigateTo('/pages/classify/classify', {
+          app.safeNavigateTo('/pages/classify/classify', {
             id: item.linkId,
             name: trashType ? trashType.name : '垃圾分类'
           })
@@ -126,7 +126,7 @@ Page({
 
   goToLearningCenter() {
     console.log('[Index] 点击学习中心')
-    navigateTo('/pages/learning-center/learning-center')
+    app.safeNavigateTo('/pages/learning-center/learning-center')
   },
 
   /**
@@ -138,10 +138,11 @@ Page({
     console.log('[Index] 点击垃圾分类', item.name)
 
     // 跳转到垃圾分类常识页面，传递分类ID
-    navigateTo('/pages/classify/classify', {
+    app.safeNavigateTo('/pages/classify/classify', {
       id: item.id,
       name: item.name
     })
+    app.recordChildClassify()
   },
 
   /**
@@ -152,11 +153,12 @@ Page({
     const { item } = e.currentTarget.dataset
     console.log('[Index] 开始练习', item.name)
 
-    navigateTo('/pages/sort-practice/sort-practice', {
+    app.safeNavigateTo('/pages/sort-practice/sort-practice', {
       mode: 'category',
       typeId: item.id,
       typeName: item.name
     })
+    app.recordChildGame()
   },
 
   /**
@@ -187,7 +189,7 @@ Page({
     const firstType = this.data.trashTypes[0]
     console.log('[Index] 点击了解分类详情', firstType.name)
 
-    navigateTo('/pages/classify/classify', {
+    app.safeNavigateTo('/pages/classify/classify', {
       id: firstType.id,
       name: firstType.name
     })
@@ -198,7 +200,7 @@ Page({
    */
   goToQuiz() {
     console.log('[Index] 点击知识问答')
-    navigateTo('/pages/quiz/quiz')
+    app.safeNavigateTo('/pages/quiz/quiz')
   },
 
   /**
@@ -206,7 +208,7 @@ Page({
    */
   goToDailyQuiz() {
     console.log('[Index] 点击每日一练')
-    navigateTo('/pages/quiz-daily/quiz-daily')
+    app.safeNavigateTo('/pages/quiz-daily/quiz-daily')
   },
 
   /**
@@ -214,9 +216,10 @@ Page({
    */
   goToSortPracticeRandom() {
     console.log('[Index] 点击垃圾分类练习（随机混合）')
-    navigateTo('/pages/sort-practice/sort-practice', {
+    app.safeNavigateTo('/pages/sort-practice/sort-practice', {
       mode: 'random'
     })
+    app.recordChildGame()
   },
 
   /**
@@ -224,9 +227,10 @@ Page({
    */
   goToSortPracticeWrong() {
     console.log('[Index] 点击垃圾分类练习（易错题）')
-    navigateTo('/pages/sort-practice/sort-practice', {
+    app.safeNavigateTo('/pages/sort-practice/sort-practice', {
       mode: 'wrong'
     })
+    app.recordChildGame()
   },
 
   /**
@@ -272,30 +276,30 @@ Page({
     const { item } = e.currentTarget.dataset
     console.log('[Index] 点击热点动态', item.title)
     if (item.tag === '活动') {
-      navigateTo('/pages/activity/activity', { id: '1' })
+      app.safeNavigateTo('/pages/activity/activity', { id: '1' })
     } else if (item.tag === '政策') {
-      navigateTo('/pages/classify/classify', { id: 1 })
+      app.safeNavigateTo('/pages/classify/classify', { id: 1 })
     }
   },
 
   goToSearch() {
     console.log('[Index] 点击搜索框')
-    navigateTo('/pages/search/search')
+    app.safeNavigateTo('/pages/search/search')
   },
 
   goToPhotoRecognize() {
     console.log('[Index] 点击拍一拍识垃圾')
-    navigateTo('/pages/photo-recognize/photo-recognize')
+    app.safeNavigateTo('/pages/photo-recognize/photo-recognize')
   },
 
   goToDropPoint() {
     console.log('[Index] 点击投放点地图')
-    navigateTo('/pages/drop-point/drop-point')
+    app.safeNavigateTo('/pages/drop-point/drop-point')
   },
 
   goToCommunity() {
     console.log('[Index] 点击环保社区')
-    navigateTo('/pages/community/community')
+    app.safeNavigateTo('/pages/community/community')
   },
 
   /**
@@ -303,22 +307,23 @@ Page({
    */
   goToGameHall() {
     console.log('[Index] 点击垃圾分类小游戏')
-    navigateTo('/pages/game-hall/game-hall')
+    app.safeNavigateTo('/pages/game-hall/game-hall')
+    app.recordChildGame()
   },
 
   goToLearningPath() {
     console.log('[Index] 点击我的学习路径')
-    navigateTo('/pages/learning-path/learning-path')
+    app.safeNavigateTo('/pages/learning-path/learning-path')
   },
 
   goToRecycleBook() {
     console.log('[Index] 点击预约上门回收')
-    navigateTo('/pages/recycle-book/recycle-book')
+    app.safeNavigateTo('/pages/recycle-book/recycle-book')
   },
 
   goToVerify() {
     console.log('[Index] 点击证书验真')
-    navigateTo('/pages/certificate-verify/certificate-verify')
+    app.safeNavigateTo('/pages/certificate-verify/certificate-verify')
   },
 
   /**

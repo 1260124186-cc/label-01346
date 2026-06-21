@@ -1,8 +1,132 @@
 <!--
   设置页面
-  功能：消息通知开关、清除缓存、隐私政策、用户协议、意见反馈
+  功能：消息通知开关、儿童模式管控、清除缓存、隐私政策、用户协议、意见反馈
 -->
 <view class="page-container">
+
+  <!-- 儿童模式管控区 -->
+  <view class="section child-section">
+    <view class="section-header-row">
+      <view class="section-title">
+        <text class="title-icon">🧒</text>
+        <text>儿童模式管控</text>
+      </view>
+      <view class="child-lock-status" wx:if="{{isChildLocked}}">
+        <text class="lock-dot"></text>
+        <text class="lock-text">已锁定</text>
+      </view>
+    </view>
+
+    <view class="child-main-card">
+      <view class="setting-item child-toggle-row">
+        <view class="setting-left">
+          <view class="setting-icon big-icon" style="background: rgba(243, 156, 18, 0.12);">
+            <text class="setting-emoji">🧸</text>
+          </view>
+          <view class="setting-info">
+            <view class="setting-title-row">
+              <text class="setting-title big-title">儿童模式</text>
+              <view class="pin-tag" wx:if="{{hasChildPIN}}">
+                <text class="pin-icon">🔒</text>
+                <text class="pin-text">PIN已设</text>
+              </view>
+            </view>
+            <text class="setting-desc">家长管控 · 适龄内容 · 时长限制</text>
+          </view>
+        </view>
+        <view class="setting-right">
+          <switch
+            checked="{{childModeEnabled}}"
+            bindchange="onChildModeChange"
+            color="#5BBD72"
+          />
+        </view>
+      </view>
+
+      <!-- 儿童模式开启后才显示的配置 -->
+      <view class="child-config-area" wx:if="{{childModeEnabled || hasChildPIN}}">
+
+        <view class="today-stats-card">
+          <view class="stats-header">
+            <text class="stats-title">📊 今日使用情况</text>
+          </view>
+          <view class="usage-progress-wrap">
+            <view class="progress-info-row">
+              <view class="progress-info-item">
+                <text class="info-label">已使用</text>
+                <text class="info-value used">{{usageTimeText}}</text>
+              </view>
+              <view class="progress-info-item right">
+                <text class="info-label">剩余</text>
+                <text class="info-value remain">{{usageRemainingText}}</text>
+              </view>
+            </view>
+            <view class="usage-bar">
+              <view class="usage-fill {{usagePercent >= 90 ? 'warn' : ''}}" style="width: {{usagePercent}}%;"></view>
+            </view>
+          </view>
+        </view>
+
+        <view class="sub-settings-list">
+          <view class="sub-setting-item" bindtap="onSelectTimeLimit">
+            <view class="sub-left">
+              <text class="sub-icon">⏱️</text>
+              <view class="sub-info">
+                <text class="sub-title">每日时长上限</text>
+                <text class="sub-desc">超时自动锁定，仅保留学习</text>
+              </view>
+            </view>
+            <view class="sub-right">
+              <text class="sub-value highlight">{{childTimeLimit}}分钟</text>
+              <text class="setting-arrow">›</text>
+            </view>
+          </view>
+
+          <view class="sub-setting-item" bindtap="onSelectAgeGroup">
+            <view class="sub-left">
+              <text class="sub-icon">🎂</text>
+              <view class="sub-info">
+                <text class="sub-title">年龄分级</text>
+                <text class="sub-desc">自动适配适龄内容和题目</text>
+              </view>
+            </view>
+            <view class="sub-right">
+              <text class="sub-value">{{childAgeGroupText}}</text>
+              <text class="setting-arrow">›</text>
+            </view>
+          </view>
+
+          <view class="sub-setting-item" bindtap="onChangePIN">
+            <view class="sub-left">
+              <text class="sub-icon">🔐</text>
+              <view class="sub-info">
+                <text class="sub-title">{{hasChildPIN ? '修改家长PIN' : '设置家长PIN'}}</text>
+                <text class="sub-desc">4-6位数字验证开启/关闭</text>
+              </view>
+            </view>
+            <view class="sub-right">
+              <text class="setting-arrow">›</text>
+            </view>
+          </view>
+
+          <view class="sub-setting-item" bindtap="onGoDashboard">
+            <view class="sub-left">
+              <text class="sub-icon">📈</text>
+              <view class="sub-info">
+                <text class="sub-title">家长监控看板</text>
+                <text class="sub-desc">查看学习数据 · 远程管控</text>
+              </view>
+            </view>
+            <view class="sub-right">
+              <view class="new-tag">NEW</view>
+              <text class="setting-arrow">›</text>
+            </view>
+          </view>
+        </view>
+
+      </view>
+    </view>
+  </view>
 
   <!-- 通用设置 -->
   <view class="section">
@@ -19,31 +143,9 @@
           </view>
         </view>
         <view class="setting-right">
-          <switch 
-            checked="{{notifyEnabled}}" 
+          <switch
+            checked="{{notifyEnabled}}"
             bindchange="onNotifyChange"
-            color="#5BBD72"
-          />
-        </view>
-      </view>
-
-      <view class="setting-item">
-        <view class="setting-left">
-          <view class="setting-icon" style="background: rgba(243, 156, 18, 0.1);">
-            <text class="setting-emoji">🔒</text>
-          </view>
-          <view class="setting-info">
-            <view class="setting-title-row">
-              <text class="setting-title">儿童模式</text>
-              <text class="setting-lock-icon">🔒</text>
-            </view>
-            <text class="setting-desc">简化UI、仅虚拟勋章、无实物兑换</text>
-          </view>
-        </view>
-        <view class="setting-right">
-          <switch 
-            checked="{{childModeEnabled}}" 
-            bindchange="onChildModeChange"
             color="#5BBD72"
           />
         </view>
@@ -173,4 +275,52 @@
   </view>
 
   <view class="safe-area-bottom"></view>
+</view>
+
+<!-- 时长选择弹窗 -->
+<view class="picker-mask" wx:if="{{showTimePicker}}" bindtap="onCloseTimePicker">
+  <view class="picker-panel" catchtap="preventMaskClose">
+    <view class="picker-header">
+      <text class="picker-title">设置每日使用时长</text>
+      <view class="picker-close" bindtap="onCloseTimePicker">✕</view>
+    </view>
+    <view class="picker-options">
+      <view wx:for="{{childTimeLimitOptions}}" wx:key="id"
+            class="picker-option {{childTimeLimit === item.id ? 'selected' : ''}}"
+            bindtap="onConfirmTimeLimit" data-minutes="{{item.id}}">
+        <view class="option-main">
+          <text class="option-name">{{item.name}}</text>
+          <text class="option-desc">{{item.desc}}</text>
+        </view>
+        <view class="option-check" wx:if="{{childTimeLimit === item.id}}">✓</view>
+      </view>
+    </view>
+  </view>
+</view>
+
+<!-- 年龄选择弹窗 -->
+<view class="picker-mask" wx:if="{{showAgePicker}}" bindtap="onCloseAgePicker">
+  <view class="picker-panel" catchtap="preventMaskClose">
+    <view class="picker-header">
+      <text class="picker-title">选择年龄分级</text>
+      <view class="picker-close" bindtap="onCloseAgePicker">✕</view>
+    </view>
+    <view class="picker-options">
+      <view wx:for="{{childAgeGroups}}" wx:key="id"
+            class="picker-option {{childAgeGroup === item.id ? 'selected' : ''}}"
+            bindtap="onConfirmAgeGroup" data-age-id="{{item.id}}">
+        <view class="option-main">
+          <view class="age-row">
+            <text class="option-name">{{item.name}}</text>
+            <view class="age-tag" wx:if="{{item.useImageQuestions}}">
+              <text class="tag-icon">🖼️</text>
+              <text class="tag-text">图片题</text>
+            </view>
+          </view>
+          <text class="option-desc">{{item.desc}}</text>
+        </view>
+        <view class="option-check" wx:if="{{childAgeGroup === item.id}}">✓</view>
+      </view>
+    </view>
+  </view>
 </view>

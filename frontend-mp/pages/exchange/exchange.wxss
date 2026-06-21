@@ -632,6 +632,77 @@
   font-weight: 600;
 }
 
+.badge-tabs.only-badges {
+  background: transparent;
+  box-shadow: none;
+  padding: 0;
+  margin-top: 8rpx;
+}
+
+.badge-tab.only-badge {
+  flex: none;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12rpx;
+  padding: 20rpx 0;
+  background: linear-gradient(135deg, rgba(243, 156, 18, 0.08), rgba(91, 189, 114, 0.08));
+  border: 2rpx dashed rgba(91, 189, 114, 0.3);
+}
+
+.badge-tab.only-badge .tab-icon {
+  font-size: 30rpx;
+}
+
+.badge-tab.only-badge .tab-text {
+  font-size: 30rpx;
+  color: #5BBD72;
+  font-weight: 600;
+}
+
+/* 儿童模式提示条 */
+.child-mode-notice {
+  margin: 16rpx 32rpx 0;
+  padding: 24rpx 28rpx;
+  background: linear-gradient(135deg, rgba(243, 156, 18, 0.1), rgba(91, 189, 114, 0.1));
+  border-radius: 20rpx;
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+  border: 2rpx solid rgba(243, 156, 18, 0.15);
+}
+
+.notice-icon {
+  font-size: 44rpx;
+  width: 64rpx;
+  height: 64rpx;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.notice-content {
+  display: flex;
+  flex-direction: column;
+  gap: 6rpx;
+  flex: 1;
+}
+
+.notice-title {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #E67E22;
+}
+
+.notice-desc {
+  font-size: 22rpx;
+  color: #8E8E93;
+}
+
 /* ==================== 儿童模式提示卡片 ==================== */
 .child-mode-tip-card {
   margin: 16rpx 32rpx;

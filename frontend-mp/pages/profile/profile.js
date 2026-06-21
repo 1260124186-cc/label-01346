@@ -123,26 +123,38 @@ Page({
       return app.filterMenusForChild(baseMenus)
     }
 
+    const isPageBlocked = (link) => {
+      if (!link) return false
+      const check = app.isPageBlockedInChildMode(link)
+      return check.blocked
+    }
+
+    const excludeByLink = (m) => !isPageBlocked(m.link)
+
     const filteredLearn = baseMenus.learnMenus.filter(m => {
-      const excludeIds = ['community', 'exchange', 'orders', 'recycle']
-      return !excludeIds.includes(m.id)
+      const excludeIds = ['community', 'exchange', 'orders', 'recycle', 'invite', 'pkBattle']
+      return !excludeIds.includes(m.id) && excludeByLink(m)
     }).slice(0, 6)
 
     const filteredRecord = baseMenus.recordMenus.filter(m => {
-      const excludeIds = ['orders', 'quizRecords']
-      return !excludeIds.includes(m.id)
+      const excludeIds = ['orders', 'recycleOrders']
+      return !excludeIds.includes(m.id) && excludeByLink(m)
     })
 
     const filteredService = baseMenus.serviceMenus.filter(m => {
-      const excludeIds = ['recycle', 'recycleOrders', 'address']
-      return !excludeIds.includes(m.id)
+      const excludeIds = ['recycle', 'recycleOrders', 'address', 'goods', 'packagingWizard']
+      return !excludeIds.includes(m.id) && excludeByLink(m)
+    })
+
+    const filteredOther = baseMenus.otherMenus.filter(m => {
+      return excludeByLink(m)
     })
 
     return {
       learnMenus: filteredLearn,
       recordMenus: filteredRecord,
       serviceMenus: filteredService,
-      otherMenus: baseMenus.otherMenus,
+      otherMenus: filteredOther,
       noticeMenus: []
     }
   },
@@ -391,9 +403,9 @@ Page({
     const { item } = e.currentTarget.dataset
     console.log('[Profile] 点击菜单', item.title)
 
-    // 如果有链接，直接跳转
+    // 如果有链接，用带拦截的安全跳转
     if (item.link) {
-      navigateTo(item.link)
+      app.safeNavigateTo(item.link)
       return
     }
 

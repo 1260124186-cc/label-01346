@@ -68,21 +68,20 @@
     </view>
   </view>
 
-  <!-- 商品分类 -->
+  <!-- 儿童模式：强制勋章Tab，隐藏切换条 -->
+  <view class="child-mode-notice" wx:if="{{childModeEnabled}}">
+    <view class="notice-icon">🧸</view>
+    <view class="notice-content">
+      <text class="notice-title">儿童模式 · 虚拟勋章兑换</text>
+      <text class="notice-desc">通过学习获得专属荣誉勋章</text>
+    </view>
+  </view>
+
+  <!-- 正常模式：商品分类Tab切换 -->
   <view class="badge-tabs-section" wx:if="{{childModeEnabled}}">
-    <view class="badge-tabs">
-      <view 
-        class="badge-tab {{currentBadgeTab === 'goods' ? 'active' : ''}}"
-        bindtap="switchBadgeTab"
-        data-tab="goods"
-      >
-        <text class="tab-text">实物兑换</text>
-      </view>
-      <view 
-        class="badge-tab {{currentBadgeTab === 'badges' ? 'active' : ''}}"
-        bindtap="switchBadgeTab"
-        data-tab="badges"
-      >
+    <view class="badge-tabs only-badges">
+      <view class="badge-tab only-badge active">
+        <text class="tab-icon">🏆</text>
         <text class="tab-text">虚拟勋章</text>
       </view>
     </view>

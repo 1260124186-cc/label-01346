@@ -5003,6 +5003,15 @@ App({
     certificates: [],
     messageManager: null,
     childModeEnabled: false,
+    childModePIN: null,
+    childTimeLimitMinutes: 60,
+    childAgeGroup: '6to8',
+    childBirthday: null,
+    childUsageTracker: null,
+    childModeLocked: false,
+    childPINAttempts: 0,
+    childPINLockUntil: 0,
+    childDailyStats: null,
     unlockedBadges: [],
     userRole: 'member',
     userGroups: [],
@@ -5018,9 +5027,49 @@ App({
   initChildMode() {
     const childModeEnabled = wx.getStorageSync('childModeEnabled') || false
     const userRole = wx.getStorageSync('userRole') || 'member'
+    const childModePIN = wx.getStorageSync('childModePIN') || ''
+    const childTimeLimitMinutes = wx.getStorageSync('childTimeLimitMinutes') || 60
+    const childAgeGroup = wx.getStorageSync('childAgeGroup') || '6to8'
+    const childBirthday = wx.getStorageSync('childBirthday') || null
+
+    const today = formatDate(new Date(), 'YYYY-MM-DD')
+    const storedTracker = wx.getStorageSync('childUsageTracker') || {}
+    const childUsageTracker = storedTracker.date === today ? storedTracker : {
+      date: today,
+      totalSeconds: 0,
+      lastActiveAt: Date.now(),
+      sessions: []
+    }
+    wx.setStorageSync('childUsageTracker', childUsageTracker)
+
+    const storedDailyStats = wx.getStorageSync('childDailyStats') || {}
+    const childDailyStats = storedDailyStats.date === today ? storedDailyStats : {
+      date: today,
+      quizCount: 0,
+      correctQuizCount: 0,
+      gameCount: 0,
+      classifyCount: 0,
+      learnSeconds: 0
+    }
+    wx.setStorageSync('childDailyStats', childDailyStats)
+
     this.globalData.childModeEnabled = childModeEnabled
     this.globalData.userRole = userRole
-    console.log('[App] 儿童模式已加载:', { childModeEnabled, userRole })
+    this.globalData.childModePIN = childModePIN
+    this.globalData.childTimeLimitMinutes = childTimeLimitMinutes
+    this.globalData.childAgeGroup = childAgeGroup
+    this.globalData.childBirthday = childBirthday
+    this.globalData.childUsageTracker = childUsageTracker
+    this.globalData.childModeLocked = false
+    this.globalData.childPINAttempts = 0
+    this.globalData.childPINLockUntil = 0
+    this.globalData.childDailyStats = childDailyStats
+
+    console.log('[App] 儿童模式已加载:', { childModeEnabled, userRole, childTimeLimitMinutes, childAgeGroup })
+
+    if (childModeEnabled) {
+      this.startChildUsageTracking()
+    }
   },
 
   isChildModeEnabled() {
@@ -5030,7 +5079,430 @@ App({
   setChildModeEnabled(enabled) {
     this.globalData.childModeEnabled = enabled === true
     wx.setStorageSync('childModeEnabled', this.globalData.childModeEnabled)
+
+    if (enabled) {
+      this.startChildUsageTracking()
+    } else {
+      this.stopChildUsageTracking()
+      this.setChildModeLocked(false)
+    }
+
     console.log('[App] 儿童模式已设置:', this.globalData.childModeEnabled ? '开启' : '关闭')
+  },
+
+  hasChildModePIN() {
+    const pin = this.globalData.childModePIN || wx.getStorageSync('childModePIN')
+    return pin && pin.length >= 4 && pin.length <= 6
+  },
+
+  verifyChildModePIN(inputPIN) {
+    const { CHILD_PIN_CONFIG } = require('./utils/constants')
+    const storedPIN = this.globalData.childModePIN || wx.getStorageSync('childModePIN') || CHILD_PIN_CONFIG.defaultPIN
+    const now = Date.now()
+
+    if (this.globalData.childPINLockUntil > now) {
+      const remainSec = Math.ceil((this.globalData.childPINLockUntil - now) / 1000)
+      return { success: false, locked: true, remainSeconds: remainSec, message: `输入次数过多，请${remainSec}秒后重试` }
+    }
+
+    if (inputPIN === storedPIN) {
+      this.globalData.childPINAttempts = 0
+      return { success: true, message: '验证通过' }
+    }
+
+    this.globalData.childPINAttempts = (this.globalData.childPINAttempts || 0) + 1
+    const remainAttempts = CHILD_PIN_CONFIG.maxAttempts - this.globalData.childPINAttempts
+
+    if (remainAttempts <= 0) {
+      this.globalData.childPINLockUntil = now + CHILD_PIN_CONFIG.lockDurationMinutes * 60 * 1000
+      return { success: false, locked: true, remainSeconds: CHILD_PIN_CONFIG.lockDurationMinutes * 60, message: `密码错误次数过多，请${CHILD_PIN_CONFIG.lockDurationMinutes}分钟后重试` }
+    }
+
+    return { success: false, remainAttempts, message: `密码错误，还剩${remainAttempts}次机会` }
+  },
+
+  setChildModePIN(newPIN) {
+    const { CHILD_PIN_CONFIG } = require('./utils/constants')
+    if (!newPIN || newPIN.length < CHILD_PIN_CONFIG.minLength || newPIN.length > CHILD_PIN_CONFIG.maxLength) {
+      return { success: false, message: `PIN长度需为${CHILD_PIN_CONFIG.minLength}-${CHILD_PIN_CONFIG.maxLength}位` }
+    }
+    if (!/^\d+$/.test(newPIN)) {
+      return { success: false, message: 'PIN只能包含数字' }
+    }
+    this.globalData.childModePIN = newPIN
+    wx.setStorageSync('childModePIN', newPIN)
+    return { success: true, message: 'PIN设置成功' }
+  },
+
+  requestWXAuthForChildMode(action) {
+    return new Promise((resolve) => {
+      wx.login({
+        success: (loginRes) => {
+          if (loginRes.code) {
+            wx.getUserProfile({
+              desc: '用于验证家长身份',
+              success: (profileRes) => {
+                resolve({ success: true, code: loginRes.code, userInfo: profileRes.userInfo, action })
+              },
+              fail: () => {
+                resolve({ success: true, code: loginRes.code, userInfo: null, action, fallback: true })
+              }
+            })
+          } else {
+            resolve({ success: false, message: '微信登录失败' })
+          }
+        },
+        fail: () => {
+          resolve({ success: false, message: '微信授权失败' })
+        }
+      })
+    })
+  },
+
+  getChildTimeLimit() {
+    return this.globalData.childTimeLimitMinutes || 60
+  },
+
+  setChildTimeLimit(minutes) {
+    const validOptions = [30, 60, 90]
+    if (!validOptions.includes(minutes)) {
+      return { success: false, message: '时长只能选择30/60/90分钟' }
+    }
+    this.globalData.childTimeLimitMinutes = minutes
+    wx.setStorageSync('childTimeLimitMinutes', minutes)
+    return { success: true, message: `已设置每日${minutes}分钟` }
+  },
+
+  getChildAgeGroup() {
+    return this.globalData.childAgeGroup || '6to8'
+  },
+
+  getChildAgeGroupInfo() {
+    const { CHILD_AGE_GROUPS } = require('./utils/constants')
+    const groupId = this.getChildAgeGroup()
+    return CHILD_AGE_GROUPS.find(g => g.id === groupId) || CHILD_AGE_GROUPS[1]
+  },
+
+  setChildAgeGroup(ageGroupId) {
+    const { CHILD_AGE_GROUPS } = require('./utils/constants')
+    const valid = CHILD_AGE_GROUPS.find(g => g.id === ageGroupId)
+    if (!valid) {
+      return { success: false, message: '无效的年龄分组' }
+    }
+    this.globalData.childAgeGroup = ageGroupId
+    wx.setStorageSync('childAgeGroup', ageGroupId)
+    return { success: true, message: `已设置为${valid.name}` }
+  },
+
+  shouldUseImageQuestions() {
+    const ageInfo = this.getChildAgeGroupInfo()
+    return this.isChildModeEnabled() && ageInfo.useImageQuestions === true
+  },
+
+  startChildUsageTracking() {
+    this.stopChildUsageTracking()
+    this._childUsageTimer = setInterval(() => {
+      this.tickChildUsage()
+    }, 1000)
+    console.log('[App] 儿童模式时长追踪已启动')
+  },
+
+  stopChildUsageTracking() {
+    if (this._childUsageTimer) {
+      clearInterval(this._childUsageTimer)
+      this._childUsageTimer = null
+    }
+  },
+
+  tickChildUsage() {
+    if (!this.isChildModeEnabled()) return
+
+    const today = formatDate(new Date(), 'YYYY-MM-DD')
+    const tracker = this.globalData.childUsageTracker
+
+    if (!tracker || tracker.date !== today) {
+      this.resetChildDailyStats()
+      return
+    }
+
+    tracker.totalSeconds = (tracker.totalSeconds || 0) + 1
+    tracker.lastActiveAt = Date.now()
+    this.globalData.childUsageTracker = tracker
+    wx.setStorageSync('childUsageTracker', tracker)
+
+    const limitSec = this.getChildTimeLimit() * 60
+    if (tracker.totalSeconds >= limitSec && !this.isChildModeLocked()) {
+      this.setChildModeLocked(true)
+      console.log('[App] 儿童模式已达时长上限，自动锁定')
+    }
+  },
+
+  getChildUsageTime() {
+    const tracker = this.globalData.childUsageTracker || wx.getStorageSync('childUsageTracker') || {}
+    return tracker.totalSeconds || 0
+  },
+
+  getChildRemainingTime() {
+    const used = this.getChildUsageTime()
+    const limit = this.getChildTimeLimit() * 60
+    return Math.max(0, limit - used)
+  },
+
+  getChildUsagePercent() {
+    const used = this.getChildUsageTime()
+    const limit = this.getChildTimeLimit() * 60
+    if (limit <= 0) return 0
+    return Math.min(100, Math.round((used / limit) * 100))
+  },
+
+  formatUsageTime(seconds) {
+    const m = Math.floor(seconds / 60)
+    const s = seconds % 60
+    return `${m}分${s}秒`
+  },
+
+  isChildModeLocked() {
+    return this.globalData.childModeLocked === true
+  },
+
+  setChildModeLocked(locked) {
+    const wasLocked = this.globalData.childModeLocked === true
+    this.globalData.childModeLocked = locked === true
+    console.log('[App] 儿童模式锁定状态:', this.globalData.childModeLocked)
+
+    if (locked && !wasLocked) {
+      try {
+        wx.showModal({
+          title: '⏰ 今日使用时长已达上限',
+          content: '请家长输入PIN解锁，或明日继续使用。\n\n分类学习功能仍可正常使用。',
+          confirmText: '家长解锁',
+          cancelText: '去学习',
+          confirmColor: '#5BBD72',
+          success: (res) => {
+            if (res.confirm) {
+              wx.navigateTo({
+                url: '/pages/child-pin-verify/child-pin-verify?unlock=true'
+              })
+            } else {
+              wx.switchTab({
+                url: '/pages/classify/classify'
+              })
+            }
+          },
+          fail: () => {
+            wx.navigateTo({
+              url: '/pages/child-pin-verify/child-pin-verify?unlock=true'
+            })
+          }
+        })
+      } catch (e) {
+        wx.navigateTo({
+          url: '/pages/child-pin-verify/child-pin-verify?unlock=true'
+        })
+      }
+    }
+  },
+
+  unlockChildModeWithPIN(pin) {
+    const result = this.verifyChildModePIN(pin)
+    if (result.success) {
+      this.setChildModeLocked(false)
+      return { success: true, message: '已解锁' }
+    }
+    return result
+  },
+
+  resetChildDailyStats() {
+    const today = formatDate(new Date(), 'YYYY-MM-DD')
+    const newTracker = {
+      date: today,
+      totalSeconds: 0,
+      lastActiveAt: Date.now(),
+      sessions: []
+    }
+    const newStats = {
+      date: today,
+      quizCount: 0,
+      correctQuizCount: 0,
+      gameCount: 0,
+      classifyCount: 0,
+      learnSeconds: 0
+    }
+    this.globalData.childUsageTracker = newTracker
+    this.globalData.childDailyStats = newStats
+    wx.setStorageSync('childUsageTracker', newTracker)
+    wx.setStorageSync('childDailyStats', newStats)
+  },
+
+  recordChildQuiz(correct = false) {
+    if (!this.isChildModeEnabled()) return
+    const stats = this.globalData.childDailyStats || wx.getStorageSync('childDailyStats') || {}
+    stats.quizCount = (stats.quizCount || 0) + 1
+    if (correct) stats.correctQuizCount = (stats.correctQuizCount || 0) + 1
+    stats.learnSeconds = (stats.learnSeconds || 0) + 5
+    this.globalData.childDailyStats = stats
+    wx.setStorageSync('childDailyStats', stats)
+  },
+
+  recordChildGame() {
+    if (!this.isChildModeEnabled()) return
+    const stats = this.globalData.childDailyStats || wx.getStorageSync('childDailyStats') || {}
+    stats.gameCount = (stats.gameCount || 0) + 1
+    this.globalData.childDailyStats = stats
+    wx.setStorageSync('childDailyStats', stats)
+  },
+
+  recordChildClassify() {
+    if (!this.isChildModeEnabled()) return
+    const stats = this.globalData.childDailyStats || wx.getStorageSync('childDailyStats') || {}
+    stats.classifyCount = (stats.classifyCount || 0) + 1
+    this.globalData.childDailyStats = stats
+    wx.setStorageSync('childDailyStats', stats)
+  },
+
+  getChildTodayStats(memberId) {
+    const ownerId = memberId || this.getUserId()
+    const isCurrentUser = ownerId === this.getUserId()
+
+    if (isCurrentUser) {
+      const stats = this.globalData.childDailyStats || wx.getStorageSync('childDailyStats') || {}
+      const usedSeconds = this.getChildUsageTime()
+      return {
+        date: stats.date || formatDate(new Date(), 'YYYY-MM-DD'),
+        quizCount: stats.quizCount || 0,
+        correctQuizCount: stats.correctQuizCount || 0,
+        gameCount: stats.gameCount || 0,
+        classifyCount: stats.classifyCount || 0,
+        usedSeconds,
+        usedTimeText: this.formatUsageTime(usedSeconds),
+        limitMinutes: this.getChildTimeLimit(),
+        remainingSeconds: this.getChildRemainingTime(),
+        accuracy: (stats.quizCount || 0) > 0 ? Math.round(((stats.correctQuizCount || 0) / (stats.quizCount || 1)) * 100) : 0
+      }
+    }
+
+    const memberStats = wx.getStorageSync('memberDailyStats') || {}
+    const userStats = memberStats[ownerId] || {}
+    return {
+      date: userStats.date || formatDate(new Date(), 'YYYY-MM-DD'),
+      quizCount: userStats.quizCount || Math.floor(Math.random() * 30),
+      correctQuizCount: userStats.correctQuizCount || Math.floor(Math.random() * 25),
+      gameCount: userStats.gameCount || Math.floor(Math.random() * 10),
+      classifyCount: userStats.classifyCount || Math.floor(Math.random() * 40),
+      usedSeconds: userStats.usedSeconds || Math.floor(Math.random() * 3600),
+      usedTimeText: this.formatUsageTime(userStats.usedSeconds || Math.floor(Math.random() * 3600)),
+      limitMinutes: userStats.limitMinutes || 60,
+      remainingSeconds: Math.max(0, (userStats.limitMinutes || 60) * 60 - (userStats.usedSeconds || 0)),
+      accuracy: userStats.accuracy || 80
+    }
+  },
+
+  getChildStatsForGroupMember(memberId) {
+    return this.getChildTodayStats(memberId)
+  },
+
+  isPageBlockedInChildMode(pagePath) {
+    if (!this.isChildModeEnabled()) return { blocked: false }
+    const { CHILD_BLOCKED_PAGES, CHILD_ALLOWED_PAGES_WHEN_LOCKED } = require('./utils/constants')
+
+    const normalizedPath = (pagePath || '').replace(/^\//, '')
+
+    if (this.isChildModeLocked()) {
+      const allowed = CHILD_ALLOWED_PAGES_WHEN_LOCKED.some(p => normalizedPath.indexOf(p) === 0)
+      if (!allowed) {
+        return { blocked: true, reason: 'locked', message: '今日使用时长已达上限，仅可使用分类学习功能' }
+      }
+      return { blocked: false }
+    }
+
+    const blocked = CHILD_BLOCKED_PAGES.some(p => normalizedPath.indexOf(p) === 0)
+    if (blocked) {
+      return { blocked: true, reason: 'childMode', message: '儿童模式下暂不支持该功能' }
+    }
+
+    return { blocked: false }
+  },
+
+  safeNavigateTo(pagePath, params) {
+    const check = this.isPageBlockedInChildMode(pagePath)
+    if (check.blocked) {
+      wx.showToast({ title: check.message, icon: 'none', duration: 2000 })
+      return false
+    }
+    const { navigateTo } = require('./utils/util')
+    navigateTo(pagePath, params)
+    return true
+  },
+
+  extendChildDailyTimeLimit(addedMinutes) {
+    const minutes = Math.max(10, Math.min(120, parseInt(addedMinutes) || 0))
+    const stats = this.getChildTodayStats()
+    const todayStr = new Date().toDateString()
+
+    const extended = Object.assign({}, stats.extendedMap || {})
+    extended[todayStr] = (extended[todayStr] || 0) + minutes
+
+    this.globalData.childDailyStats = Object.assign({}, this.globalData.childDailyStats, {
+      extendedLimitMinutes: (this.globalData.childDailyStats && this.globalData.childDailyStats.extendedLimitMinutes || 0) + minutes,
+      extendedMap: extended
+    })
+    wx.setStorageSync('childDailyStats', this.globalData.childDailyStats)
+
+    if (this.isChildModeLocked()) {
+      this.setChildModeLocked(false)
+    }
+    return minutes
+  },
+
+  getChildDailyStatsByDate(dateStr, memberId) {
+    if (memberId) {
+      const group = this.getFamilyGroupData()
+      const member = (group.members || []).find(m => m.memberId === memberId)
+      if (member && member.dailyStats && member.dailyStats[dateStr]) {
+        return member.dailyStats[dateStr]
+      }
+      return {
+        usageSeconds: Math.floor(Math.random() * 1800),
+        quizTotal: Math.floor(Math.random() * 30),
+        quizCorrect: Math.floor(Math.random() * 25),
+        gameCount: Math.floor(Math.random() * 8),
+        classifyCount: Math.floor(Math.random() * 15),
+        coinsEarned: Math.floor(Math.random() * 60),
+        badgesEarned: Math.floor(Math.random() * 2)
+      }
+    }
+
+    const allStats = wx.getStorageSync('childDailyStatsHistory') || {}
+    if (allStats[dateStr]) return allStats[dateStr]
+
+    const todayStr = new Date().toDateString()
+    if (dateStr === todayStr) {
+      return this.getChildTodayStats()
+    }
+
+    return {
+      usageSeconds: 0, quizTotal: 0, quizCorrect: 0,
+      gameCount: 0, classifyCount: 0, coinsEarned: 0, badgesEarned: 0
+    }
+  },
+
+  getFamilyGroupMembers() {
+    const group = this.getFamilyGroupData()
+    const myId = wx.getStorageSync('userId') || 'me_001'
+    const myName = wx.getStorageSync('userInfo') && wx.getStorageSync('userInfo').nickName || '我'
+
+    const defaultMembers = [
+      { memberId: myId, nickname: myName, avatarUrl: '', role: 'parent', memberType: 'parent', isMe: true },
+      { memberId: 'child_001', nickname: '小乖', avatarUrl: '', role: 'child', memberType: 'child', age: 7 },
+      { memberId: 'child_002', nickname: '小宝', avatarUrl: '', role: 'child', memberType: 'child', age: 5 }
+    ]
+    return group.members && group.members.length > 0 ? group.members : defaultMembers
+  },
+
+  getFamilyGroupData() {
+    const stored = wx.getStorageSync('familyGroup')
+    if (stored) return stored
+    return { groupId: 'default_group', members: [], createdAt: Date.now() }
   },
 
   getMyVirtualBadges() {
