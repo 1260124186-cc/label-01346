@@ -12,7 +12,8 @@ const {
   getTypeNameForCity,
   getTrashTypesForCity,
   hasUpcomingStandard,
-  getUpcomingStandards
+  getUpcomingStandards,
+  incrementWrongCount
 } = require('./utils/constants')
 const {
   MESSAGE_TYPES,
@@ -1311,34 +1312,28 @@ App({
   addWrongQuestion(question) {
     const targetMemberId = question.memberId || this.getUserId()
     const isCurrentUser = targetMemberId === this.getUserId()
-    let wrongQuestions = this.globalData.wrongQuestions || []
-    let existingIndex
+    const allWrongQuestions = this.globalData.wrongQuestions || []
+
+    let memberWrongList
+    let otherMemberList
     if (isCurrentUser) {
-      existingIndex = wrongQuestions.findIndex(q => q.id === question.id && (q.memberId === targetMemberId || !q.memberId))
+      memberWrongList = allWrongQuestions.filter(q => (q.memberId === targetMemberId || !q.memberId))
+      otherMemberList = allWrongQuestions.filter(q => !(q.memberId === targetMemberId || !q.memberId))
     } else {
-      existingIndex = wrongQuestions.findIndex(q => q.id === question.id && q.memberId === targetMemberId)
+      memberWrongList = allWrongQuestions.filter(q => q.memberId === targetMemberId)
+      otherMemberList = allWrongQuestions.filter(q => !(q.memberId === targetMemberId))
     }
 
-    if (existingIndex > -1) {
-      wrongQuestions[existingIndex] = {
-        ...wrongQuestions[existingIndex],
-        memberId: targetMemberId,
-        wrongCount: (wrongQuestions[existingIndex].wrongCount || 1) + 1,
-        wrongTime: new Date().toISOString()
-      }
-    } else {
-      wrongQuestions.push({
-        ...question,
-        memberId: targetMemberId,
-        wrongCount: 1,
-        wrongTime: new Date().toISOString()
-      })
-    }
+    const updatedMemberList = incrementWrongCount(memberWrongList, question, targetMemberId)
+    this.globalData.wrongQuestions = [...otherMemberList, ...updatedMemberList]
+    wx.setStorageSync('wrongQuestions', this.globalData.wrongQuestions)
 
-    this.globalData.wrongQuestions = wrongQuestions
-    wx.setStorageSync('wrongQuestions', wrongQuestions)
-    const foundWrong = wrongQuestions.find(q => q.id === question.id && q.memberId === targetMemberId)
-    console.log('[App] 错题已更新', question.question, '错误次数:', foundWrong ? foundWrong.wrongCount : 1, 'memberId:', targetMemberId)
+    const foundWrong = this.globalData.wrongQuestions.find(q =>
+      q.id === question.id && (isCurrentUser
+        ? (q.memberId === targetMemberId || !q.memberId)
+        : q.memberId === targetMemberId)
+    )
+    console.log('[App] 错题已更新（统一逻辑）', question.question, '错误次数:', foundWrong ? foundWrong.wrongCount : 1, 'memberId:', targetMemberId)
   },
 
   removeWrongQuestion(questionId, memberId) {

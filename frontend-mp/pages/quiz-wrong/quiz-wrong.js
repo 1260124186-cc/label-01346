@@ -20,7 +20,8 @@ Page({
     QUESTION_TYPE_MAP: {
       single: { name: '单选', icon: '○' },
       multiple: { name: '多选', icon: '☐' },
-      judge: { name: '判断', icon: '✓' }
+      judge: { name: '判断', icon: '✓' },
+      image: { name: '图片题', icon: '🖼️' }
     },
     SCENE_MAP: {
       kitchen: '厨房',
@@ -62,28 +63,35 @@ Page({
 
     const processedQuestions = wrongQuestions.map(q => {
       const type = q.type || 'single'
+      let normalizedType = type
+      if (normalizedType === 'image') normalizedType = 'single'
       let options = q.options
       let correctIndex = q.correctIndex
       let correctIndexes = q.correctIndexes || []
       const wrongCount = q.wrongCount || 1
       const wrongTime = q.wrongTime || new Date().toISOString()
+      const imageOptions = q.imageOptions || null
+      const questionImage = q.questionImage || null
+      const explanationImage = q.explanationImage || null
+      const media = q.media || []
+      const encyclopediaId = q.encyclopediaId || null
 
-      if (type === 'judge' && (!options || options.length === 0)) {
+      if (normalizedType === 'judge' && (!options || options.length === 0)) {
         options = ['正确', '错误']
       }
 
       const optionsWithLabel = options.map((opt, idx) => ({
         text: opt,
-        label: type === 'judge' ? (idx === 0 ? '✓' : '✗') : String.fromCharCode(65 + idx)
+        label: normalizedType === 'judge' ? (idx === 0 ? '✓' : '✗') : String.fromCharCode(65 + idx)
       }))
 
       let correctAnswerLabel = ''
-      if (type === 'multiple') {
+      if (normalizedType === 'multiple') {
         correctAnswerLabel = correctIndexes
           .sort((a, b) => a - b)
           .map(i => String.fromCharCode(65 + i))
           .join('、')
-      } else if (type === 'judge') {
+      } else if (normalizedType === 'judge') {
         correctAnswerLabel = correctIndex === 0 ? '正确' : '错误'
       } else {
         correctAnswerLabel = String.fromCharCode(65 + correctIndex)
@@ -98,7 +106,13 @@ Page({
       return {
         ...q,
         type,
+        normalizedType,
         options,
+        imageOptions,
+        questionImage,
+        explanationImage,
+        media,
+        encyclopediaId,
         optionsWithLabel,
         correctIndex,
         correctIndexes,

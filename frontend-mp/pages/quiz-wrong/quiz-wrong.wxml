@@ -91,6 +91,15 @@
 
           <view class="question-text">{{item.question}}</view>
 
+          <view class="question-image-wrap" wx:if="{{item.questionImage}}">
+            <image class="question-image" src="{{item.questionImage}}" mode="widthFix"></image>
+          </view>
+          <view class="question-media-list" wx:if="{{item.media && item.media.length > 0}}">
+            <block wx:for="{{item.media}}" wx:key="url" wx:for-item="med">
+              <image wx:if="{{med.type === 'image'}}" class="question-media-item" src="{{med.url}}" mode="widthFix"></image>
+            </block>
+          </view>
+
           <view class="question-options">
             <view class="option-preview" wx:for="{{item.optionsWithLabel}}" wx:key="index" wx:for-item="opt">
               <text class="option-label">{{opt.label}}.</text>

@@ -142,8 +142,25 @@ const QUIZ_SCENES = [
 const QUIZ_QUESTION_TYPES = [
   { id: 'single', name: '单选题', icon: '①' },
   { id: 'multiple', name: '多选题', icon: '②' },
-  { id: 'judge', name: '判断题', icon: '✓✗' }
+  { id: 'judge', name: '判断题', icon: '✓✗' },
+  { id: 'image', name: '图片题', icon: '🖼️' }
 ]
+
+/**
+ * 图片占位图 URL（用 base64 占位，避免网络请求）
+ */
+const IMAGE_PLACEHOLDERS = {
+  plasticBottle: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=clear%20empty%20plastic%20water%20bottle%20white%20background&image_size=square',
+  newspaper: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=stack%20of%20old%20newspapers%20recyclable%20waste&image_size=square',
+  battery: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=used%20AA%20batteries%20harmful%20waste&image_size=square',
+  foodWaste: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=food%20scraps%20vegetable%20peels%20kitchen%20waste&image_size=square',
+  tissue: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=used%20paper%20tissues%20other%20waste&image_size=square',
+  glassBottle: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=empty%20glass%20bottles%20recyclable&image_size=square',
+  can: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=empty%20aluminum%20cans%20recyclable%20waste&image_size=square',
+  lightbulb: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=broken%20fluorescent%20light%20bulb%20harmful&image_size=square',
+  expiredMedicine: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=expired%20medicine%20bottles%20harmful%20waste&image_size=square',
+  cigarette: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=cigarette%20butts%20other%20waste&image_size=square'
+}
 
 /**
  * 首页轮播图数据
@@ -279,11 +296,11 @@ const getUserLevel = (points) => {
  * 知识问答章节数据
  */
 const QUIZ_CHAPTERS = [
-  { id: 1, name: '可回收垃圾', description: '了解可回收垃圾的分类知识', icon: '♻️', color: '#4A90D9', totalQuestions: 36, unlocked: true, completed: false, progress: 0 },
-  { id: 2, name: '有害垃圾', description: '了解有害垃圾的分类知识', icon: '☣️', color: '#E85D5D', totalQuestions: 30, unlocked: true, completed: false, progress: 0 },
-  { id: 3, name: '厨余垃圾', description: '了解厨余垃圾的分类知识', icon: '🍂', color: '#5BBD72', totalQuestions: 36, unlocked: false, completed: false, progress: 0 },
-  { id: 4, name: '其他垃圾', description: '了解其他垃圾的分类知识', icon: '🗑️', color: '#8E8E93', totalQuestions: 28, unlocked: false, completed: false, progress: 0 },
-  { id: 5, name: '综合知识', description: '垃圾分类综合知识测试', icon: '📚', color: '#9B59B6', totalQuestions: 40, unlocked: false, completed: false, progress: 0 }
+  { id: 1, name: '可回收垃圾', description: '了解可回收垃圾的分类知识', icon: '♻️', color: '#4A90D9', totalQuestions: 40, unlocked: true, completed: false, progress: 0 },
+  { id: 2, name: '有害垃圾', description: '了解有害垃圾的分类知识', icon: '☣️', color: '#E85D5D', totalQuestions: 33, unlocked: true, completed: false, progress: 0 },
+  { id: 3, name: '厨余垃圾', description: '了解厨余垃圾的分类知识', icon: '🍂', color: '#5BBD72', totalQuestions: 37, unlocked: false, completed: false, progress: 0 },
+  { id: 4, name: '其他垃圾', description: '了解其他垃圾的分类知识', icon: '🗑️', color: '#8E8E93', totalQuestions: 30, unlocked: false, completed: false, progress: 0 },
+  { id: 5, name: '综合知识', description: '垃圾分类综合知识测试', icon: '📚', color: '#9B59B6', totalQuestions: 42, unlocked: false, completed: false, progress: 0 }
 ]
 
 /**
@@ -2072,7 +2089,158 @@ const QUIZ_QUESTIONS = [
     explanation: '以上都是有效的垃圾分类宣传手段，可以从认知、视觉、利益等多维度引导用户。',
     explanationImage: '',
     errorTip: '寓教于乐的宣传活动效果最好。',
-    relatedTrash: []
+    relatedTrash: [],
+    media: [],
+    encyclopediaId: null
+  },
+  // ========= 图片题（media题型贯通，支持所有题型附带media） =========
+  { id: 171, type: 'image', chapterId: 1, difficulty: 'easy', scenes: ['kitchen', 'office'],
+    question: '图中的空塑料瓶属于什么垃圾？',
+    options: ['可回收垃圾', '有害垃圾', '厨余垃圾', '其他垃圾'],
+    correctIndex: 0,
+    explanation: '干净的塑料瓶属于可回收垃圾中的废塑料类（PET材质），回收后可制成新的塑料制品。投放前请倒空残留液体并简单冲洗。',
+    explanationImage: '',
+    errorTip: '注意：如果瓶内油污严重无法清洗干净，则归为其他垃圾。',
+    relatedTrash: [{name: '塑料瓶', typeId: 1, emoji: '🧴'}, {name: '塑料餐盒', typeId: 4, emoji: '🥡'}],
+    media: [{ type: 'image', url: IMAGE_PLACEHOLDERS.plasticBottle, caption: '空塑料瓶' }],
+    questionImage: IMAGE_PLACEHOLDERS.plasticBottle,
+    encyclopediaId: 'ency_recyclable_plastic'
+  },
+  { id: 172, type: 'image', chapterId: 1, difficulty: 'easy', scenes: ['kitchen', 'office'],
+    question: '观察图片中的物品，它们属于哪一类垃圾？',
+    options: ['可回收垃圾', '有害垃圾', '厨余垃圾', '其他垃圾'],
+    correctIndex: 0,
+    explanation: '旧报纸、书本等干净的纸张都属于可回收垃圾中的废纸张类，可回收再制成再生纸制品。',
+    explanationImage: '',
+    errorTip: '被油污或食物严重污染的纸张不再属于可回收物，应归为其他垃圾。',
+    relatedTrash: [{name: '报纸', typeId: 1, emoji: '📰'}, {name: '书本', typeId: 1, emoji: '📚'}],
+    media: [{ type: 'image', url: IMAGE_PLACEHOLDERS.newspaper, caption: '旧报纸' }],
+    questionImage: IMAGE_PLACEHOLDERS.newspaper,
+    encyclopediaId: 'ency_recyclable_paper'
+  },
+  { id: 173, type: 'image', chapterId: 1, difficulty: 'easy', scenes: ['kitchen', 'campus'],
+    question: '图中的空易拉罐应该投入哪个颜色的垃圾桶？',
+    options: ['蓝色（可回收物）', '红色（有害垃圾）', '绿色（厨余垃圾）', '灰色（其他垃圾）'],
+    correctIndex: 0,
+    explanation: '易拉罐主要由铝或铁制成，属于可回收垃圾中的废金属类，应投入蓝色可回收物容器。',
+    explanationImage: '',
+    errorTip: '投放前请倒空罐内液体，有条件可简单冲洗以减少污染。',
+    relatedTrash: [{name: '易拉罐', typeId: 1, emoji: '🥫'}, {name: '金属罐头', typeId: 1, emoji: '🥫'}],
+    media: [{ type: 'image', url: IMAGE_PLACEHOLDERS.can, caption: '空易拉罐' }],
+    questionImage: IMAGE_PLACEHOLDERS.can,
+    encyclopediaId: 'ency_recyclable_metal'
+  },
+  { id: 174, type: 'image', chapterId: 1, difficulty: 'medium', scenes: ['kitchen'],
+    question: '如图所示，这些干净的玻璃瓶应如何处理？',
+    options: ['投入蓝色可回收物容器', '投入红色有害垃圾容器', '投入绿色厨余垃圾容器', '打碎后投入灰色其他垃圾'],
+    correctIndex: 0,
+    explanation: '玻璃瓶属于可回收垃圾中的废玻璃类。玻璃是可无限循环利用的材料，保持完整投放更利于回收。',
+    explanationImage: '',
+    errorTip: '切勿打碎玻璃瓶！完整的玻璃瓶更安全、回收价值也更高。',
+    relatedTrash: [{name: '玻璃瓶', typeId: 1, emoji: '🍶'}, {name: '玻璃杯', typeId: 1, emoji: '🥛'}],
+    media: [{ type: 'image', url: IMAGE_PLACEHOLDERS.glassBottle, caption: '干净的玻璃瓶' }],
+    questionImage: IMAGE_PLACEHOLDERS.glassBottle,
+    encyclopediaId: 'ency_recyclable_glass'
+  },
+  { id: 175, type: 'image', chapterId: 2, difficulty: 'easy', scenes: ['kitchen', 'office', 'campus'],
+    question: '图中的废旧电池应该如何分类投放？',
+    options: ['有害垃圾（红色容器）', '可回收垃圾（蓝色容器）', '厨余垃圾（绿色容器）', '其他垃圾（灰色容器）'],
+    correctIndex: 0,
+    explanation: '废电池（特别是充电电池、纽扣电池）含有重金属等有毒有害物质，随意丢弃会严重污染土壤和水源，必须单独投放至红色有害垃圾容器。',
+    explanationImage: '',
+    errorTip: '普通5号/7号一次性干电池（无汞环保型）部分地区归为其他垃圾，可按当地实际规定执行。',
+    relatedTrash: [{name: '充电电池', typeId: 2, emoji: '🔋'}, {name: '纽扣电池', typeId: 2, emoji: '🔋'}],
+    media: [{ type: 'image', url: IMAGE_PLACEHOLDERS.battery, caption: '废旧电池' }],
+    questionImage: IMAGE_PLACEHOLDERS.battery,
+    encyclopediaId: 'ency_harmful_battery'
+  },
+  { id: 176, type: 'image', chapterId: 2, difficulty: 'easy', scenes: ['kitchen', 'campus'],
+    question: '图中破损的荧光灯管属于什么垃圾？',
+    options: ['有害垃圾', '可回收垃圾', '厨余垃圾', '其他垃圾'],
+    correctIndex: 0,
+    explanation: '荧光灯管内部含有汞蒸气（水银），一旦破损释放会严重危害人体健康和环境，因此属于有害垃圾。',
+    explanationImage: '',
+    errorTip: '投放时请连带原包装或用报纸包裹，轻拿轻放避免破损。',
+    relatedTrash: [{name: '荧光灯管', typeId: 2, emoji: '💡'}, {name: '节能灯', typeId: 2, emoji: '💡'}],
+    media: [{ type: 'image', url: IMAGE_PLACEHOLDERS.lightbulb, caption: '破损的荧光灯管' }],
+    questionImage: IMAGE_PLACEHOLDERS.lightbulb,
+    encyclopediaId: 'ency_harmful_lightbulb'
+  },
+  { id: 177, type: 'image', chapterId: 2, difficulty: 'medium', scenes: ['kitchen'],
+    question: '图中的过期药品和药瓶应该怎么处理？',
+    options: ['连同包装投入有害垃圾容器', '拆封后冲入下水道', '直接扔到其他垃圾桶', '送给有需要的邻居'],
+    correctIndex: 0,
+    explanation: '过期药品成分可能变化，部分药品含有对环境有害的化学物质，属于有害垃圾。应连同内外包装一起投放至红色有害垃圾容器。',
+    explanationImage: '',
+    errorTip: '切勿随意丢弃或冲下马桶，也不要转赠他人，过期药品存在安全风险。',
+    relatedTrash: [{name: '过期药品', typeId: 2, emoji: '💊'}, {name: '药品包装', typeId: 2, emoji: '💊'}],
+    media: [{ type: 'image', url: IMAGE_PLACEHOLDERS.expiredMedicine, caption: '过期药品' }],
+    questionImage: IMAGE_PLACEHOLDERS.expiredMedicine,
+    encyclopediaId: 'ency_harmful_medicine'
+  },
+  { id: 178, type: 'image', chapterId: 3, difficulty: 'easy', scenes: ['kitchen'],
+    question: '图中的食物残渣（菜叶、果皮等）属于什么垃圾？',
+    options: ['厨余垃圾', '可回收垃圾', '有害垃圾', '其他垃圾'],
+    correctIndex: 0,
+    explanation: '菜叶、果皮等食物残渣属于易腐烂的生物质生活废弃物，是典型的厨余垃圾（也叫湿垃圾/餐厨垃圾）。',
+    explanationImage: '',
+    errorTip: '投放前请沥干水分，去除食品包装袋后再投放。',
+    relatedTrash: [{name: '剩菜剩饭', typeId: 3, emoji: '🍚'}, {name: '果皮', typeId: 3, emoji: '🍎'}],
+    media: [{ type: 'image', url: IMAGE_PLACEHOLDERS.foodWaste, caption: '食物残渣' }],
+    questionImage: IMAGE_PLACEHOLDERS.foodWaste,
+    encyclopediaId: 'ency_kitchen_basic'
+  },
+  { id: 179, type: 'image', chapterId: 4, difficulty: 'easy', scenes: ['kitchen', 'office', 'campus'],
+    question: '图中用过的脏纸巾属于什么垃圾？',
+    options: ['其他垃圾', '可回收垃圾', '有害垃圾', '厨余垃圾'],
+    correctIndex: 0,
+    explanation: '用过的纸巾、卫生纸等吸水性强，遇水即溶，无法作为再生纸浆原料回收，属于其他垃圾（干垃圾）。',
+    explanationImage: '',
+    errorTip: '无论是否使用过，卫生纸、餐巾纸、湿巾纸都归为其他垃圾，不是可回收物。',
+    relatedTrash: [{name: '卫生纸', typeId: 4, emoji: '🧻'}, {name: '烟蒂', typeId: 4, emoji: '🚬'}],
+    media: [{ type: 'image', url: IMAGE_PLACEHOLDERS.tissue, caption: '用过的脏纸巾' }],
+    questionImage: IMAGE_PLACEHOLDERS.tissue,
+    encyclopediaId: 'ency_other_tissue'
+  },
+  { id: 180, type: 'image', chapterId: 4, difficulty: 'easy', scenes: ['kitchen', 'office', 'campus'],
+    question: '图中的烟蒂应该投入哪类垃圾桶？',
+    options: ['其他垃圾（灰色）', '可回收垃圾（蓝色）', '有害垃圾（红色）', '厨余垃圾（绿色）'],
+    correctIndex: 0,
+    explanation: '烟蒂（烟头）虽然含有微量有害物质，但因其量微且多采用综合处理方式，一般归类为其他垃圾。',
+    explanationImage: '',
+    errorTip: '请确保烟头完全熄灭后再投放，避免火灾隐患！',
+    relatedTrash: [{name: '烟蒂', typeId: 4, emoji: '🚬'}, {name: '烟灰', typeId: 4, emoji: '🚬'}],
+    media: [{ type: 'image', url: IMAGE_PLACEHOLDERS.cigarette, caption: '烟蒂' }],
+    questionImage: IMAGE_PLACEHOLDERS.cigarette,
+    encyclopediaId: 'ency_other_cigarette'
+  },
+  // ========= 综合知识图片题 =========
+  { id: 181, type: 'image', chapterId: 5, difficulty: 'medium', scenes: ['kitchen'],
+    question: '（多选题）观察下列图示，哪些物品属于可回收物？（多选）',
+    options: ['干净的塑料瓶', '废充电电池', '旧报纸', '打碎的陶瓷碗'],
+    correctIndexes: [0, 2],
+    explanation: '干净的塑料瓶（PET）和旧报纸都是标准可回收物。废电池属有害垃圾，陶瓷属其他垃圾。',
+    explanationImage: '',
+    errorTip: '可回收物判断口诀："干净干燥、材质可辨"，记住纸张、塑料、玻璃、金属、织物五大类。',
+    relatedTrash: [{name: '塑料瓶', typeId: 1, emoji: '🧴'}, {name: '报纸', typeId: 1, emoji: '📰'}, {name: '陶瓷碎片', typeId: 4, emoji: '🏺'}, {name: '废电池', typeId: 2, emoji: '🔋'}],
+    media: [
+      { type: 'image', url: IMAGE_PLACEHOLDERS.plasticBottle, caption: '塑料瓶' },
+      { type: 'image', url: IMAGE_PLACEHOLDERS.newspaper, caption: '旧报纸' }
+    ],
+    questionImage: IMAGE_PLACEHOLDERS.plasticBottle,
+    encyclopediaId: 'ency_comprehensive_recycle'
+  },
+  { id: 182, type: 'image', chapterId: 5, difficulty: 'hard', scenes: ['kitchen', 'office'],
+    question: '（判断题）图中的物品都是厨余垃圾。',
+    options: ['正确', '错误'],
+    correctIndex: 1,
+    explanation: '图中大骨头（椰子壳、榴莲壳等类似硬质物）由于难以粉碎和生物降解，会损坏厨余处理设备，因此属于其他垃圾，而非厨余垃圾。',
+    explanationImage: '',
+    errorTip: '记住："能啃得动的"小骨头（鸡骨鱼骨）属厨余，"啃不动的"大骨头属其他垃圾。',
+    relatedTrash: [{name: '大骨头', typeId: 4, emoji: '🦴'}, {name: '剩菜剩饭', typeId: 3, emoji: '🍚'}],
+    media: [{ type: 'image', url: IMAGE_PLACEHOLDERS.foodWaste, caption: '食物残渣与大骨头对比' }],
+    questionImage: IMAGE_PLACEHOLDERS.foodWaste,
+    encyclopediaId: 'ency_comprehensive_hardbone'
   }
 ]
 
@@ -2117,11 +2285,11 @@ const getDailyQuestions = () => {
   return shuffled.slice(0, 5)
 }
 
-// 判断题目是否正确（支持单选/判断/多选）
+// 判断题目是否正确（支持单选/判断/多选/图片）
 const isQuestionCorrect = (question, userAnswer) => {
   if (!question || typeof userAnswer === 'undefined' || userAnswer === null) return false
 
-  const { type } = question
+  const type = question.type === 'image' ? 'single' : (question.type || 'single')
 
   if (type === 'multiple') {
     if (!Array.isArray(userAnswer)) return false
@@ -2133,6 +2301,254 @@ const isQuestionCorrect = (question, userAnswer) => {
   } else {
     return Number(userAnswer) === Number(question.correctIndex)
   }
+}
+
+/**
+ * Boss关组题：强制包含 1道多选 + 1道判断 + 1道图片题
+ * 剩余题目从当前章节随机抽取，总数为 QUIZ_BOSS_CONFIG.questionsCount
+ */
+const getBossQuestionsForChapter = (chapterId) => {
+  const chapterQs = getQuestionsForCity ? getQuestionsForCity(chapterId) : getQuestionsByChapter(chapterId)
+  const total = QUIZ_BOSS_CONFIG.questionsCount || 10
+
+  const required = {
+    multiple: chapterQs.filter(q => q.type === 'multiple'),
+    judge: chapterQs.filter(q => q.type === 'judge'),
+    image: chapterQs.filter(q => q.type === 'image')
+  }
+
+  let pickedIds = []
+  let result = []
+
+  // 必选1道多选
+  if (required.multiple.length > 0) {
+    const shuffled = [...required.multiple].sort(() => 0.5 - Math.random())
+    const q = shuffled[0]
+    result.push(q)
+    pickedIds.push(q.id)
+  }
+
+  // 必选1道判断
+  if (required.judge.length > 0) {
+    const shuffled = [...required.judge].sort(() => 0.5 - Math.random())
+    const q = shuffled.find(q => !pickedIds.includes(q.id))
+    if (q) {
+      result.push(q)
+      pickedIds.push(q.id)
+    }
+  }
+
+  // 必选1道图片题
+  if (required.image.length > 0) {
+    const shuffled = [...required.image].sort(() => 0.5 - Math.random())
+    const q = shuffled.find(q => !pickedIds.includes(q.id))
+    if (q) {
+      result.push(q)
+      pickedIds.push(q.id)
+    }
+  }
+
+  // 其余题目从该章节剩余题目中随机补齐
+  const remaining = chapterQs.filter(q => !pickedIds.includes(q.id))
+  const shuffledRemaining = remaining.sort(() => 0.5 - Math.random())
+  const need = Math.max(0, total - result.length)
+
+  result = result.concat(shuffledRemaining.slice(0, need))
+
+  // 如果不够10道，从所有题目中随机补
+  if (result.length < total) {
+    const allQs = getQuestionsForCity ? getQuestionsForCity(null) : QUIZ_QUESTIONS
+    const extra = allQs
+      .filter(q => !pickedIds.includes(q.id))
+      .sort(() => 0.5 - Math.random())
+      .slice(0, total - result.length)
+    result = result.concat(extra)
+  }
+
+  // 打乱顺序，避免前三题固定为多选/判断/图片
+  return result.sort(() => 0.5 - Math.random())
+}
+
+/**
+ * 获取同类题（按 chapterId + scenes 匹配），用于"再练5题"
+ * @param {Object} question - 参考题目
+ * @param {number} count - 需要的题目数量，默认5
+ * @param {Array<number>} excludeIds - 需要排除的题目ID（已做过的）
+ */
+const getSimilarQuestions = (question, count = 5, excludeIds = []) => {
+  if (!question) return []
+
+  const chapterId = question.chapterId
+  const scenes = question.scenes || []
+  const allQs = getQuestionsForCity ? getQuestionsForCity(null) : QUIZ_QUESTIONS
+
+  let pool = allQs.filter(q =>
+    !excludeIds.includes(q.id) &&
+    q.id !== question.id
+  )
+
+  // 优先：同章节 + 场景交集
+  let matched = pool.filter(q =>
+    q.chapterId === chapterId &&
+    scenes.some(s => (q.scenes || []).includes(s))
+  )
+
+  // 不够就扩大到同章节
+  if (matched.length < count) {
+    const matchedIds = matched.map(q => q.id)
+    const sameChapter = pool.filter(q =>
+      q.chapterId === chapterId && !matchedIds.includes(q.id)
+    )
+    matched = matched.concat(sameChapter)
+  }
+
+  // 还不够就扩大到同难度
+  if (matched.length < count && question.difficulty) {
+    const matchedIds = matched.map(q => q.id)
+    const sameDiff = pool.filter(q =>
+      q.difficulty === question.difficulty && !matchedIds.includes(q.id)
+    )
+    matched = matched.concat(sameDiff)
+  }
+
+  return matched
+    .sort(() => 0.5 - Math.random())
+    .slice(0, Math.min(count, matched.length))
+}
+
+/**
+ * 统一 wrongCount 累加逻辑
+ * 返回更新后的错题对象列表
+ */
+const incrementWrongCount = (wrongList, question, memberId) => {
+  const list = Array.isArray(wrongList) ? [...wrongList] : []
+  const targetMemberId = memberId
+
+  let existingIndex = -1
+  if (targetMemberId) {
+    existingIndex = list.findIndex(q =>
+      q.id === question.id && q.memberId === targetMemberId
+    )
+  } else {
+    existingIndex = list.findIndex(q =>
+      q.id === question.id && (q.memberId === undefined || q.memberId === null)
+    )
+  }
+
+  // 提取需要保存的媒体字段
+  const safeMediaFields = {
+    media: question.media || question.mediaUrls || [],
+    questionImage: question.questionImage || question.questionImg || '',
+    explanationImage: question.explanationImage || question.explanationImg || '',
+    imageOptions: question.imageOptions || null
+  }
+
+  if (existingIndex > -1) {
+    const existing = list[existingIndex]
+    list[existingIndex] = {
+      ...existing,
+      ...safeMediaFields,
+      question: question.question || existing.question,
+      options: question.options || existing.options,
+      correctIndex: question.correctIndex !== undefined ? question.correctIndex : existing.correctIndex,
+      correctIndexes: question.correctIndexes || existing.correctIndexes,
+      type: question.type || existing.type,
+      explanation: question.explanation || existing.explanation,
+      errorTip: question.errorTip || existing.errorTip,
+      relatedTrash: question.relatedTrash || existing.relatedTrash,
+      scenes: question.scenes || existing.scenes,
+      chapterId: question.chapterId || existing.chapterId,
+      difficulty: question.difficulty || existing.difficulty,
+      memberId: targetMemberId || existing.memberId,
+      wrongCount: (existing.wrongCount || 1) + 1,
+      wrongTime: new Date().toISOString(),
+      encyclopediaId: question.encyclopediaId || existing.encyclopediaId || null
+    }
+  } else {
+    list.push({
+      id: question.id,
+      chapterId: question.chapterId || null,
+      difficulty: question.difficulty || 'easy',
+      type: question.type || 'single',
+      question: question.question,
+      options: question.options,
+      correctIndex: question.correctIndex,
+      correctIndexes: question.correctIndexes,
+      explanation: question.explanation || '',
+      explanationImage: question.explanationImage || '',
+      errorTip: question.errorTip || '',
+      relatedTrash: question.relatedTrash || [],
+      scenes: question.scenes || [],
+      ...safeMediaFields,
+      memberId: targetMemberId,
+      wrongCount: 1,
+      wrongTime: new Date().toISOString(),
+      encyclopediaId: question.encyclopediaId || null
+    })
+  }
+
+  return list
+}
+
+/**
+ * 更新难度模式记录（回写 difficultyBest_*, difficultyAttempts_*）
+ * @param {string} difficultyId - easy/medium/hard
+ * @param {number} accuracy - 本次正确率（0-100）
+ * @param {object} storageAdapter - 存储适配器 { get, set }
+ */
+const updateDifficultyStats = (difficultyId, accuracy, storageAdapter) => {
+  if (!difficultyId) return
+
+  const storage = storageAdapter || {
+    get: (k, d) => {
+      try { return wx.getStorageSync(k) !== '' ? wx.getStorageSync(k) : d } catch (e) { return d }
+    },
+    set: (k, v) => { try { wx.setStorageSync(k, v) } catch (e) {} }
+  }
+
+  const bestKey = `difficultyBest_${difficultyId}`
+  const attemptsKey = `difficultyAttempts_${difficultyId}`
+
+  const currentBest = Number(storage.get(bestKey, 0)) || 0
+  const currentAttempts = Number(storage.get(attemptsKey, 0)) || 0
+
+  const newBest = Math.max(currentBest, Number(accuracy) || 0)
+  const newAttempts = currentAttempts + 1
+
+  storage.set(bestKey, newBest)
+  storage.set(attemptsKey, newAttempts)
+
+  return {
+    bestScore: newBest,
+    totalAttempts: newAttempts,
+    isNewRecord: (Number(accuracy) || 0) > currentBest
+  }
+}
+
+/**
+ * 根据encyclopediaId查找百科条目信息
+ */
+const getEncyclopediaEntry = (encyclopediaId) => {
+  if (!encyclopediaId) return null
+
+  // 按前缀推断跳转目标
+  if (encyclopediaId.startsWith('ency_recyclable_')) {
+    return { type: 'classify', typeId: '1', title: '可回收物百科', desc: '查看可回收物详细分类指南' }
+  }
+  if (encyclopediaId.startsWith('ency_harmful_')) {
+    return { type: 'classify', typeId: '2', title: '有害垃圾百科', desc: '了解有害垃圾的正确投放方式' }
+  }
+  if (encyclopediaId.startsWith('ency_kitchen_')) {
+    return { type: 'classify', typeId: '3', title: '厨余垃圾百科', desc: '了解厨余垃圾分类与投放技巧' }
+  }
+  if (encyclopediaId.startsWith('ency_other_')) {
+    return { type: 'classify', typeId: '4', title: '其他垃圾百科', desc: '什么是其他垃圾？一文看懂' }
+  }
+  if (encyclopediaId.startsWith('ency_comprehensive_')) {
+    return { type: 'learning', typeId: '', title: '环保学习中心', desc: '系统化学习垃圾分类知识' }
+  }
+
+  return { type: 'classify', typeId: '1', title: '垃圾分类百科', desc: '了解更多垃圾分类知识' }
 }
 
 // ========= 垃圾分类练习题库 =========
@@ -4033,6 +4449,7 @@ module.exports = {
   TRASH_TYPES,
   QUIZ_SCENES,
   QUIZ_QUESTION_TYPES,
+  IMAGE_PLACEHOLDERS,
   BANNER_LIST,
   EXCHANGE_GOODS,
   EXCHANGE_BANNERS,
@@ -4057,6 +4474,11 @@ module.exports = {
   getQuestionById,
   getDailyQuestions,
   isQuestionCorrect,
+  getBossQuestionsForChapter,
+  getSimilarQuestions,
+  incrementWrongCount,
+  updateDifficultyStats,
+  getEncyclopediaEntry,
   SORT_PRACTICE_ITEMS,
   getSortItemsByType,
   getRandomSortItems,

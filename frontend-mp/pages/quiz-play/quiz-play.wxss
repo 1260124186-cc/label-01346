@@ -1105,3 +1105,145 @@
   color: #F39C12;
   font-weight: 600;
 }
+
+.question-image-wrap {
+  margin-top: 24rpx;
+  border-radius: 16rpx;
+  overflow: hidden;
+  background: #F8F9FA;
+}
+
+.question-image {
+  width: 100%;
+  display: block;
+  border-radius: 16rpx;
+}
+
+.question-media-list {
+  margin-top: 20rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+}
+
+.question-media-item {
+  width: 100%;
+  border-radius: 12rpx;
+  display: block;
+}
+
+.encyclopedia-card {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+  background: linear-gradient(135deg, #E8F5E9 0%, #C8E6C9 100%);
+  padding: 28rpx 24rpx;
+  border-radius: 16rpx;
+  margin-top: 24rpx;
+  box-shadow: 0 4rpx 16rpx rgba(46, 125, 50, 0.08);
+  border-left: 6rpx solid #2E7D32;
+}
+
+.encyclopedia-icon-wrap {
+  width: 72rpx;
+  height: 72rpx;
+  border-radius: 50%;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.04);
+}
+
+.encyclopedia-icon {
+  font-size: 36rpx;
+}
+
+.encyclopedia-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.encyclopedia-title {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #1B5E20;
+  margin-bottom: 6rpx;
+}
+
+.encyclopedia-desc {
+  font-size: 24rpx;
+  color: #388E3C;
+  opacity: 0.85;
+  line-height: 1.4;
+}
+
+.encyclopedia-arrow {
+  font-size: 40rpx;
+  color: #2E7D32;
+  opacity: 0.7;
+  flex-shrink: 0;
+  padding-right: 4rpx;
+}
+
+.similar-practice-card {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+  background: linear-gradient(135deg, #FFF3E0 0%, #FFE0B2 100%);
+  padding: 28rpx 24rpx;
+  border-radius: 16rpx;
+  margin-top: 24rpx;
+  box-shadow: 0 4rpx 16rpx rgba(230, 81, 0, 0.08);
+  border-left: 6rpx solid #E65100;
+}
+
+.similar-icon-wrap {
+  width: 72rpx;
+  height: 72rpx;
+  border-radius: 50%;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.04);
+}
+
+.similar-icon {
+  font-size: 36rpx;
+}
+
+.similar-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.similar-title {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #BF360C;
+  margin-bottom: 6rpx;
+}
+
+.similar-desc {
+  font-size: 24rpx;
+  color: #E65100;
+  opacity: 0.85;
+  line-height: 1.4;
+}
+
+.similar-btn {
+  background: #E65100;
+  color: #fff;
+  padding: 12rpx 24rpx;
+  border-radius: 24rpx;
+  font-size: 24rpx;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.similar-btn text {
+  color: #fff;
+}

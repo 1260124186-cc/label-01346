@@ -18,6 +18,10 @@ const {
   QUIZ_BOSS_CONFIG,
   QUIZ_POINTS_CONFIG,
   isQuestionCorrect,
+  getBossQuestionsForChapter,
+  getSimilarQuestions,
+  updateDifficultyStats,
+  getEncyclopediaEntry,
   getChildImageQuestions
 } = require('../../utils/constants')
 const {
@@ -71,7 +75,8 @@ Page({
     QUESTION_TYPE_MAP: {
       single: { name: '单选题', icon: '○' },
       multiple: { name: '多选题', icon: '☐' },
-      judge: { name: '判断题', icon: '✓' }
+      judge: { name: '判断题', icon: '✓' },
+      image: { name: '图片题', icon: '🖼️' }
     },
     SCENE_MAP: {
       kitchen: '厨房',
@@ -80,7 +85,10 @@ Page({
     },
     TRASH_TYPE_MAP: {},
     useImageQuestions: false,
-    isChildMode: false
+    isChildMode: false,
+    encyclopediaEntry: null,
+    similarPracticeQuestions: [],
+    showSimilarPracticeBtn: false
   },
 
   onLoad(options) {
@@ -139,8 +147,7 @@ Page({
         .filter(q => q.isDaily)
     } else if (type === 'chapter' && chapterId) {
       if (isBossMode) {
-        const chapterQs = getQuestionsForCity(parseInt(chapterId, 10), currentCity)
-        questions = chapterQs.slice(0, QUIZ_BOSS_CONFIG.questionCount)
+        questions = getBossQuestionsForChapter(parseInt(chapterId, 10), currentCity)
       } else {
         questions = getQuestionsForCity(parseInt(chapterId, 10), currentCity)
       }
@@ -209,21 +216,23 @@ Page({
 
   processQuestion(q) {
     const type = q.type || 'single'
+    let normalizedType = type
+    if (normalizedType === 'image') normalizedType = 'single'
     let options = q.options
     let correctIndex = q.correctIndex
     let correctIndexes = q.correctIndexes || []
     let imageOptions = q.imageOptions || null
 
-    if (type === 'image-single' && imageOptions) {
+    if (normalizedType === 'image-single' && imageOptions) {
       options = imageOptions.map(opt => opt.label)
     }
 
-    if (type === 'judge' && (!options || options.length === 0)) {
+    if (normalizedType === 'judge' && (!options || options.length === 0)) {
       options = ['正确', '错误']
     }
 
     let optionsWithLabel = []
-    if (type === 'image-single' && imageOptions) {
+    if (normalizedType === 'image-single' && imageOptions) {
       optionsWithLabel = imageOptions.map((opt, idx) => ({
         text: opt.label,
         label: String.fromCharCode(65 + idx),
@@ -232,17 +241,17 @@ Page({
     } else {
       optionsWithLabel = options.map((opt, idx) => ({
         text: opt,
-        label: type === 'judge' ? (idx === 0 ? '✓' : '✗') : String.fromCharCode(65 + idx)
+        label: normalizedType === 'judge' ? (idx === 0 ? '✓' : '✗') : String.fromCharCode(65 + idx)
       }))
     }
 
     let correctAnswerLabel = ''
-    if (type === 'multiple') {
+    if (normalizedType === 'multiple') {
       correctAnswerLabel = correctIndexes
         .sort((a, b) => a - b)
         .map(i => String.fromCharCode(65 + i))
         .join('、')
-    } else if (type === 'judge') {
+    } else if (normalizedType === 'judge') {
       correctAnswerLabel = correctIndex === 0 ? '正确' : '错误'
     } else {
       correctAnswerLabel = String.fromCharCode(65 + correctIndex)
@@ -256,6 +265,7 @@ Page({
     return {
       ...q,
       type,
+      normalizedType,
       options,
       imageOptions,
       optionsWithLabel,
@@ -311,7 +321,7 @@ Page({
     if (this.data.isAnswered) return
 
     const question = this.data.currentQuestion
-    const userAnswer = question.type === 'multiple' ? [] : -1
+    const userAnswer = question.normalizedType === 'multiple' ? [] : -1
 
     this.setData({
       isAnswered: true,
@@ -346,7 +356,7 @@ Page({
 
     const { index } = e.currentTarget.dataset
     const question = this.data.currentQuestion
-    const type = question.type || 'single'
+    const type = question.normalizedType || 'single'
 
     if (type === 'multiple') {
       let selected = [...this.data.selectedIndexes]
@@ -428,6 +438,22 @@ Page({
       app.recordChildQuiz(isCorrect)
     }
 
+    let encyclopediaEntry = null
+    let similarPracticeQuestions = []
+    let showSimilarPracticeBtn = false
+    try {
+      encyclopediaEntry = question.encyclopediaId ? getEncyclopediaEntry(question.encyclopediaId) : null
+      if (!isCorrect) {
+        const answeredIds = (this.data.questions || []).map(q => q.id).filter(Boolean)
+        answeredIds.push(question.id)
+        similarPracticeQuestions = getSimilarQuestions(question, 5, answeredIds)
+        showSimilarPracticeBtn = similarPracticeQuestions.length >= 3
+      }
+    } catch (e) {
+      console.warn('[QuizPlay] 解析增强数据获取失败', e && e.message)
+    }
+    this.setData({ encyclopediaEntry, similarPracticeQuestions, showSimilarPracticeBtn })
+
     if (isCorrect) {
       const basePoints = this.calculatePoints()
       const pointsMode = this.getPointsMode()
@@ -496,7 +522,7 @@ Page({
     const diffConfig = QUIZ_DIFFICULTIES.find(d => d.id === difficulty)
     if (diffConfig) {
       let base = diffConfig.pointsPerQuestion
-      if (question.type === 'multiple') base = Math.round(base * 1.5)
+      if (question.normalizedType === 'multiple') base = Math.round(base * 1.5)
       if (question.difficulty === 'hard') base = Math.round(base * 1.2)
       return base
     }
@@ -510,6 +536,65 @@ Page({
 
   removeFromWrongQuestions(questionId) {
     app.removeWrongQuestion(questionId)
+  },
+
+  goToEncyclopedia() {
+    const entry = this.data.encyclopediaEntry
+    if (!entry) {
+      showToast('暂无对应百科条目', 'none')
+      return
+    }
+    if (entry.target === 'classify') {
+      navigateTo({
+        url: `/pages/classify/classify?typeId=${entry.typeId || ''}`
+      })
+    } else if (entry.target === 'learning') {
+      navigateTo({ url: '/pages/learning/learning' })
+    } else {
+      showToast('跳转目标无效', 'none')
+    }
+  },
+
+  practiceSimilarQuestions() {
+    const questions = this.data.similarPracticeQuestions || []
+    if (questions.length === 0) {
+      showToast('暂无同类题目', 'none')
+      return
+    }
+    const picked = questions.slice(0, 5)
+    const processed = picked.map(q => this.processQuestion(q))
+    this.setData({
+      questions: processed,
+      totalQuestions: processed.length,
+      currentIndex: 0,
+      currentQuestion: processed[0],
+      selectedIndex: -1,
+      selectedIndexes: [],
+      isAnswered: false,
+      isCorrect: false,
+      isTimeout: false,
+      userAnswer: null,
+      correctCount: 0,
+      wrongCount: 0,
+      timeoutCount: 0,
+      totalPoints: 0,
+      progressPercent: 0,
+      showResult: false,
+      encyclopediaEntry: null,
+      similarPracticeQuestions: [],
+      showSimilarPracticeBtn: false,
+      quizType: 'similar',
+      chapterName: this.data.currentQuestion ? '同类题强化' : this.data.chapterName,
+      isBossMode: false,
+      isTimedMode: false,
+      difficulty: '',
+      difficultyName: ''
+    })
+    this.updateNavigationTitle()
+    if (this.data.isTimedMode) {
+      this.startTimer()
+    }
+    showSuccess(`开始练习${picked.length}道同类题`)
   },
 
   updateProgress() {
@@ -610,6 +695,17 @@ Page({
 
     if (this.data.quizType === 'daily' && bonusPoints > 0) {
       app.markDailyCompletionBonusClaimed()
+    }
+
+    if (this.data.quizType === 'difficulty' && this.data.difficulty) {
+      try {
+        const result = updateDifficultyStats(this.data.difficulty, accuracy)
+        if (result && result.isNewRecord) {
+          console.log('[QuizPlay] 难度最佳记录刷新！', this.data.difficulty, accuracy + '%')
+        }
+      } catch (e) {
+        console.warn('[QuizPlay] 难度数据回写失败', e && e.message)
+      }
     }
 
     this.setData({

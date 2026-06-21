@@ -43,7 +43,15 @@
         </view>
       </view>
       <view class="question-text">{{currentQuestion.question}}</view>
-      <view class="question-hint" wx:if="{{currentQuestion.type === 'multiple'}}">
+      <view class="question-image-wrap" wx:if="{{currentQuestion.questionImage}}">
+        <image class="question-image" src="{{currentQuestion.questionImage}}" mode="widthFix" bindtap="onPreviewImage" data-url="{{currentQuestion.questionImage}}"></image>
+      </view>
+      <view class="question-media-list" wx:if="{{currentQuestion.media && currentQuestion.media.length > 0}}">
+        <block wx:for="{{currentQuestion.media}}" wx:key="url">
+          <image wx:if="{{item.type === 'image'}}" class="question-media-item" src="{{item.url}}" mode="widthFix" bindtap="onPreviewImage" data-url="{{item.url}}"></image>
+        </block>
+      </view>
+      <view class="question-hint" wx:if="{{currentQuestion.normalizedType === 'multiple'}}">
         <text class="hint-icon">💡</text>
         <text>多选题，请选择所有正确选项</text>
       </view>
@@ -73,30 +81,30 @@
     </view>
 
     <!-- 普通选项 -->
-    <view class="options-list {{currentQuestion.type === 'judge' ? 'judge-options' : ''}}" wx:else>
+    <view class="options-list {{currentQuestion.normalizedType === 'judge' ? 'judge-options' : ''}}" wx:else>
       <view
-        class="option-item {{currentQuestion.type === 'judge' ? 'judge-item' : ''}} {{currentQuestion.type !== 'judge' && selectedIndexes.indexOf(index) > -1 ? 'selected' : ''}} {{selectedIndex === index && currentQuestion.type !== 'multiple' ? 'selected' : ''}} {{isAnswered && currentQuestion.type !== 'multiple' && index === currentQuestion.correctIndex ? 'correct' : ''}} {{isAnswered && currentQuestion.type === 'multiple' && currentQuestion.correctIndexes.indexOf(index) > -1 ? 'correct' : ''}} {{isAnswered && selectedIndex === index && !isCorrect && currentQuestion.type !== 'multiple' ? 'wrong' : ''}} {{isAnswered && currentQuestion.type === 'multiple' && selectedIndexes.indexOf(index) > -1 && currentQuestion.correctIndexes.indexOf(index) === -1 ? 'wrong' : ''}}"
+        class="option-item {{currentQuestion.normalizedType === 'judge' ? 'judge-item' : ''}} {{currentQuestion.normalizedType !== 'judge' && selectedIndexes.indexOf(index) > -1 ? 'selected' : ''}} {{selectedIndex === index && currentQuestion.normalizedType !== 'multiple' ? 'selected' : ''}} {{isAnswered && currentQuestion.normalizedType !== 'multiple' && index === currentQuestion.correctIndex ? 'correct' : ''}} {{isAnswered && currentQuestion.normalizedType === 'multiple' && currentQuestion.correctIndexes.indexOf(index) > -1 ? 'correct' : ''}} {{isAnswered && selectedIndex === index && !isCorrect && currentQuestion.normalizedType !== 'multiple' ? 'wrong' : ''}} {{isAnswered && currentQuestion.normalizedType === 'multiple' && selectedIndexes.indexOf(index) > -1 && currentQuestion.correctIndexes.indexOf(index) === -1 ? 'wrong' : ''}}"
         wx:for="{{currentQuestion.optionsWithLabel}}"
         wx:key="index"
         data-index="{{index}}"
         bindtap="onSelectOption"
       >
-        <view wx:if="{{currentQuestion.type === 'multiple'}}" class="option-checkbox {{selectedIndexes.indexOf(index) > -1 ? 'checked' : ''}} {{isAnswered && currentQuestion.correctIndexes.indexOf(index) > -1 ? 'correct' : ''}} {{isAnswered && selectedIndexes.indexOf(index) > -1 && currentQuestion.correctIndexes.indexOf(index) === -1 ? 'wrong' : ''}}">
+        <view wx:if="{{currentQuestion.normalizedType === 'multiple'}}" class="option-checkbox {{selectedIndexes.indexOf(index) > -1 ? 'checked' : ''}} {{isAnswered && currentQuestion.correctIndexes.indexOf(index) > -1 ? 'correct' : ''}} {{isAnswered && selectedIndexes.indexOf(index) > -1 && currentQuestion.correctIndexes.indexOf(index) === -1 ? 'wrong' : ''}}">
           <text wx:if="{{selectedIndexes.indexOf(index) > -1}}" class="checkbox-mark">✓</text>
         </view>
-        <view wx:elif="{{currentQuestion.type === 'judge'}}" class="option-judge-icon {{index === 0 ? 'icon-true' : 'icon-false'}}">
+        <view wx:elif="{{currentQuestion.normalizedType === 'judge'}}" class="option-judge-icon {{index === 0 ? 'icon-true' : 'icon-false'}}">
           <text>{{index === 0 ? '✓' : '✗'}}</text>
         </view>
         <view wx:else class="option-label">{{item.label}}</view>
         <view class="option-text">{{item.text}}</view>
         <view class="option-icon" wx:if="{{isAnswered}}">
-          <text wx:if="{{(currentQuestion.type !== 'multiple' && index === currentQuestion.correctIndex) || (currentQuestion.type === 'multiple' && currentQuestion.correctIndexes.indexOf(index) > -1)}}" class="icon-correct">✓</text>
-          <text wx:elif="{{(currentQuestion.type !== 'multiple' && selectedIndex === index && !isCorrect) || (currentQuestion.type === 'multiple' && selectedIndexes.indexOf(index) > -1 && currentQuestion.correctIndexes.indexOf(index) === -1)}}" class="icon-wrong">✗</text>
+          <text wx:if="{{(currentQuestion.normalizedType !== 'multiple' && index === currentQuestion.correctIndex) || (currentQuestion.normalizedType === 'multiple' && currentQuestion.correctIndexes.indexOf(index) > -1)}}" class="icon-correct">✓</text>
+          <text wx:elif="{{(currentQuestion.normalizedType !== 'multiple' && selectedIndex === index && !isCorrect) || (currentQuestion.normalizedType === 'multiple' && selectedIndexes.indexOf(index) > -1 && currentQuestion.correctIndexes.indexOf(index) === -1)}}" class="icon-wrong">✗</text>
         </view>
       </view>
     </view>
 
-    <view class="multiple-submit-section" wx:if="{{currentQuestion.type === 'multiple' && !isAnswered}}">
+    <view class="multiple-submit-section" wx:if="{{currentQuestion.normalizedType === 'multiple' && !isAnswered}}">
       <view class="selected-info">已选择 {{selectedIndexes.length}} 项</view>
       <view class="submit-btn" bindtap="onSubmitMultiple">提交答案</view>
     </view>
@@ -149,6 +157,32 @@
           </view>
         </view>
       </scroll-view>
+    </view>
+
+    <view class="encyclopedia-card" wx:if="{{encyclopediaEntry}}" bindtap="goToEncyclopedia">
+      <view class="encyclopedia-icon-wrap">
+        <text class="encyclopedia-icon">📖</text>
+      </view>
+      <view class="encyclopedia-info">
+        <view class="encyclopedia-title">查看百科详解</view>
+        <view class="encyclopedia-desc">{{encyclopediaEntry.label}} · 了解详细分类规则与常见误区</view>
+      </view>
+      <view class="encyclopedia-arrow">
+        <text>›</text>
+      </view>
+    </view>
+
+    <view class="similar-practice-card" wx:if="{{showSimilarPracticeBtn && !isCorrect}}" bindtap="practiceSimilarQuestions">
+      <view class="similar-icon-wrap">
+        <text class="similar-icon">🎯</text>
+      </view>
+      <view class="similar-info">
+        <view class="similar-title">同类题强化练习</view>
+        <view class="similar-desc">同场景同类型题目再练{{similarPracticeQuestions.length >= 5 ? 5 : similarPracticeQuestions.length}}题，巩固知识点</view>
+      </view>
+      <view class="similar-btn">
+        <text>开始练习</text>
+      </view>
     </view>
   </view>
 
