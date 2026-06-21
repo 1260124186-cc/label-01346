@@ -1101,6 +1101,7 @@ App({
           wrongCount: 0,
           accuracy: 100,
           points: 50,
+          memberId: this.getUserId(),
           time: twoDaysAgo + ' 20:30'
         }
       ]
@@ -1110,13 +1111,18 @@ App({
   },
 
   addQuizRecord(record) {
+    if (!record.memberId) {
+      record.memberId = this.getUserId()
+    }
     this.globalData.quizRecords.unshift(record)
     wx.setStorageSync('quizRecords', this.globalData.quizRecords)
-    console.log('[App] 新增答题记录', record.points + '分')
+    console.log('[App] 新增答题记录', record.points + '分', 'memberId:', record.memberId)
   },
 
-  getQuizRecords() {
-    return this.globalData.quizRecords || []
+  getQuizRecords(memberId) {
+    const all = this.globalData.quizRecords || []
+    if (!memberId) return all
+    return all.filter(r => r.memberId === memberId || r.memberId === undefined || r.memberId === this.getUserId())
   },
 
   /**
@@ -1225,18 +1231,21 @@ App({
   },
 
   addWrongQuestion(question) {
+    const targetMemberId = question.memberId || this.getUserId()
     let wrongQuestions = this.globalData.wrongQuestions || []
-    const existingIndex = wrongQuestions.findIndex(q => q.id === question.id)
+    const existingIndex = wrongQuestions.findIndex(q => q.id === question.id && (q.memberId === targetMemberId || !q.memberId))
 
     if (existingIndex > -1) {
       wrongQuestions[existingIndex] = {
         ...wrongQuestions[existingIndex],
+        memberId: targetMemberId,
         wrongCount: (wrongQuestions[existingIndex].wrongCount || 1) + 1,
         wrongTime: new Date().toISOString()
       }
     } else {
       wrongQuestions.push({
         ...question,
+        memberId: targetMemberId,
         wrongCount: 1,
         wrongTime: new Date().toISOString()
       })
@@ -1244,20 +1253,23 @@ App({
 
     this.globalData.wrongQuestions = wrongQuestions
     wx.setStorageSync('wrongQuestions', wrongQuestions)
-    const foundWrong = wrongQuestions.find(q => q.id === question.id)
-    console.log('[App] 错题已更新', question.question, '错误次数:', foundWrong ? foundWrong.wrongCount : 1)
+    const foundWrong = wrongQuestions.find(q => q.id === question.id && q.memberId === targetMemberId)
+    console.log('[App] 错题已更新', question.question, '错误次数:', foundWrong ? foundWrong.wrongCount : 1, 'memberId:', targetMemberId)
   },
 
-  removeWrongQuestion(questionId) {
+  removeWrongQuestion(questionId, memberId) {
+    const targetMemberId = memberId || this.getUserId()
     let wrongQuestions = this.globalData.wrongQuestions || []
-    wrongQuestions = wrongQuestions.filter(q => q.id !== questionId)
+    wrongQuestions = wrongQuestions.filter(q => !(q.id === questionId && (q.memberId === targetMemberId || !q.memberId)))
     this.globalData.wrongQuestions = wrongQuestions
     wx.setStorageSync('wrongQuestions', wrongQuestions)
-    console.log('[App] 错题已移除', questionId)
+    console.log('[App] 错题已移除', questionId, 'memberId:', targetMemberId)
   },
 
-  getWrongQuestions() {
-    return this.globalData.wrongQuestions || []
+  getWrongQuestions(memberId) {
+    const all = this.globalData.wrongQuestions || []
+    if (!memberId) return all
+    return all.filter(q => q.memberId === memberId || q.memberId === undefined || q.memberId === this.getUserId())
   },
 
   clearWrongQuestions() {
@@ -4193,6 +4205,40 @@ App({
     return progress.completedChapters.length >= totalChapters
   },
 
+  getMemberCourseProgress(memberId) {
+    const { COURSES } = require('./data/courses')
+    const targetMemberId = memberId || this.getUserId()
+    const isCurrentUser = targetMemberId === this.getUserId()
+
+    return COURSES.filter(c => c.categoryId && ['kitchen', 'harmful', 'recyclable', 'other'].includes(c.categoryId)).map(course => {
+      let progress = 0
+      if (isCurrentUser) {
+        const courseProgress = this.getCourseProgress(course.id)
+        const totalChapters = course.totalChapters || (course.chapters ? course.chapters.length : 0)
+        const completed = courseProgress.completedChapters ? courseProgress.completedChapters.length : 0
+        progress = totalChapters > 0 ? Math.round((completed / totalChapters) * 100) : 0
+      }
+
+      const categoryMap = {
+        kitchen: { id: 3, name: '厨余垃圾', emoji: '🍂', color: '#5BBD72' },
+        harmful: { id: 2, name: '有害垃圾', emoji: '☣️', color: '#E85D5D' },
+        recyclable: { id: 1, name: '可回收物', emoji: '♻️', color: '#4A90D9' },
+        other: { id: 4, name: '其他垃圾', emoji: '🗑️', color: '#8E8E93' }
+      }
+      const category = categoryMap[course.categoryId] || { id: 0, name: course.title, emoji: '📚', color: '#9B59B6' }
+
+      return {
+        id: course.id,
+        name: course.title,
+        categoryId: category.id,
+        categoryName: category.name,
+        emoji: course.icon || category.emoji,
+        color: category.color,
+        progress
+      }
+    })
+  },
+
   getLearningStats() {
     const progress = this.getLearningProgress()
     const { COURSES } = require('./data/courses')
@@ -5350,7 +5396,7 @@ App({
   },
 
   _getWeeklyClassifyCount(memberId) {
-    const records = this.getClassifyRecords()
+    const records = this.getClassifyRecords(memberId)
     const now = new Date()
     const weekStart = new Date(now.getTime() - now.getDay() * 86400000)
     weekStart.setHours(0, 0, 0, 0)
@@ -5359,7 +5405,7 @@ App({
     return records.filter(r => {
       const dateStr = (r.time || '').split(' ')[0]
       return dateStr >= weekStartStr
-    }).length + Math.floor(Math.random() * 20)
+    }).length
   },
 
   _checkWeeklyGroupTask() {
@@ -6169,116 +6215,81 @@ App({
   },
 
   getMemberLearningReport(memberId) {
-    const classifyRecords = this.getClassifyRecords()
-    const quizRecords = this.getQuizRecords()
+    const targetMemberId = memberId || this.getUserId()
+    const classifyRecords = this.getClassifyRecords(targetMemberId)
+    const quizRecords = this.getQuizRecords(targetMemberId)
 
-    const totalClassify = classifyRecords.length + Math.floor(Math.random() * 100)
-    const totalQuiz = quizRecords.reduce((s, r) => s + (r.totalQuestions || 0), 0) + Math.floor(Math.random() * 80)
-    const correctQuiz = quizRecords.reduce((s, r) => s + (r.correctCount || 0), 0) + Math.floor(Math.random() * 60)
-    const userInfo = this.globalData.userInfo || {}
-    const totalPoints = (userInfo.points || 0) + Math.floor(Math.random() * 2000)
-    const streakDays = this.getStreakDays() + Math.floor(Math.random() * 10)
+    const totalClassify = classifyRecords.length
+    const totalQuiz = quizRecords.reduce((s, r) => s + (r.totalQuestions || 0), 0)
+    const correctQuiz = quizRecords.reduce((s, r) => s + (r.correctCount || 0), 0)
+    const overallAccuracy = totalQuiz > 0 ? Math.round((correctQuiz / totalQuiz) * 100) : 0
+
+    const signInRecords = this.getSignInRecords(targetMemberId)
+    const dailyQuizRecords = this.getDailyQuizRecords(targetMemberId)
+    const mergedStudyDays = Array.from(new Set([...signInRecords, ...dailyQuizRecords]))
+    const totalStudyDays = mergedStudyDays.length
+
+    const streakDays = this.getStreakDays(targetMemberId)
+    const totalPoints = this.getUserPoints() || 0
 
     return {
-      totalStudyDays: 30 + Math.floor(Math.random() * 100),
+      totalStudyDays,
       totalClassify,
       totalQuiz,
       correctQuiz,
       totalPoints,
       streakDays,
-      overallAccuracy: totalQuiz > 0 ? Math.round((correctQuiz / totalQuiz) * 100) : 85
+      overallAccuracy
     }
   },
 
   getMemberWeakCategories(memberId) {
     const { TRASH_TYPES } = require('./utils/constants')
-    const records = this.getWrongQuestions()
-
-    // 按类别预定义典型的正确答案，用于兜底生成 yourAnswer / correctAnswer
-    const typeAnswerMap = {
-      1: { correct: '蓝色垃圾桶', wrongPool: ['红色垃圾桶', '绿色垃圾桶', '灰色垃圾桶'] },
-      2: { correct: '红色垃圾桶', wrongPool: ['蓝色垃圾桶', '绿色垃圾桶', '灰色垃圾桶'] },
-      3: { correct: '绿色垃圾桶', wrongPool: ['蓝色垃圾桶', '红色垃圾桶', '灰色垃圾桶'] },
-      4: { correct: '灰色垃圾桶', wrongPool: ['蓝色垃圾桶', '红色垃圾桶', '绿色垃圾桶'] }
-    }
+    const targetMemberId = memberId || this.getUserId()
+    const wrongQuestions = this.getWrongQuestions(targetMemberId)
 
     return TRASH_TYPES.map(type => {
-      const wrongCount = records.filter(r => r.chapterId === type.id).length + Math.floor(Math.random() * 8)
-      const accuracy = Math.max(25, 90 - wrongCount * 6)
-      const wrongPool = typeAnswerMap[type.id] || { correct: '其他垃圾桶', wrongPool: ['蓝色垃圾桶', '红色垃圾桶', '绿色垃圾桶'] }
+      const typeWrongList = wrongQuestions.filter(q => q.chapterId === type.id)
+      const wrongCount = typeWrongList.length
 
-      const recentWrongQuestions = records
-        .filter(r => r.chapterId === type.id)
-        .slice(0, 5)
-        .map((q, idx) => {
-          // 优先使用原始数据自带的答案，否则根据类别兜底生成
-          const hasAnswerInfo = q.yourAnswer && q.correctAnswer
-          const wrongAnswerFromPool = wrongPool.wrongPool[idx % wrongPool.wrongPool.length]
-          return {
-            id: q.id,
-            question: q.question,
-            wrongTime: q.wrongTime,
-            wrongCount: q.wrongCount || 1,
-            yourAnswer: q.yourAnswer || wrongAnswerFromPool,
-            correctAnswer: q.correctAnswer || wrongPool.correct
-          }
-        })
+      let accuracy
+      const typeQuizzes = this.getQuizRecords(targetMemberId)
+        .filter(r => r.chapterId === type.id || r.chapterName === type.name)
+      const totalQuestions = typeQuizzes.reduce((s, r) => s + (r.totalQuestions || 0), 0)
+      const correctQuestions = typeQuizzes.reduce((s, r) => s + (r.correctCount || 0), 0)
+      const attempted = totalQuestions > 0
 
-      // 如果错题本没有记录，生成一些模拟错题
-      let finalWrongQuestions = recentWrongQuestions
-      if (finalWrongQuestions.length === 0 && accuracy < 60) {
-        const mockQuestionPool = this._getMockQuestionsByCategory(type.id)
-        finalWrongQuestions = mockQuestionPool.slice(0, 3).map((q, idx) => ({
-          id: `mock_wrong_${type.id}_${idx}`,
-          question: q.question,
-          wrongTime: new Date(Date.now() - idx * 86400000).toISOString(),
-          wrongCount: 1,
-          yourAnswer: wrongPool.wrongPool[idx % wrongPool.wrongPool.length],
-          correctAnswer: wrongPool.correct
-        }))
+      if (attempted) {
+        accuracy = Math.max(0, Math.round((correctQuestions / totalQuestions) * 100))
+      } else if (wrongCount > 0) {
+        accuracy = Math.max(20, 60 - wrongCount * 5)
+      } else {
+        accuracy = 100
       }
+
+      const recentWrongQuestions = typeWrongList
+        .slice(0, 5)
+        .map(q => ({
+          id: q.id,
+          question: q.question,
+          wrongTime: q.wrongTime,
+          wrongCount: q.wrongCount || 1,
+          yourAnswer: q.yourAnswer || '',
+          correctAnswer: q.correctAnswer || ''
+        }))
 
       return {
         id: type.id,
         name: type.name,
         emoji: type.emoji,
         color: type.color,
+        bgColor: type.bgColor,
         accuracy,
         wrongCount,
-        isWeak: accuracy < 60,
-        recentWrongQuestions: finalWrongQuestions
+        isWeak: attempted ? accuracy < 60 : false,
+        recentWrongQuestions
       }
     }).filter(c => c.isWeak).sort((a, b) => a.accuracy - b.accuracy)
-  },
-
-  _getMockQuestionsByCategory(typeId) {
-    const questionPool = {
-      1: [
-        { question: '废弃的矿泉水瓶应该投入哪个颜色的垃圾桶？' },
-        { question: '旧报纸属于什么垃圾？' },
-        { question: '易拉罐应该投入哪个垃圾桶？' },
-        { question: '纸箱属于什么垃圾？' }
-      ],
-      2: [
-        { question: '废电池应该投入哪个颜色的垃圾桶？' },
-        { question: '过期感冒药属于什么垃圾？' },
-        { question: '水银温度计破损后应如何处理？' },
-        { question: '过期化妆品属于什么垃圾？' }
-      ],
-      3: [
-        { question: '剩菜剩饭属于什么垃圾？' },
-        { question: '果皮应该投入哪个颜色的垃圾桶？' },
-        { question: '茶叶渣属于什么垃圾？' },
-        { question: '鱼骨头属于什么垃圾？' }
-      ],
-      4: [
-        { question: '使用过的餐巾纸属于什么垃圾？' },
-        { question: '破碎的陶瓷碗属于什么垃圾？' },
-        { question: '烟蒂应该投入哪个垃圾桶？' },
-        { question: '一次性筷子属于什么垃圾？' }
-      ]
-    }
-    return questionPool[typeId] || questionPool[4]
   },
 
   getMemberBadges(memberId) {
@@ -6286,16 +6297,22 @@ App({
   },
 
   getMemberWeeklyStats(memberId) {
+    const classifyRecords = this.getClassifyRecords(memberId)
+    const quizRecords = this.getQuizRecords(memberId)
     const now = new Date()
     const days = []
 
     for (let i = 6; i >= 0; i--) {
       const date = new Date(now.getTime() - i * 86400000)
+      const dateStr = formatDate(date, 'YYYY-MM-DD')
+      const dayClassify = classifyRecords.filter(r => (r.time || '').split(' ')[0] === dateStr)
+      const dayQuiz = quizRecords.filter(r => (r.time || '').split(' ')[0] === dateStr)
+
       days.push({
         date: formatDate(date, 'MM-DD'),
         weekday: ['日', '一', '二', '三', '四', '五', '六'][date.getDay()],
-        classifyCount: 3 + Math.floor(Math.random() * 20),
-        quizCount: 2 + Math.floor(Math.random() * 15)
+        classifyCount: dayClassify.length,
+        quizCount: dayQuiz.length
       })
     }
 

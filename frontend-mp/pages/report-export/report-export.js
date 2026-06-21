@@ -228,11 +228,11 @@ Page({
 
       if (!rawData) {
         rawData = {
-          totalDays: 23,
-          classifyCount: 156,
-          quizCount: 87,
-          correctCount: 68,
-          overallAccuracy: 78
+          totalStudyDays: 0,
+          totalClassify: 0,
+          totalQuiz: 0,
+          correctQuiz: 0,
+          overallAccuracy: 0
         }
       }
 
@@ -290,15 +290,8 @@ Page({
         if (typeof app.getMemberCourseProgress === 'function') {
           progress = app.getMemberCourseProgress(memberId) || []
         }
-      } catch (e) {}
-
-      if (progress.length === 0) {
-        progress = [
-          { id: 1, name: '可回收物', progress: 82 },
-          { id: 2, name: '有害垃圾', progress: 45 },
-          { id: 3, name: '厨余垃圾', progress: 73 },
-          { id: 4, name: '其他垃圾', progress: 61 }
-        ]
+      } catch (e) {
+        console.warn('[ReportExport] fetchCourseProgress error', e)
       }
 
       this.setData({ 'reportData.courseProgress': progress })
@@ -320,11 +313,8 @@ Page({
             total = memberRank.totalHomework || 0
           }
         }
-      } catch (e) {}
-
-      if (total === 0) {
-        completed = 3
-        total = 5
+      } catch (e) {
+        console.warn('[ReportExport] fetchHomeworkCompletion error', e)
       }
 
       const rate = total > 0 ? Math.round(completed / total * 100) : 0
@@ -345,14 +335,8 @@ Page({
         if (typeof app.getMemberWeakCategories === 'function') {
           weakData = app.getMemberWeakCategories(memberId) || []
         }
-      } catch (e) {}
-
-      if (weakData.length === 0) {
-        weakData = [
-          { id: 2, name: '有害垃圾', emoji: '☣️', color: '#E85D5D', bgColor: 'rgba(232,93,93,0.1)', accuracy: 48 },
-          { id: 4, name: '其他垃圾', emoji: '🗑️', color: '#8E8E93', bgColor: 'rgba(142,142,147,0.1)', accuracy: 55 },
-          { id: 1, name: '可回收物', emoji: '♻️', color: '#4A90D9', bgColor: 'rgba(74,144,217,0.1)', accuracy: 62 }
-        ]
+      } catch (e) {
+        console.warn('[ReportExport] fetchWeakTop3 error', e)
       }
 
       const sorted = weakData
