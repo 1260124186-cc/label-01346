@@ -5045,11 +5045,15 @@ App({
     const storedDailyStats = wx.getStorageSync('childDailyStats') || {}
     const childDailyStats = storedDailyStats.date === today ? storedDailyStats : {
       date: today,
-      quizCount: 0,
-      correctQuizCount: 0,
+      quizTotal: 0,
+      quizCorrect: 0,
       gameCount: 0,
       classifyCount: 0,
-      learnSeconds: 0
+      learnSeconds: 0,
+      coinsEarned: 0,
+      badgesEarned: 0,
+      extendedLimitMinutes: 0,
+      extendedMap: {}
     }
     wx.setStorageSync('childDailyStats', childDailyStats)
 
@@ -5377,7 +5381,8 @@ App({
 
   syncChildStatsToFamilyGroup() {
     const myId = this.getUserId()
-    const group = this.getFamilyGroupData()
+    const group = this.getCurrentGroup()
+    if (!group) return
     const today = formatDate(new Date(), 'YYYY-MM-DD')
     const stats = this.globalData.childDailyStats || wx.getStorageSync('childDailyStats') || {}
     const usedSeconds = this.getChildUsageTime()
@@ -5385,6 +5390,7 @@ App({
     const todayStats = {
       date: today,
       usageSeconds: usedSeconds,
+      timeLimitMinutes: this.getChildTimeLimit(),
       quizTotal: stats.quizTotal || 0,
       quizCorrect: stats.quizCorrect || 0,
       gameCount: stats.gameCount || 0,
@@ -5395,34 +5401,63 @@ App({
     }
 
     if (!group.members) group.members = []
-    let member = group.members.find(m => m.memberId === myId)
+    let member = group.members.find(m => (m.id || m.memberId) === myId)
     if (!member) {
       const userInfo = wx.getStorageSync('userInfo') || {}
       member = {
+        id: myId,
         memberId: myId,
+        nickName: userInfo.nickName || '小朋友',
         nickname: userInfo.nickName || '小朋友',
         avatarUrl: userInfo.avatarUrl || '',
         role: 'child',
         memberType: 'child',
+        joinTime: today,
         dailyStats: {},
         createdAt: Date.now()
       }
       group.members.push(member)
+      group.memberCount = group.members.length
     }
 
     if (!member.dailyStats) member.dailyStats = {}
     member.dailyStats[today] = todayStats
-    member.updatedAt = Date.now()
     member.lastUsageSeconds = usedSeconds
     member.lastActiveAt = Date.now()
 
-    this.saveFamilyGroupData(group)
+    this.saveFamilyGroupData()
   },
 
-  saveFamilyGroupData(group) {
-    const data = group || this.getFamilyGroupData()
-    this.globalData.familyGroup = data
-    wx.setStorageSync('familyGroup', data)
+  saveFamilyGroupData() {
+    this._saveUserGroups()
+  },
+
+  getFamilyGroupData() {
+    return this.getCurrentGroup() || { id: 'default', name: '我的家庭组', members: [], memberCount: 0 }
+  },
+
+  getFamilyGroupMembers() {
+    const group = this.getCurrentGroup()
+    if (!group) return []
+    const myId = this.getUserId()
+    const rawMembers = this.getGroupMembers(group.id) || []
+
+    return rawMembers.map(m => {
+      const memberId = m.id || m.memberId
+      return {
+        ...m,
+        memberId,
+        id: memberId,
+        nickname: m.nickName || m.nickname || '成员',
+        nickName: m.nickName || m.nickname || '成员',
+        isMe: memberId === myId,
+        dailyStats: m.dailyStats || {},
+        role: m.role || 'member',
+        memberType: m.memberType || m.role || 'member',
+        age: m.age || null,
+        avatarUrl: m.avatarUrl || ''
+      }
+    })
   },
 
   getChildTodayStats(memberId) {
@@ -5431,7 +5466,7 @@ App({
     const today = formatDate(new Date(), 'YYYY-MM-DD')
     const timeLimit = this.getChildTimeLimit()
     const group = this.getFamilyGroupData()
-    const member = (group.members || []).find(m => m.memberId === ownerId)
+    const member = (group.members || []).find(m => (m.id || m.memberId) === ownerId)
     const memberDailyStats = member && member.dailyStats && member.dailyStats[today]
       ? member.dailyStats[today]
       : null
@@ -5557,7 +5592,7 @@ App({
   getChildDailyStatsByDate(dateStr, memberId) {
     if (memberId) {
       const group = this.getFamilyGroupData()
-      const member = (group.members || []).find(m => m.memberId === memberId)
+      const member = (group.members || []).find(m => (m.id || m.memberId) === memberId)
       if (member && member.dailyStats && member.dailyStats[dateStr]) {
         const raw = member.dailyStats[dateStr]
         return {
@@ -5744,17 +5779,17 @@ App({
     const userInfo = this.globalData.userInfo || {}
 
     const mockMembers = [
-      { id: userId, nickName: userInfo.nickName || '我', avatarUrl: userInfo.avatarUrl || '', role: 'owner', joinTime: today }
+      { id: userId, memberId: userId, nickName: userInfo.nickName || '我', nickname: userInfo.nickName || '我', avatarUrl: userInfo.avatarUrl || '', role: 'owner', memberType: 'parent', joinTime: today, dailyStats: {} }
     ]
 
     if (Math.random() > 0.3) {
       const familyMembers = [
-        { id: 'mem_' + generateId(), nickName: '爸爸', avatarUrl: '', role: 'parent', joinTime: today },
-        { id: 'mem_' + generateId(), nickName: '妈妈', avatarUrl: '', role: 'parent', joinTime: today },
-        { id: 'mem_' + generateId(), nickName: '小明', avatarUrl: '', role: 'child', joinTime: today }
+        { id: 'mem_parent_001', memberId: 'mem_parent_001', nickName: '爸爸', nickname: '爸爸', avatarUrl: '', role: 'parent', memberType: 'parent', joinTime: today, dailyStats: {} },
+        { id: 'mem_parent_002', memberId: 'mem_parent_002', nickName: '妈妈', nickname: '妈妈', avatarUrl: '', role: 'parent', memberType: 'parent', joinTime: today, dailyStats: {} },
+        { id: 'mem_child_001', memberId: 'mem_child_001', nickName: '小明', nickname: '小明', avatarUrl: '', role: 'child', memberType: 'child', age: 7, joinTime: today, dailyStats: {} }
       ]
       return [{
-        id: 'grp_' + generateId(),
+        id: 'grp_family_default',
         name: '幸福一家',
         type: 'family',
         ownerId: userId,

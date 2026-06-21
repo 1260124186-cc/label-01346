@@ -52,7 +52,9 @@ Page({
 
   async loadFamilyMembers() {
     const members = app.getFamilyGroupMembers()
-    const childMembers = members.filter(m => m.role === 'child' || m.memberType === 'child')
+    const childMembers = members.filter(m =>
+      (m.role === 'child' || m.memberType === 'child' || (m.role && m.role.includes('child')))
+    )
 
     if (childMembers.length === 0 && !this.data.currentMemberId) {
       this.setData({
@@ -64,7 +66,7 @@ Page({
     }
 
     if (!this.data.currentMemberId && childMembers.length > 0) {
-      this.setData({ currentMemberId: childMembers[0].memberId })
+      this.setData({ currentMemberId: childMembers[0].memberId || childMembers[0].id })
     }
 
     this.setData({
@@ -72,9 +74,9 @@ Page({
     })
 
     if (childMembers.length > 0) {
-      const current = childMembers.find(m => m.memberId === this.data.currentMemberId) || childMembers[0]
+      const current = childMembers.find(m => (m.memberId || m.id) === this.data.currentMemberId) || childMembers[0]
       this.setData({
-        memberNickname: current.nickname || '小朋友',
+        memberNickname: current.nickname || current.nickName || '小朋友',
         memberAvatar: current.avatarUrl || '/assets/icons/avatar-default.png'
       })
     }
