@@ -1686,6 +1686,43 @@ App({
     }
   },
 
+  awardCorrectionPoints(submitterId, submitterName, points, recordInfo) {
+    if (submitterId === 'current_user' || !submitterId) {
+      this.updateUserPoints(points, recordInfo)
+      return
+    }
+
+    const pool = wx.getStorageSync('userPointsPool') || {}
+    const userPool = pool[submitterId] || {
+      userId: submitterId,
+      nickName: submitterName || '未知用户',
+      points: 0,
+      records: []
+    }
+    userPool.points += points
+    userPool.nickName = submitterName || userPool.nickName
+
+    const now = new Date()
+    const timeStr = formatDate(now, 'YYYY-MM-DD HH:mm')
+    userPool.records.unshift({
+      id: generateId(),
+      type: 'earn',
+      category: recordInfo.category || 'correction',
+      title: recordInfo.title || '纠错采纳奖励',
+      desc: recordInfo.desc || '',
+      emoji: recordInfo.emoji || '✅',
+      points,
+      time: timeStr
+    })
+    if (userPool.records.length > 100) {
+      userPool.records = userPool.records.slice(0, 100)
+    }
+
+    pool[submitterId] = userPool
+    wx.setStorageSync('userPointsPool', pool)
+    console.log('[App] 纠错积分已发放给', submitterName, '(', submitterId, ') +', points, '总积分:', userPool.points)
+  },
+
   /**
    * 更新用户信息
    * @param {Object} info 要更新的用户信息
@@ -4794,7 +4831,10 @@ App({
     currentGroupId: null,
     groupInviteCodes: {},
     groupPointsPool: {},
-    groupTasksProgress: {}
+    groupTasksProgress: {},
+    encyclopediaNeedsRefresh: false,
+    hotWordsNeedsRefresh: false,
+    leaderboardNeedsRefresh: false
   },
 
   initChildMode() {

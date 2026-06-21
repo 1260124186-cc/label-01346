@@ -110,6 +110,8 @@ const correctionManager = {
 
     wx.setStorageSync('corrections', this._corrections)
 
+    this.syncToEncyclopedia(correction)
+
     this.updateLeaderboard(correction.submitterId, correction.submitterName)
 
     console.log('[Correction] 纠错已采纳:', correction.itemName, '奖励', CORRECTION_POINTS_REWARD, '积分')
@@ -219,6 +221,40 @@ const correctionManager = {
   getHotCorrectionWords() {
     return (wx.getStorageSync('hotCorrectionWords') || [])
       .filter(w => w.count >= HOT_CORRECTION_THRESHOLD)
+  },
+
+  syncToEncyclopedia(correction) {
+    if (!correction || !correction.itemId) return
+    if (!correction.correctTypeId || correction.correctTypeId === correction.originalTypeId) {
+      if (correction.reason !== 'wrong_desc' && correction.reason !== 'wrong_tips') return
+    }
+
+    const overrides = wx.getStorageSync('encyclopediaOverrides') || {}
+    const existing = overrides[correction.itemId] || {}
+
+    const patch = { ...existing }
+
+    if (correction.correctTypeId && correction.correctTypeId !== correction.originalTypeId) {
+      patch.typeId = correction.correctTypeId
+      patch.correctedFromTypeId = correction.originalTypeId
+    }
+
+    if (correction.description) {
+      patch.description = correction.description
+      patch.correctedReason = correction.reasonName
+    }
+
+    patch.correctedAt = correction.reviewTime
+    patch.correctedBy = correction.submitterName
+
+    overrides[correction.itemId] = patch
+    wx.setStorageSync('encyclopediaOverrides', overrides)
+
+    console.log('[Correction] 百科数据已同步:', correction.itemName, patch)
+  },
+
+  getEncyclopediaOverrides() {
+    return wx.getStorageSync('encyclopediaOverrides') || {}
   },
 
   getMergedHotSearchWords(baseWords) {

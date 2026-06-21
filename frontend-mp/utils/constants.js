@@ -2806,16 +2806,39 @@ const getTrashTypesForCity = (cityId) => {
 
 const getTrashEncyclopediaForCity = (cityId) => {
   const city = cityId || getCurrentCity()
+  let encyclopediaOverrides = {}
+  try {
+    encyclopediaOverrides = wx.getStorageSync('encyclopediaOverrides') || {}
+  } catch (e) {
+    console.warn('[Constants] 读取百科覆盖数据失败', e)
+  }
   return TRASH_ENCYCLOPEDIA.map(item => {
-    const cityItem = getItemForCity(item, city)
+    let cityItem = getItemForCity(item, city)
+    const override = encyclopediaOverrides[item.id]
+    if (override) {
+      if (override.typeId) {
+        cityItem = { ...cityItem, typeId: override.typeId }
+      }
+    }
     const typeName = getTypeNameForCity(cityItem.typeId, city)
     const typeInfo = TRASH_TYPES.find(t => t.id === cityItem.typeId)
-    return {
+    const result = {
       ...cityItem,
       typeName,
       typeColor: typeInfo ? typeInfo.color : cityItem.typeColor,
       typeBgColor: typeInfo ? typeInfo.bgColor : cityItem.typeBgColor
     }
+    if (override) {
+      if (override.description) {
+        result.description = override.description
+      }
+      if (override.correctedAt) {
+        result.correctedAt = override.correctedAt
+        result.correctedBy = override.correctedBy
+        result.correctedReason = override.correctedReason || ''
+      }
+    }
+    return result
   })
 }
 

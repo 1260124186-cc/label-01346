@@ -62,15 +62,24 @@ Page({
 
       const result = correctionManager.approveCorrection(id, 'admin')
       if (result.success) {
+        const c = result.correction
         if (result.rewardPoints > 0) {
-          app.updateUserPoints(result.rewardPoints, {
-            category: 'correction',
-            title: '纠错采纳奖励',
-            desc: `纠错"${result.correction.itemName}"被采纳`,
-            emoji: '✅'
-          })
+          app.awardCorrectionPoints(
+            c.submitterId,
+            c.submitterName,
+            result.rewardPoints,
+            {
+              category: 'correction',
+              title: '纠错采纳奖励',
+              desc: `纠错"${c.itemName}"被采纳`,
+              emoji: '✅'
+            }
+          )
         }
-        showToast('已采纳，积分已发放', 'success')
+        showToast('已采纳，积分已发放给' + c.submitterName, 'success')
+        app.globalData.encyclopediaNeedsRefresh = true
+        app.globalData.hotWordsNeedsRefresh = true
+        app.globalData.leaderboardNeedsRefresh = true
         this.loadCorrections()
       } else {
         showToast(result.message, 'none')

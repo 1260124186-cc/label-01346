@@ -15,6 +15,9 @@ Page({
   },
 
   onShow() {
+    if (app.globalData.leaderboardNeedsRefresh) {
+      app.globalData.leaderboardNeedsRefresh = false
+    }
     this.loadData()
   },
 

@@ -59,6 +59,19 @@ Page({
     const currentCityInfo = app.getCurrentCityInfo()
     this.setData({ currentCity, currentCityInfo })
     this.loadSearchHistory()
+
+    if (app.globalData.hotWordsNeedsRefresh) {
+      app.globalData.hotWordsNeedsRefresh = false
+      this.loadMergedHotWords()
+    }
+
+    if (app.globalData.encyclopediaNeedsRefresh) {
+      app.globalData.encyclopediaNeedsRefresh = false
+      const { searchKeyword } = this.data
+      if (searchKeyword && searchKeyword.trim()) {
+        this.performSearch(searchKeyword)
+      }
+    }
   },
 
   loadSearchHistory() {
