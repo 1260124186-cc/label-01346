@@ -783,6 +783,9 @@ App({
   },
 
   addPointsRecord(record) {
+    if (!record.memberId) {
+      record.memberId = this.getUserId()
+    }
     if (record.type === 'earn' && !record.expireAt) {
       const recordDate = record.time ? record.time.split(' ')[0] : formatDate(new Date(), 'YYYY-MM-DD')
       const expireAt = new Date(new Date(recordDate).getTime() + 365 * 24 * 60 * 60 * 1000)
@@ -796,11 +799,37 @@ App({
     }
     this.globalData.pointsRecords.unshift(record)
     this.savePointsRecords()
-    console.log('[App] 新增积分记录', record.title, 'expireAt:', record.expireAt)
+    console.log('[App] 新增积分记录', record.title, 'memberId:', record.memberId, 'expireAt:', record.expireAt)
   },
 
-  getPointsRecords() {
-    return this.globalData.pointsRecords || []
+  getPointsRecords(memberId) {
+    const all = this.globalData.pointsRecords || []
+    if (!memberId) return all
+    return all.filter(r => r.memberId === memberId || r.memberId === undefined)
+  },
+
+  /**
+   * 获取指定成员的总积分
+   * @param {string} memberId - 可选，指定成员，不传则获取当前用户积分
+   * @returns {number} 总积分
+   */
+  getUserPoints(memberId) {
+    const targetMemberId = memberId || this.getUserId()
+    if (targetMemberId === this.getUserId()) {
+      return (this.globalData.userInfo && this.globalData.userInfo.points) || 0
+    }
+    const pool = wx.getStorageSync('userPointsPool') || {}
+    const userPool = pool[targetMemberId]
+    if (userPool) {
+      return userPool.points || 0
+    }
+    const records = this.getPointsRecords(targetMemberId)
+    let total = 0
+    records.forEach(r => {
+      if (r.type === 'earn') total += r.points || 0
+      else total -= r.points || 0
+    })
+    return Math.max(0, total)
   },
 
   consumePointsFIFO(pointsToConsume, spendRecordId) {
@@ -1122,7 +1151,7 @@ App({
   getQuizRecords(memberId) {
     const all = this.globalData.quizRecords || []
     if (!memberId) return all
-    return all.filter(r => r.memberId === memberId || r.memberId === undefined || r.memberId === this.getUserId())
+    return all.filter(r => r.memberId === memberId || r.memberId === undefined)
   },
 
   /**
@@ -1177,7 +1206,7 @@ App({
     })
     if (!memberId) return normalized.map(r => r.date)
     return normalized
-      .filter(r => r.memberId === memberId || r.memberId === undefined || r.memberId === this.getUserId())
+      .filter(r => r.memberId === memberId || r.memberId === undefined)
       .map(r => r.date)
   },
 
@@ -1189,15 +1218,8 @@ App({
     if (records) {
       this.globalData.dailyQuizRecords = records
     } else {
-      const now = new Date()
-      const records = []
-      for (let i = 0; i < 10; i++) {
-        const date = new Date(now.getTime() - 86400000 * i)
-        records.push(formatDate(date, 'YYYY-MM-DD'))
-      }
-      records.reverse()
-      this.globalData.dailyQuizRecords = records
-      wx.setStorageSync('dailyQuizRecords', records)
+      this.globalData.dailyQuizRecords = []
+      wx.setStorageSync('dailyQuizRecords', [])
     }
     console.log('[App] 每日一练记录已加载', this.globalData.dailyQuizRecords.length, '条')
   },
@@ -1205,23 +1227,44 @@ App({
   /**
    * 添加每日一练完成记录
    * @param {string} dateStr 日期字符串 YYYY-MM-DD
+   * @param {string} memberId 可选，指定成员，默认当前用户
    */
-  addDailyQuizRecord(dateStr) {
+  addDailyQuizRecord(dateStr, memberId) {
+    const ownerId = memberId || this.getUserId()
     const records = this.globalData.dailyQuizRecords || []
-    if (!records.includes(dateStr)) {
-      records.push(dateStr)
+    const alreadyExists = records.some(r => {
+      const d = typeof r === 'string' ? r : r.date
+      const o = typeof r === 'string' ? null : r.memberId
+      return d === dateStr && (o === ownerId || o === null || o === undefined)
+    })
+    if (!alreadyExists) {
+      records.push({
+        date: dateStr,
+        memberId: ownerId
+      })
       this.globalData.dailyQuizRecords = records
       wx.setStorageSync('dailyQuizRecords', records)
-      console.log('[App] 新增每日一练记录', dateStr)
+      console.log('[App] 新增每日一练记录', dateStr, 'memberId:', ownerId)
     }
   },
 
   /**
    * 获取每日一练完成记录
+   * @param {string} memberId 可选，指定成员，不传则返回全部（兼容旧格式）
    * @returns {Array} 日期数组
    */
-  getDailyQuizRecords() {
-    return this.globalData.dailyQuizRecords || []
+  getDailyQuizRecords(memberId) {
+    const all = this.globalData.dailyQuizRecords || []
+    const normalized = all.map(r => {
+      if (typeof r === 'string') {
+        return { date: r, memberId: this.getUserId() }
+      }
+      return r
+    })
+    if (!memberId) return normalized.map(r => r.date)
+    return normalized
+      .filter(r => r.memberId === memberId || r.memberId === undefined || r.memberId === this.getUserId())
+      .map(r => r.date)
   },
 
   initWrongQuestions() {
@@ -1269,7 +1312,7 @@ App({
   getWrongQuestions(memberId) {
     const all = this.globalData.wrongQuestions || []
     if (!memberId) return all
-    return all.filter(q => q.memberId === memberId || q.memberId === undefined || q.memberId === this.getUserId())
+    return all.filter(q => q.memberId === memberId || q.memberId === undefined)
   },
 
   clearWrongQuestions() {
@@ -1438,7 +1481,7 @@ App({
    */
   getStreakDays(memberId) {
     const signInRecords = this.getSignInRecords(memberId)
-    const dailyQuizRecords = this.getDailyQuizRecords()
+    const dailyQuizRecords = this.getDailyQuizRecords(memberId)
     const mergedRecords = Array.from(new Set([...signInRecords, ...dailyQuizRecords]))
     return this.calculateContinuousDays(mergedRecords)
   },
@@ -1639,8 +1682,9 @@ App({
     }
   },
 
-  updateUserPoints(points, recordInfo = null) {
-    const userInfo = this.globalData.userInfo
+  updateUserPoints(points, recordInfo = null, memberId) {
+    const targetMemberId = memberId || this.getUserId()
+    const isCurrentUser = targetMemberId === this.getUserId()
     let finalPoints = points
     let multiplierInfo = { isDoubled: false, multiplier: 1, bonusPoints: 0, appliedActivities: [] }
 
@@ -1658,19 +1702,36 @@ App({
       }
     }
 
-    userInfo.points = Math.max(0, userInfo.points + finalPoints)
-    const levelInfo = getUserLevel(userInfo.points)
-    userInfo.level = levelInfo.level
-    this.globalData.userInfo = userInfo
-    wx.setStorageSync('userInfo', userInfo)
-    console.log('[App] 用户积分已更新', userInfo.points, '等级:', userInfo.level,
-      multiplierInfo.isDoubled ? `(双倍x${multiplierInfo.multiplier})` : '')
+    if (isCurrentUser) {
+      const userInfo = this.globalData.userInfo
+      userInfo.points = Math.max(0, userInfo.points + finalPoints)
+      const levelInfo = getUserLevel(userInfo.points)
+      userInfo.level = levelInfo.level
+      this.globalData.userInfo = userInfo
+      wx.setStorageSync('userInfo', userInfo)
+      console.log('[App] 用户积分已更新', userInfo.points, '等级:', userInfo.level,
+        multiplierInfo.isDoubled ? `(双倍x${multiplierInfo.multiplier})` : '', 'memberId:', targetMemberId)
+    } else {
+      const pool = wx.getStorageSync('userPointsPool') || {}
+      const userPool = pool[targetMemberId] || {
+        userId: targetMemberId,
+        nickName: '成员' + targetMemberId.slice(-4),
+        points: 0,
+        records: []
+      }
+      userPool.points = Math.max(0, userPool.points + finalPoints)
+      pool[targetMemberId] = userPool
+      wx.setStorageSync('userPointsPool', pool)
+      console.log('[App] 成员积分已更新', targetMemberId, '总积分:', userPool.points,
+        multiplierInfo.isDoubled ? `(双倍x${multiplierInfo.multiplier})` : '')
+    }
 
     if (recordInfo) {
       const now = new Date()
       const timeStr = formatDate(now, 'YYYY-MM-DD HH:mm')
       const record = {
         id: generateId(),
+        memberId: targetMemberId,
         type: finalPoints >= 0 ? 'earn' : 'spend',
         category: recordInfo.category || 'other',
         title: recordInfo.title || (finalPoints >= 0 ? '积分获取' : '积分消费'),
@@ -1681,12 +1742,14 @@ App({
       }
       this.addPointsRecord(record)
 
-      if (finalPoints < 0) {
+      if (finalPoints < 0 && isCurrentUser) {
         this.consumePointsFIFO(Math.abs(finalPoints), record.id)
       }
     }
 
-    this.checkAchievements()
+    if (isCurrentUser) {
+      this.checkAchievements()
+    }
 
     if (multiplierInfo.isDoubled && recordInfo && recordInfo.category) {
       for (const act of multiplierInfo.appliedActivities) {
@@ -4209,22 +4272,40 @@ App({
     const { COURSES } = require('./data/courses')
     const targetMemberId = memberId || this.getUserId()
     const isCurrentUser = targetMemberId === this.getUserId()
+    const categoryMap = {
+      kitchen: { id: 3, name: '厨余垃圾', emoji: '🍂', color: '#5BBD72' },
+      harmful: { id: 2, name: '有害垃圾', emoji: '☣️', color: '#E85D5D' },
+      recyclable: { id: 1, name: '可回收物', emoji: '♻️', color: '#4A90D9' },
+      other: { id: 4, name: '其他垃圾', emoji: '🗑️', color: '#8E8E93' }
+    }
+
+    const memberQuizRecords = this.getQuizRecords(targetMemberId)
+    const memberClassifyRecords = this.getClassifyRecords(targetMemberId)
 
     return COURSES.filter(c => c.categoryId && ['kitchen', 'harmful', 'recyclable', 'other'].includes(c.categoryId)).map(course => {
       let progress = 0
+      const totalChapters = course.totalChapters || (course.chapters ? course.chapters.length : 0)
+
       if (isCurrentUser) {
         const courseProgress = this.getCourseProgress(course.id)
-        const totalChapters = course.totalChapters || (course.chapters ? course.chapters.length : 0)
         const completed = courseProgress.completedChapters ? courseProgress.completedChapters.length : 0
         progress = totalChapters > 0 ? Math.round((completed / totalChapters) * 100) : 0
+      } else {
+        const category = categoryMap[course.categoryId]
+        let categoryQuizCount = 0
+        let categoryClassifyCount = 0
+        if (category) {
+          categoryQuizCount = memberQuizRecords.filter(r =>
+            r.chapterId === category.id || r.chapterName === category.name
+          ).reduce((s, r) => s + (r.totalQuestions || 0), 0)
+          categoryClassifyCount = memberClassifyRecords.filter(r => r.typeId === category.id).length
+        }
+        const totalActivity = categoryQuizCount + categoryClassifyCount
+        const baselinePerChapter = 5
+        const estimated = totalChapters > 0 ? Math.min(100, Math.round(((totalActivity / baselinePerChapter) / totalChapters) * 100)) : 0
+        progress = estimated
       }
 
-      const categoryMap = {
-        kitchen: { id: 3, name: '厨余垃圾', emoji: '🍂', color: '#5BBD72' },
-        harmful: { id: 2, name: '有害垃圾', emoji: '☣️', color: '#E85D5D' },
-        recyclable: { id: 1, name: '可回收物', emoji: '♻️', color: '#4A90D9' },
-        other: { id: 4, name: '其他垃圾', emoji: '🗑️', color: '#8E8E93' }
-      }
       const category = categoryMap[course.categoryId] || { id: 0, name: course.title, emoji: '📚', color: '#9B59B6' }
 
       return {
@@ -6230,7 +6311,7 @@ App({
     const totalStudyDays = mergedStudyDays.length
 
     const streakDays = this.getStreakDays(targetMemberId)
-    const totalPoints = this.getUserPoints() || 0
+    const totalPoints = this.getUserPoints(targetMemberId) || 0
 
     return {
       totalStudyDays,

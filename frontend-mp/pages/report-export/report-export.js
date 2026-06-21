@@ -239,7 +239,7 @@ Page({
       const totalDays = rawData.totalStudyDays || rawData.totalDays || 0
       const totalClassify = rawData.totalClassify || rawData.classifyCount || 0
       const totalQuiz = rawData.totalQuiz || rawData.quizCount || 0
-      const accuracy = rawData.overallAccuracy || (totalQuiz > 0 ? Math.round((rawData.correctCount || 0) / totalQuiz * 100) : 0)
+      const accuracy = rawData.overallAccuracy || (totalQuiz > 0 ? Math.round(((rawData.correctQuiz || rawData.correctCount || 0) / totalQuiz) * 100) : 0)
 
       this.setData({
         'reportData.totalDays': totalDays,
