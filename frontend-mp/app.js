@@ -805,7 +805,12 @@ App({
   getPointsRecords(memberId) {
     const all = this.globalData.pointsRecords || []
     if (!memberId) return all
-    return all.filter(r => r.memberId === memberId || r.memberId === undefined)
+    const targetMemberId = memberId
+    const isCurrentUser = targetMemberId === this.getUserId()
+    if (isCurrentUser) {
+      return all.filter(r => r.memberId === targetMemberId || r.memberId === undefined)
+    }
+    return all.filter(r => r.memberId === targetMemberId)
   },
 
   /**
@@ -1106,7 +1111,12 @@ App({
   getClassifyRecords(memberId) {
     const all = this.globalData.classifyRecords || []
     if (!memberId) return all
-    return all.filter(r => r.memberId === memberId || r.memberId === undefined)
+    const targetMemberId = memberId
+    const isCurrentUser = targetMemberId === this.getUserId()
+    if (isCurrentUser) {
+      return all.filter(r => r.memberId === targetMemberId || r.memberId === undefined)
+    }
+    return all.filter(r => r.memberId === targetMemberId)
   },
 
   /**
@@ -1151,7 +1161,12 @@ App({
   getQuizRecords(memberId) {
     const all = this.globalData.quizRecords || []
     if (!memberId) return all
-    return all.filter(r => r.memberId === memberId || r.memberId === undefined)
+    const targetMemberId = memberId
+    const isCurrentUser = targetMemberId === this.getUserId()
+    if (isCurrentUser) {
+      return all.filter(r => r.memberId === targetMemberId || r.memberId === undefined)
+    }
+    return all.filter(r => r.memberId === targetMemberId)
   },
 
   /**
@@ -1178,11 +1193,15 @@ App({
   addSignInRecord(dateStr, memberId) {
     const records = this.globalData.signInRecords || []
     const ownerId = memberId || this.getUserId()
+    const isCurrentUser = ownerId === this.getUserId()
 
     const alreadySigned = records.some(r => {
       const d = typeof r === 'string' ? r : r.date
       const o = typeof r === 'string' ? null : r.memberId
-      return d === dateStr && (o === ownerId || o === null || o === undefined)
+      if (isCurrentUser) {
+        return d === dateStr && (o === ownerId || o === null || o === undefined)
+      }
+      return d === dateStr && o === ownerId
     })
 
     if (!alreadySigned) {
@@ -1205,9 +1224,15 @@ App({
       return r
     })
     if (!memberId) return normalized.map(r => r.date)
-    return normalized
-      .filter(r => r.memberId === memberId || r.memberId === undefined)
-      .map(r => r.date)
+    const targetMemberId = memberId
+    const isCurrentUser = targetMemberId === this.getUserId()
+    let filtered
+    if (isCurrentUser) {
+      filtered = normalized.filter(r => r.memberId === targetMemberId || r.memberId === undefined)
+    } else {
+      filtered = normalized.filter(r => r.memberId === targetMemberId)
+    }
+    return filtered.map(r => r.date)
   },
 
   /**
@@ -1231,11 +1256,15 @@ App({
    */
   addDailyQuizRecord(dateStr, memberId) {
     const ownerId = memberId || this.getUserId()
+    const isCurrentUser = ownerId === this.getUserId()
     const records = this.globalData.dailyQuizRecords || []
     const alreadyExists = records.some(r => {
       const d = typeof r === 'string' ? r : r.date
       const o = typeof r === 'string' ? null : r.memberId
-      return d === dateStr && (o === ownerId || o === null || o === undefined)
+      if (isCurrentUser) {
+        return d === dateStr && (o === ownerId || o === null || o === undefined)
+      }
+      return d === dateStr && o === ownerId
     })
     if (!alreadyExists) {
       records.push({
@@ -1262,9 +1291,15 @@ App({
       return r
     })
     if (!memberId) return normalized.map(r => r.date)
-    return normalized
-      .filter(r => r.memberId === memberId || r.memberId === undefined || r.memberId === this.getUserId())
-      .map(r => r.date)
+    const targetMemberId = memberId
+    const isCurrentUser = targetMemberId === this.getUserId()
+    let filtered
+    if (isCurrentUser) {
+      filtered = normalized.filter(r => r.memberId === targetMemberId || r.memberId === undefined)
+    } else {
+      filtered = normalized.filter(r => r.memberId === targetMemberId)
+    }
+    return filtered.map(r => r.date)
   },
 
   initWrongQuestions() {
@@ -1275,8 +1310,14 @@ App({
 
   addWrongQuestion(question) {
     const targetMemberId = question.memberId || this.getUserId()
+    const isCurrentUser = targetMemberId === this.getUserId()
     let wrongQuestions = this.globalData.wrongQuestions || []
-    const existingIndex = wrongQuestions.findIndex(q => q.id === question.id && (q.memberId === targetMemberId || !q.memberId))
+    let existingIndex
+    if (isCurrentUser) {
+      existingIndex = wrongQuestions.findIndex(q => q.id === question.id && (q.memberId === targetMemberId || !q.memberId))
+    } else {
+      existingIndex = wrongQuestions.findIndex(q => q.id === question.id && q.memberId === targetMemberId)
+    }
 
     if (existingIndex > -1) {
       wrongQuestions[existingIndex] = {
@@ -1302,8 +1343,13 @@ App({
 
   removeWrongQuestion(questionId, memberId) {
     const targetMemberId = memberId || this.getUserId()
+    const isCurrentUser = targetMemberId === this.getUserId()
     let wrongQuestions = this.globalData.wrongQuestions || []
-    wrongQuestions = wrongQuestions.filter(q => !(q.id === questionId && (q.memberId === targetMemberId || !q.memberId)))
+    if (isCurrentUser) {
+      wrongQuestions = wrongQuestions.filter(q => !(q.id === questionId && (q.memberId === targetMemberId || !q.memberId)))
+    } else {
+      wrongQuestions = wrongQuestions.filter(q => !(q.id === questionId && q.memberId === targetMemberId))
+    }
     this.globalData.wrongQuestions = wrongQuestions
     wx.setStorageSync('wrongQuestions', wrongQuestions)
     console.log('[App] 错题已移除', questionId, 'memberId:', targetMemberId)
@@ -1312,7 +1358,12 @@ App({
   getWrongQuestions(memberId) {
     const all = this.globalData.wrongQuestions || []
     if (!memberId) return all
-    return all.filter(q => q.memberId === memberId || q.memberId === undefined)
+    const targetMemberId = memberId
+    const isCurrentUser = targetMemberId === this.getUserId()
+    if (isCurrentUser) {
+      return all.filter(q => q.memberId === targetMemberId || q.memberId === undefined)
+    }
+    return all.filter(q => q.memberId === targetMemberId)
   },
 
   clearWrongQuestions() {
@@ -5862,8 +5913,7 @@ App({
       }
 
       case 'quiz': {
-        const quizRecords = this.getQuizRecords()
-        const memberRecords = quizRecords.filter(r => r.memberId === memberId || r.memberId === undefined)
+        const memberRecords = this.getQuizRecords(memberId)
         const totalQuestions = memberRecords.reduce((sum, r) => sum + (r.totalQuestions || 0), 0)
         const target = task.count || 20
         return {
