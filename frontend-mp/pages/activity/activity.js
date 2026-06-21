@@ -283,8 +283,8 @@ Page({
 
     if (flashSession && flashSession.current) {
       diffMs = Math.max(0, flashSession.current.endTime - now)
-    } else if (flashSession && flashSession.next) {
-      diffMs = Math.max(0, flashSession.next.startTime - now)
+    } else if (flashSession && flashSession.display && flashSession.display.startTime) {
+      diffMs = Math.max(0, flashSession.display.startTime - now)
     } else {
       return
     }

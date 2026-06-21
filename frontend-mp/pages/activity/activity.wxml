@@ -65,9 +65,11 @@
       <view class="countdown-header-row">
         <text class="countdown-label" wx:if="{{flashSession && flashSession.isActive}}">本场结束倒计时</text>
         <text class="countdown-label" wx:elif="{{flashSession && flashSession.next}}">距离下一场开抢</text>
-        <text class="countdown-label" wx:else>秒杀场次</text>
+        <text class="countdown-label" wx:elif="{{flashSession && flashSession.display && flashSession.display.isTomorrow}}">距离明日开抢</text>
+        <text class="countdown-label" wx:else>距离下次开抢</text>
         <view class="session-info" wx:if="{{flashSession && flashSession.display}}">
-          <text class="session-time">{{flashSession.display.startTimeStr}} - {{flashSession.display.endTimeStr}}</text>
+          <text class="session-time" wx:if="{{flashSession.display.dateLabel === '今日'}}">{{flashSession.display.startTimeStr}} - {{flashSession.display.endTimeStr}}</text>
+          <text class="session-time" wx:else>{{flashSession.display.dateLabel}} {{flashSession.display.startTimeStr}} - {{flashSession.display.endTimeStr}}</text>
         </view>
       </view>
       <view class="countdown-timer">
@@ -98,7 +100,7 @@
       <view class="reservation-list">
         <view class="reservation-item" wx:for="{{reservations}}" wx:key="id">
           <view class="res-info">
-            <text class="res-time">{{item.startTimeStr}}</text>
+            <text class="res-time">{{item.dateLabel === '今日' ? '' : item.dateLabel + ' '}}{{item.startTimeStr}}</text>
             <text class="res-status">{{item.status === 'upcoming' ? '待开始' : item.status === 'reminded' ? '已提醒' : '已完成'}}</text>
           </view>
           <view class="res-cancel"
