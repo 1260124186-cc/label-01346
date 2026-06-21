@@ -5160,7 +5160,10 @@ App({
   },
 
   getChildTimeLimit() {
-    return this.globalData.childTimeLimitMinutes || 60
+    const baseLimit = this.globalData.childTimeLimitMinutes || 60
+    const stats = this.globalData.childDailyStats || wx.getStorageSync('childDailyStats') || {}
+    const extended = stats.extendedLimitMinutes || 0
+    return baseLimit + extended
   },
 
   setChildTimeLimit(minutes) {
@@ -5322,79 +5325,173 @@ App({
     }
     const newStats = {
       date: today,
-      quizCount: 0,
-      correctQuizCount: 0,
+      quizTotal: 0,
+      quizCorrect: 0,
       gameCount: 0,
       classifyCount: 0,
-      learnSeconds: 0
+      learnSeconds: 0,
+      coinsEarned: 0,
+      badgesEarned: 0
     }
     this.globalData.childUsageTracker = newTracker
     this.globalData.childDailyStats = newStats
     wx.setStorageSync('childUsageTracker', newTracker)
     wx.setStorageSync('childDailyStats', newStats)
+    this.syncChildStatsToFamilyGroup()
   },
 
   recordChildQuiz(correct = false) {
     if (!this.isChildModeEnabled()) return
     const stats = this.globalData.childDailyStats || wx.getStorageSync('childDailyStats') || {}
-    stats.quizCount = (stats.quizCount || 0) + 1
-    if (correct) stats.correctQuizCount = (stats.correctQuizCount || 0) + 1
+    const today = formatDate(new Date(), 'YYYY-MM-DD')
+    stats.date = today
+    stats.quizTotal = (stats.quizTotal || 0) + 1
+    if (correct) stats.quizCorrect = (stats.quizCorrect || 0) + 1
     stats.learnSeconds = (stats.learnSeconds || 0) + 5
     this.globalData.childDailyStats = stats
     wx.setStorageSync('childDailyStats', stats)
+    this.syncChildStatsToFamilyGroup()
   },
 
   recordChildGame() {
     if (!this.isChildModeEnabled()) return
     const stats = this.globalData.childDailyStats || wx.getStorageSync('childDailyStats') || {}
+    const today = formatDate(new Date(), 'YYYY-MM-DD')
+    stats.date = today
     stats.gameCount = (stats.gameCount || 0) + 1
     this.globalData.childDailyStats = stats
     wx.setStorageSync('childDailyStats', stats)
+    this.syncChildStatsToFamilyGroup()
   },
 
   recordChildClassify() {
     if (!this.isChildModeEnabled()) return
     const stats = this.globalData.childDailyStats || wx.getStorageSync('childDailyStats') || {}
+    const today = formatDate(new Date(), 'YYYY-MM-DD')
+    stats.date = today
     stats.classifyCount = (stats.classifyCount || 0) + 1
     this.globalData.childDailyStats = stats
     wx.setStorageSync('childDailyStats', stats)
+    this.syncChildStatsToFamilyGroup()
+  },
+
+  syncChildStatsToFamilyGroup() {
+    const myId = this.getUserId()
+    const group = this.getFamilyGroupData()
+    const today = formatDate(new Date(), 'YYYY-MM-DD')
+    const stats = this.globalData.childDailyStats || wx.getStorageSync('childDailyStats') || {}
+    const usedSeconds = this.getChildUsageTime()
+
+    const todayStats = {
+      date: today,
+      usageSeconds: usedSeconds,
+      quizTotal: stats.quizTotal || 0,
+      quizCorrect: stats.quizCorrect || 0,
+      gameCount: stats.gameCount || 0,
+      classifyCount: stats.classifyCount || 0,
+      coinsEarned: stats.coinsEarned || 0,
+      badgesEarned: stats.badgesEarned || 0,
+      updatedAt: Date.now()
+    }
+
+    if (!group.members) group.members = []
+    let member = group.members.find(m => m.memberId === myId)
+    if (!member) {
+      const userInfo = wx.getStorageSync('userInfo') || {}
+      member = {
+        memberId: myId,
+        nickname: userInfo.nickName || '小朋友',
+        avatarUrl: userInfo.avatarUrl || '',
+        role: 'child',
+        memberType: 'child',
+        dailyStats: {},
+        createdAt: Date.now()
+      }
+      group.members.push(member)
+    }
+
+    if (!member.dailyStats) member.dailyStats = {}
+    member.dailyStats[today] = todayStats
+    member.updatedAt = Date.now()
+    member.lastUsageSeconds = usedSeconds
+    member.lastActiveAt = Date.now()
+
+    this.saveFamilyGroupData(group)
+  },
+
+  saveFamilyGroupData(group) {
+    const data = group || this.getFamilyGroupData()
+    this.globalData.familyGroup = data
+    wx.setStorageSync('familyGroup', data)
   },
 
   getChildTodayStats(memberId) {
     const ownerId = memberId || this.getUserId()
     const isCurrentUser = ownerId === this.getUserId()
+    const today = formatDate(new Date(), 'YYYY-MM-DD')
+    const timeLimit = this.getChildTimeLimit()
+    const group = this.getFamilyGroupData()
+    const member = (group.members || []).find(m => m.memberId === ownerId)
+    const memberDailyStats = member && member.dailyStats && member.dailyStats[today]
+      ? member.dailyStats[today]
+      : null
 
+    let stats
     if (isCurrentUser) {
-      const stats = this.globalData.childDailyStats || wx.getStorageSync('childDailyStats') || {}
-      const usedSeconds = this.getChildUsageTime()
-      return {
-        date: stats.date || formatDate(new Date(), 'YYYY-MM-DD'),
-        quizCount: stats.quizCount || 0,
-        correctQuizCount: stats.correctQuizCount || 0,
-        gameCount: stats.gameCount || 0,
-        classifyCount: stats.classifyCount || 0,
-        usedSeconds,
-        usedTimeText: this.formatUsageTime(usedSeconds),
-        limitMinutes: this.getChildTimeLimit(),
+      const localStats = this.globalData.childDailyStats || wx.getStorageSync('childDailyStats') || {}
+      const usageSeconds = this.getChildUsageTime()
+      const quizTotal = localStats.quizTotal || 0
+      const quizCorrect = localStats.quizCorrect || 0
+
+      stats = {
+        date: today,
+        usageSeconds,
+        timeLimitMinutes: timeLimit,
+        quizTotal,
+        quizCorrect,
+        gameCount: localStats.gameCount || 0,
+        classifyCount: localStats.classifyCount || 0,
+        coinsEarned: localStats.coinsEarned || 0,
+        badgesEarned: localStats.badgesEarned || 0,
         remainingSeconds: this.getChildRemainingTime(),
-        accuracy: (stats.quizCount || 0) > 0 ? Math.round(((stats.correctQuizCount || 0) / (stats.quizCount || 1)) * 100) : 0
+        accuracy: quizTotal > 0 ? Math.round((quizCorrect / quizTotal) * 100) : 0
+      }
+    } else if (memberDailyStats) {
+      const usageSeconds = memberDailyStats.usageSeconds || 0
+      const quizTotal = memberDailyStats.quizTotal || 0
+      const quizCorrect = memberDailyStats.quizCorrect || 0
+      const limitMinutes = memberDailyStats.timeLimitMinutes || timeLimit
+
+      stats = {
+        date: today,
+        usageSeconds,
+        timeLimitMinutes: limitMinutes,
+        quizTotal,
+        quizCorrect,
+        gameCount: memberDailyStats.gameCount || 0,
+        classifyCount: memberDailyStats.classifyCount || 0,
+        coinsEarned: memberDailyStats.coinsEarned || 0,
+        badgesEarned: memberDailyStats.badgesEarned || 0,
+        remainingSeconds: Math.max(0, limitMinutes * 60 - usageSeconds),
+        accuracy: quizTotal > 0 ? Math.round((quizCorrect / quizTotal) * 100) : 0
+      }
+    } else {
+      stats = {
+        date: today,
+        usageSeconds: 0,
+        timeLimitMinutes: timeLimit,
+        quizTotal: 0,
+        quizCorrect: 0,
+        gameCount: 0,
+        classifyCount: 0,
+        coinsEarned: 0,
+        badgesEarned: 0,
+        remainingSeconds: timeLimit * 60,
+        accuracy: 0
       }
     }
 
-    const memberStats = wx.getStorageSync('memberDailyStats') || {}
-    const userStats = memberStats[ownerId] || {}
-    return {
-      date: userStats.date || formatDate(new Date(), 'YYYY-MM-DD'),
-      quizCount: userStats.quizCount || Math.floor(Math.random() * 30),
-      correctQuizCount: userStats.correctQuizCount || Math.floor(Math.random() * 25),
-      gameCount: userStats.gameCount || Math.floor(Math.random() * 10),
-      classifyCount: userStats.classifyCount || Math.floor(Math.random() * 40),
-      usedSeconds: userStats.usedSeconds || Math.floor(Math.random() * 3600),
-      usedTimeText: this.formatUsageTime(userStats.usedSeconds || Math.floor(Math.random() * 3600)),
-      limitMinutes: userStats.limitMinutes || 60,
-      remainingSeconds: Math.max(0, (userStats.limitMinutes || 60) * 60 - (userStats.usedSeconds || 0)),
-      accuracy: userStats.accuracy || 80
-    }
+    return stats
   },
 
   getChildStatsForGroupMember(memberId) {
@@ -5436,17 +5533,20 @@ App({
 
   extendChildDailyTimeLimit(addedMinutes) {
     const minutes = Math.max(10, Math.min(120, parseInt(addedMinutes) || 0))
-    const stats = this.getChildTodayStats()
-    const todayStr = new Date().toDateString()
+    const todayStr = formatDate(new Date(), 'YYYY-MM-DD')
+    const stats = this.globalData.childDailyStats || wx.getStorageSync('childDailyStats') || {}
 
-    const extended = Object.assign({}, stats.extendedMap || {})
-    extended[todayStr] = (extended[todayStr] || 0) + minutes
+    const extendedMap = Object.assign({}, stats.extendedMap || {})
+    extendedMap[todayStr] = (extendedMap[todayStr] || 0) + minutes
 
-    this.globalData.childDailyStats = Object.assign({}, this.globalData.childDailyStats, {
-      extendedLimitMinutes: (this.globalData.childDailyStats && this.globalData.childDailyStats.extendedLimitMinutes || 0) + minutes,
-      extendedMap: extended
+    const newExtendedLimit = (stats.extendedLimitMinutes || 0) + minutes
+
+    this.globalData.childDailyStats = Object.assign({}, stats, {
+      extendedLimitMinutes: newExtendedLimit,
+      extendedMap: extendedMap
     })
     wx.setStorageSync('childDailyStats', this.globalData.childDailyStats)
+    this.syncChildStatsToFamilyGroup()
 
     if (this.isChildModeLocked()) {
       this.setChildModeLocked(false)
@@ -5459,42 +5559,76 @@ App({
       const group = this.getFamilyGroupData()
       const member = (group.members || []).find(m => m.memberId === memberId)
       if (member && member.dailyStats && member.dailyStats[dateStr]) {
-        return member.dailyStats[dateStr]
+        const raw = member.dailyStats[dateStr]
+        return {
+          date: dateStr,
+          usageSeconds: raw.usageSeconds || 0,
+          timeLimitMinutes: raw.timeLimitMinutes || this.getChildTimeLimit(),
+          quizTotal: raw.quizTotal || 0,
+          quizCorrect: raw.quizCorrect || 0,
+          gameCount: raw.gameCount || 0,
+          classifyCount: raw.classifyCount || 0,
+          coinsEarned: raw.coinsEarned || 0,
+          badgesEarned: raw.badgesEarned || 0
+        }
       }
       return {
-        usageSeconds: Math.floor(Math.random() * 1800),
-        quizTotal: Math.floor(Math.random() * 30),
-        quizCorrect: Math.floor(Math.random() * 25),
-        gameCount: Math.floor(Math.random() * 8),
-        classifyCount: Math.floor(Math.random() * 15),
-        coinsEarned: Math.floor(Math.random() * 60),
-        badgesEarned: Math.floor(Math.random() * 2)
+        date: dateStr,
+        usageSeconds: 0,
+        timeLimitMinutes: this.getChildTimeLimit(),
+        quizTotal: 0,
+        quizCorrect: 0,
+        gameCount: 0,
+        classifyCount: 0,
+        coinsEarned: 0,
+        badgesEarned: 0
       }
     }
 
     const allStats = wx.getStorageSync('childDailyStatsHistory') || {}
-    if (allStats[dateStr]) return allStats[dateStr]
+    if (allStats[dateStr]) {
+      const raw = allStats[dateStr]
+      return {
+        date: dateStr,
+        usageSeconds: raw.usageSeconds || 0,
+        timeLimitMinutes: raw.timeLimitMinutes || this.getChildTimeLimit(),
+        quizTotal: raw.quizTotal || 0,
+        quizCorrect: raw.quizCorrect || 0,
+        gameCount: raw.gameCount || 0,
+        classifyCount: raw.classifyCount || 0,
+        coinsEarned: raw.coinsEarned || 0,
+        badgesEarned: raw.badgesEarned || 0
+      }
+    }
 
-    const todayStr = new Date().toDateString()
+    const todayStr = formatDate(new Date(), 'YYYY-MM-DD')
     if (dateStr === todayStr) {
       return this.getChildTodayStats()
     }
 
     return {
-      usageSeconds: 0, quizTotal: 0, quizCorrect: 0,
-      gameCount: 0, classifyCount: 0, coinsEarned: 0, badgesEarned: 0
+      date: dateStr,
+      usageSeconds: 0,
+      timeLimitMinutes: this.getChildTimeLimit(),
+      quizTotal: 0,
+      quizCorrect: 0,
+      gameCount: 0,
+      classifyCount: 0,
+      coinsEarned: 0,
+      badgesEarned: 0
     }
   },
 
   getFamilyGroupMembers() {
     const group = this.getFamilyGroupData()
-    const myId = wx.getStorageSync('userId') || 'me_001'
-    const myName = wx.getStorageSync('userInfo') && wx.getStorageSync('userInfo').nickName || '我'
+    const myId = this.getUserId()
+    const userInfo = wx.getStorageSync('userInfo') || {}
+    const myName = userInfo.nickName || '我'
 
     const defaultMembers = [
-      { memberId: myId, nickname: myName, avatarUrl: '', role: 'parent', memberType: 'parent', isMe: true },
-      { memberId: 'child_001', nickname: '小乖', avatarUrl: '', role: 'child', memberType: 'child', age: 7 },
-      { memberId: 'child_002', nickname: '小宝', avatarUrl: '', role: 'child', memberType: 'child', age: 5 }
+      { memberId: myId, nickname: myName, avatarUrl: userInfo.avatarUrl || '', role: 'parent', memberType: 'parent', isMe: true, dailyStats: {}, createdAt: Date.now() },
+      { memberId: 'child_001', nickname: '小乖', avatarUrl: '', role: 'child', memberType: 'child', age: 7, dailyStats: {}, createdAt: Date.now() },
+      { memberId: 'child_002', nickname: '小宝', avatarUrl: '', role: 'child', memberType: 'child', age: 5, dailyStats: {}, createdAt: Date.now() }
     ]
     return group.members && group.members.length > 0 ? group.members : defaultMembers
   },
