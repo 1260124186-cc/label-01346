@@ -47,12 +47,22 @@
         <view class="result-info">
           <view class="result-name">
             <text>{{item.name}}</text>
+            <view class="corrected-tag" wx:if="{{item.correctedAt}}">
+              <text class="corrected-tag-text">已纠错</text>
+            </view>
           </view>
           <view class="result-type" style="color: {{item.typeColor}};">
             {{item.typeName}}
           </view>
         </view>
-        <view class="result-arrow">›</view>
+        <view
+          class="result-correction-btn"
+          catchtap="onListCorrectionTap"
+          data-item="{{item}}"
+        >
+          <text class="result-correction-icon">✏️</text>
+          <text class="result-correction-text">纠错</text>
+        </view>
       </view>
     </view>
   </view>

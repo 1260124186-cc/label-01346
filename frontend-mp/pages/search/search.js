@@ -282,12 +282,28 @@ Page({
     console.log('[Search] 点击纠错:', currentDetail.name)
     this.onCloseDetail()
 
+    this.navigateToCorrection(currentDetail)
+  },
+
+  onListCorrectionTap(e) {
+    const { item } = e.currentTarget.dataset
+    if (!item) return
+    console.log('[Search] 列表点击纠错:', item.name)
+
+    const currentCity = this.data.currentCity
+    const encyclopedia = getTrashEncyclopediaForCity(currentCity)
+    const fullItem = encyclopedia.find(t => t.id === item.id) || item
+
+    this.navigateToCorrection(fullItem)
+  },
+
+  navigateToCorrection(item) {
     const params = encodeURIComponent(JSON.stringify({
-      itemId: currentDetail.id,
-      itemName: currentDetail.name,
-      itemEmoji: currentDetail.emoji,
-      originalTypeId: currentDetail.typeId,
-      originalTypeName: currentDetail.typeName
+      itemId: item.id,
+      itemName: item.name,
+      itemEmoji: item.emoji,
+      originalTypeId: item.typeId,
+      originalTypeName: item.typeName
     }))
     navigateTo('/pages/correction-submit/correction-submit', { data: params })
   },
