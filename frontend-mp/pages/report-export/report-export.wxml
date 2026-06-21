@@ -257,10 +257,34 @@
     </view>
   </view>
 
+  <view class="export-format-section">
+    <view class="section-header">
+      <text class="section-title">导出格式</text>
+    </view>
+    <view class="format-tabs">
+      <view
+        class="format-tab {{exportFormat === 'pdf' ? 'active' : ''}}"
+        bindtap="onSelectFormat"
+        data-format="pdf"
+      >
+        <text class="format-icon">📄</text>
+        <text class="format-name">PDF</text>
+      </view>
+      <view
+        class="format-tab {{exportFormat === 'image' ? 'active' : ''}}"
+        bindtap="onSelectFormat"
+        data-format="image"
+      >
+        <text class="format-icon">🖼️</text>
+        <text class="format-name">长图</text>
+      </view>
+    </view>
+  </view>
+
   <view class="export-actions">
-    <view class="export-btn export-image-btn" bindtap="onExportImage">
-      <text class="export-btn-icon">🖼️</text>
-      <text class="export-btn-text">导出长图</text>
+    <view class="export-btn export-primary-btn" bindtap="onExportReport">
+      <text class="export-btn-icon">{{exportFormat === 'pdf' ? '📄' : '🖼️'}}</text>
+      <text class="export-btn-text">导出{{exportFormat === 'pdf' ? 'PDF' : '长图'}}</text>
     </view>
     <view class="export-btn export-share-btn" bindtap="onShareToWeChat">
       <text class="export-btn-icon">💬</text>
@@ -271,7 +295,7 @@
   <view class="batch-export-action" wx:if="{{isBatchMode && selectedMemberIds.length > 0}}">
     <view class="batch-export-btn" bindtap="onBatchExport">
       <text class="batch-export-icon">📦</text>
-      <text class="batch-export-text">批量导出 ({{selectedMemberIds.length}}人)</text>
+      <text class="batch-export-text">批量导出 {{exportFormat === 'pdf' ? 'PDF' : '长图'}} ({{selectedMemberIds.length}}人)</text>
     </view>
   </view>
 

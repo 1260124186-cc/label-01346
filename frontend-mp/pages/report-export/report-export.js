@@ -29,7 +29,8 @@ Page({
       nextWeekPlan: []
     },
     canvasWidth: 750,
-    canvasHeight: 2000
+    canvasHeight: 2000,
+    exportFormat: 'pdf'
   },
 
   onLoad(options) {
@@ -398,6 +399,20 @@ Page({
     return plans
   },
 
+  onSelectFormat(e) {
+    const { format } = e.currentTarget.dataset
+    if (format === this.data.exportFormat) return
+    this.setData({ exportFormat: format })
+  },
+
+  onExportReport() {
+    if (this.data.exportFormat === 'pdf') {
+      this.onExportPDF()
+    } else {
+      this.onExportImage()
+    }
+  },
+
   onExportImage() {
     showLoading('生成长图中...')
     this.drawReportCanvas().then(() => {
@@ -736,6 +751,8 @@ Page({
           const canvas = res[0].node
           wx.canvasToTempFilePath({
             canvas,
+            fileType: 'jpg',
+            quality: 0.92,
             success: (imgRes) => {
               resolve(imgRes.tempFilePath)
             },
@@ -747,7 +764,208 @@ Page({
     })
   },
 
+  onExportPDF() {
+    showLoading('生成PDF中...')
+    let pdfPath = ''
+    this.drawReportCanvas()
+      .then(() => this.saveCanvasToImage())
+      .then(imgPath => {
+        return this.generatePDFFromImage(imgPath)
+      })
+      .then(path => {
+        pdfPath = path
+        hideLoading()
+        return new Promise((resolve) => {
+          wx.showModal({
+            title: 'PDF已生成',
+            content: 'PDF报告已生成，是否立即预览？',
+            confirmText: '预览',
+            cancelText: '完成',
+            success: (res) => {
+              resolve(res.confirm)
+            }
+          })
+        })
+      })
+      .then(needPreview => {
+        if (needPreview && pdfPath) {
+          this.previewPDF(pdfPath)
+        } else {
+          showSuccess('PDF已生成')
+        }
+      })
+      .catch(err => {
+        hideLoading()
+        console.error('[ReportExport] 导出PDF失败', err)
+        showError('PDF导出失败，请重试')
+      })
+  },
+
+  generatePDFFromImage(imgPath) {
+    return new Promise((resolve, reject) => {
+      const fs = wx.getFileSystemManager()
+      const { canvasWidth, canvasHeight } = this.data
+
+      fs.readFile({
+        filePath: imgPath,
+        success: (res) => {
+          try {
+            const imgData = res.data
+            const pdfBuffer = this.buildPDF(imgData, canvasWidth, canvasHeight)
+            const timestamp = Date.now()
+            const fileName = `学习报告_${this.data.reportMemberName}_${formatDate(new Date(), 'YYYY-MM-DD')}.pdf`
+            const savePath = `${wx.env.USER_DATA_PATH}/report_${timestamp}.pdf`
+
+            fs.writeFile({
+              filePath: savePath,
+              data: pdfBuffer,
+              encoding: 'binary',
+              success: () => {
+                resolve(savePath)
+              },
+              fail: (err) => {
+                reject(err)
+              }
+            })
+          } catch (e) {
+            reject(e)
+          }
+        },
+        fail: (err) => {
+          reject(err)
+        }
+      })
+    })
+  },
+
+  buildPDF(imgData, imgWidth, imgHeight) {
+    const pageWidth = Math.round(imgWidth)
+    const pageHeight = Math.round(imgHeight)
+
+    const objects = []
+    const offsets = []
+
+    let offset = 0
+
+    const headerStr = '%PDF-1.4\n%âãÏÓ\n'
+    const headerBuf = this.stringToUtf8(headerStr)
+    offset += headerBuf.byteLength
+
+    const catalogObj = `1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n`
+    objects.push(this.stringToUtf8(catalogObj))
+
+    const pagesObj = `2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n`
+    objects.push(this.stringToUtf8(pagesObj))
+
+    const pageObj = `3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${pageWidth} ${pageHeight}] /Resources << /XObject << /Im1 4 0 R >> >> /Contents 5 0 R >>\nendobj\n`
+    objects.push(this.stringToUtf8(pageObj))
+
+    const imgLength = imgData.byteLength
+    const imageHeader = `4 0 obj\n<< /Type /XObject /Subtype /Image /Width ${imgWidth} /Height ${imgHeight} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${imgLength} >>\nstream\n`
+    const imageFooter = `\nendstream\nendobj\n`
+
+    const imageHeaderBuf = this.stringToUtf8(imageHeader)
+    const imageFooterBuf = this.stringToUtf8(imageFooter)
+    const imageObjBuf = this.concatBuffers([imageHeaderBuf, imgData, imageFooterBuf])
+    objects.push(imageObjBuf)
+
+    const content = `q\n${pageWidth} 0 0 ${pageHeight} 0 0 cm\n/Im1 Do\nQ\n`
+    const contentObj = `5 0 obj\n<< /Length ${content.length} >>\nstream\n${content}endstream\nendobj\n`
+    objects.push(this.stringToUtf8(contentObj))
+
+    const pdfParts = [headerBuf]
+
+    objects.forEach((obj, i) => {
+      offsets.push(offset)
+      pdfParts.push(obj)
+      offset += obj.byteLength
+    })
+
+    const xrefPos = offset
+    let xrefStr = `xref\n0 ${objects.length + 1}\n`
+    xrefStr += `0000000000 65535 f \n`
+    offsets.forEach(off => {
+      xrefStr += `${String(off).padStart(10, '0')} 00000 n \n`
+    })
+
+    const trailer = `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xrefPos}\n%%EOF\n`
+    xrefStr += trailer
+
+    pdfParts.push(this.stringToUtf8(xrefStr))
+
+    return this.concatBuffers(pdfParts)
+  },
+
+  stringToUtf8(str) {
+    const encoder = new TextEncoder()
+    return encoder.encode(str).buffer
+  },
+
+  concatBuffers(buffers) {
+    let totalLength = 0
+    buffers.forEach(buf => {
+      totalLength += buf.byteLength
+    })
+    const result = new Uint8Array(totalLength)
+    let offset = 0
+    buffers.forEach(buf => {
+      result.set(new Uint8Array(buf), offset)
+      offset += buf.byteLength
+    })
+    return result.buffer
+  },
+
+  previewPDF(filePath) {
+    wx.openDocument({
+      filePath: filePath,
+      fileType: 'pdf',
+      showMenu: true,
+      success: () => {
+        console.log('[ReportExport] PDF预览成功')
+      },
+      fail: (err) => {
+        console.error('[ReportExport] PDF预览失败', err)
+        showError('预览失败，文件已保存在本地')
+      }
+    })
+  },
+
   onShareToWeChat() {
+    const format = this.data.exportFormat
+    if (format === 'pdf') {
+      this.sharePDF()
+    } else {
+      this.shareImage()
+    }
+  },
+
+  sharePDF() {
+    showLoading('生成PDF中...')
+    this.drawReportCanvas()
+      .then(() => this.saveCanvasToImage())
+      .then(imgPath => this.generatePDFFromImage(imgPath))
+      .then(pdfPath => {
+        hideLoading()
+        const fileName = `学习报告_${this.data.reportMemberName}_${formatDate(new Date(), 'YYYY-MM-DD')}.pdf`
+        wx.shareFileMessage({
+          filePath: pdfPath,
+          fileName: fileName,
+          success: () => {
+            showSuccess('已分享到聊天')
+          },
+          fail: (err) => {
+            if (err.errMsg && err.errMsg.indexOf('cancel') > -1) return
+            this.fallbackSharePDF(pdfPath)
+          }
+        })
+      })
+      .catch(() => {
+        hideLoading()
+        showError('生成失败，请重试')
+      })
+  },
+
+  shareImage() {
     showLoading('生成分享图片...')
     this.drawReportCanvas().then(() => {
       return this.saveCanvasToImage()
@@ -767,6 +985,20 @@ Page({
     }).catch(() => {
       hideLoading()
       this.fallbackShareMiniProgram()
+    })
+  },
+
+  fallbackSharePDF(pdfPath) {
+    wx.showModal({
+      title: '分享提示',
+      content: 'PDF报告已生成，是否打开预览后再分享？',
+      confirmText: '预览',
+      cancelText: '取消',
+      success: (res) => {
+        if (res.confirm) {
+          this.previewPDF(pdfPath)
+        }
+      }
     })
   },
 
@@ -796,15 +1028,17 @@ Page({
   },
 
   onBatchExport() {
-    const { selectedMemberIds, members } = this.data
+    const { selectedMemberIds, members, exportFormat } = this.data
     if (selectedMemberIds.length === 0) {
       showError('请至少选择一名成员')
       return
     }
 
+    const formatText = exportFormat === 'pdf' ? 'PDF' : '长图'
+
     showModal({
       title: '批量导出确认',
-      content: `将为 ${selectedMemberIds.length} 名成员分别生成学习报告长图，是否继续？`
+      content: `将为 ${selectedMemberIds.length} 名成员分别生成学习报告${formatText}，是否继续？`
     }).then(confirmed => {
       if (!confirmed) return
 
@@ -817,8 +1051,9 @@ Page({
     if (index >= memberIds.length) {
       hideLoading()
       const count = filePaths.length
-      showSuccess(`已成功导出 ${count} 份报告`)
-      this.showBatchResult(filePaths, members)
+      const formatText = this.data.exportFormat === 'pdf' ? 'PDF' : '长图'
+      showSuccess(`已成功导出 ${count} 份${formatText}`)
+      this.showBatchResult(filePaths)
       return
     }
 
@@ -830,16 +1065,22 @@ Page({
       reportMemberName: member ? member.nickName : '未知'
     })
 
-    this.loadReportDataAsync(memberId).then(() => {
-      return this.drawReportCanvas()
-    }).then(() => {
-      return this.saveCanvasToImage()
-    }).then(filePath => {
-      filePaths.push({ memberId, name: member ? member.nickName : '未知', filePath })
-      this.batchExportQueue(memberIds, members, index + 1, filePaths)
-    }).catch(() => {
-      this.batchExportQueue(memberIds, members, index + 1, filePaths)
-    })
+    this.loadReportDataAsync(memberId)
+      .then(() => this.drawReportCanvas())
+      .then(() => this.saveCanvasToImage())
+      .then(imgPath => {
+        if (this.data.exportFormat === 'pdf') {
+          return this.generatePDFFromImage(imgPath)
+        }
+        return imgPath
+      })
+      .then(filePath => {
+        filePaths.push({ memberId, name: member ? member.nickName : '未知', filePath })
+        this.batchExportQueue(memberIds, members, index + 1, filePaths)
+      })
+      .catch(() => {
+        this.batchExportQueue(memberIds, members, index + 1, filePaths)
+      })
   },
 
   loadReportDataAsync(memberId) {
@@ -867,28 +1108,44 @@ Page({
     })
   },
 
-  showBatchResult(filePaths, members) {
+  showBatchResult(filePaths) {
     if (filePaths.length === 0) return
 
-    wx.saveImageToPhotosAlbum({
-      filePath: filePaths[0].filePath,
-      success: () => {
-        if (filePaths.length > 1) {
+    const isPDF = this.data.exportFormat === 'pdf'
+
+    if (isPDF) {
+      wx.showModal({
+        title: '批量导出完成',
+        content: `${filePaths.length} 份PDF报告已生成，是否打开第一份预览？`,
+        confirmText: '预览',
+        cancelText: '完成',
+        success: (res) => {
+          if (res.confirm && filePaths[0].filePath) {
+            this.previewPDF(filePaths[0].filePath)
+          }
+        }
+      })
+    } else {
+      wx.saveImageToPhotosAlbum({
+        filePath: filePaths[0].filePath,
+        success: () => {
+          if (filePaths.length > 1) {
+            showModal({
+              title: '批量导出完成',
+              content: `${filePaths.length} 份报告已生成，第1份已保存到相册。其余报告可在相册中逐一保存。`
+            })
+          } else {
+            showSuccess('报告已保存到相册')
+          }
+        },
+        fail: () => {
           showModal({
             title: '批量导出完成',
-            content: `${filePaths.length} 份报告已生成，第1份已保存到相册。其余报告可在相册中逐一保存。`
+            content: `${filePaths.length} 份报告已生成，请前往相册手动保存。`
           })
-        } else {
-          showSuccess('报告已保存到相册')
         }
-      },
-      fail: () => {
-        showModal({
-          title: '批量导出完成',
-          content: `${filePaths.length} 份报告已生成，请前往相册手动保存。`
-        })
-      }
-    })
+      })
+    }
   },
 
   onShareAppMessage() {
