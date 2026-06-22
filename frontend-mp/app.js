@@ -9482,7 +9482,7 @@ App({
       const kw = filter.keyword.toLowerCase()
       items = items.filter(i =>
         i.title.toLowerCase().includes(kw) ||
-        (i.description && i.description.toLowerCase().includes(kw) ||
+        (i.description && i.description.toLowerCase().includes(kw)) ||
         (i.tags && i.tags.some(t => t.toLowerCase().includes(kw)))
       )
     }
@@ -9492,7 +9492,7 @@ App({
     if (filter.tradeType && filter.tradeType !== 'all') {
       items = items.filter(i => i.tradeType === filter.tradeType)
     }
-    return items.sort((a, b) => new Date(b.createTime) - new Date(a.createTime)
+    return items.sort((a, b) => new Date(b.createTime) - new Date(a.createTime))
   },
 
   getMarketItemById(itemId) {
