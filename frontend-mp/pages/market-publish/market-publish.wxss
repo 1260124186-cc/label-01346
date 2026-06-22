@@ -1,0 +1,506 @@
+.page-container {
+  min-height: 100vh;
+  background: #F7FAF8;
+  padding-bottom: 280rpx;
+}
+
+.section {
+  background: #FFFFFF;
+  margin: 20rpx 0;
+  padding: 28rpx 32rpx;
+}
+
+.section:first-child {
+  margin-top: 0;
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  margin-bottom: 24rpx;
+}
+
+.title-text {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #2D3436;
+}
+
+.title-required {
+  color: #E85D5D;
+  font-size: 28rpx;
+  margin-left: 6rpx;
+}
+
+.title-hint {
+  font-size: 22rpx;
+  color: #B2BEC3;
+  margin-left: 8rpx;
+}
+
+.title-count {
+  margin-left: auto;
+  font-size: 22rpx;
+  color: #B2BEC3;
+}
+
+/* ==================== 物品分类 ==================== */
+.category-grid {
+  display: flex;
+  gap: 20rpx;
+}
+
+.category-card {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 28rpx 16rpx;
+  border-radius: 16rpx;
+  background: #F7F9FA;
+  border: 2rpx solid transparent;
+  transition: all 0.2s ease;
+}
+
+.category-card.active {
+  background: color-mix(in srgb, var(--cat-color) 10%, transparent);
+  border-color: color-mix(in srgb, var(--cat-color) 40%, transparent);
+}
+
+.cat-icon {
+  font-size: 48rpx;
+  margin-bottom: 8rpx;
+}
+
+.cat-name {
+  font-size: 26rpx;
+  font-weight: 500;
+  color: #636E72;
+}
+
+.category-card.active .cat-name {
+  color: var(--cat-color);
+  font-weight: 600;
+}
+
+/* ==================== 垃圾分类提示 ==================== */
+.disposal-tip-section {
+  margin: 20rpx 32rpx;
+  background: linear-gradient(135deg, rgba(74, 144, 217, 0.08) 0%, rgba(91, 189, 114, 0.08) 100%);
+  border-radius: 16rpx;
+  overflow: hidden;
+  border: 1rpx solid rgba(74, 144, 217, 0.2);
+}
+
+.tip-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20rpx 24rpx;
+}
+
+.tip-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+}
+
+.tip-icon {
+  font-size: 28rpx;
+}
+
+.tip-title {
+  font-size: 26rpx;
+  font-weight: 600;
+  color: #4A90D9;
+}
+
+.tip-arrow {
+  font-size: 20rpx;
+  color: #4A90D9;
+}
+
+.tip-content {
+  padding: 0 24rpx 24rpx;
+}
+
+.tip-intro {
+  font-size: 24rpx;
+  color: #636E72;
+  margin-bottom: 16rpx;
+  line-height: 1.6;
+}
+
+.tip-list {
+  margin-bottom: 16rpx;
+}
+
+.tip-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8rpx;
+  margin-bottom: 10rpx;
+}
+
+.tip-bullet {
+  font-size: 24rpx;
+  color: #5BBD72;
+  line-height: 1.6;
+}
+
+.tip-text {
+  flex: 1;
+  font-size: 24rpx;
+  color: #636E72;
+  line-height: 1.6;
+}
+
+.tip-footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8rpx;
+  padding-top: 16rpx;
+  border-top: 1rpx dashed rgba(74, 144, 217, 0.2);
+}
+
+.footer-icon {
+  font-size: 24rpx;
+}
+
+.footer-text {
+  font-size: 22rpx;
+  color: #5BBD72;
+  font-weight: 500;
+}
+
+/* ==================== 图片上传 ==================== */
+.images-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16rpx;
+}
+
+.image-item {
+  position: relative;
+  width: 200rpx;
+  height: 200rpx;
+  border-radius: 12rpx;
+  overflow: hidden;
+}
+
+.uploaded-image {
+  width: 100%;
+  height: 100%;
+}
+
+.image-remove {
+  position: absolute;
+  top: 4rpx;
+  right: 4rpx;
+  width: 40rpx;
+  height: 40rpx;
+  background: rgba(0, 0, 0, 0.6);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.remove-icon {
+  font-size: 28rpx;
+  color: #FFFFFF;
+  line-height: 1;
+}
+
+.image-add {
+  width: 200rpx;
+  height: 200rpx;
+  border-radius: 12rpx;
+  background: #F7F9FA;
+  border: 2rpx dashed #DFE6E9;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8rpx;
+}
+
+.image-add:active {
+  background: #F0F2F5;
+}
+
+.add-icon {
+  font-size: 40rpx;
+}
+
+.add-text {
+  font-size: 22rpx;
+  color: #B2BEC3;
+}
+
+/* ==================== 输入框通用 ==================== */
+.input-placeholder {
+  color: #B2BEC3;
+  font-size: 26rpx;
+}
+
+.title-input,
+.barter-input,
+.location-input {
+  width: 100%;
+  height: 80rpx;
+  background: #F7F9FA;
+  border-radius: 12rpx;
+  padding: 0 24rpx;
+  font-size: 28rpx;
+  color: #2D3436;
+  box-sizing: border-box;
+}
+
+.desc-textarea {
+  width: 100%;
+  min-height: 200rpx;
+  background: #F7F9FA;
+  border-radius: 12rpx;
+  padding: 20rpx 24rpx;
+  font-size: 28rpx;
+  color: #2D3436;
+  line-height: 1.6;
+  box-sizing: border-box;
+}
+
+/* ==================== 成色选择 ==================== */
+.condition-list {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16rpx;
+}
+
+.condition-item {
+  padding: 20rpx;
+  border-radius: 12rpx;
+  background: #F7F9FA;
+  border: 2rpx solid transparent;
+  transition: all 0.2s ease;
+}
+
+.condition-item.active {
+  background: rgba(91, 189, 114, 0.1);
+  border-color: #5BBD72;
+}
+
+.condition-name {
+  display: block;
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #2D3436;
+  margin-bottom: 6rpx;
+}
+
+.condition-item.active .condition-name {
+  color: #5BBD72;
+}
+
+.condition-desc {
+  font-size: 22rpx;
+  color: #B2BEC3;
+  line-height: 1.4;
+}
+
+/* ==================== 交易方式 ==================== */
+.trade-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+}
+
+.trade-item {
+  display: flex;
+  align-items: center;
+  padding: 24rpx;
+  border-radius: 16rpx;
+  background: #F7F9FA;
+  border: 2rpx solid transparent;
+  transition: all 0.2s ease;
+}
+
+.trade-item.active {
+  background: color-mix(in srgb, var(--trade-color) 8%, transparent);
+  border-color: color-mix(in srgb, var(--trade-color) 40%, transparent);
+}
+
+.trade-icon {
+  font-size: 40rpx;
+  margin-right: 20rpx;
+}
+
+.trade-info {
+  flex: 1;
+}
+
+.trade-name {
+  display: block;
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #2D3436;
+  margin-bottom: 4rpx;
+}
+
+.trade-item.active .trade-name {
+  color: var(--trade-color);
+}
+
+.trade-desc {
+  font-size: 22rpx;
+  color: #B2BEC3;
+}
+
+.trade-check {
+  width: 44rpx;
+  height: 44rpx;
+  border-radius: 50%;
+  background: var(--trade-color);
+  color: #FFFFFF;
+  font-size: 28rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ==================== 积分价格 ==================== */
+.price-input-wrapper {
+  display: flex;
+  align-items: center;
+  background: #F7F9FA;
+  border-radius: 12rpx;
+  padding: 0 24rpx;
+}
+
+.price-input {
+  flex: 1;
+  height: 80rpx;
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #E67E22;
+}
+
+.price-unit {
+  font-size: 26rpx;
+  color: #E67E22;
+  font-weight: 500;
+}
+
+/* ==================== 配送方式 ==================== */
+.delivery-list {
+  display: flex;
+  gap: 16rpx;
+}
+
+.delivery-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8rpx;
+  padding: 24rpx 16rpx;
+  border-radius: 12rpx;
+  background: #F7F9FA;
+  border: 2rpx solid transparent;
+  transition: all 0.2s ease;
+}
+
+.delivery-item.active {
+  background: rgba(91, 189, 114, 0.1);
+  border-color: #5BBD72;
+}
+
+.delivery-icon {
+  font-size: 36rpx;
+}
+
+.delivery-name {
+  font-size: 24rpx;
+  font-weight: 500;
+  color: #636E72;
+}
+
+.delivery-item.active .delivery-name {
+  color: #5BBD72;
+  font-weight: 600;
+}
+
+/* ==================== 底部操作栏 ==================== */
+.bottom-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: #FFFFFF;
+  padding: 20rpx 32rpx 40rpx;
+  box-shadow: 0 -4rpx 20rpx rgba(0, 0, 0, 0.06);
+  z-index: 100;
+}
+
+.points-hint {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8rpx;
+  margin-bottom: 16rpx;
+}
+
+.hint-icon {
+  font-size: 24rpx;
+}
+
+.hint-text {
+  font-size: 24rpx;
+  color: #5BBD72;
+  font-weight: 500;
+}
+
+.community-guidelines {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8rpx;
+  margin-bottom: 20rpx;
+}
+
+.guidelines-icon {
+  font-size: 22rpx;
+}
+
+.guidelines-text {
+  font-size: 22rpx;
+  color: #B2BEC3;
+}
+
+.publish-btn {
+  width: 100%;
+  height: 88rpx;
+  background: linear-gradient(135deg, #5BBD72 0%, #4CAF50 100%);
+  border-radius: 44rpx;
+  color: #FFFFFF;
+  font-size: 30rpx;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8rpx 24rpx rgba(91, 189, 114, 0.35);
+  border: none;
+}
+
+.publish-btn::after {
+  border: none;
+}
+
+.publish-btn:active {
+  transform: scale(0.98);
+  opacity: 0.9;
+}
+
+.bottom-safe {
+  height: 40rpx;
+}

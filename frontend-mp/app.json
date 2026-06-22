@@ -80,7 +80,12 @@
     "pages/mission-center/mission-center",
     "pages/lottery/lottery",
     "pages/blindbox/blindbox",
-    "pages/lottery-records/lottery-records"
+    "pages/lottery-records/lottery-records",
+    "pages/market/market",
+    "pages/market-publish/market-publish",
+    "pages/market-detail/market-detail",
+    "pages/market-my/market-my",
+    "pages/market-review/market-review"
   ],
   "window": {
     "backgroundTextStyle": "dark",

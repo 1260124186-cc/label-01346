@@ -1,0 +1,112 @@
+<view class="page">
+  <view class="header">
+    <view class="header-bg"></view>
+    <view class="stats-card">
+      <view class="stats-item">
+        <view class="stats-num">{{stats.total}}</view>
+        <view class="stats-label">全部发布</view>
+      </view>
+      <view class="stats-divider"></view>
+      <view class="stats-item">
+        <view class="stats-num">{{stats.available}}</view>
+        <view class="stats-label">出售中</view>
+      </view>
+      <view class="stats-divider"></view>
+      <view class="stats-item">
+        <view class="stats-num">{{stats.sold}}</view>
+        <view class="stats-label">已交易</view>
+      </view>
+      <view class="stats-divider"></view>
+      <view class="stats-item">
+        <view class="stats-num">{{stats.offshelf}}</view>
+        <view class="stats-label">已下架</view>
+      </view>
+    </view>
+  </view>
+
+  <view class="tabs">
+    <view
+      wx:for="{{tabs}}"
+      wx:key="id"
+      class="tab-item {{currentTab === item.id ? 'active' : ''}}"
+      data-id="{{item.id}}"
+      bindtap="onTabTap"
+    >
+      <text>{{item.name}}</text>
+      <view class="tab-count" wx:if="{{item.count > 0}}">{{item.count}}</view>
+    </view>
+  </view>
+
+  <view class="content" wx:if="{{items.length > 0}}">
+    <view class="item-card" wx:for="{{items}}" wx:key="id" data-id="{{item.id}}" bindtap="onItemTap">
+      <image class="item-image" src="{{item.images[0]}}" mode="aspectFill"></image>
+      <view class="item-info">
+        <view class="item-title-row">
+          <text class="item-title">{{item.title}}</text>
+          <view class="item-status-tag status-{{item.status}}">
+            <text wx:if="{{item.status === 'available'}}">出售中</text>
+            <text wx:elif="{{item.status === 'sold'}}">已交易</text>
+            <text wx:elif="{{item.status === 'offshelf'}}">已下架</text>
+          </view>
+        </view>
+        <view class="item-meta">
+          <text class="meta-tag">{{item.categoryIcon}} {{item.categoryName}}</text>
+          <text class="meta-tag">{{item.conditionName}}</text>
+          <text class="meta-tag">{{item.tradeTypeIcon}} {{item.tradeTypeName}}</text>
+        </view>
+        <view class="item-price-row" wx:if="{{item.tradeType === 'points'}}">
+          <text class="price-label">积分价格</text>
+          <text class="price-value">🪙 {{item.price}}</text>
+        </view>
+        <view class="item-price-row" wx:elif="{{item.tradeType === 'barter'}}">
+          <text class="price-label barter">以物易物</text>
+          <text class="barter-wish">{{item.barterWish}}</text>
+        </view>
+        <view class="item-price-row" wx:else>
+          <text class="price-label">📍 {{item.location}}</text>
+        </view>
+        <view class="item-stats">
+          <text class="stat-text">👁 {{item.viewCount}}</text>
+          <text class="stat-text">❤️ {{item.favoriteCount || 0}}</text>
+          <text class="stat-text">📅 {{item.createTime}}</text>
+        </view>
+        <view class="item-actions">
+          <block wx:if="{{item.status === 'available'}}">
+            <button class="action-btn action-sold" data-id="{{item.id}}" catchtap="onMarkSold">
+              标记已交易
+            </button>
+            <button class="action-btn action-offshelf" data-id="{{item.id}}" catchtap="onOffShelf">
+              下架
+            </button>
+          </block>
+          <block wx:elif="{{item.status === 'sold'}}">
+            <button class="action-btn action-review" data-id="{{item.id}}" catchtap="onReview">
+              去评价
+            </button>
+          </block>
+          <block wx:elif="{{item.status === 'offshelf'}}">
+            <button class="action-btn action-relist" data-id="{{item.id}}" catchtap="onRelist">
+              重新上架
+            </button>
+          </block>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view class="empty" wx:else>
+    <view class="empty-icon">📦</view>
+    <view class="empty-title" wx:if="{{currentTab === 'available'}}">暂无在售物品</view>
+    <view class="empty-title" wx:elif="{{currentTab === 'sold'}}">暂无已交易物品</view>
+    <view class="empty-title" wx:else>暂无已下架物品</view>
+    <view class="empty-desc" wx:if="{{currentTab === 'available'}}">去发布你的第一件闲置物品吧</view>
+    <button class="empty-btn" wx:if="{{currentTab === 'available'}}" bindtap="onPublishTap">
+      立即发布
+    </button>
+  </view>
+
+  <view class="fab" bindtap="onPublishTap" wx:if="{{currentTab === 'available'}}">
+    <text class="fab-icon">＋</text>
+    <text class="fab-text">发布</text>
+  </view>
+</view>

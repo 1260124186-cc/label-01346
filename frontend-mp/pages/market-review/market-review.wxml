@@ -1,0 +1,111 @@
+<view class="page" wx:if="{{item}}">
+  <view class="card item-card">
+    <image class="item-image" src="{{item.images[0]}}" mode="aspectFill"></image>
+    <view class="item-info">
+      <text class="item-title">{{item.title}}</text>
+      <view class="seller-row">
+        <text class="seller-avatar">{{item.userAvatarEmoji}}</text>
+        <text class="seller-name">{{item.userNickName}}</text>
+        <text class="seller-rating">⭐ {{item.userRating || '5.0'}}</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="card rating-card">
+    <view class="section-title">综合评分</view>
+    <view class="stars-row">
+      <block wx:for="{{[1,2,3,4,5]}}" wx:key="*this">
+        <view
+          class="star-item"
+          data-value="{{item}}"
+          bindtap="onRatingTap"
+          bindtouchstart="onRatingHover"
+          bindtouchend="onRatingLeave"
+          bindmouseenter="onRatingHover"
+          bindmouseleave="onRatingLeave"
+        >
+          <text class="star {{(hoverRating || rating) >= item ? 'active' : ''}}">★</text>
+        </view>
+      </block>
+      <text class="rating-text">{{rating === 5 ? '非常满意' : rating === 4 ? '满意' : rating === 3 ? '一般' : rating === 2 ? '不满意' : rating === 1 ? '非常不满意' : '请评分'}}</text>
+    </view>
+  </view>
+
+  <view class="card">
+    <view class="section-title">
+      <text>评价标签</text>
+      <text class="section-hint">可多选</text>
+    </view>
+    <view class="tags-group">
+      <view class="tags-label">👍 好评标签</view>
+      <view class="tags-wrap">
+        <view
+          wx:for="{{positiveTags}}"
+          wx:key="id"
+          class="tag-item {{selectedTags.indexOf(item.id) > -1 ? 'active positive' : ''}}"
+          data-id="{{item.id}}"
+          bindtap="onTagTap"
+        >
+          {{item.name}}
+        </view>
+      </view>
+    </view>
+    <view class="tags-group">
+      <view class="tags-label">👎 待改进</view>
+      <view class="tags-wrap">
+        <view
+          wx:for="{{negativeTags}}"
+          wx:key="id"
+          class="tag-item {{selectedTags.indexOf(item.id) > -1 ? 'active negative' : ''}}"
+          data-id="{{item.id}}"
+          bindtap="onTagTap"
+        >
+          {{item.name}}
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view class="card">
+    <view class="section-title">
+      <text>评价内容</text>
+      <text class="section-hint">{{content.length}}/{{maxContentLength}}</text>
+    </view>
+    <textarea
+      class="content-input"
+      placeholder="分享你的交易体验，帮助其他用户更好地了解..."
+      placeholder-class="content-placeholder"
+      value="{{content}}"
+      bindinput="onContentInput"
+      maxlength="{{maxContentLength}}"
+      auto-height
+    ></textarea>
+  </view>
+
+  <view class="card anonymous-card">
+    <view class="anonymous-info">
+      <text class="anonymous-icon">👤</text>
+      <view class="anonymous-text">
+        <text class="anonymous-title">匿名评价</text>
+        <text class="anonymous-desc">开启后对方将无法看到你的昵称和头像</text>
+      </view>
+    </view>
+    <switch
+      class="anonymous-switch"
+      checked="{{anonymous}}"
+      bindchange="onAnonymousChange"
+      color="#5BBD72"
+    />
+  </view>
+
+  <view class="reward-tip">
+    <text class="reward-icon">🎁</text>
+    <text class="reward-text">完成评价可获得 10 积分奖励</text>
+  </view>
+
+  <view class="submit-bar">
+    <button class="submit-btn" bindtap="onSubmit">
+      提交评价
+    </button>
+  </view>
+</view>

@@ -1,0 +1,244 @@
+<view class="page-container">
+  <!-- 物品分类 -->
+  <view class="section">
+    <view class="section-title">
+      <text class="title-text">物品分类</text>
+      <text class="title-required">*</text>
+    </view>
+    <view class="category-grid">
+      <view
+        wx:for="{{categories}}"
+        wx:key="id"
+        class="category-card {{currentCategory === item.id ? 'active' : ''}}"
+        bindtap="onCategoryTap"
+        data-id="{{item.id}}"
+        style="--cat-color: {{item.color}};"
+      >
+        <text class="cat-icon">{{item.icon}}</text>
+        <text class="cat-name">{{item.name}}</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 垃圾分类提示 -->
+  <view class="disposal-tip-section" wx:if="{{disposalTip}}">
+    <view class="tip-header" bindtap="toggleDisposalTip">
+      <view class="tip-title-row">
+        <text class="tip-icon">{{disposalTip.emoji}}</text>
+        <text class="tip-title">环保小贴士：{{disposalTip.typeName}}分类</text>
+      </view>
+      <text class="tip-arrow">{{showDisposalTip ? '▲' : '▼'}}</text>
+    </view>
+    <view class="tip-content" wx:if="{{showDisposalTip}}">
+      <text class="tip-intro">如果这件物品最终无人认领，请按以下方式正确丢弃：</text>
+      <view class="tip-list">
+        <view
+          wx:for="{{disposalTip.tips}}"
+          wx:key="index"
+          class="tip-item"
+        >
+          <text class="tip-bullet">•</text>
+          <text class="tip-text">{{item}}</text>
+        </view>
+      </view>
+      <view class="tip-footer">
+        <text class="footer-icon">🌿</text>
+        <text class="footer-text">正确分类，让资源循环再生</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 图片上传 -->
+  <view class="section">
+    <view class="section-title">
+      <text class="title-text">物品图片</text>
+      <text class="title-required">*</text>
+      <text class="title-hint">（{{images.length}}/{{maxImages}}）</text>
+    </view>
+    <view class="images-grid">
+      <view
+        wx:for="{{images}}"
+        wx:key="*this"
+        class="image-item"
+        bindtap="onPreviewImage"
+        data-index="{{index}}"
+      >
+        <image src="{{item}}" mode="aspectFill" class="uploaded-image" />
+        <view class="image-remove" catchtap="onRemoveImage" data-index="{{index}}">
+          <text class="remove-icon">×</text>
+        </view>
+      </view>
+      <view class="image-add" wx:if="{{images.length < maxImages}}" bindtap="onChooseImage">
+        <text class="add-icon">📷</text>
+        <text class="add-text">添加图片</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 标题 -->
+  <view class="section">
+    <view class="section-title">
+      <text class="title-text">物品标题</text>
+      <text class="title-required">*</text>
+      <text class="title-count">{{title.length}}/{{titleMaxLength}}</text>
+    </view>
+    <input
+      class="title-input"
+      placeholder="简单描述物品，如：九成新Kindle电子书阅读器"
+      placeholder-class="input-placeholder"
+      maxlength="{{titleMaxLength}}"
+      value="{{title}}"
+      bindinput="onTitleInput"
+    />
+  </view>
+
+  <!-- 详细描述 -->
+  <view class="section">
+    <view class="section-title">
+      <text class="title-text">详细描述</text>
+      <text class="title-required">*</text>
+      <text class="title-count">{{description.length}}/{{descMaxLength}}</text>
+    </view>
+    <textarea
+      class="desc-textarea"
+      placeholder="详细描述物品的使用情况、购买时间、有无瑕疵等..."
+      placeholder-class="input-placeholder"
+      maxlength="{{descMaxLength}}"
+      auto-height
+      value="{{description}}"
+      bindinput="onDescInput"
+    />
+  </view>
+
+  <!-- 成色选择 -->
+  <view class="section">
+    <view class="section-title">
+      <text class="title-text">物品成色</text>
+      <text class="title-required">*</text>
+    </view>
+    <view class="condition-list">
+      <view
+        wx:for="{{conditionLevels}}"
+        wx:key="id"
+        class="condition-item {{currentCondition === item.id ? 'active' : ''}}"
+        bindtap="onConditionTap"
+        data-id="{{item.id}}"
+      >
+        <text class="condition-name">{{item.name}}</text>
+        <text class="condition-desc">{{item.desc}}</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 交易方式 -->
+  <view class="section">
+    <view class="section-title">
+      <text class="title-text">交易方式</text>
+      <text class="title-required">*</text>
+    </view>
+    <view class="trade-list">
+      <view
+        wx:for="{{tradeTypes}}"
+        wx:key="id"
+        class="trade-item {{currentTradeType === item.id ? 'active' : ''}}"
+        bindtap="onTradeTypeTap"
+        data-id="{{item.id}}"
+        style="--trade-color: {{item.color || '#5BBD72'}};"
+      >
+        <text class="trade-icon">{{item.icon}}</text>
+        <view class="trade-info">
+          <text class="trade-name">{{item.name}}</text>
+          <text class="trade-desc">{{item.desc}}</text>
+        </view>
+        <view class="trade-check" wx:if="{{currentTradeType === item.id}}">✓</view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 积分价格 -->
+  <view class="section" wx:if="{{currentTradeType === 'points'}}">
+    <view class="section-title">
+      <text class="title-text">期望积分</text>
+      <text class="title-required">*</text>
+    </view>
+    <view class="price-input-wrapper">
+      <input
+        class="price-input"
+        type="digit"
+        placeholder="输入期望的积分价格"
+        placeholder-class="input-placeholder"
+        value="{{price}}"
+        bindinput="onPriceInput"
+      />
+      <text class="price-unit">积分</text>
+    </view>
+  </view>
+
+  <!-- 以物易物愿望 -->
+  <view class="section" wx:if="{{currentTradeType === 'barter'}}">
+    <view class="section-title">
+      <text class="title-text">希望交换</text>
+      <text class="title-hint">（选填）</text>
+    </view>
+    <input
+      class="barter-input"
+      placeholder="描述你希望交换的物品，如：同价值的推理小说"
+      placeholder-class="input-placeholder"
+      value="{{barterWish}}"
+      bindinput="onBarterWishInput"
+    />
+  </view>
+
+  <!-- 配送方式 -->
+  <view class="section">
+    <view class="section-title">
+      <text class="title-text">配送方式</text>
+      <text class="title-required">*</text>
+    </view>
+    <view class="delivery-list">
+      <view
+        wx:for="{{deliveryTypes}}"
+        wx:key="id"
+        class="delivery-item {{currentDelivery === item.id ? 'active' : ''}}"
+        bindtap="onDeliveryTap"
+        data-id="{{item.id}}"
+      >
+        <text class="delivery-icon">{{item.icon}}</text>
+        <text class="delivery-name">{{item.name}}</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 交易地点 -->
+  <view class="section">
+    <view class="section-title">
+      <text class="title-text">交易地点</text>
+      <text class="title-required">*</text>
+    </view>
+    <input
+      class="location-input"
+      placeholder="填写大致区域，如：上海市浦东新区张江"
+      placeholder-class="input-placeholder"
+      value="{{location}}"
+      bindinput="onLocationInput"
+    />
+  </view>
+
+  <!-- 底部操作栏 -->
+  <view class="bottom-bar">
+    <view class="points-hint">
+      <text class="hint-icon">💡</text>
+      <text class="hint-text">发布成功可获得 {{publishPoints}} 积分</text>
+    </view>
+    <view class="community-guidelines">
+      <text class="guidelines-icon">⚠️</text>
+      <text class="guidelines-text">请确保物品描述真实，禁止发布违禁物品</text>
+    </view>
+    <button class="publish-btn" bindtap="onPublish">
+      <text>立即发布</text>
+    </button>
+  </view>
+
+  <!-- 底部安全区域 -->
+  <view class="bottom-safe"></view>
+</view>

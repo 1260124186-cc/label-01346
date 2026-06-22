@@ -130,6 +130,9 @@ App({
     this.initCarbonMilestones()
     this.initMissionCenter()
     this.initLotterySystem()
+    this.initMarketItems()
+    this.initMarketReviews()
+    this.initMarketFavorites()
 
     this.startExpireCheckInterval()
   },
@@ -9448,5 +9451,258 @@ App({
         wx.setStorageSync('physicalPendingNotified_' + prize.id, true)
       }
     })
+  },
+
+  initMarketItems() {
+    const { MARKET_ITEMS_MOCK } = require('./data/market')
+    const storedItems = wx.getStorageSync('marketItems')
+    if (storedItems && storedItems.length > 0) {
+      this.globalData.marketItems = storedItems
+      console.log('[App] 市集物品已从存储加载', storedItems.length, '条')
+    } else {
+      this.globalData.marketItems = [...MARKET_ITEMS_MOCK]
+      this.saveMarketItems()
+      console.log('[App] 市集物品已初始化')
+    }
+  },
+
+  saveMarketItems() {
+    wx.setStorageSync('marketItems', this.globalData.marketItems)
+  },
+
+  getMarketItems(filter = {}) {
+    let items = [...(this.globalData.marketItems || [])]
+    if (filter.category && filter.category !== 'all') {
+      items = items.filter(i => i.category === filter.category)
+    }
+    if (filter.status) {
+      items = items.filter(i => i.status === filter.status)
+    }
+    if (filter.keyword) {
+      const kw = filter.keyword.toLowerCase()
+      items = items.filter(i =>
+        i.title.toLowerCase().includes(kw) ||
+        (i.description && i.description.toLowerCase().includes(kw) ||
+        (i.tags && i.tags.some(t => t.toLowerCase().includes(kw)))
+      )
+    }
+    if (filter.userId) {
+      items = items.filter(i => i.userId === filter.userId)
+    }
+    if (filter.tradeType && filter.tradeType !== 'all') {
+      items = items.filter(i => i.tradeType === filter.tradeType)
+    }
+    return items.sort((a, b) => new Date(b.createTime) - new Date(a.createTime)
+  },
+
+  getMarketItemById(itemId) {
+    return this.globalData.marketItems.find(i => i.id === itemId)
+  },
+
+  addMarketItem(itemData) {
+    const userInfo = this.globalData.userInfo
+    const newItem = {
+      id: 'm' + Date.now(),
+      userId: userInfo ? userInfo.id || 'u001' : 'u001',
+      userNickName: userInfo ? userInfo.nickName : '环保达人',
+      userAvatarEmoji: userInfo ? (userInfo.avatarEmoji || '🌿') : '🌿',
+      userRating: 4.8,
+      userTradeCount: 0,
+      status: 'available',
+      viewCount: 0,
+      favoriteCount: 0,
+      createTime: formatDate(new Date(), 'YYYY-MM-DD HH:mm'),
+      ...itemData
+    }
+    this.globalData.marketItems.unshift(newItem)
+    this.saveMarketItems()
+    this.updateUserPoints(20, {
+      category: 'market',
+      title: '发布闲置物品',
+      desc: newItem.title,
+      emoji: '♻️'
+    })
+    console.log('[App] 新增市集物品', newItem.title)
+    return newItem
+  },
+
+  updateMarketItem(itemId, updates) {
+    const item = this.getMarketItemById(itemId)
+    if (!item) return null
+    Object.assign(item, updates)
+    this.saveMarketItems()
+    return item
+  },
+
+  deleteMarketItem(itemId) {
+    const index = this.globalData.marketItems.findIndex(i => i.id === itemId)
+    if (index === -1) return false
+    this.globalData.marketItems.splice(index, 1)
+    this.saveMarketItems()
+    return true
+  },
+
+  offShelfMarketItem(itemId) {
+    return this.updateMarketItem(itemId, { status: 'offshelf' })
+  },
+
+  relistMarketItem(itemId) {
+    return this.updateMarketItem(itemId, { status: 'available' })
+  },
+
+  markMarketItemSold(itemId) {
+    return this.updateMarketItem(itemId, { status: 'sold' })
+  },
+
+  incrementMarketItemView(itemId) {
+    const item = this.getMarketItemById(itemId)
+    if (item) {
+      item.viewCount = (item.viewCount || 0) + 1
+      this.saveMarketItems()
+    }
+  },
+
+  initMarketReviews() {
+    const reviews = wx.getStorageSync('marketReviews')
+    this.globalData.marketReviews = reviews || []
+    console.log('[App] 市集评价已加载', this.globalData.marketReviews.length, '条')
+  },
+
+  saveMarketReviews() {
+    wx.setStorageSync('marketReviews', this.globalData.marketReviews)
+  },
+
+  getMarketReviews(filter = {}) {
+    let reviews = [...(this.globalData.marketReviews || [])]
+    if (filter.itemId) {
+      reviews = reviews.filter(r => r.itemId === filter.itemId)
+    }
+    if (filter.userId) {
+      reviews = reviews.filter(r => r.toUserId === filter.userId || r.fromUserId === filter.userId)
+    }
+    return reviews.sort((a, b) => new Date(b.createTime) - new Date(a.createTime))
+  },
+
+  addMarketReview(reviewData) {
+    const userInfo = this.globalData.userInfo
+    const review = {
+      id: 'r' + Date.now(),
+      fromUserId: userInfo ? (userInfo.id || 'u001') : 'u001',
+      fromUserNickName: userInfo ? userInfo.nickName : '环保达人',
+      fromUserAvatarEmoji: userInfo ? (userInfo.avatarEmoji || '🌿') : '🌿',
+      createTime: formatDate(new Date(), 'YYYY-MM-DD HH:mm'),
+      ...reviewData
+    }
+    this.globalData.marketReviews.unshift(review)
+    this.saveMarketReviews()
+    this.updateUserPoints(10, {
+      category: 'market',
+      title: '交易互评奖励',
+      emoji: '⭐'
+    })
+    console.log('[App] 新增市集评价')
+    return review
+  },
+
+  initMarketFavorites() {
+    const favorites = wx.getStorageSync('marketFavorites')
+    this.globalData.marketFavorites = favorites || []
+    console.log('[App] 市集收藏已加载', this.globalData.marketFavorites.length, '条')
+  },
+
+  saveMarketFavorites() {
+    wx.setStorageSync('marketFavorites', this.globalData.marketFavorites)
+  },
+
+  toggleMarketFavorite(itemId) {
+    const userInfo = this.globalData.userInfo
+    const userId = userInfo ? (userInfo.id || 'u001') : 'u001'
+    const idx = this.globalData.marketFavorites.findIndex(f => f.itemId === itemId && f.userId === userId)
+    if (idx > -1) {
+      this.globalData.marketFavorites.splice(idx, 1)
+      const item = this.getMarketItemById(itemId)
+      if (item) item.favoriteCount = Math.max(0, (item.favoriteCount || 0) - 1)
+      this.saveMarketItems()
+      this.saveMarketFavorites()
+      return { favorited: false }
+    } else {
+      this.globalData.marketFavorites.push({ itemId, userId, createTime: formatDate(new Date(), 'YYYY-MM-DD HH:mm') })
+      const item = this.getMarketItemById(itemId)
+      if (item) item.favoriteCount = (item.favoriteCount || 0) + 1
+      this.saveMarketItems()
+      this.saveMarketFavorites()
+      return { favorited: true }
+    }
+  },
+
+  isMarketFavorited(itemId) {
+    const userInfo = this.globalData.userInfo
+    const userId = userInfo ? (userInfo.id || 'u001') : 'u001'
+    return this.globalData.marketFavorites.some(f => f.itemId === itemId && f.userId === userId)
+  },
+
+  reportMarketItem(itemId, reason) {
+    const reports = wx.getStorageSync('marketReports') || []
+    reports.push({
+      id: 'rep' + Date.now(),
+      itemId,
+      reason,
+      createTime: formatDate(new Date(), 'YYYY-MM-DD HH:mm')
+    })
+    wx.setStorageSync('marketReports', reports)
+    console.log('[App] 举报物品', itemId, '原因:', reason)
+    return true
+  },
+
+  startNegotiate(itemId, offerPoints) {
+    const item = this.getMarketItemById(itemId)
+    if (!item) return { success: false, message: '物品不存在' }
+    if (item.status !== 'available') return { success: false, message: '物品已下架或已售出' }
+
+    const negotiations = wx.getStorageSync('marketNegotiations') || []
+    const userInfo = this.globalData.userInfo
+    const negotiation = {
+      id: 'n' + Date.now(),
+      itemId,
+      itemTitle: item.title,
+      itemImage: item.images[0],
+      fromUserId: userInfo ? (userInfo.id || 'u001') : 'u001',
+      fromUserNickName: userInfo ? userInfo.nickName : '环保达人',
+      offerPoints,
+      sellerUserId: item.userId,
+      status: 'pending',
+      createTime: formatDate(new Date(), 'YYYY-MM-DD HH:mm')
+    }
+    negotiations.unshift(negotiation)
+    wx.setStorageSync('marketNegotiations', negotiations)
+    console.log('[App] 发起议价', item.title, '出价:', offerPoints, '积分')
+    return { success: true, negotiation }
+  },
+
+  startBarter(itemId, barterItemTitle, barterItemDesc) {
+    const item = this.getMarketItemById(itemId)
+    if (!item) return { success: false, message: '物品不存在' }
+    if (item.status !== 'available') return { success: false, message: '物品已下架或已售出' }
+
+    const negotiations = wx.getStorageSync('marketNegotiations') || []
+    const userInfo = this.globalData.userInfo
+    const negotiation = {
+      id: 'n' + Date.now(),
+      itemId,
+      itemTitle: item.title,
+      itemImage: item.images[0],
+      fromUserId: userInfo ? (userInfo.id || 'u001') : 'u001',
+      fromUserNickName: userInfo ? userInfo.nickName : '环保达人',
+      barterItemTitle,
+      barterItemDesc,
+      sellerUserId: item.userId,
+      type: 'barter',
+      status: 'pending',
+      createTime: formatDate(new Date(), 'YYYY-MM-DD HH:mm')
+    }
+    negotiations.unshift(negotiation)
+    wx.setStorageSync('marketNegotiations', negotiations)
+    console.log('[App] 发起以物易物请求', item.title, '交换:', barterItemTitle)
+    return { success: true, negotiation }
   }
 })

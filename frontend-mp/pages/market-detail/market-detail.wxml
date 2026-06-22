@@ -1,0 +1,367 @@
+<view class="page-container" wx:if="{{item}}">
+  <!-- 图片轮播 -->
+  <view class="image-section">
+    <swiper
+      class="image-swiper"
+      indicator-dots="{{false}}"
+      autoplay="{{true}}"
+      interval="3500"
+      duration="500"
+      circular="{{true}}"
+      bindchange="onImageChange"
+    >
+      <swiper-item
+        wx:for="{{item.images}}"
+        wx:key="*this"
+        class="image-item"
+      >
+        <image
+          class="detail-image"
+          src="{{item}}"
+          mode="aspectFill"
+          bindtap="onPreviewImage"
+          data-index="{{index}}"
+        />
+      </swiper-item>
+    </swiper>
+    <view class="image-indicator">
+      <text>{{currentImageIndex + 1}}/{{item.images.length}}</text>
+    </view>
+    <view class="status-badge status-{{item.status}}" wx:if="{{item.status !== 'available'}}">
+      <text class="status-text">{{item.status === 'sold' ? '已交易' : '已下架'}}</text>
+    </view>
+  </view>
+
+  <!-- 基本信息 -->
+  <view class="info-section">
+    <view class="price-row">
+      <view class="price-info">
+        <text class="price-icon">🪙</text>
+        <text class="price-value">{{item.price}}</text>
+        <text class="price-unit">积分</text>
+        <view class="trade-badge">
+          <text class="badge-icon">{{tradeTypeIcon}}</text>
+          <text class="badge-text">{{tradeTypeName}}</text>
+        </view>
+      </view>
+      <view class="favorite-btn {{isFavorited ? 'active' : ''}}" bindtap="onFavoriteTap">
+        <text class="favorite-icon">{{isFavorited ? '❤️' : '🤍'}}</text>
+        <text class="favorite-count">{{item.favoriteCount}}</text>
+      </view>
+    </view>
+
+    <text class="item-title">{{item.title}}</text>
+
+    <view class="meta-row">
+      <view class="meta-item">
+        <text class="meta-icon">✨</text>
+        <text class="meta-text">{{conditionName}}</text>
+      </view>
+      <view class="meta-item">
+        <text class="meta-icon">{{deliveryIcon}}</text>
+        <text class="meta-text">{{deliveryName}}</text>
+      </view>
+      <view class="meta-item">
+        <text class="meta-icon">👁️</text>
+        <text class="meta-text">{{item.viewCount}}次浏览</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 卖家信息 -->
+  <view class="seller-section">
+    <view class="seller-info">
+      <view class="seller-avatar">
+        <text class="avatar-emoji">{{item.userAvatarEmoji}}</text>
+      </view>
+      <view class="seller-detail">
+        <text class="seller-name">{{item.userNickName}}</text>
+        <view class="seller-stats">
+          <view class="stat-item">
+            <text class="stat-icon">⭐</text>
+            <text class="stat-text">{{item.userRating}}分</text>
+          </view>
+          <view class="stat-item">
+            <text class="stat-icon">📦</text>
+            <text class="stat-text">{{item.userTradeCount}}次交易</text>
+          </view>
+        </view>
+      </view>
+    </view>
+    <view class="seller-actions" wx:if="{{!isOwner}}">
+      <view class="contact-btn" bindtap="onContactTap">
+        <text class="contact-icon">💬</text>
+        <text class="contact-text">联系</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 详细描述 -->
+  <view class="desc-section">
+    <view class="section-header">
+      <text class="section-title">物品描述</text>
+    </view>
+    <text class="desc-text">{{item.description}}</text>
+
+    <view class="barter-wish" wx:if="{{item.barterWish && item.barterWish !== ''}}">
+      <text class="barter-icon">🔄</text>
+      <view class="barter-content">
+        <text class="barter-label">卖家希望交换：</text>
+        <text class="barter-text">{{item.barterWish}}</text>
+      </view>
+    </view>
+
+    <view class="location-row">
+      <text class="location-icon">📍</text>
+      <text class="location-text">{{item.location}}</text>
+    </view>
+
+    <view class="time-row">
+      <text class="time-icon">🕐</text>
+      <text class="time-text">发布于 {{item.createTime}}</text>
+    </view>
+  </view>
+
+  <!-- 垃圾分类小贴士 -->
+  <view class="eco-tip-section" wx:if="{{item.category}}">
+    <view class="eco-tip-header">
+      <text class="eco-icon">🌿</text>
+      <text class="eco-title">环保小贴士</text>
+    </view>
+    <text class="eco-content">如果这件物品最终无人认领，请按照可回收物分类正确丢弃，让资源循环再生。</text>
+  </view>
+
+  <!-- 评价区 -->
+  <view class="review-section">
+    <view class="section-header">
+      <text class="section-title">交易评价</text>
+      <text class="section-count">（{{reviews.length}}）</text>
+      <view class="review-btn" bindtap="onGoReview" wx:if="{{!isOwner && item.status === 'available'}}">
+        <text class="review-btn-text">去评价</text>
+      </view>
+    </view>
+
+    <view class="review-list" wx:if="{{reviews.length > 0}}">
+      <view
+        wx:for="{{reviews}}"
+        wx:key="id"
+        class="review-item"
+      >
+        <view class="review-user">
+          <text class="review-avatar">{{item.fromUserAvatarEmoji}}</text>
+          <view class="review-user-info">
+            <text class="review-user-name">{{item.fromUserNickName}}</text>
+            <view class="review-rating">
+              <text wx:for="{{[1,2,3,4,5]}}" wx:key="*this" wx:for-item="star" class="review-star {{star <= item.rating ? 'active' : ''}}">★</text>
+            </view>
+          </view>
+          <text class="review-time">{{item.createTime}}</text>
+        </view>
+        <text class="review-content">{{item.content}}</text>
+      </view>
+    </view>
+
+    <view class="review-empty" wx:else>
+      <text class="empty-text">暂无评价，完成交易后可互评</text>
+    </view>
+  </view>
+
+  <!-- 底部安全区域 -->
+  <view class="bottom-safe"></view>
+
+  <!-- 底部操作栏 - 卖家 -->
+  <view class="bottom-bar owner" wx:if="{{isOwner}}">
+    <view class="owner-actions">
+      <view class="owner-btn secondary" bindtap="onOffShelf">
+        <text>下架</text>
+      </view>
+      <view class="owner-btn primary" bindtap="onMarkSold" wx:if="{{item.status === 'available'}}">
+        <text>标记已交易</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 底部操作栏 - 买家 -->
+  <view class="bottom-bar buyer" wx:if="{{!isOwner && item.status === 'available'}}">
+    <view class="action-item report" bindtap="onReportTap">
+      <text class="action-icon">⚠️</text>
+      <text class="action-text">举报</text>
+    </view>
+    <view class="action-item barter" bindtap="onBarterTap">
+      <text class="action-icon">🔄</text>
+      <text class="action-text">以物易物</text>
+    </view>
+    <view class="action-item negotiate" bindtap="onNegotiateTap">
+      <text class="action-icon">💰</text>
+      <text class="action-text">积分议价</text>
+    </view>
+  </view>
+
+  <!-- 议价弹窗 -->
+  <view class="modal {{showNegotiateModal ? 'show' : ''}}" bindtap="closeNegotiateModal">
+    <view class="modal-content" catchtap="preventClose">
+      <view class="modal-header">
+        <text class="modal-title">积分议价</text>
+        <view class="modal-close" bindtap="closeNegotiateModal">
+          <text class="close-icon">×</text>
+        </view>
+      </view>
+      <view class="modal-body">
+        <view class="negotiate-item">
+          <text class="negotiate-label">物品名称</text>
+          <text class="negotiate-value">{{item.title}}</text>
+        </view>
+        <view class="negotiate-item">
+          <text class="negotiate-label">卖家标价</text>
+          <text class="negotiate-value price">{{item.price}} 积分</text>
+        </view>
+        <view class="negotiate-item">
+          <text class="negotiate-label">我的积分</text>
+          <text class="negotiate-value">{{userPoints}} 积分</text>
+        </view>
+        <view class="negotiate-input-row">
+          <text class="negotiate-label">我的出价</text>
+          <view class="negotiate-input-wrapper">
+            <input
+              class="negotiate-input"
+              type="digit"
+              placeholder="输入你期望的积分"
+              placeholder-class="input-placeholder"
+              value="{{offerPoints}}"
+              bindinput="onOfferPointsInput"
+            />
+            <text class="input-unit">积分</text>
+          </view>
+        </view>
+        <text class="negotiate-tip">💡 平台不提供支付服务，仅做信息撮合，请线下确认交易</text>
+      </view>
+      <view class="modal-footer">
+        <view class="modal-btn cancel" bindtap="closeNegotiateModal">
+          <text>取消</text>
+        </view>
+        <view class="modal-btn confirm" bindtap="submitNegotiate">
+          <text>确认出价</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 以物易物弹窗 -->
+  <view class="modal {{showBarterModal ? 'show' : ''}}" bindtap="closeBarterModal">
+    <view class="modal-content" catchtap="preventClose">
+      <view class="modal-header">
+        <text class="modal-title">以物易物</text>
+        <view class="modal-close" bindtap="closeBarterModal">
+          <text class="close-icon">×</text>
+        </view>
+      </view>
+      <view class="modal-body">
+        <view class="barter-item-info">
+          <text class="barter-item-label">想要交换</text>
+          <text class="barter-item-name">{{item.title}}</text>
+        </view>
+        <view class="input-section">
+          <text class="input-label">我的物品名称 *</text>
+          <input
+            class="barter-input"
+            placeholder="描述你用来交换的物品"
+            placeholder-class="input-placeholder"
+            value="{{barterItemTitle}}"
+            bindinput="onBarterTitleInput"
+          />
+        </view>
+        <view class="input-section">
+          <text class="input-label">物品详情（选填）</text>
+          <textarea
+            class="barter-textarea"
+            placeholder="详细描述物品成色、购买时间等..."
+            placeholder-class="input-placeholder"
+            value="{{barterItemDesc}}"
+            bindinput="onBarterDescInput"
+            auto-height
+          />
+        </view>
+        <text class="negotiate-tip">💡 平台不提供支付服务，仅做信息撮合，请线下确认交易</text>
+      </view>
+      <view class="modal-footer">
+        <view class="modal-btn cancel" bindtap="closeBarterModal">
+          <text>取消</text>
+        </view>
+        <view class="modal-btn confirm" bindtap="submitBarter">
+          <text>发送请求</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 联系卖家弹窗 -->
+  <view class="modal {{showContactModal ? 'show' : ''}}" bindtap="closeContactModal">
+    <view class="modal-content" catchtap="preventClose">
+      <view class="modal-header">
+        <text class="modal-title">联系卖家</text>
+        <view class="modal-close" bindtap="closeContactModal">
+          <text class="close-icon">×</text>
+        </view>
+      </view>
+      <view class="modal-body">
+        <view class="contact-info-row">
+          <text class="contact-label">卖家昵称</text>
+          <view class="contact-value-row">
+            <text class="contact-value">{{item.userNickName}}</text>
+            <view class="copy-btn" bindtap="onCopyContact">
+              <text>复制</text>
+            </view>
+          </view>
+        </view>
+        <view class="contact-info-row">
+          <text class="contact-label">信用评分</text>
+          <text class="contact-value">{{item.userRating}} 分 · {{item.userTradeCount}} 次交易</text>
+        </view>
+        <view class="contact-notice">
+          <text class="notice-icon">💡</text>
+          <text class="notice-text">本平台仅提供信息撮合服务，不参与实际交易。请在线下沟通交易细节，注意交易安全，建议当面验货后再完成交易。</text>
+        </view>
+      </view>
+      <view class="modal-footer">
+        <view class="modal-btn confirm single" bindtap="closeContactModal">
+          <text>我知道了</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 举报弹窗 -->
+  <view class="modal {{showReportModal ? 'show' : ''}}" bindtap="closeReportModal">
+    <view class="modal-content" catchtap="preventClose">
+      <view class="modal-header">
+        <text class="modal-title">举报物品</text>
+        <view class="modal-close" bindtap="closeReportModal">
+          <text class="close-icon">×</text>
+        </view>
+      </view>
+      <view class="modal-body">
+        <text class="report-subtitle">请选择举报原因</text>
+        <view class="report-reasons">
+          <view
+            wx:for="{{reportReasons}}"
+            wx:key="id"
+            class="report-reason {{selectedReportReason === item.id ? 'active' : ''}}"
+            bindtap="onReportReasonTap"
+            data-id="{{item.id}}"
+          >
+            <text class="reason-name">{{item.name}}</text>
+            <text class="reason-check" wx:if="{{selectedReportReason === item.id}}">✓</text>
+          </view>
+        </view>
+      </view>
+      <view class="modal-footer">
+        <view class="modal-btn cancel" bindtap="closeReportModal">
+          <text>取消</text>
+        </view>
+        <view class="modal-btn confirm danger" bindtap="submitReport">
+          <text>提交举报</text>
+        </view>
+      </view>
+    </view>
+  </view>
+</view>

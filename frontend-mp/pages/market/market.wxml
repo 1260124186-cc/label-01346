@@ -1,0 +1,157 @@
+<view class="page-container">
+  <!-- 顶部区域 -->
+  <view class="header-section">
+    <view class="header-bg-decoration"></view>
+    <view class="header-content">
+      <view class="header-top">
+        <view class="title-area">
+          <text class="page-title">♻️ 环保市集</text>
+          <text class="page-subtitle">让闲置物品循环起来</text>
+        </view>
+        <view class="header-actions">
+          <view class="action-btn my-items" bindtap="onMyItemsTap">
+            <text class="action-icon">📦</text>
+            <text class="action-text">我的</text>
+          </view>
+        </view>
+      </view>
+
+      <!-- 用户积分 -->
+      <view class="points-card" bindtap="onMyItemsTap">
+        <text class="points-label">我的积分</text>
+        <text class="points-value">{{userPoints}}</text>
+        <text class="points-unit">分</text>
+      </view>
+
+      <!-- 搜索框 -->
+      <view class="search-bar {{isSearchFocused ? 'focused' : ''}}">
+        <text class="search-icon">🔍</text>
+        <input
+          class="search-input"
+          placeholder="搜索书籍、玩具、小家电..."
+          placeholder-class="search-placeholder"
+          value="{{searchKeyword}}"
+          bindinput="onSearchInput"
+          bindconfirm="onSearchConfirm"
+          bindfocus="onSearchFocus"
+          bindblur="onSearchBlur"
+          confirm-type="search"
+        />
+        <view class="search-clear" wx:if="{{searchKeyword}}" bindtap="onClearSearch">
+          <text class="clear-icon">×</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 交易方式筛选 -->
+  <view class="trade-filter-section">
+    <scroll-view class="trade-scroll" scroll-x enable-flex>
+      <view
+        wx:for="{{tradeTypes}}"
+        wx:key="id"
+        class="trade-item {{currentTradeType === item.id ? 'active' : ''}}"
+        bindtap="onTradeTypeTap"
+        data-id="{{item.id}}"
+        style="--trade-color: {{item.color}};"
+      >
+        <text class="trade-icon">{{item.icon}}</text>
+        <text class="trade-name">{{item.name}}</text>
+      </view>
+    </scroll-view>
+  </view>
+
+  <!-- 分类筛选 -->
+  <view class="category-section">
+    <view
+      wx:for="{{categories}}"
+      wx:key="id"
+      class="category-item {{currentCategory === item.id ? 'active' : ''}}"
+      bindtap="onCategoryTap"
+      data-id="{{item.id}}"
+      style="--cat-color: {{item.color}};"
+    >
+      <text class="category-icon">{{item.icon}}</text>
+      <text class="category-name">{{item.name}}</text>
+    </view>
+  </view>
+
+  <!-- 物品列表 -->
+  <view class="items-section">
+    <view class="section-header">
+      <text class="section-title">闲置好物</text>
+      <text class="section-count">共 {{items.length}} 件</text>
+    </view>
+
+    <view class="items-grid" wx:if="{{items.length > 0}}">
+      <view
+        wx:for="{{items}}"
+        wx:key="id"
+        class="item-card"
+        bindtap="onItemTap"
+        data-id="{{item.id}}"
+      >
+        <view class="item-image-wrapper">
+          <image
+            class="item-image"
+            src="{{item.images[0]}}"
+            mode="aspectFill"
+            lazy-load="{{true}}"
+          />
+          <view class="item-trade-badge" style="background: linear-gradient(135deg, #5BBD72 0%, #4CAF50 100%);">
+            <text class="trade-badge-icon">{{item.tradeTypeIcon}}</text>
+            <text class="trade-badge-text">{{item.tradeTypeName}}</text>
+          </view>
+          <view class="item-condition-badge">
+            <text class="condition-badge-text">{{item.conditionName}}</text>
+          </view>
+        </view>
+
+        <view class="item-info">
+          <text class="item-title">{{item.title}}</text>
+          <text class="item-desc">{{item.description}}</text>
+
+          <view class="item-footer">
+            <view class="item-price">
+              <text class="price-icon">🪙</text>
+              <text class="price-value">{{item.price}}</text>
+              <text class="price-unit">积分</text>
+            </view>
+            <view class="item-location">
+              <text class="location-icon">📍</text>
+              <text class="location-text">{{item.location}}</text>
+            </view>
+          </view>
+
+          <view class="item-seller">
+            <text class="seller-avatar">{{item.userAvatarEmoji}}</text>
+            <text class="seller-name">{{item.userNickName}}</text>
+            <view class="seller-rating">
+              <text class="rating-star">⭐</text>
+              <text class="rating-value">{{item.userRating}}</text>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 空状态 -->
+    <view class="empty-state" wx:if="{{items.length === 0}}">
+      <text class="empty-emoji">🔄</text>
+      <text class="empty-title">暂无闲置物品</text>
+      <text class="empty-desc">快来发布第一件闲置物品吧～</text>
+      <view class="empty-btn" bindtap="onPublishTap">
+        <text class="empty-btn-text">去发布</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 底部安全区域 -->
+  <view class="bottom-safe"></view>
+
+  <!-- 发布浮动按钮 -->
+  <view class="fab-publish" bindtap="onPublishTap">
+    <text class="fab-icon">+</text>
+    <text class="fab-text">发布</text>
+  </view>
+</view>
