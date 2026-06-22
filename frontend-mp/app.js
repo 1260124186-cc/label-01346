@@ -3122,7 +3122,14 @@ App({
   initLeaderboardData() {
     const { LEADERBOARD_USERS } = require('./utils/constants')
     const stored = wx.getStorageSync('leaderboardData')
-    const currentSeasonId = this.globalData.seasonData && this.globalData.seasonData.seasonId
+    let currentSeasonId = this.globalData.seasonData && this.globalData.seasonData.seasonId
+
+    if (!currentSeasonId) {
+      const now = new Date()
+      const year = now.getFullYear()
+      const month = now.getMonth() + 1
+      currentSeasonId = `${year}-${String(month).padStart(2, '0')}`
+    }
 
     if (stored && stored.users && stored.users.length > 0) {
       const needUpgrade = stored.users.some(u => !u.seasonStats)
@@ -3145,7 +3152,16 @@ App({
   },
 
   generateUserSeasonStats(user, currentSeasonId) {
-    if (!currentSeasonId) return user
+    if (!user.seasonStats) {
+      user.seasonStats = {}
+    }
+
+    if (!currentSeasonId) {
+      const now = new Date()
+      const year = now.getFullYear()
+      const month = now.getMonth() + 1
+      currentSeasonId = `${year}-${String(month).padStart(2, '0')}`
+    }
 
     const totalPoints = user.points || 0
     const totalClassify = user.classifyCount || 0
@@ -3991,6 +4007,134 @@ App({
       wx.setStorageSync('antiCheatData', this.globalData.antiCheatData)
     }
     console.log('[App] 防作弊数据已加载')
+  },
+
+  initGameRecords() {
+    const records = wx.getStorageSync('gameRecords')
+    if (records && Array.isArray(records)) {
+      this.globalData.gameRecords = records
+    } else {
+      const now = new Date()
+      const today = formatDate(now, 'YYYY-MM-DD')
+      const yesterday = formatDate(new Date(now.getTime() - 86400000), 'YYYY-MM-DD')
+      const twoDaysAgo = formatDate(new Date(now.getTime() - 86400000 * 2), 'YYYY-MM-DD')
+
+      this.globalData.gameRecords = [
+        {
+          id: generateId(),
+          gameType: 'catch',
+          gameName: '接垃圾',
+          score: 120,
+          rawScore: 150,
+          flagged: false,
+          flagReason: null,
+          durationSeconds: 60,
+          correctCount: 12,
+          totalCount: 15,
+          time: today + ' 16:30'
+        },
+        {
+          id: generateId(),
+          gameType: 'conveyor',
+          gameName: '传送带',
+          score: 85,
+          rawScore: 85,
+          flagged: false,
+          flagReason: null,
+          durationSeconds: 45,
+          correctCount: 8,
+          totalCount: 10,
+          time: yesterday + ' 19:15'
+        },
+        {
+          id: generateId(),
+          gameType: 'match',
+          gameName: '配对消消乐',
+          score: 150,
+          rawScore: 150,
+          flagged: false,
+          flagReason: null,
+          durationSeconds: 90,
+          correctCount: 15,
+          totalCount: 15,
+          time: twoDaysAgo + ' 20:00'
+        }
+      ]
+      wx.setStorageSync('gameRecords', this.globalData.gameRecords)
+    }
+    console.log('[App] 游戏记录已加载', this.globalData.gameRecords.length, '条')
+  },
+
+  getGameRecords(memberId) {
+    const all = this.globalData.gameRecords || []
+    if (!memberId) return all
+    const targetMemberId = memberId
+    const isCurrentUser = targetMemberId === this.getUserId()
+    if (isCurrentUser) {
+      return all.filter(r => r.memberId === targetMemberId || r.memberId === undefined)
+    }
+    return all.filter(r => r.memberId === targetMemberId)
+  },
+
+  addGameRecord(record) {
+    if (!record.memberId) {
+      record.memberId = this.getUserId()
+    }
+    record.id = record.id || generateId()
+    record.time = record.time || formatDate(new Date(), 'YYYY-MM-DD HH:mm')
+    this.globalData.gameRecords.unshift(record)
+    wx.setStorageSync('gameRecords', this.globalData.gameRecords)
+    console.log('[App] 新增游戏记录', record.gameName, record.score + '分', 'memberId:', record.memberId)
+
+    const isCurrentUser = !record.memberId || record.memberId === this.getUserId()
+    if (isCurrentUser && this.globalData.missionCenter) {
+      this.incrementGamePlayForMission()
+    }
+  },
+
+  initDailyGamePlays() {
+    const today = formatDate(new Date(), 'YYYY-MM-DD')
+    const stored = wx.getStorageSync('dailyGamePlays')
+
+    if (stored && stored.date === today) {
+      this.globalData.dailyGamePlays = stored
+    } else {
+      this.globalData.dailyGamePlays = {
+        date: today,
+        count: 0,
+        types: {}
+      }
+      wx.setStorageSync('dailyGamePlays', this.globalData.dailyGamePlays)
+    }
+    console.log('[App] 每日游戏次数已加载', this.globalData.dailyGamePlays.count, '次')
+  },
+
+  getDailyGamePlays() {
+    const today = formatDate(new Date(), 'YYYY-MM-DD')
+    const dailyGamePlays = this.globalData.dailyGamePlays
+
+    if (!dailyGamePlays || dailyGamePlays.date !== today) {
+      this.initDailyGamePlays()
+    }
+
+    return this.globalData.dailyGamePlays
+  },
+
+  incrementDailyGamePlay(gameType) {
+    const today = formatDate(new Date(), 'YYYY-MM-DD')
+    const dailyGamePlays = this.globalData.dailyGamePlays
+
+    if (!dailyGamePlays || dailyGamePlays.date !== today) {
+      this.initDailyGamePlays()
+    }
+
+    this.globalData.dailyGamePlays.count += 1
+    if (!this.globalData.dailyGamePlays.types) {
+      this.globalData.dailyGamePlays.types = {}
+    }
+    this.globalData.dailyGamePlays.types[gameType] = (this.globalData.dailyGamePlays.types[gameType] || 0) + 1
+    wx.setStorageSync('dailyGamePlays', this.globalData.dailyGamePlays)
+    console.log('[App] 每日游戏次数已更新', this.globalData.dailyGamePlays.count, '次')
   },
 
   recordAntiCheatGameTap(gameType) {
