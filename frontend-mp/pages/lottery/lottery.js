@@ -80,8 +80,16 @@ Page({
 
   loadProbability() {
     const disclosure = app.getProbabilityDisclosure()
+    const groups = (disclosure.groups || []).map(group => ({
+      ...group,
+      totalProbDisplay: (group.totalProb * 100).toFixed(1),
+      prizes: (group.prizes || []).map(prize => ({
+        ...prize,
+        probabilityDisplay: (prize.probability * 100).toFixed(1)
+      }))
+    }))
     this.setData({
-      probabilityGroups: disclosure.groups || []
+      probabilityGroups: groups
     })
   },
 

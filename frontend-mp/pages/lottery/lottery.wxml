@@ -106,13 +106,13 @@
       <view class="rarity-group" wx:for="{{probabilityGroups}}" wx:for-item="group" wx:key="rarity">
         <view class="rarity-header" style="border-left-color: {{group.color}};">
           <text class="rarity-name">{{group.name}}</text>
-          <text class="rarity-prob">总概率 {{(group.totalProb * 100).toFixed(1)}}%</text>
+          <text class="rarity-prob">总概率 {{group.totalProbDisplay}}%</text>
         </view>
         <view class="prize-list">
           <view class="prize-row" wx:for="{{group.prizes}}" wx:for-item="prize" wx:key="id">
             <text class="prize-emoji">{{prize.emoji}}</text>
             <text class="prize-name">{{prize.name}}</text>
-            <text class="prize-prob">{{(prize.probability * 100).toFixed(1)}}%</text>
+            <text class="prize-prob">{{prize.probabilityDisplay}}%</text>
           </view>
         </view>
       </view>
