@@ -94,8 +94,10 @@ Page({
     const dispatchStatusInfo = RECYCLE_DISPATCH_STATUS[order.dispatchStatus.toUpperCase()] || null
 
     const isRealMode = order.dispatchMode === 'real'
+    const isSimulateMode = order.dispatchMode === 'simulate'
     const isPendingOrAppointed = order.status === 'pending' || order.status === 'appointed'
     const notTerminal = order.status !== 'completed' && order.status !== 'cancelled'
+    const dispatchAccepted = order.dispatchStatus === 'accepted'
 
     const canDispatch = isRealMode && notTerminal && order.dispatchStatus === 'pending'
     const canAccept = isRealMode && order.dispatchStatus === 'dispatching'
@@ -104,6 +106,9 @@ Page({
       (order.dispatchStatus === 'rejected' || order.dispatchStatus === 'timeout') &&
       order.dispatchAttempts < RECYCLE_DISPATCH_CONFIG.maxDispatchAttempts
 
+    const canMarkVisiting = canTransition('visiting') && (isSimulateMode || dispatchAccepted)
+    const canMarkComplete = canTransition('completed') && (isSimulateMode || dispatchAccepted)
+
     const availableCollectors = isRealMode && canDispatch ? app.getAvailableCollectors(order.categoryId) : []
 
     this.setData({
@@ -111,8 +116,8 @@ Page({
       estimatedPoints,
       estimatedPointsBreakdown,
       canCancel: canTransition('cancelled'),
-      canMarkVisiting: canTransition('visiting'),
-      canMarkComplete: canTransition('completed'),
+      canMarkVisiting,
+      canMarkComplete,
       canDispatch,
       canAccept,
       canReject,
@@ -320,28 +325,35 @@ Page({
     }
 
     const modes = Object.values(RECYCLE_DISPATCH_MODE)
-    const modeNames = modes.map(m => `${m.icon} ${m.name}\n${m.desc}`)
+    const currentMode = order.dispatchMode
+    const otherModes = modes.filter(m => m.id !== currentMode)
+    const modeNames = otherModes.map(m => `${m.icon} ${m.name}\n${m.desc}`)
 
     wx.showActionSheet({
       itemList: modeNames,
       success: (res) => {
-        const selectedMode = modes[res.tapIndex]
+        const selectedMode = otherModes[res.tapIndex]
+        const changeDesc = selectedMode.id === 'simulate'
+          ? '切换后系统将自动分配回收员并推进订单状态'
+          : '切换后需要手动发起派单，回收员接单后订单才会推进'
+
         showModal({
           title: '切换派单模式',
-          content: `确认将派单模式切换为「${selectedMode.name}」吗？`,
+          content: `确认将派单模式切换为「${selectedMode.name}」吗？\n\n${changeDesc}`,
           showCancel: true,
           success: (modalRes) => {
             if (modalRes.confirm) {
-              app.setRecycleDispatchMode(selectedMode.id)
-              
-              const updatedOrder = app.getRecycleOrderById(this.data.orderId)
-              if (updatedOrder) {
-                updatedOrder.dispatchMode = selectedMode.id
-                app.saveRecycleOrders()
-              }
-              
-              showSuccess(`已切换为${selectedMode.name}`)
-              this.loadOrderDetail()
+              showLoading('切换中...')
+              setTimeout(() => {
+                const result = app.switchOrderDispatchMode(this.data.orderId, selectedMode.id)
+                hideLoading()
+                if (result.success) {
+                  showSuccess(`已切换为${selectedMode.name}`)
+                  this.loadOrderDetail()
+                } else {
+                  showToast(result.message || '切换失败')
+                }
+              }, 300)
             }
           }
         })

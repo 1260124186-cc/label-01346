@@ -4255,6 +4255,13 @@ App({
       return false
     }
 
+    if (order.dispatchMode === 'real') {
+      if ((status === 'visiting' || status === 'completed') && order.dispatchStatus !== 'accepted') {
+        console.warn('[App] 真实派单模式下，回收员未接单不能推进订单状态:', order.dispatchStatus)
+        return false
+      }
+    }
+
     const statusInfo = RECYCLE_ORDER_STATUS[status]
     if (!statusInfo) return false
 
@@ -4389,6 +4396,60 @@ App({
     wx.setStorageSync('recycleDispatchMode', mode)
     console.log('[App] 派单模式已切换为:', mode)
     return true
+  },
+
+  switchOrderDispatchMode(orderId, newMode) {
+    const { RECYCLE_DISPATCH_MODE, RECYCLE_DISPATCH_STATUS } = require('./utils/constants')
+    const validModes = Object.keys(RECYCLE_DISPATCH_MODE).map(k => RECYCLE_DISPATCH_MODE[k].id)
+    if (!validModes.includes(newMode)) {
+      return { success: false, message: '无效的派单模式' }
+    }
+
+    const order = this.getRecycleOrderById(orderId)
+    if (!order) {
+      return { success: false, message: '订单不存在' }
+    }
+
+    if (order.status !== 'pending') {
+      return { success: false, message: '仅待确认订单可切换派单模式' }
+    }
+
+    if (order.dispatchMode === newMode) {
+      return { success: true, message: '已是该派单模式', order }
+    }
+
+    this.clearDispatchTimer(orderId)
+
+    order.dispatchMode = newMode
+    order.dispatchAttempts = 0
+    order.dispatchHistory = []
+
+    if (newMode === 'simulate') {
+      order.dispatchStatus = 'accepted'
+      order.dispatchStatusText = RECYCLE_DISPATCH_STATUS.ACCEPTED.text
+      order.collector = this.assignCollector(order.categoryId)
+      order.dispatchHistory.push({
+        status: 'accepted',
+        time: formatDate(new Date(), 'YYYY-MM-DD HH:mm'),
+        collectorId: order.collector.id,
+        collectorName: order.collector.name,
+        desc: '切换为模拟派单：系统自动分配回收员'
+      })
+    } else {
+      order.dispatchStatus = 'pending'
+      order.dispatchStatusText = RECYCLE_DISPATCH_STATUS.PENDING.text
+      order.collector = null
+      order.dispatchHistory.push({
+        status: 'pending',
+        time: formatDate(new Date(), 'YYYY-MM-DD HH:mm'),
+        desc: '切换为真实派单：等待发起派单'
+      })
+    }
+
+    this.saveRecycleOrders()
+    this.setRecycleDispatchMode(newMode)
+    console.log('[App] 订单派单模式切换成功', orderId, '->', newMode)
+    return { success: true, order }
   },
 
   getRecycleDispatchMode() {
