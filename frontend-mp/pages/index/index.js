@@ -186,6 +186,12 @@ Page({
     recordPageVisit('learningCenter')
   },
 
+  goToGreenGuide() {
+    console.log('[Index] 点击绿色消费指南')
+    app.safeNavigateTo('/pages/green-guide/green-guide')
+    recordPageVisit('greenGuide')
+  },
+
   goToClassify(e) {
     const { item } = e.currentTarget.dataset
     console.log('[Index] 点击垃圾分类', item.name)

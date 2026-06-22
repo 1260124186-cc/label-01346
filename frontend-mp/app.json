@@ -85,7 +85,11 @@
     "pages/market-publish/market-publish",
     "pages/market-detail/market-detail",
     "pages/market-my/market-my",
-    "pages/market-review/market-review"
+    "pages/market-review/market-review",
+    "pages/green-guide/green-guide",
+    "pages/green-product/green-product",
+    "pages/green-compare/green-compare",
+    "pages/green-vote/green-vote"
   ],
   "window": {
     "backgroundTextStyle": "dark",

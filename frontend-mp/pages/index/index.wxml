@@ -210,6 +210,31 @@
     </view>
   </view>
 
+  <!-- 绿色消费指南入口 -->
+  <view class="game-entry-section" bindtap="goToGreenGuide">
+    <view class="green-guide-entry-card">
+      <view class="green-guide-entry-bg"></view>
+      <view class="game-entry-content">
+        <view class="game-entry-left">
+          <view class="game-entry-emoji">🌿</view>
+          <view class="game-entry-text">
+            <view class="game-entry-title">绿色消费指南</view>
+            <view class="game-entry-subtitle">
+              环保产品评级 · 可降解认证 · 减塑等级 · 对比卡片 · 扫码查评分
+            </view>
+          </view>
+        </view>
+        <view class="game-entry-right">
+          <view class="game-entry-btn" style="background: linear-gradient(135deg, #27AE60 0%, #2ECC71 100%);">
+            <text>去选购</text>
+            <text class="game-arrow">›</text>
+          </view>
+        </view>
+      </view>
+      <view class="learning-entry-tag" style="background: #27AE60;">HOT</view>
+    </view>
+  </view>
+
   <!-- 快捷功能区域 -->
   <view class="quick-actions-section">
     <view class="quick-actions-header">

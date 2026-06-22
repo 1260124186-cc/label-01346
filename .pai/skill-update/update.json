@@ -1,11 +1,12 @@
 {
   "generate-mini-app": {
     "lastCheck": 1782111583687,
-    "checkedAt": "2026-06-22T06:59:43.687Z",
-    "status": "already_new",
-    "reason": "already_new",
+    "checkedAt": "2026-06-22T08:19:18.508Z",
+    "status": "skipped",
+    "reason": "skipped",
     "skill_builtin_version": "1.0.0",
     "skill_local_version": "UNKNOWN",
-    "updatedAt": ""
+    "updatedAt": "",
+    "nextCheckAt": "2026-06-22T09:59:43.687Z"
   }
 }

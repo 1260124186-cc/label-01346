@@ -1,0 +1,134 @@
+<view class="green-compare-page {{experienceClasses}}">
+  <view class="page-container">
+    <!-- 对比详情视图 -->
+    <block wx:if="{{comparison && !showAllList}}">
+      <view class="compare-hero">
+        <view class="compare-hero-bg"></view>
+        <view class="compare-hero-content">
+          <text class="compare-hero-title">{{comparison.title}}</text>
+          <text class="compare-hero-subtitle">{{comparison.subtitle}}</text>
+        </view>
+      </view>
+
+      <!-- 三列对比卡片 -->
+      <view class="compare-cards-row">
+        <!-- 传统产品 -->
+        <view class="compare-card conventional">
+          <view class="card-type-tag conventional-tag">传统</view>
+          <text class="card-emoji">{{comparison.conventional.emoji}}</text>
+          <text class="card-name">{{comparison.conventional.name}}</text>
+          <text class="card-metric-value">{{comparison.conventional.metrics[activeMetric]}}</text>
+        </view>
+
+        <!-- 改良产品 -->
+        <view class="compare-card green">
+          <view class="card-type-tag green-tag">改良</view>
+          <text class="card-emoji">{{comparison.green.emoji}}</text>
+          <text class="card-name">{{comparison.green.name}}</text>
+          <text class="card-metric-value">{{comparison.green.metrics[activeMetric]}}</text>
+        </view>
+
+        <!-- 最优产品 -->
+        <view class="compare-card best">
+          <view class="card-type-tag best-tag">最优</view>
+          <text class="card-emoji">{{comparison.best.emoji}}</text>
+          <text class="card-name">{{comparison.best.name}}</text>
+          <text class="card-metric-value">{{comparison.best.metrics[activeMetric]}}</text>
+        </view>
+      </view>
+
+      <!-- 指标切换 -->
+      <view class="metrics-section">
+        <view class="section-title-row">
+          <text class="section-icon">📊</text>
+          <text class="section-title">切换对比指标</text>
+        </view>
+        <view class="metrics-grid">
+          <view
+            class="metric-item {{activeMetric === item.key ? 'active' : ''}}"
+            wx:for="{{metrics}}"
+            wx:key="key"
+            data-key="{{item.key}}"
+            bindtap="onMetricTap"
+          >
+            <text class="metric-icon">{{item.icon}}</text>
+            <text class="metric-name">{{item.name}}</text>
+          </view>
+        </view>
+      </view>
+
+      <!-- 全指标详情 -->
+      <view class="detail-table-section">
+        <view class="section-title-row">
+          <text class="section-icon">📋</text>
+          <text class="section-title">全指标数据一览</text>
+        </view>
+        <view class="detail-table">
+          <view class="table-header">
+            <view class="th metric-th">指标</view>
+            <view class="th">{{comparison.conventional.name}}</view>
+            <view class="th">{{comparison.green.name}}</view>
+            <view class="th">{{comparison.best.name}}</view>
+          </view>
+          <view class="table-row" wx:for="{{metrics}}" wx:key="key">
+            <view class="td metric-td">
+              <text class="metric-icon-small">{{item.icon}}</text>
+              <text class="metric-name-small">{{item.name}}</text>
+            </view>
+            <view class="td conventional-td">
+              <text class="td-text">{{comparison.conventional.metrics[item.key]}}</text>
+            </view>
+            <view class="td green-td">
+              <text class="td-text">{{comparison.green.metrics[item.key]}}</text>
+            </view>
+            <view class="td best-td">
+              <text class="td-text">{{comparison.best.metrics[item.key]}}</text>
+            </view>
+          </view>
+        </view>
+      </view>
+
+      <!-- 环保建议 -->
+      <view class="suggestion-section">
+        <view class="suggestion-card">
+          <text class="suggestion-emoji">💡</text>
+          <view class="suggestion-content">
+            <text class="suggestion-title">选购建议</text>
+            <text class="suggestion-text">优先选择「{{comparison.best.name}}」，每次使用都在减少环境负担。如条件不允许，「{{comparison.green.name}}」也是更优的过渡选择。</text>
+          </view>
+        </view>
+      </view>
+    </block>
+
+    <!-- 全部对比列表视图 -->
+    <block wx:if="{{showAllList}}">
+      <view class="all-list-header">
+        <text class="all-list-emoji">⚖️</text>
+        <text class="all-list-title">环境影响对比</text>
+        <text class="all-list-subtitle">选择一个品类查看详细对比数据</text>
+      </view>
+      <view class="all-list">
+        <view
+          class="all-list-item"
+          wx:for="{{allComparisons}}"
+          wx:key="id"
+          data-id="{{item.id}}"
+          bindtap="onAllComparisonTap"
+        >
+          <view class="list-item-emojis">
+            <text class="list-emoji">{{item.conventional.emoji}}</text>
+            <text class="list-vs">vs</text>
+            <text class="list-emoji">{{item.best.emoji}}</text>
+          </view>
+          <view class="list-item-info">
+            <text class="list-item-title">{{item.title}}</text>
+            <text class="list-item-subtitle">{{item.subtitle}}</text>
+          </view>
+          <text class="list-item-arrow">›</text>
+        </view>
+      </view>
+    </block>
+
+    <view class="safe-area-bottom"></view>
+  </view>
+</view>

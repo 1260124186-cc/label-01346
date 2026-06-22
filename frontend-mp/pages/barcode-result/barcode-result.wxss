@@ -170,6 +170,86 @@
 }
 
 /* ========== 包装材质 ========== */
+
+/* ========== 环保评分 ========== */
+.eco-score-section {
+  cursor: pointer;
+}
+
+.eco-score-section:active {
+  opacity: 0.9;
+}
+
+.eco-more {
+  font-size: 24rpx;
+  color: #5BBD72;
+  font-weight: 500;
+}
+
+.eco-score-card {
+  display: flex;
+  align-items: center;
+}
+
+.eco-score-ring {
+  width: 100rpx;
+  height: 100rpx;
+  border-radius: 50%;
+  border: 4rpx solid;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin-right: 24rpx;
+  flex-shrink: 0;
+  background: rgba(255,255,255,0.5);
+}
+
+.eco-score-level {
+  font-size: 32rpx;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.eco-score-value {
+  font-size: 20rpx;
+  font-weight: 500;
+}
+
+.eco-score-info {
+  flex: 1;
+}
+
+.eco-tip {
+  display: block;
+  font-size: 26rpx;
+  color: #4E5969;
+  line-height: 1.6;
+  margin-bottom: 12rpx;
+}
+
+.eco-suggestion-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8rpx;
+  background: rgba(91, 189, 114, 0.06);
+  padding: 12rpx 16rpx;
+  border-radius: 12rpx;
+}
+
+.eco-suggestion-icon {
+  font-size: 24rpx;
+  flex-shrink: 0;
+}
+
+.eco-suggestion-text {
+  font-size: 24rpx;
+  color: #27AE60;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+/* ========== 包装材质原始区域 ========== */
 .materials-grid {
   display: flex;
   flex-wrap: wrap;

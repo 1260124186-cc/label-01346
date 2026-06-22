@@ -61,6 +61,32 @@
     </view>
   </view>
 
+  <!-- 环保评分 -->
+  <view class="section-card eco-score-section" wx:if="{{product && ecoInfo}}" bindtap="goToGreenGuide">
+    <view class="section-header">
+      <view class="section-title-row">
+        <text class="section-icon">🌿</text>
+        <text class="section-title">环保评分</text>
+      </view>
+      <text class="eco-more">查看更多 ›</text>
+    </view>
+    <view class="section-body">
+      <view class="eco-score-card">
+        <view class="eco-score-ring" style="border-color: {{ecoInfo.ecoLevelColor}};">
+          <text class="eco-score-level" style="color: {{ecoInfo.ecoLevelColor}};">{{ecoInfo.ecoLevel}}</text>
+          <text class="eco-score-value" style="color: {{ecoInfo.ecoLevelColor}};">{{ecoInfo.ecoScore}}分</text>
+        </view>
+        <view class="eco-score-info">
+          <text class="eco-tip">{{ecoInfo.tip}}</text>
+          <view class="eco-suggestion-row">
+            <text class="eco-suggestion-icon">💡</text>
+            <text class="eco-suggestion-text">{{ecoInfo.greenSuggestion}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+
   <!-- 组合包装拆解向导入口 -->
   <view class="section-card" wx:if="{{product && packaging}}">
     <view class="section-header">

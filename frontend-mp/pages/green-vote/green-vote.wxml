@@ -1,0 +1,123 @@
+<view class="green-vote-page {{experienceClasses}}">
+  <view class="page-container">
+    <!-- 头部 -->
+    <view class="vote-hero">
+      <view class="vote-hero-bg"></view>
+      <view class="vote-hero-content">
+        <view class="hero-title-row">
+          <text class="hero-emoji">🗳️</text>
+          <text class="hero-title">我会复购的环保产品</text>
+        </view>
+        <text class="hero-subtitle">为你回购的环保好物投票，形成 UGC 推荐清单</text>
+        <view class="hero-stats">
+          <view class="stat-item">
+            <text class="stat-value">{{totalVotes}}</text>
+            <text class="stat-label">总投票</text>
+          </view>
+          <view class="stat-divider"></view>
+          <view class="stat-item">
+            <text class="stat-value">{{voteList.length}}</text>
+            <text class="stat-label">参与产品</text>
+          </view>
+          <view class="stat-divider"></view>
+          <view class="stat-item">
+            <text class="stat-value">{{myVotes.length}}</text>
+            <text class="stat-label">我已投票</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- Tab切换 -->
+    <view class="tab-bar">
+      <view class="tab-item {{currentTab === 'rank' ? 'active' : ''}}" bindtap="switchToRank">
+        <text class="tab-icon">🏆</text>
+        <text class="tab-label">投票排行</text>
+      </view>
+      <view class="tab-item {{currentTab === 'myVotes' ? 'active' : ''}}" bindtap="switchToMyVotes">
+        <text class="tab-icon">✅</text>
+        <text class="tab-label">我的投票</text>
+      </view>
+    </view>
+
+    <!-- 排行榜 -->
+    <view class="rank-section" wx:if="{{currentTab === 'rank'}}">
+      <view class="rank-list">
+        <view
+          class="rank-item {{item.rank <= 3 ? 'top-rank' : ''}}"
+          wx:for="{{voteList}}"
+          wx:key="id"
+        >
+          <view class="rank-badge" style="background: {{item.rank === 1 ? '#F1C40F' : item.rank === 2 ? '#BDC3C7' : item.rank === 3 ? '#E67E22' : 'var(--bg-card)' }};">
+            <text class="rank-num" style="color: {{item.rank <= 3 ? '#fff' : 'var(--text-tertiary)'}};">{{item.rank}}</text>
+          </view>
+          <view class="rank-info" data-productid="{{item.productId}}" bindtap="onProductTap">
+            <text class="rank-emoji">{{item.emoji}}</text>
+            <view class="rank-text">
+              <text class="rank-name">{{item.name}}</text>
+              <view class="rank-meta">
+                <view class="eco-badge" style="background: {{item.ecoLevelColor}}20; color: {{item.ecoLevelColor}};">{{item.ecoLevel}}</view>
+                <text class="rank-votes">{{item.votes}}票</text>
+              </view>
+            </view>
+          </view>
+          <view
+            class="vote-btn {{item.hasVoted ? 'voted' : ''}}"
+            data-id="{{item.id}}"
+            bindtap="onVoteTap"
+          >
+            <text class="vote-btn-icon">{{item.hasVoted ? '✅' : '👍'}}</text>
+            <text class="vote-btn-text">{{item.hasVoted ? '已投票' : '投票'}}</text>
+          </view>
+        </view>
+      </view>
+
+      <view class="rank-bar-section">
+        <text class="bar-section-title">📊 投票占比</text>
+        <view class="bar-list">
+          <view class="bar-item" wx:for="{{voteList}}" wx:key="id">
+            <text class="bar-emoji">{{item.emoji}}</text>
+            <view class="bar-track">
+              <view class="bar-fill" style="width: {{item.barWidth}}%; background: {{item.rank <= 3 ? '#5BBD72' : 'var(--text-tertiary)'}};"></view>
+            </view>
+            <text class="bar-count">{{item.votes}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 我的投票 -->
+    <view class="my-votes-section" wx:if="{{currentTab === 'myVotes'}}">
+      <view class="my-votes-list" wx:if="{{myVotes.length > 0}}">
+        <view
+          class="my-vote-item"
+          wx:for="{{myVotes}}"
+          wx:key="id"
+          data-productid="{{item.productId}}"
+          bindtap="onProductTap"
+        >
+          <text class="my-vote-emoji">{{item.emoji}}</text>
+          <view class="my-vote-info">
+            <text class="my-vote-name">{{item.name}}</text>
+            <view class="my-vote-meta">
+              <view class="eco-badge" style="background: {{item.ecoLevelColor}}20; color: {{item.ecoLevelColor}};">{{item.ecoLevel}}</view>
+              <text class="my-vote-count">{{item.votes}}人投票</text>
+            </view>
+          </view>
+          <text class="my-vote-check">✅</text>
+        </view>
+      </view>
+
+      <view class="empty-state" wx:if="{{myVotes.length === 0}}">
+        <text class="empty-emoji">🗳️</text>
+        <text class="empty-title">你还没有投票</text>
+        <text class="empty-desc">去排行榜为你复购的环保产品投票吧</text>
+        <view class="empty-action" bindtap="switchToRank">
+          <text class="empty-btn-text">去投票</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="safe-area-bottom"></view>
+  </view>
+</view>

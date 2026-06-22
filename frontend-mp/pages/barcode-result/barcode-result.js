@@ -17,6 +17,10 @@ const {
   toggleFavoriteBarcode,
   addScanHistory
 } = require('../../data/barcode')
+const {
+  getEcoScoreByBarcode,
+  getEcoLevelColor
+} = require('../../data/green-guide')
 
 Page({
   data: {
@@ -24,6 +28,7 @@ Page({
     product: null,
     packaging: null,
     isFavorite: false,
+    ecoInfo: null,
     experienceClasses: ''
   },
 
@@ -46,11 +51,21 @@ Page({
     const detail = getBarcodeProductDetail(barcode)
     
     if (detail) {
+      const ecoData = getEcoScoreByBarcode(barcode)
+      let ecoInfo = null
+      if (ecoData) {
+        ecoInfo = {
+          ...ecoData,
+          ecoLevelColor: getEcoLevelColor(ecoData.ecoLevel)
+        }
+      }
+
       this.setData({
         barcode: barcode,
         product: detail,
         packaging: detail.packaging || null,
-        isFavorite: isFavoriteBarcode(barcode)
+        isFavorite: isFavoriteBarcode(barcode),
+        ecoInfo: ecoInfo
       })
 
       addScanHistory({
@@ -149,6 +164,11 @@ Page({
     navigateTo('/pages/barcode-submit/barcode-submit', {
       barcode: barcode
     })
+  },
+
+  goToGreenGuide() {
+    console.log('[BarcodeResult] 跳转到绿色消费指南')
+    navigateTo('/pages/green-guide/green-guide')
   },
 
   onThemeChange(isDark) {

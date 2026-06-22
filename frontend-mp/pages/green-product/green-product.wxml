@@ -1,0 +1,122 @@
+<view class="green-product-page {{experienceClasses}}">
+  <view class="page-container" wx:if="{{product}}">
+    <!-- 产品评分头部 -->
+    <view class="product-hero" style="--eco-color: {{ecoLevelColor}};">
+      <view class="hero-score-area">
+        <view class="big-score-ring" style="border-color: {{ecoLevelColor}};">
+          <text class="big-score-level" style="color: {{ecoLevelColor}};">{{product.ecoLevel}}</text>
+          <text class="big-score-value" style="color: {{ecoLevelColor}};">{{product.ecoScore}}分</text>
+        </view>
+        <view class="score-label">环保评分</view>
+      </view>
+      <view class="hero-product-info">
+        <view class="hero-name-row">
+          <text class="hero-emoji">{{product.emoji}}</text>
+          <text class="hero-name">{{product.name}}</text>
+        </view>
+        <text class="hero-brand">{{product.brand}}</text>
+        <text class="hero-price">{{product.priceRange}}</text>
+        <view class="hero-materials">
+          <text class="material-chip" wx:for="{{product.materials}}" wx:key="*this">{{item}}</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 减塑等级 -->
+    <view class="section-card">
+      <view class="section-title-row">
+        <text class="section-icon">🛡️</text>
+        <text class="section-title">减塑等级</text>
+      </view>
+      <view class="plastic-level-card" style="background: {{plasticLevel.color}}15;">
+        <text class="plastic-level-icon">{{plasticLevel.icon}}</text>
+        <view class="plastic-level-info">
+          <text class="plastic-level-name" style="color: {{plasticLevel.color}};">{{plasticLevel.name}}</text>
+          <text class="plastic-level-desc">{{plasticLevel.desc}}</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 认证信息 -->
+    <view class="section-card" wx:if="{{certDetails.length > 0}}">
+      <view class="section-title-row">
+        <text class="section-icon">🏅</text>
+        <text class="section-title">环保认证 ({{certDetails.length}})</text>
+      </view>
+      <view class="cert-list">
+        <view class="cert-detail-item" wx:for="{{certDetails}}" wx:key="id">
+          <view class="cert-icon-wrapper" style="background: {{item.color}}15;">
+            <text class="cert-detail-icon">{{item.icon}}</text>
+          </view>
+          <view class="cert-detail-info">
+            <view class="cert-detail-header">
+              <text class="cert-detail-name">{{item.name}}</text>
+              <view class="cert-level-badge" style="background: {{item.color}}20; color: {{item.color}};">{{item.level}}级</view>
+            </view>
+            <text class="cert-detail-desc">{{item.desc}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 优缺点 -->
+    <view class="section-card">
+      <view class="section-title-row">
+        <text class="section-icon">⚖️</text>
+        <text class="section-title">优缺点分析</text>
+      </view>
+      <view class="pros-list">
+        <view class="pros-item" wx:for="{{product.pros}}" wx:key="*this">
+          <text class="pros-check">✅</text>
+          <text class="pros-text">{{item}}</text>
+        </view>
+      </view>
+      <view class="cons-list">
+        <view class="cons-item" wx:for="{{product.cons}}" wx:key="*this">
+          <text class="cons-mark">⚠️</text>
+          <text class="cons-text">{{item}}</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 绿色替代推荐 -->
+    <view class="section-card" wx:if="{{greenAltProduct}}">
+      <view class="section-title-row">
+        <text class="section-icon">💡</text>
+        <text class="section-title">更环保的选择</text>
+      </view>
+      <view class="alt-card" bindtap="onGoToGreenAlt">
+        <view class="alt-score-ring" style="border-color: {{ecoLevelColor}};">
+          <text class="alt-score" style="color: {{ecoLevelColor}};">{{greenAltProduct.ecoLevel}}</text>
+        </view>
+        <view class="alt-info">
+          <view class="alt-name-row">
+            <text class="alt-emoji">{{greenAltProduct.emoji}}</text>
+            <text class="alt-name">{{greenAltProduct.name}}</text>
+          </view>
+          <text class="alt-brand">{{greenAltProduct.brand}}</text>
+          <text class="alt-score-text">环保评分 {{greenAltProduct.ecoScore}} 分 · {{greenAltProduct.priceRange}}</text>
+        </view>
+        <text class="alt-arrow">›</text>
+      </view>
+    </view>
+
+    <!-- 对比入口 -->
+    <view class="section-card">
+      <view class="compare-entry" bindtap="onGoToCompare">
+        <text class="compare-emoji">⚖️</text>
+        <view class="compare-info">
+          <text class="compare-title">查看环境影响对比</text>
+          <text class="compare-desc">对比不同产品的环境数据</text>
+        </view>
+        <text class="compare-arrow">›</text>
+      </view>
+    </view>
+
+    <!-- 免责声明 -->
+    <view class="disclaimer-card">
+      <text class="disclaimer-icon">ℹ️</text>
+      <text class="disclaimer-text">{{product.disclaimer}}</text>
+    </view>
+  </view>
+</view>

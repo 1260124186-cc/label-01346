@@ -11,6 +11,7 @@ const COURSE_CATEGORIES = [
   { id: 'harmful', name: '有害垃圾', icon: '☣️', color: '#E85D5D' },
   { id: 'recyclable', name: '可回收物', icon: '♻️', color: '#4A90D9' },
   { id: 'other', name: '其他垃圾', icon: '🗑️', color: '#8E8E93' },
+  { id: 'green_consume', name: '绿色消费', icon: '🌿', color: '#27AE60' },
   { id: 'esg', name: 'ESG培训', icon: '🌍', color: '#9B59B6' }
 ]
 
@@ -1044,6 +1045,142 @@ const COURSES = [
           ]
         }
       }
+    ]
+  },
+  {
+    id: 'course_green_01',
+    title: '绿色消费入门指南',
+    subtitle: '认识环保标识，做出更绿色的购买决策',
+    categoryId: 'green_consume',
+    difficulty: 'beginner',
+    scenes: ['family', 'community'],
+    icon: '🌿',
+    coverColor: 'linear-gradient(135deg, #27AE60 0%, #2ECC71 100%)',
+    color: '#27AE60',
+    description: '本课程带你认识常见环保认证标识、理解减塑等级、学会在日常生活中做出更环保的消费选择。',
+    totalDuration: 30,
+    totalChapters: 4,
+    quizChapterId: 3,
+    pointsReward: 150,
+    certificateName: '绿色消费达人',
+    certificateLevel: '初级',
+    instructor: { name: '张环保', title: '绿色消费倡导者', avatar: '' },
+    tags: ['热门', '绿色消费'],
+    studentCount: 8960,
+    rating: 4.8,
+    publishDate: '2025-01-10',
+    chapters: [
+      {
+        id: 'gc_chap_01',
+        title: '第一章：为什么要绿色消费',
+        type: 'article',
+        duration: 8,
+        content: {
+          summary: '了解绿色消费的意义和环境影响',
+          sections: [
+            { title: '什么是绿色消费', content: '绿色消费是指消费者在购买、使用和处置商品时，优先选择对环境影响较小、资源利用率较高、有利于人体健康的产品和服务。它不仅是一种消费方式，更是一种生活态度和社会责任。' },
+            { title: '日常消费的环境代价', content: '全球每年产生约3亿吨塑料垃圾，其中仅9%被回收利用。一个塑料袋的使用时间平均仅12分钟，但自然降解需要200-1000年。外卖包装、一次性餐具、购物袋等日常消费品正在给地球带来巨大负担。' }
+          ]
+        }
+      },
+      {
+        id: 'gc_chap_02',
+        title: '第二章：认识环保认证标识',
+        type: 'article',
+        duration: 7,
+        content: {
+          summary: '解读FSC、蓝色天使、BPI等国际环保认证',
+          sections: [
+            { title: 'FSC森林认证', content: 'FSC（森林管理委员会）认证确保木材和纸制品来源于可持续经营的森林。购买FSC认证的纸巾、笔记本等产品，意味着你支持了负责任的森林管理。' },
+            { title: '可降解认证（OK Compost/BPI）', content: 'OK Compost和BPI认证证明产品在工业堆肥条件下可在3-6个月内完全降解为水、二氧化碳和生物质。注意：需工业堆肥条件，自然环境中降解速度可能较慢。' }
+          ]
+        }
+      },
+      {
+        id: 'gc_chap_03',
+        title: '第三章：减塑等级与替代方案',
+        type: 'article',
+        duration: 8,
+        content: {
+          summary: '理解减塑等级，选择最佳替代方案',
+          sections: [
+            { title: '减塑等级解读', content: '减塑等级从0到3：0级为无减塑（传统石化塑料），1级为轻度减塑，2级为中度减塑（50%以上再生料），3级为深度减塑（完全无塑或100%可降解）。优先选择3级产品。' },
+            { title: '常见替代方案对比', content: '塑料袋→可降解袋→布袋；塑料餐盒→PLA可降解盒→纸浆模塑盒；一次性餐具→竹纤维餐具→不锈钢餐具。替代方案环境影响依次降低，但成本和使用便利性需权衡。' }
+          ]
+        }
+      },
+      {
+        id: 'gc_chap_04',
+        title: '第四章：扫码查评分实践',
+        type: 'article',
+        duration: 7,
+        content: {
+          summary: '学会使用扫码功能查询产品环保评分',
+          sections: [
+            { title: '扫码查环保评分', content: '在购物时使用本小程序的扫码功能扫描商品条码，即可查看该产品的环保评分、包装材质分析和绿色替代建议。根据评分做出更环保的选择。' },
+            { title: '消费决策清单', content: '购物前问自己三个问题：1) 我真的需要吗？2) 有没有更环保的替代品？3) 用完后如何正确处置？养成绿色消费习惯，从每一次选择开始。' }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    id: 'course_green_02',
+    title: '包装减量与循环利用',
+    subtitle: '从包装减量到循环再利用的全链路实践',
+    categoryId: 'green_consume',
+    difficulty: 'intermediate',
+    scenes: ['community', 'enterprise'],
+    icon: '📦',
+    coverColor: 'linear-gradient(135deg, #F39C12 0%, #27AE60 100%)',
+    color: '#F39C12',
+    description: '深入理解产品包装的环境影响，掌握包装减量、材质选择和循环利用的实用方法。',
+    totalDuration: 35,
+    totalChapters: 4,
+    quizChapterId: 4,
+    pointsReward: 180,
+    certificateName: '包装减量师',
+    certificateLevel: '中级',
+    instructor: { name: '李循环', title: '循环经济研究员', avatar: '' },
+    tags: ['进阶', '包装'],
+    studentCount: 5420,
+    rating: 4.7,
+    publishDate: '2025-02-15',
+    chapters: [
+      { id: 'pg_chap_01', title: '第一章：包装的环境足迹', type: 'article', duration: 10, content: { summary: '认识包装从生产到废弃的环境影响', sections: [] } },
+      { id: 'pg_chap_02', title: '第二章：外卖包装的选择', type: 'article', duration: 8, content: { summary: 'PP/PLA/纸浆模塑材质对比', sections: [] } },
+      { id: 'pg_chap_03', title: '第三章：快递包装减量', type: 'article', duration: 8, content: { summary: '如何减少快递包装浪费', sections: [] } },
+      { id: 'pg_chap_04', title: '第四章：包装循环利用实践', type: 'article', duration: 9, content: { summary: '社区和企业层面的包装循环方案', sections: [] } }
+    ]
+  },
+  {
+    id: 'course_green_03',
+    title: '零废弃生活方式',
+    subtitle: '从减量到零废弃的渐进式实践指南',
+    categoryId: 'green_consume',
+    difficulty: 'advanced',
+    scenes: ['family', 'community'],
+    icon: '♻️',
+    coverColor: 'linear-gradient(135deg, #E85D5D 0%, #27AE60 100%)',
+    color: '#E85D5D',
+    description: '系统学习零废弃生活理念，从日常减量、重复使用到回收利用，逐步实现零废弃目标。',
+    totalDuration: 40,
+    totalChapters: 5,
+    quizChapterId: 5,
+    pointsReward: 200,
+    certificateName: '零废弃生活家',
+    certificateLevel: '高级',
+    instructor: { name: '王零废', title: '零废弃生活倡导者', avatar: '' },
+    tags: ['高级', '生活方式'],
+    studentCount: 3210,
+    rating: 4.9,
+    publishDate: '2025-03-01',
+    chapters: [
+      { id: 'zw_chap_01', title: '第一章：零废弃理念', type: 'article', duration: 8, content: { summary: '理解5R原则：Refuse、Reduce、Reuse、Recycle、Rot', sections: [] } },
+      { id: 'zw_chap_02', title: '第二章：厨余减量', type: 'article', duration: 8, content: { summary: '从源头减少食物浪费，家庭堆肥实践', sections: [] } },
+      { id: 'zw_chap_03', title: '第三章：无塑购物', type: 'article', duration: 8, content: { summary: '超市无塑购物攻略，散装采购技巧', sections: [] } },
+      { id: 'zw_chap_04', title: '第四章：DIY清洁用品', type: 'article', duration: 8, content: { summary: '用天然材料自制清洁剂，减少化学污染', sections: [] } },
+      { id: 'zw_chap_05', title: '第五章：社区零废弃行动', type: 'article', duration: 8, content: { summary: '组织和参与社区零废弃活动', sections: [] } }
     ]
   }
 ]

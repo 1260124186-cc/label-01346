@@ -1,0 +1,236 @@
+<view class="green-guide-page {{experienceClasses}}">
+  <view class="page-container">
+    <!-- 顶部搜索与标题 -->
+    <view class="hero-section">
+      <view class="hero-bg"></view>
+      <view class="hero-content">
+        <view class="hero-title-row">
+          <text class="hero-emoji">🌿</text>
+          <text class="hero-title">绿色消费指南</text>
+        </view>
+        <text class="hero-subtitle">按品类查看环保选购建议，让每次消费都对地球更友好</text>
+        <view class="hero-search" bindtap="onShowSearch">
+          <text class="search-icon">🔍</text>
+          <text class="search-placeholder">搜索产品、品牌或材质</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 快捷入口 -->
+    <view class="quick-entries">
+      <view class="quick-entry-card" bindtap="onGoToVote">
+        <view class="entry-icon-bg" style="background: linear-gradient(135deg, rgba(243,156,18,0.15) 0%, rgba(243,156,18,0.05) 100%);">
+          <text class="entry-emoji">🗳️</text>
+        </view>
+        <view class="entry-info">
+          <text class="entry-name">复购投票</text>
+          <text class="entry-desc">推荐你回购的环保好物</text>
+        </view>
+        <text class="entry-arrow">›</text>
+      </view>
+      <view class="quick-entry-card" bindtap="onGoToCourse">
+        <view class="entry-icon-bg" style="background: linear-gradient(135deg, rgba(155,89,182,0.15) 0%, rgba(155,89,182,0.05) 100%);">
+          <text class="entry-emoji">📚</text>
+        </view>
+        <view class="entry-info">
+          <text class="entry-name">专题课程</text>
+          <text class="entry-desc">绿色消费专题课程</text>
+        </view>
+        <text class="entry-arrow">›</text>
+      </view>
+    </view>
+
+    <!-- 品类Tab -->
+    <scroll-view class="category-scroll" scroll-x="{{true}}" enhanced="{{true}}" show-scrollbar="{{false}}">
+      <view class="category-list">
+        <view
+          class="category-item {{activeCategoryId === item.id ? 'active' : ''}}"
+          wx:for="{{categories}}"
+          wx:key="id"
+          data-id="{{item.id}}"
+          bindtap="onCategoryTap"
+          style="--cat-color: {{item.color}}"
+        >
+          <text class="category-icon">{{item.icon}}</text>
+          <text class="category-name">{{item.name}}</text>
+        </view>
+      </view>
+    </scroll-view>
+
+    <!-- 产品对比入口 -->
+    <view class="comparison-section" wx:if="{{comparisonList.length > 0}}">
+      <view class="section-header">
+        <view class="section-title-row">
+          <text class="section-icon">⚖️</text>
+          <text class="section-title">环境影响对比</text>
+        </view>
+      </view>
+      <scroll-view class="comparison-scroll" scroll-x="{{true}}" enhanced="{{true}}" show-scrollbar="{{false}}">
+        <view class="comparison-cards">
+          <view
+            class="comparison-card"
+            wx:for="{{comparisonList}}"
+            wx:key="id"
+            data-id="{{item.id}}"
+            bindtap="onComparisonTap"
+          >
+            <text class="cmp-emoji">{{item.conventional.emoji}}</text>
+            <text class="cmp-vs">vs</text>
+            <text class="cmp-emoji">{{item.best.emoji}}</text>
+            <text class="cmp-title">{{item.title}}</text>
+            <text class="cmp-subtitle">{{item.subtitle}}</text>
+          </view>
+        </view>
+      </scroll-view>
+    </view>
+
+    <!-- 产品评级列表 -->
+    <view class="product-section">
+      <view class="section-header">
+        <view class="section-title-row">
+          <text class="section-icon">🏷️</text>
+          <text class="section-title">环保产品评级</text>
+        </view>
+        <view class="disclaimer-link" bindtap="onShowDisclaimer">
+          <text class="disclaimer-icon">ℹ️</text>
+          <text class="disclaimer-text">免责声明</text>
+        </view>
+      </view>
+
+      <view class="product-list">
+        <view
+          class="product-card"
+          wx:for="{{productList}}"
+          wx:key="id"
+          data-id="{{item.id}}"
+          bindtap="onProductTap"
+          style="--eco-color: {{item.ecoLevelColor}}"
+        >
+          <!-- 评分环 -->
+          <view class="score-ring-wrapper">
+            <view class="score-ring" style="border-color: {{item.ecoLevelColor}};">
+              <text class="score-level" style="color: {{item.ecoLevelColor}};">{{item.ecoLevel}}</text>
+              <text class="score-value" style="color: {{item.ecoLevelColor}};">{{item.ecoScore}}</text>
+            </view>
+          </view>
+
+          <!-- 产品信息 -->
+          <view class="product-info">
+            <view class="product-header">
+              <text class="product-emoji">{{item.emoji}}</text>
+              <text class="product-name">{{item.name}}</text>
+            </view>
+            <text class="product-brand">{{item.brand}}</text>
+
+            <!-- 认证标签 -->
+            <view class="cert-tags" wx:if="{{item.certDetails.length > 0}}">
+              <view
+                class="cert-tag"
+                wx:for="{{item.certDetails}}"
+                wx:for-item="cert"
+                wx:key="id"
+                style="background: {{cert.color}}15; color: {{cert.color}};"
+              >
+                <text class="cert-icon">{{cert.icon}}</text>
+                <text class="cert-name">{{cert.name}}</text>
+              </view>
+            </view>
+
+            <!-- 减塑等级 -->
+            <view class="plastic-level">
+              <text class="plastic-icon" style="color: {{item.plasticLevelColor}};">{{item.plasticLevelIcon}}</text>
+              <text class="plastic-name" style="color: {{item.plasticLevelColor}};">{{item.plasticLevelName}}</text>
+            </view>
+
+            <!-- 优缺点摘要 -->
+            <view class="product-pros-cons">
+              <view class="pros-row">
+                <text class="pros-label">✅</text>
+                <text class="pros-text">{{item.pros[0]}}</text>
+              </view>
+              <view class="cons-row" wx:if="{{item.cons.length > 0}}">
+                <text class="cons-label">⚠️</text>
+                <text class="cons-text">{{item.cons[0]}}</text>
+              </view>
+            </view>
+
+            <!-- 绿色替代提示 -->
+            <view class="green-alt-hint" wx:if="{{item.greenAlternative}}">
+              <text class="alt-icon">💡</text>
+              <text class="alt-text">有更环保的替代品</text>
+              <text class="alt-arrow">›</text>
+            </view>
+          </view>
+        </view>
+      </view>
+
+      <view class="empty-state" wx:if="{{productList.length === 0}}">
+        <text class="empty-emoji">📭</text>
+        <text class="empty-text">该品类暂无环保产品数据</text>
+      </view>
+    </view>
+
+    <!-- 免责声明弹窗 -->
+    <view class="disclaimer-modal-mask" wx:if="{{disclaimerVisible}}" bindtap="onCloseDisclaimer">
+      <view class="disclaimer-modal" catchtap="">
+        <view class="modal-header">
+          <text class="modal-title">⚠️ 免责声明</text>
+          <view class="modal-close" bindtap="onCloseDisclaimer">
+            <text>✕</text>
+          </view>
+        </view>
+        <view class="modal-body">
+          <text class="modal-text">1. 本指南中的品牌名称仅为示例，不构成购买推荐或商业背书。</text>
+          <text class="modal-text">2. 环保评分基于公开可查的认证信息和材料属性综合评定，仅供参考。</text>
+          <text class="modal-text">3. 产品实际环保表现可能因生产工艺、供应链、使用场景等因素有所不同。</text>
+          <text class="modal-text">4. 消费者应结合自身需求，参考产品实际认证标识做出购买决策。</text>
+          <text class="modal-text">5. 本指南数据来源于公开资料，如有遗漏或错误，欢迎反馈纠错。</text>
+        </view>
+        <view class="modal-footer">
+          <view class="modal-btn" bindtap="onCloseDisclaimer">我知道了</view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 搜索弹层 -->
+    <view class="search-modal-mask" wx:if="{{showSearch}}" bindtap="onHideSearch">
+      <view class="search-modal" catchtap="">
+        <view class="search-bar">
+          <text class="search-bar-icon">🔍</text>
+          <input
+            class="search-input"
+            placeholder="搜索产品、品牌或材质"
+            value="{{searchText}}"
+            bindinput="onSearchInput"
+            focus="{{showSearch}}"
+            confirm-type="search"
+          />
+          <view class="search-cancel" bindtap="onHideSearch">
+            <text>取消</text>
+          </view>
+        </view>
+        <view class="search-results" wx:if="{{searchResults.length > 0}}">
+          <view
+            class="search-result-item"
+            wx:for="{{searchResults}}"
+            wx:key="id"
+            data-id="{{item.id}}"
+            bindtap="onSearchProductTap"
+          >
+            <text class="result-emoji">{{item.emoji}}</text>
+            <view class="result-info">
+              <text class="result-name">{{item.name}}</text>
+              <text class="result-brand">{{item.brand}}</text>
+            </view>
+            <view class="result-score" style="color: {{item.ecoLevelColor}};">{{item.ecoLevel}}</view>
+          </view>
+        </view>
+        <view class="search-empty" wx:if="{{searchText.length > 0 && searchResults.length === 0}}">
+          <text class="search-empty-text">未找到相关产品</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="safe-area-bottom"></view>
+  </view>
+</view>
