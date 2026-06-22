@@ -24,6 +24,9 @@ Page({
   onShow() {
     console.log('[Community] 页面显示')
     this.loadAllData()
+    if (app.incrementCommunityVisitForMission) {
+      app.incrementCommunityVisitForMission()
+    }
   },
 
   loadAllData() {
@@ -104,6 +107,9 @@ Page({
     if (result.success) {
       if (result.points > 0) {
         showToast(`点赞成功 +${result.points}积分`)
+      }
+      if (result.liked && app.incrementCommunityLikeForMission) {
+        app.incrementCommunityLikeForMission()
       }
       this.loadPosts()
       this.refreshUserInfo()

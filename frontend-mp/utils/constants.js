@@ -225,6 +225,7 @@ const PROFILE_MENUS = [
     groupId: 'learn',
     groupName: '学习中心',
     items: [
+      { id: 'missionCenter', icon: 'mission', emoji: '🎯', title: '任务中心', desc: '每日/每周任务，赢取丰厚奖励', link: '/pages/mission-center/mission-center', badge: 'HOT' },
       { id: 'learning', icon: 'learning', emoji: '📚', title: '学习中心', desc: '结构化环保课程，学成拿证书', link: '/pages/learning-center/learning-center', badge: 'NEW' },
       { id: 'certificates', icon: 'certificate', emoji: '🎓', title: '我的证书', desc: '查看获得的结业证书', link: '/pages/certificates/certificates' },
       { id: 'quiz', icon: 'quiz', emoji: '❓', title: '知识问答', desc: '答题赢取积分奖励', link: '/pages/quiz/quiz' },
@@ -4803,6 +4804,205 @@ const getChildImageQuestions = (chapterId, ageGroup) => {
   return questions
 }
 
+const DAILY_MISSIONS = [
+  {
+    id: 'daily_signin',
+    name: '今日签到',
+    description: '完成每日签到',
+    childDescription: '每日打卡',
+    emoji: '📅',
+    childEmoji: '📅',
+    iconBgColor: 'linear-gradient(135deg, rgba(91, 189, 114, 0.18) 0%, rgba(91, 189, 114, 0.06) 100%)',
+    target: 1,
+    points: 5,
+    category: 'signin',
+    link: '/pages/signin/signin',
+    childLink: '/pages/signin/signin',
+    sortOrder: 1,
+    forChild: true
+  },
+  {
+    id: 'daily_classify',
+    name: '完成1次分类练习',
+    description: '进入分类页面，完成至少1次垃圾分类',
+    childDescription: '玩1次垃圾分类',
+    emoji: '🗑️',
+    childEmoji: '🗑️',
+    iconBgColor: 'linear-gradient(135deg, rgba(74, 144, 217, 0.18) 0%, rgba(74, 144, 217, 0.06) 100%)',
+    target: 1,
+    points: 10,
+    category: 'classify',
+    link: '/pages/classify/classify',
+    childLink: '/pages/classify/classify',
+    sortOrder: 2,
+    forChild: true
+  },
+  {
+    id: 'daily_share',
+    name: '分享1次',
+    description: '将小程序分享给好友或朋友圈',
+    childDescription: '分享给小伙伴',
+    emoji: '📤',
+    childEmoji: '🎈',
+    iconBgColor: 'linear-gradient(135deg, rgba(155, 89, 182, 0.18) 0%, rgba(155, 89, 182, 0.06) 100%)',
+    target: 1,
+    points: 10,
+    category: 'share',
+    link: '',
+    childLink: '',
+    sortOrder: 3,
+    forChild: true
+  },
+  {
+    id: 'daily_game',
+    name: '游戏玩1局',
+    description: '进入游戏大厅，完成至少1局小游戏',
+    childDescription: '玩1局小游戏',
+    emoji: '🎮',
+    childEmoji: '🎮',
+    iconBgColor: 'linear-gradient(135deg, rgba(230, 126, 34, 0.18) 0%, rgba(230, 126, 34, 0.06) 100%)',
+    target: 1,
+    points: 15,
+    category: 'game',
+    link: '/pages/game-hall/game-hall',
+    childLink: '/pages/game-hall/game-hall',
+    sortOrder: 4,
+    forChild: true
+  },
+  {
+    id: 'daily_community_like',
+    name: '社区点赞3次',
+    description: '在社区为3个帖子点赞',
+    childDescription: '',
+    emoji: '👍',
+    childEmoji: '',
+    iconBgColor: 'linear-gradient(135deg, rgba(231, 76, 60, 0.18) 0%, rgba(231, 76, 60, 0.06) 100%)',
+    target: 3,
+    points: 12,
+    category: 'community',
+    link: '/pages/community/community',
+    childLink: '',
+    sortOrder: 5,
+    forChild: false
+  }
+]
+
+const WEEKLY_MISSIONS = [
+  {
+    id: 'weekly_classify_10',
+    name: '本周完成10次分类',
+    description: '本周内累计完成10次垃圾分类',
+    childDescription: '本周分类10次',
+    emoji: '♻️',
+    childEmoji: '♻️',
+    iconBgColor: 'linear-gradient(135deg, rgba(39, 174, 96, 0.18) 0%, rgba(39, 174, 96, 0.06) 100%)',
+    target: 10,
+    points: 50,
+    category: 'classify',
+    link: '/pages/classify/classify',
+    childLink: '/pages/classify/classify',
+    sortOrder: 1,
+    forChild: true
+  },
+  {
+    id: 'weekly_quiz_20',
+    name: '本周答题正确20道',
+    description: '本周内累计答对20道知识题',
+    childDescription: '答对20道题目',
+    emoji: '📝',
+    childEmoji: '📝',
+    iconBgColor: 'linear-gradient(135deg, rgba(52, 152, 219, 0.18) 0%, rgba(52, 152, 219, 0.06) 100%)',
+    target: 20,
+    points: 60,
+    category: 'quiz',
+    link: '/pages/quiz/quiz',
+    childLink: '/pages/quiz/quiz',
+    sortOrder: 2,
+    forChild: true
+  },
+  {
+    id: 'weekly_game_5',
+    name: '本周玩5局游戏',
+    description: '本周内累计完成5局小游戏',
+    childDescription: '玩5局小游戏',
+    emoji: '🏆',
+    childEmoji: '🏆',
+    iconBgColor: 'linear-gradient(135deg, rgba(241, 196, 15, 0.18) 0%, rgba(241, 196, 15, 0.06) 100%)',
+    target: 5,
+    points: 40,
+    category: 'game',
+    link: '/pages/game-hall/game-hall',
+    childLink: '/pages/game-hall/game-hall',
+    sortOrder: 3,
+    forChild: true
+  },
+  {
+    id: 'weekly_community_5',
+    name: '本周浏览社区5次',
+    description: '本周内累计进入社区页面5次',
+    childDescription: '',
+    emoji: '💬',
+    childEmoji: '',
+    iconBgColor: 'linear-gradient(135deg, rgba(155, 89, 182, 0.18) 0%, rgba(155, 89, 182, 0.06) 100%)',
+    target: 5,
+    points: 30,
+    category: 'community',
+    link: '/pages/community/community',
+    childLink: '',
+    sortOrder: 4,
+    forChild: false
+  }
+]
+
+const DAILY_TREASURE_BOX = {
+  points: 30,
+  emoji: '🎁',
+  name: '每日宝箱'
+}
+
+const MISSION_ACHIEVEMENTS = [
+  {
+    id: 'mission_streak_7',
+    name: '坚持一周',
+    description: '连续7天完成全部每日任务',
+    emoji: '🌟',
+    bgColor: 'linear-gradient(135deg, #5BBD72 0%, #4CAF50 100%)',
+    color: '#fff',
+    target: 7,
+    rewardPoints: 100
+  },
+  {
+    id: 'mission_streak_30',
+    name: '月度之星',
+    description: '连续30天完成全部每日任务',
+    emoji: '🏆',
+    bgColor: 'linear-gradient(135deg, #F39C12 0%, #E67E22 100%)',
+    color: '#fff',
+    target: 30,
+    rewardPoints: 500
+  }
+]
+
+const MISSION_CONFIG = {
+  dailyResetHour: 0,
+  weekStartDay: 1,
+  storageKeys: {
+    dailyProgress: 'missionDailyProgress',
+    weeklyProgress: 'missionWeeklyProgress',
+    dailyClaimed: 'missionDailyClaimed',
+    weeklyClaimed: 'missionWeeklyClaimed',
+    treasureClaimed: 'missionTreasureClaimed',
+    fullCompleteStreak: 'missionFullCompleteStreak',
+    unlockedAchievements: 'missionUnlockedAchievements',
+    weeklyClassifyCount: 'missionWeeklyClassifyCount',
+    weeklyQuizCorrect: 'missionWeeklyQuizCorrect',
+    weeklyGamePlay: 'missionWeeklyGamePlay',
+    weeklyCommunityVisit: 'missionWeeklyCommunityVisit',
+    communityLikeCount: 'missionCommunityLikeCount',
+    shareCount: 'missionShareCount'
+  }
+}
+
 module.exports = {
   TRASH_TYPES,
   QUIZ_SCENES,
@@ -4922,5 +5122,10 @@ module.exports = {
   CHILD_BLOCKED_PAGES,
   CHILD_ALLOWED_PAGES_WHEN_LOCKED,
   CHILD_IMAGE_QUIZ_QUESTIONS,
-  getChildImageQuestions
+  getChildImageQuestions,
+  DAILY_MISSIONS,
+  WEEKLY_MISSIONS,
+  DAILY_TREASURE_BOX,
+  MISSION_ACHIEVEMENTS,
+  MISSION_CONFIG
 }

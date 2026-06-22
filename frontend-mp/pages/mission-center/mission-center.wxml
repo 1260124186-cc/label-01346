@@ -1,0 +1,243 @@
+<view class="mission-page {{experienceClasses}} {{childModeEnabled ? 'child-mode' : ''}}">
+  <view class="header-section">
+    <view class="header-bg"></view>
+    <view class="header-content">
+      <view class="streak-card">
+        <view class="streak-emoji">🔥</view>
+        <view class="streak-info">
+          <view class="streak-num">{{fullCompleteStreak}}</view>
+          <view class="streak-label">连续全部完成</view>
+        </view>
+      </view>
+      <view class="points-card">
+        <view class="points-emoji">💰</view>
+        <view class="points-info">
+          <view class="points-num">{{userPoints}}</view>
+          <view class="points-label">当前积分</view>
+        </view>
+      </view>
+    </view>
+
+    <view class="progress-section">
+      <view class="progress-header">
+        <view class="progress-title">今日任务进度</view>
+        <view class="progress-count">{{dailySummary.completed}}/{{dailySummary.total}}</view>
+      </view>
+      <view class="progress-bar-bg">
+        <view class="progress-bar-fill" style="width: {{dailySummary.progressPercent}}%;"></view>
+      </view>
+    </view>
+
+    <view class="treasure-section" bindtap="onTreasureTap">
+      <view class="treasure-card {{treasureAvailable ? 'available' : ''}} {{treasureClaimed ? 'claimed' : ''}}">
+        <view class="treasure-icon-wrapper">
+          <text class="treasure-icon">{{DAILY_TREASURE_BOX.emoji}}</text>
+          <view class="treasure-glow" wx:if="{{treasureAvailable}}"></view>
+        </view>
+        <view class="treasure-info">
+          <view class="treasure-name">{{DAILY_TREASURE_BOX.name}}</view>
+          <view class="treasure-desc">
+            <text wx:if="{{treasureClaimed}}">今日已领取</text>
+            <text wx:elif="{{dailySummary.allCompleted}}">点击领取 +{{DAILY_TREASURE_BOX.points}}积分</text>
+            <text wx:else>完成全部每日任务可领取</text>
+          </view>
+        </view>
+        <view class="treasure-points" wx:if="{{!treasureClaimed}}">
+          <text class="points-text">+{{DAILY_TREASURE_BOX.points}}</text>
+        </view>
+        <view class="treasure-arrow" wx:else>
+          <text class="check-icon">✓</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view class="tabs-section">
+    <view class="tabs-wrapper">
+      <view class="tab-item {{activeTab === 'daily' ? 'active' : ''}}" bindtap="onTabChange" data-tab="daily">
+        <text class="tab-text">每日任务</text>
+      </view>
+      <view class="tab-item {{activeTab === 'weekly' ? 'active' : ''}}" bindtap="onTabChange" data-tab="weekly">
+        <text class="tab-text">每周任务</text>
+        <text class="week-range" wx:if="{{activeTab === 'weekly'}}">{{weekRange}}</text>
+      </view>
+      <view class="tab-item {{activeTab === 'achievement' ? 'active' : ''}}" bindtap="onTabChange" data-tab="achievement">
+        <text class="tab-text">成就</text>
+      </view>
+    </view>
+    <view class="claim-all-btn" wx:if="{{activeTab !== 'achievement' && (dailySummary.canClaimCount > 0)}}" bindtap="onClaimAllTap">
+      <text class="claim-all-text">一键领取</text>
+      <view class="claim-all-badge" wx:if="{{dailySummary.canClaimCount > 0}}">
+        <text class="badge-num">{{dailySummary.canClaimCount}}</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="content-section">
+    <block wx:if="{{activeTab === 'daily'}}">
+      <view class="mission-list">
+        <view
+          wx:for="{{dailyMissions}}"
+          wx:key="id"
+          class="mission-card {{item.isCompleted ? 'completed' : ''}} {{item.isClaimed ? 'claimed' : ''}} {{childModeEnabled ? 'child-mission' : ''}}"
+          bindtap="onMissionTap"
+          data-item="{{item}}"
+        >
+          <view class="mission-icon" style="background: {{item.iconBgColor}};">
+            <text class="icon-emoji">{{item.displayEmoji}}</text>
+          </view>
+          <view class="mission-content">
+            <view class="mission-name">{{item.displayName}}</view>
+            <view class="mission-desc" wx:if="{{!childModeEnabled}}">{{item.description}}</view>
+            <view class="mission-progress-row">
+              <view class="mission-progress-bg">
+                <view class="mission-progress-fill" style="width: {{item.progressPercent}}%;"></view>
+              </view>
+              <view class="mission-progress-text">{{item.progress}}/{{item.target}}</view>
+            </view>
+          </view>
+          <view class="mission-action">
+            <view class="mission-points" wx:if="{{!item.isClaimed}}">
+              <text class="points-val">+{{item.points}}</text>
+            </view>
+            <view class="action-btn {{item.canClaim ? 'can-claim' : (item.isClaimed ? 'done' : 'go')}}">
+              <text wx:if="{{item.isClaimed}}" class="btn-text">已领取</text>
+              <text wx:elif="{{item.canClaim}}" class="btn-text">领取</text>
+              <text wx:elif="{{item.target > 1}}" class="btn-text">去完成</text>
+              <text wx:else class="btn-text">去完成</text>
+            </view>
+          </view>
+        </view>
+      </view>
+    </block>
+
+    <block wx:elif="{{activeTab === 'weekly'}}">
+      <view class="mission-list">
+        <view
+          wx:for="{{weeklyMissions}}"
+          wx:key="id"
+          class="mission-card {{item.isCompleted ? 'completed' : ''}} {{item.isClaimed ? 'claimed' : ''}} {{childModeEnabled ? 'child-mission' : ''}}"
+          bindtap="onMissionTap"
+          data-item="{{item}}"
+        >
+          <view class="mission-icon" style="background: {{item.iconBgColor}};">
+            <text class="icon-emoji">{{item.displayEmoji}}</text>
+          </view>
+          <view class="mission-content">
+            <view class="mission-name">{{item.displayName}}</view>
+            <view class="mission-desc" wx:if="{{!childModeEnabled}}">{{item.description}}</view>
+            <view class="mission-progress-row">
+              <view class="mission-progress-bg">
+                <view class="mission-progress-fill" style="width: {{item.progressPercent}}%;"></view>
+              </view>
+              <view class="mission-progress-text">{{item.progress}}/{{item.target}}</view>
+            </view>
+          </view>
+          <view class="mission-action">
+            <view class="mission-points" wx:if="{{!item.isClaimed}}">
+              <text class="points-val">+{{item.points}}</text>
+            </view>
+            <view class="action-btn {{item.canClaim ? 'can-claim' : (item.isClaimed ? 'done' : 'go')}}">
+              <text wx:if="{{item.isClaimed}}" class="btn-text">已领取</text>
+              <text wx:elif="{{item.canClaim}}" class="btn-text">领取</text>
+              <text wx:else class="btn-text">去完成</text>
+            </view>
+          </view>
+        </view>
+      </view>
+    </block>
+
+    <block wx:elif="{{activeTab === 'achievement'}}">
+      <view class="achievement-header-tip">
+        <text class="tip-emoji">🏆</text>
+        <text class="tip-text">连续完成每日任务解锁长期成就</text>
+      </view>
+      <view class="achievement-list">
+        <view
+          wx:for="{{missionAchievements}}"
+          wx:key="id"
+          class="achievement-card {{item.unlocked ? 'unlocked' : 'locked'}}"
+        >
+          <view class="achievement-icon-wrapper" style="background: {{item.unlocked ? item.bgColor : 'rgba(142, 142, 147, 0.1)'}};">
+            <text class="achievement-emoji">{{item.unlocked ? item.emoji : '🔒'}}</text>
+          </view>
+          <view class="achievement-content">
+            <view class="achievement-name">{{item.name}}</view>
+            <view class="achievement-desc">{{item.description}}</view>
+            <view class="achievement-progress-row">
+              <view class="achievement-progress-bg">
+                <view class="achievement-progress-fill" style="width: {{item.progress}}%; background: {{item.color}};"></view>
+              </view>
+              <view class="achievement-progress-text">{{item.current}}/{{item.target}}</view>
+            </view>
+            <view class="achievement-reward" wx:if="{{!item.unlocked}}">
+              <text class="reward-label">奖励：</text>
+              <text class="reward-points">+{{item.rewardPoints}}积分</text>
+            </view>
+            <view class="achievement-time" wx:if="{{item.unlockTime}}">
+              <text class="time-label">解锁时间：</text>
+              <text class="time-val">{{item.unlockTime}}</text>
+            </view>
+          </view>
+          <view class="achievement-status">
+            <text wx:if="{{item.unlocked}}" class="status-unlocked">已解锁</text>
+            <text wx:else class="status-locked">进行中</text>
+          </view>
+        </view>
+      </view>
+    </block>
+  </view>
+
+  <view class="safe-bottom"></view>
+
+  <view class="modal-overlay" wx:if="{{showTreasureModal}}" catchtap="onCloseTreasureModal">
+    <view class="modal-content treasure-modal" catchtap="">
+      <view class="treasure-modal-emoji">🎉</view>
+      <view class="modal-title">宝箱开启成功</view>
+      <view class="treasure-modal-streak">连续完成 {{treasureResult.fullCompleteStreak}} 天</view>
+      <view class="treasure-modal-points">
+        <view class="points-row">
+          <text class="points-label">{{DAILY_TREASURE_BOX.name}}</text>
+          <text class="points-value">+{{treasureResult.points}}</text>
+        </view>
+      </view>
+      <view class="modal-btn" bindtap="onCloseTreasureModal">太棒了</view>
+    </view>
+  </view>
+
+  <view class="modal-overlay" wx:if="{{showClaimModal}}" catchtap="onCloseClaimModal">
+    <view class="modal-content claim-modal" catchtap="">
+      <view class="claim-modal-emoji">✨</view>
+      <view class="modal-title">领取成功</view>
+      <view class="claim-mission-name">{{claimResult.mission.name}}</view>
+      <view class="claim-modal-points">
+        <text class="points-label">获得积分</text>
+        <text class="points-value">+{{claimResult.points}}</text>
+      </view>
+      <view class="modal-btn" bindtap="onCloseClaimModal">好的</view>
+    </view>
+  </view>
+
+  <view class="modal-overlay" wx:if="{{showAchievementModal}}" catchtap="onCloseAchievementModal">
+    <view class="modal-content achievement-modal" catchtap="">
+      <view class="achievement-modal-emoji">🏆</view>
+      <view class="modal-title">成就解锁</view>
+      <view class="achievement-unlock-list">
+        <view
+          wx:for="{{newAchievements}}"
+          wx:key="id"
+          class="unlock-item"
+        >
+          <view class="unlock-icon" style="background: {{item.bgColor}};">
+            <text class="unlock-emoji">{{item.emoji}}</text>
+          </view>
+          <view class="unlock-info">
+            <view class="unlock-name">{{item.name}}</view>
+            <view class="unlock-reward">+{{item.rewardPoints}}积分</view>
+          </view>
+        </view>
+      </view>
+      <view class="modal-btn achievement-btn" bindtap="onCloseAchievementModal">太棒了</view>
+    </view>
+  </view>
+</view>

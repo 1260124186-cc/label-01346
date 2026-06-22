@@ -76,7 +76,8 @@
     "pages/carbon-ledger/carbon-ledger",
     "pages/carbon-record/carbon-record",
     "pages/carbon-milestone/carbon-milestone",
-    "pages/carbon-certificate/carbon-certificate"
+    "pages/carbon-certificate/carbon-certificate",
+    "pages/mission-center/mission-center"
   ],
   "window": {
     "backgroundTextStyle": "dark",

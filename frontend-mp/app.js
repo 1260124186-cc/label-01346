@@ -13,7 +13,12 @@ const {
   getTrashTypesForCity,
   hasUpcomingStandard,
   getUpcomingStandards,
-  incrementWrongCount
+  incrementWrongCount,
+  DAILY_MISSIONS,
+  WEEKLY_MISSIONS,
+  DAILY_TREASURE_BOX,
+  MISSION_ACHIEVEMENTS,
+  MISSION_CONFIG
 } = require('./utils/constants')
 const {
   MESSAGE_TYPES,
@@ -111,6 +116,7 @@ App({
     this.initLargeFontMode()
     this.initCarbonRecords()
     this.initCarbonMilestones()
+    this.initMissionCenter()
 
     this.startExpireCheckInterval()
   },
@@ -1123,6 +1129,10 @@ App({
     this.globalData.classifyRecords.unshift(record)
     wx.setStorageSync('classifyRecords', this.globalData.classifyRecords)
     console.log('[App] 新增分类记录', record.trashName, 'memberId:', record.memberId, 'source:', record.source)
+    const isCurrentUser = !record.memberId || record.memberId === this.getUserId()
+    if (isCurrentUser && this.globalData.missionCenter) {
+      this.incrementClassifyForMission()
+    }
   },
 
   getClassifyRecords(memberId) {
@@ -1173,6 +1183,10 @@ App({
     this.globalData.quizRecords.unshift(record)
     wx.setStorageSync('quizRecords', this.globalData.quizRecords)
     console.log('[App] 新增答题记录', record.points + '分', 'memberId:', record.memberId)
+    const isCurrentUser = !record.memberId || record.memberId === this.getUserId()
+    if (isCurrentUser && this.globalData.missionCenter && record.correctCount > 0) {
+      this.incrementQuizCorrectForMission(record.correctCount)
+    }
   },
 
   getQuizRecords(memberId) {
@@ -2017,6 +2031,10 @@ App({
     this.globalData.shareRecords.pointsEarned = currentPoints + actualPoints
     this.globalData.shareRecords.date = today
     wx.setStorageSync('shareRecords', this.globalData.shareRecords)
+
+    if (this.globalData.missionCenter) {
+      this.incrementShareForMission()
+    }
 
     if (actualPoints > 0) {
       this.updateUserPoints(actualPoints, {
@@ -4084,6 +4102,9 @@ App({
         totalCount
       })
       this.recordAntiCheatGameScore(actualResult.points)
+    }
+    if (actualResult.success) {
+      this.incrementGamePlayForMission()
     }
     return { ...actualResult, flagged, flagReason, originalPoints: points }
   },
@@ -8533,5 +8554,495 @@ App({
     }
 
     return syncedCount
+  },
+
+  initMissionCenter() {
+    const today = formatDate(new Date(), 'YYYY-MM-DD')
+    const keys = MISSION_CONFIG.storageKeys
+    const { weekStartDay } = MISSION_CONFIG
+
+    const weeklyInfo = this.getWeekRange(weekStartDay)
+    const weekKey = weeklyInfo.weekKey
+
+    const storedDaily = wx.getStorageSync(keys.dailyProgress) || {}
+    const storedWeekly = wx.getStorageSync(keys.weeklyProgress) || {}
+    const storedDailyClaimed = wx.getStorageSync(keys.dailyClaimed) || {}
+    const storedWeeklyClaimed = wx.getStorageSync(keys.weeklyClaimed) || {}
+    const storedTreasureClaimed = wx.getStorageSync(keys.treasureClaimed) || {}
+    const storedStreak = wx.getStorageSync(keys.fullCompleteStreak) || { lastDate: '', streak: 0 }
+
+    const dailyProgress = storedDaily.date === today ? storedDaily.data : {}
+    const weeklyProgress = storedWeekly.weekKey === weekKey ? storedWeekly.data : {}
+    const dailyClaimed = storedDailyClaimed.date === today ? storedDailyClaimed.data : {}
+    const weeklyClaimed = storedWeeklyClaimed.weekKey === weekKey ? storedWeeklyClaimed.data : {}
+    const treasureClaimed = storedTreasureClaimed.date === today ? storedTreasureClaimed.data : false
+    const unlockedAchievements = wx.getStorageSync(keys.unlockedAchievements) || []
+
+    const weeklyClassifyCount = this.initWeeklyCounter(keys.weeklyClassifyCount, weekKey)
+    const weeklyQuizCorrect = this.initWeeklyCounter(keys.weeklyQuizCorrect, weekKey)
+    const weeklyGamePlay = this.initWeeklyCounter(keys.weeklyGamePlay, weekKey)
+    const weeklyCommunityVisit = this.initWeeklyCounter(keys.weeklyCommunityVisit, weekKey)
+    const communityLikeCount = this.initDailyCounter(keys.communityLikeCount, today)
+    const shareCount = this.initDailyCounter(keys.shareCount, today)
+
+    this.globalData.missionCenter = {
+      today,
+      weekKey,
+      dailyProgress,
+      weeklyProgress,
+      dailyClaimed,
+      weeklyClaimed,
+      treasureClaimed,
+      unlockedAchievements,
+      fullCompleteStreak: storedStreak.streak || 0,
+      lastFullCompleteDate: storedStreak.lastDate || '',
+      counters: {
+        weeklyClassifyCount,
+        weeklyQuizCorrect,
+        weeklyGamePlay,
+        weeklyCommunityVisit,
+        communityLikeCount,
+        shareCount
+      }
+    }
+
+    console.log('[App] 任务中心已初始化，连续完成天数:', this.globalData.missionCenter.fullCompleteStreak)
+  },
+
+  initWeeklyCounter(storageKey, currentWeekKey) {
+    const stored = wx.getStorageSync(storageKey)
+    if (stored && stored.weekKey === currentWeekKey) {
+      return stored.count || 0
+    }
+    wx.setStorageSync(storageKey, { weekKey: currentWeekKey, count: 0 })
+    return 0
+  },
+
+  initDailyCounter(storageKey, currentDate) {
+    const stored = wx.getStorageSync(storageKey)
+    if (stored && stored.date === currentDate) {
+      return stored.count || 0
+    }
+    wx.setStorageSync(storageKey, { date: currentDate, count: 0 })
+    return 0
+  },
+
+  getWeekRange(startDay = 1) {
+    const now = new Date()
+    const day = now.getDay()
+    const diff = day >= startDay ? day - startDay : day + 7 - startDay
+    const weekStart = new Date(now)
+    weekStart.setDate(now.getDate() - diff)
+    weekStart.setHours(0, 0, 0, 0)
+    const weekEnd = new Date(weekStart)
+    weekEnd.setDate(weekStart.getDate() + 6)
+    weekEnd.setHours(23, 59, 59, 999)
+    return {
+      weekKey: formatDate(weekStart, 'YYYY-MM-DD'),
+      weekStart: formatDate(weekStart, 'YYYY-MM-DD'),
+      weekEnd: formatDate(weekEnd, 'YYYY-MM-DD')
+    }
+  },
+
+  saveMissionDailyProgress() {
+    const mc = this.globalData.missionCenter
+    wx.setStorageSync(MISSION_CONFIG.storageKeys.dailyProgress, {
+      date: mc.today,
+      data: mc.dailyProgress
+    })
+    wx.setStorageSync(MISSION_CONFIG.storageKeys.dailyClaimed, {
+      date: mc.today,
+      data: mc.dailyClaimed
+    })
+    wx.setStorageSync(MISSION_CONFIG.storageKeys.treasureClaimed, {
+      date: mc.today,
+      data: mc.treasureClaimed
+    })
+  },
+
+  saveMissionWeeklyProgress() {
+    const mc = this.globalData.missionCenter
+    wx.setStorageSync(MISSION_CONFIG.storageKeys.weeklyProgress, {
+      weekKey: mc.weekKey,
+      data: mc.weeklyProgress
+    })
+    wx.setStorageSync(MISSION_CONFIG.storageKeys.weeklyClaimed, {
+      weekKey: mc.weekKey,
+      data: mc.weeklyClaimed
+    })
+  },
+
+  saveMissionCounters() {
+    const mc = this.globalData.missionCenter
+    const keys = MISSION_CONFIG.storageKeys
+    wx.setStorageSync(keys.weeklyClassifyCount, { weekKey: mc.weekKey, count: mc.counters.weeklyClassifyCount })
+    wx.setStorageSync(keys.weeklyQuizCorrect, { weekKey: mc.weekKey, count: mc.counters.weeklyQuizCorrect })
+    wx.setStorageSync(keys.weeklyGamePlay, { weekKey: mc.weekKey, count: mc.counters.weeklyGamePlay })
+    wx.setStorageSync(keys.weeklyCommunityVisit, { weekKey: mc.weekKey, count: mc.counters.weeklyCommunityVisit })
+    wx.setStorageSync(keys.communityLikeCount, { date: mc.today, count: mc.counters.communityLikeCount })
+    wx.setStorageSync(keys.shareCount, { date: mc.today, count: mc.counters.shareCount })
+  },
+
+  getMissionProgress(missionId, isWeekly = false) {
+    const mc = this.globalData.missionCenter
+    const progress = isWeekly ? mc.weeklyProgress : mc.dailyProgress
+    return progress[missionId] || 0
+  },
+
+  setMissionProgress(missionId, value, isWeekly = false) {
+    const mc = this.globalData.missionCenter
+    if (isWeekly) {
+      mc.weeklyProgress[missionId] = value
+      this.saveMissionWeeklyProgress()
+    } else {
+      mc.dailyProgress[missionId] = value
+      this.saveMissionDailyProgress()
+    }
+  },
+
+  isMissionClaimed(missionId, isWeekly = false) {
+    const mc = this.globalData.missionCenter
+    const claimed = isWeekly ? mc.weeklyClaimed : mc.dailyClaimed
+    return claimed[missionId] === true
+  },
+
+  markMissionClaimed(missionId, isWeekly = false) {
+    const mc = this.globalData.missionCenter
+    if (isWeekly) {
+      mc.weeklyClaimed[missionId] = true
+      this.saveMissionWeeklyProgress()
+    } else {
+      mc.dailyClaimed[missionId] = true
+      this.saveMissionDailyProgress()
+    }
+  },
+
+  getVisibleDailyMissions(isChildMode = false) {
+    const missions = DAILY_MISSIONS.filter(m => !isChildMode || m.forChild)
+    return missions.map(m => {
+      const progress = this.computeDailyMissionProgress(m)
+      this.setMissionProgress(m.id, progress, false)
+      const target = m.target
+      const isCompleted = progress >= target
+      const isClaimed = this.isMissionClaimed(m.id, false)
+      const canClaim = isCompleted && !isClaimed
+      return {
+        ...m,
+        displayName: isChildMode && m.childDescription ? m.childDescription : m.name,
+        displayEmoji: isChildMode && m.childEmoji ? m.childEmoji : m.emoji,
+        displayLink: isChildMode ? m.childLink : m.link,
+        progress: Math.min(progress, target),
+        target,
+        progressPercent: Math.min(100, Math.floor((progress / target) * 100)),
+        isCompleted,
+        isClaimed,
+        canClaim,
+        statusText: isClaimed ? '已领取' : (isCompleted ? '可领取' : '进行中')
+      }
+    }).sort((a, b) => a.sortOrder - b.sortOrder)
+  },
+
+  getVisibleWeeklyMissions(isChildMode = false) {
+    const missions = WEEKLY_MISSIONS.filter(m => !isChildMode || m.forChild)
+    return missions.map(m => {
+      const progress = this.computeWeeklyMissionProgress(m)
+      this.setMissionProgress(m.id, progress, true)
+      const target = m.target
+      const isCompleted = progress >= target
+      const isClaimed = this.isMissionClaimed(m.id, true)
+      const canClaim = isCompleted && !isClaimed
+      return {
+        ...m,
+        displayName: isChildMode && m.childDescription ? m.childDescription : m.name,
+        displayEmoji: isChildMode && m.childEmoji ? m.childEmoji : m.emoji,
+        displayLink: isChildMode ? m.childLink : m.link,
+        progress: Math.min(progress, target),
+        target,
+        progressPercent: Math.min(100, Math.floor((progress / target) * 100)),
+        isCompleted,
+        isClaimed,
+        canClaim,
+        statusText: isClaimed ? '已领取' : (isCompleted ? '可领取' : '进行中')
+      }
+    }).sort((a, b) => a.sortOrder - b.sortOrder)
+  },
+
+  computeDailyMissionProgress(mission) {
+    const mc = this.globalData.missionCenter
+    const today = mc.today
+
+    switch (mission.id) {
+      case 'daily_signin':
+        return this.isTodaySignedIn() ? 1 : 0
+      case 'daily_classify':
+        const classifyRecords = this.getClassifyRecords()
+        return classifyRecords.filter(r => {
+          const rDate = r.time ? r.time.split(' ')[0] : ''
+          return rDate === today
+        }).length > 0 ? 1 : 0
+      case 'daily_share':
+        return mc.counters.shareCount || 0
+      case 'daily_game':
+        return this.getTodayGamePlayCount() > 0 ? 1 : 0
+      case 'daily_community_like':
+        return mc.counters.communityLikeCount || 0
+      default:
+        return 0
+    }
+  },
+
+  computeWeeklyMissionProgress(mission) {
+    const mc = this.globalData.missionCenter
+    switch (mission.id) {
+      case 'weekly_classify_10':
+        return mc.counters.weeklyClassifyCount || 0
+      case 'weekly_quiz_20':
+        return mc.counters.weeklyQuizCorrect || 0
+      case 'weekly_game_5':
+        return mc.counters.weeklyGamePlay || 0
+      case 'weekly_community_5':
+        return mc.counters.weeklyCommunityVisit || 0
+      default:
+        return 0
+    }
+  },
+
+  getTodayGamePlayCount() {
+    const today = formatDate(new Date(), 'YYYY-MM-DD')
+    const dailyPlays = wx.getStorageSync('dailyGamePlays')
+    if (dailyPlays && dailyPlays.date === today) {
+      return dailyPlays.count || 0
+    }
+    return 0
+  },
+
+  claimMissionReward(missionId, isWeekly = false) {
+    const missions = isWeekly ? WEEKLY_MISSIONS : DAILY_MISSIONS
+    const mission = missions.find(m => m.id === missionId)
+    if (!mission) return { success: false, message: '任务不存在' }
+
+    const isClaimed = this.isMissionClaimed(missionId, isWeekly)
+    if (isClaimed) return { success: false, message: '奖励已领取', alreadyClaimed: true }
+
+    const progress = this.getMissionProgress(missionId, isWeekly)
+    if (progress < mission.target) return { success: false, message: '任务未完成' }
+
+    this.markMissionClaimed(missionId, isWeekly)
+    this.updateUserPoints(mission.points, {
+      category: 'mission',
+      title: isWeekly ? '周任务奖励' : '日任务奖励',
+      desc: mission.name,
+      emoji: mission.emoji
+    })
+
+    console.log('[App] 任务奖励已领取', mission.name, '+', mission.points, '积分')
+    return { success: true, points: mission.points, mission }
+  },
+
+  claimAllAvailableMissions() {
+    const isChild = this.isChildModeEnabled()
+    const dailyMissions = this.getVisibleDailyMissions(isChild)
+    const weeklyMissions = this.getVisibleWeeklyMissions(isChild)
+
+    let totalPoints = 0
+    let dailyCount = 0
+    let weeklyCount = 0
+
+    dailyMissions.forEach(m => {
+      if (m.canClaim) {
+        const result = this.claimMissionReward(m.id, false)
+        if (result.success) {
+          totalPoints += result.points
+          dailyCount++
+        }
+      }
+    })
+
+    weeklyMissions.forEach(m => {
+      if (m.canClaim) {
+        const result = this.claimMissionReward(m.id, true)
+        if (result.success) {
+          totalPoints += result.points
+          weeklyCount++
+        }
+      }
+    })
+
+    return { totalPoints, dailyCount, weeklyCount }
+  },
+
+  isDailyTreasureAvailable() {
+    const isChild = this.isChildModeEnabled()
+    const missions = this.getVisibleDailyMissions(isChild)
+    const allCompleted = missions.every(m => m.isCompleted)
+    const mc = this.globalData.missionCenter
+    return allCompleted && !mc.treasureClaimed
+  },
+
+  isDailyTreasureClaimed() {
+    return this.globalData.missionCenter.treasureClaimed === true
+  },
+
+  getDailyMissionsSummary() {
+    const isChild = this.isChildModeEnabled()
+    const missions = this.getVisibleDailyMissions(isChild)
+    const completed = missions.filter(m => m.isCompleted).length
+    const claimed = missions.filter(m => m.isClaimed).length
+    const canClaimCount = missions.filter(m => m.canClaim).length
+    const total = missions.length
+    const progressPercent = total > 0 ? Math.floor((completed / total) * 100) : 0
+    const allCompleted = completed === total
+    return { completed, claimed, canClaimCount, total, progressPercent, allCompleted }
+  },
+
+  claimDailyTreasure() {
+    if (!this.isDailyTreasureAvailable()) {
+      return { success: false, message: '宝箱不可领取', alreadyClaimed: this.isDailyTreasureClaimed() }
+    }
+
+    const mc = this.globalData.missionCenter
+    mc.treasureClaimed = true
+    this.saveMissionDailyProgress()
+
+    const today = mc.today
+    const yesterday = formatDate(new Date(Date.now() - 86400000), 'YYYY-MM-DD')
+
+    if (mc.lastFullCompleteDate === yesterday) {
+      mc.fullCompleteStreak = (mc.fullCompleteStreak || 0) + 1
+    } else if (mc.lastFullCompleteDate !== today) {
+      mc.fullCompleteStreak = 1
+    }
+    mc.lastFullCompleteDate = today
+
+    wx.setStorageSync(MISSION_CONFIG.storageKeys.fullCompleteStreak, {
+      lastDate: today,
+      streak: mc.fullCompleteStreak
+    })
+
+    this.updateUserPoints(DAILY_TREASURE_BOX.points, {
+      category: 'mission',
+      title: DAILY_TREASURE_BOX.name,
+      desc: '完成全部每日任务奖励',
+      emoji: DAILY_TREASURE_BOX.emoji
+    })
+
+    const unlockedList = this.checkAndUnlockMissionAchievements()
+
+    console.log('[App] 每日宝箱已领取，+', DAILY_TREASURE_BOX.points, '积分，连续完成天数:', mc.fullCompleteStreak)
+    return {
+      success: true,
+      points: DAILY_TREASURE_BOX.points,
+      fullCompleteStreak: mc.fullCompleteStreak,
+      newlyUnlockedAchievements: unlockedList
+    }
+  },
+
+  getFullCompleteStreak() {
+    return this.globalData.missionCenter.fullCompleteStreak || 0
+  },
+
+  getMissionAchievements() {
+    const streak = this.getFullCompleteStreak()
+    const unlockedIds = this.globalData.missionCenter.unlockedAchievements || []
+    const unlockRecords = wx.getStorageSync('missionAchievementUnlockRecords') || {}
+
+    return MISSION_ACHIEVEMENTS.map(a => {
+      const unlocked = unlockedIds.includes(a.id) || streak >= a.target
+      return {
+        ...a,
+        unlocked,
+        current: Math.min(streak, a.target),
+        target: a.target,
+        progress: Math.min(100, Math.floor((streak / a.target) * 100)),
+        unlockTime: unlockRecords[a.id] || ''
+      }
+    })
+  },
+
+  checkAndUnlockMissionAchievements() {
+    const streak = this.getFullCompleteStreak()
+    const unlockedIds = this.globalData.missionCenter.unlockedAchievements || []
+    const unlockRecords = wx.getStorageSync('missionAchievementUnlockRecords') || {}
+    const newlyUnlocked = []
+    const now = formatDate(new Date(), 'YYYY-MM-DD HH:mm')
+
+    MISSION_ACHIEVEMENTS.forEach(a => {
+      if (!unlockedIds.includes(a.id) && streak >= a.target) {
+        unlockedIds.push(a.id)
+        unlockRecords[a.id] = now
+        newlyUnlocked.push(a)
+
+        this.updateUserPoints(a.rewardPoints, {
+          category: 'achievement',
+          title: '成就解锁',
+          desc: a.name,
+          emoji: a.emoji
+        })
+
+        if (messageManager && MESSAGE_TYPES.ACHIEVEMENT) {
+          messageManager.addMessage({
+            type: MESSAGE_TYPES.ACHIEVEMENT,
+            title: '成就解锁',
+            content: `恭喜！你已解锁「${a.name}」成就：${a.description}`,
+            emoji: a.emoji,
+            data: { achievementId: a.id, link: '/pages/mission-center/mission-center' }
+          })
+        }
+
+        console.log('[App] 任务成就解锁:', a.name)
+      }
+    })
+
+    if (newlyUnlocked.length > 0) {
+      this.globalData.missionCenter.unlockedAchievements = unlockedIds
+      wx.setStorageSync(MISSION_CONFIG.storageKeys.unlockedAchievements, unlockedIds)
+      wx.setStorageSync('missionAchievementUnlockRecords', unlockRecords)
+    }
+
+    return newlyUnlocked
+  },
+
+  incrementMissionCounter(counterKey, amount = 1) {
+    const mc = this.globalData.missionCenter
+    if (mc.counters[counterKey] !== undefined) {
+      mc.counters[counterKey] += amount
+      this.saveMissionCounters()
+      console.log('[App] 任务计数器更新', counterKey, ':', mc.counters[counterKey])
+    }
+  },
+
+  incrementClassifyForMission() {
+    this.incrementMissionCounter('weeklyClassifyCount', 1)
+  },
+
+  incrementQuizCorrectForMission(amount = 1) {
+    this.incrementMissionCounter('weeklyQuizCorrect', amount)
+  },
+
+  incrementGamePlayForMission() {
+    this.incrementMissionCounter('weeklyGamePlay', 1)
+  },
+
+  incrementCommunityVisitForMission() {
+    this.incrementMissionCounter('weeklyCommunityVisit', 1)
+  },
+
+  incrementCommunityLikeForMission() {
+    this.incrementMissionCounter('communityLikeCount', 1)
+  },
+
+  incrementShareForMission() {
+    this.incrementMissionCounter('shareCount', 1)
+  },
+
+  getMissionCenterBadge() {
+    const isChild = this.isChildModeEnabled()
+    const daily = this.getVisibleDailyMissions(isChild)
+    const weekly = this.getVisibleWeeklyMissions(isChild)
+    let count = 0
+    daily.forEach(m => { if (m.canClaim) count++ })
+    weekly.forEach(m => { if (m.canClaim) count++ })
+    if (this.isDailyTreasureAvailable()) count++
+    return count > 0 ? count : null
   }
 })

@@ -499,6 +499,126 @@
   font-weight: 300;
 }
 
+/* ==================== 任务中心入口 ==================== */
+.mission-entry-section {
+  padding: 0 32rpx 24rpx;
+}
+
+.mission-entry-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #fff;
+  border-radius: 24rpx;
+  padding: 28rpx 28rpx;
+  box-shadow: 0 4rpx 20rpx rgba(91, 189, 114, 0.1);
+  transition: transform 0.2s ease;
+  border: 2rpx solid rgba(91, 189, 114, 0.1);
+}
+
+.mission-entry-card:active {
+  transform: scale(0.98);
+}
+
+.mission-entry-left {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+  flex: 1;
+}
+
+.mission-badge-wrapper {
+  width: 88rpx;
+  height: 88rpx;
+  border-radius: 22rpx;
+  background: linear-gradient(135deg, #FFF3E0 0%, #FFE0B2 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.mission-entry-emoji {
+  font-size: 44rpx;
+}
+
+.mission-entry-text {
+  flex: 1;
+}
+
+.mission-entry-title {
+  font-size: 30rpx;
+  font-weight: 700;
+  color: #2D3436;
+  margin-bottom: 6rpx;
+  display: block;
+}
+
+.mission-entry-subtitle {
+  font-size: 22rpx;
+  color: #636E72;
+  display: block;
+}
+
+.mission-entry-right {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+}
+
+.mission-progress-mini {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6rpx;
+}
+
+.mission-mini-count {
+  font-size: 22rpx;
+  font-weight: 700;
+  color: #5BBD72;
+}
+
+.mission-mini-bar {
+  width: 80rpx;
+  height: 8rpx;
+  background: #EDF2F0;
+  border-radius: 4rpx;
+  overflow: hidden;
+}
+
+.mission-mini-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #5BBD72 0%, #81C784 100%);
+  border-radius: 4rpx;
+}
+
+.mission-entry-badge {
+  position: relative;
+  min-width: 32rpx;
+  height: 32rpx;
+  background: #E74C3C;
+  border-radius: 16rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 8rpx;
+  z-index: 1;
+}
+
+.mission-entry-badge .badge-num {
+  font-size: 20rpx;
+  font-weight: 700;
+  color: #fff;
+  line-height: 1;
+}
+
+.mission-entry-arrow {
+  font-size: 36rpx;
+  color: #B2BEC3;
+  font-weight: 300;
+}
+
 /* ==================== 功能菜单（分组） ==================== */
 .menu-section {
   padding: 0 32rpx 24rpx;

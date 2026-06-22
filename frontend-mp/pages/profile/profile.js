@@ -62,7 +62,14 @@ Page({
     experienceClasses: '',
     totalCO2e: 0,
     carbonPoints: 0,
-    unlockedMilestoneCount: 0
+    unlockedMilestoneCount: 0,
+    missionSummary: {
+      completed: 0,
+      total: 0,
+      progressPercent: 0,
+      canClaimCount: 0,
+      allCompleted: false
+    }
   },
 
   /**
@@ -227,6 +234,9 @@ Page({
       const myGroups = app.getMyGroups ? app.getMyGroups() : []
       const currentGroup = app.getCurrentGroup ? app.getCurrentGroup() : null
       const hasReportPermission = app.hasPermission ? app.hasPermission('report') : false
+      const missionSummary = app.getDailyMissionsSummary ? app.getDailyMissionsSummary() : {
+        completed: 0, total: 0, progressPercent: 0, canClaimCount: 0, allCompleted: false
+      }
 
       this.setData({
         userInfo: {
@@ -242,7 +252,8 @@ Page({
         isSignedToday: app.isTodaySignedIn(),
         myGroups: Array.isArray(myGroups) ? myGroups : [],
         currentGroup: currentGroup || null,
-        hasReportPermission
+        hasReportPermission,
+        missionSummary
       })
 
       this.refreshMenuBadges()
@@ -290,6 +301,11 @@ Page({
   goToSignIn() {
     console.log('[Profile] 点击签到')
     navigateTo('/pages/signin/signin')
+  },
+
+  goToMissionCenter() {
+    console.log('[Profile] 点击任务中心')
+    navigateTo('/pages/mission-center/mission-center')
   },
 
   /**
