@@ -98,6 +98,28 @@
     </view>
   </view>
 
+  <!-- 碳账本入口 -->
+  <view class="carbon-entry-section" bindtap="goToCarbonLedger" aria-label="我的碳账本">
+    <view class="carbon-entry-card">
+      <view class="carbon-left">
+        <view class="carbon-badge">
+          <text class="carbon-emoji">🌱</text>
+        </view>
+        <view class="carbon-info">
+          <text class="carbon-title">我的碳账本</text>
+          <text class="carbon-desc">累计减排 {{totalCO2e}}kg · 已解锁 {{unlockedMilestoneCount}} 项荣誉</text>
+        </view>
+      </view>
+      <view class="carbon-stats">
+        <view class="carbon-stat">
+          <text class="carbon-stat-value">{{carbonPoints}}</text>
+          <text class="carbon-stat-label">碳积分</text>
+        </view>
+        <text class="carbon-arrow">›</text>
+      </view>
+    </view>
+  </view>
+
   <!-- 签到入口 -->
   <view class="signin-entry-section" bindtap="goToSignIn" aria-label="每日签到">
     <view class="signin-entry-card {{isSignedToday ? 'done' : ''}}">

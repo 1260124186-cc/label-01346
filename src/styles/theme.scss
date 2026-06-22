@@ -2,19 +2,21 @@
 // 主题配色变量（第二阶段模型可修改此文件）
 // ============================================
 
-// 品牌主题色：根据产品品牌定位修改
-$color-primary: #165dff;
-$color-primary-light: #4080ff;
-$color-primary-dark: #0e42d2;
+// 品牌主题色：环保绿
+$color-primary: #22c55e;
+$color-primary-light: #86efac;
+$color-primary-dark: #16a34a;
+$color-primary-bg: #f0fdf4;
 
 // 功能色
 $color-success: #00b42a;
-$color-warning: #ff7d00;
+$color-warning: #f59e0b;
 $color-error: #f53f3f;
-$color-info: #165dff;
+$color-info: #3b82f6;
+$color-highlight: #f59e0b;
 
 // 背景色
-$color-bg-page: #f5f6f7;
+$color-bg-page: #f0fdf4;
 $color-bg-card: #ffffff;
 $color-bg-hover: #f2f3f5;
 
@@ -28,3 +30,8 @@ $color-text-white: #ffffff;
 // 边框色
 $color-border: #e5e6eb;
 $color-divider: #f2f3f5;
+
+// 碳账本专用色
+$color-carbon-recycle: #22c55e;
+$color-carbon-save: #3b82f6;
+$color-carbon-reduce: #f59e0b;

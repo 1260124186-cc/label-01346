@@ -1,0 +1,69 @@
+@use '@/styles/variables.scss' as *;
+
+.container {
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  box-shadow: $shadow-card;
+}
+
+.title {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  margin-bottom: $spacing-lg;
+  display: block;
+}
+
+.bars {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+}
+
+.barItem {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-xs;
+}
+
+.barLabel {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.labelText {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  font-weight: $font-weight-medium;
+
+  &.isMe {
+    color: $color-primary;
+    font-weight: $font-weight-semibold;
+  }
+}
+
+.valueText {
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+  font-weight: $font-weight-semibold;
+}
+
+.barTrack {
+  height: 16rpx;
+  background: $color-divider;
+  border-radius: $radius-round;
+  overflow: hidden;
+}
+
+.barFill {
+  height: 100%;
+  background: linear-gradient(90deg, $color-primary-light 0%, $color-primary 100%);
+  border-radius: $radius-round;
+  transition: width $transition-base;
+
+  &.isMe {
+    background: linear-gradient(90deg, $color-primary 0%, $color-primary-dark 100%);
+  }
+}

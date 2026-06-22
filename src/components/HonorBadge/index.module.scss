@@ -1,0 +1,162 @@
+@use '@/styles/variables.scss' as *;
+
+.badge {
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  border: 2rpx solid transparent;
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+  transition: all $transition-base;
+
+  &.small {
+    padding: $spacing-md;
+    gap: $spacing-sm;
+
+    .icon {
+      font-size: $font-size-xxl;
+    }
+
+    .name {
+      font-size: $font-size-sm;
+    }
+
+    .description {
+      font-size: $font-size-xs;
+    }
+  }
+
+  &.medium {
+    .icon {
+      font-size: 56rpx;
+    }
+  }
+
+  &.large {
+    padding: $spacing-xl;
+    gap: $spacing-lg;
+
+    .icon {
+      font-size: 72rpx;
+    }
+
+    .name {
+      font-size: $font-size-xl;
+    }
+
+    .description {
+      font-size: $font-size-md;
+    }
+  }
+
+  &.achieved {
+    box-shadow: $shadow-card;
+  }
+
+  &.locked {
+    opacity: 0.6;
+
+    .iconWrapper {
+      filter: grayscale(1);
+    }
+
+    .icon {
+      opacity: 0.5;
+    }
+  }
+
+  &:active {
+    transform: scale(0.98);
+  }
+}
+
+.iconWrapper {
+  position: relative;
+  width: 96rpx;
+  height: 96rpx;
+  border-radius: $radius-lg;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: $color-divider;
+  flex-shrink: 0;
+
+  .small & {
+    width: 72rpx;
+    height: 72rpx;
+  }
+
+  .large & {
+    width: 120rpx;
+    height: 120rpx;
+  }
+}
+
+.icon {
+  font-size: 48rpx;
+}
+
+.levelBadge {
+  position: absolute;
+  top: -8rpx;
+  right: -8rpx;
+  padding: 4rpx 12rpx;
+  border-radius: $radius-round;
+}
+
+.levelText {
+  font-size: 18rpx;
+  color: $color-text-white;
+  font-weight: $font-weight-bold;
+}
+
+.info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-xs;
+}
+
+.name {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  @include text-ellipsis;
+}
+
+.description {
+  font-size: $font-size-sm;
+  color: $color-text-tertiary;
+  @include text-ellipsis-multi(1);
+}
+
+.progressWrapper {
+  width: 100%;
+  margin-top: $spacing-sm;
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+}
+
+.progressBar {
+  flex: 1;
+  height: 8rpx;
+  background: $color-divider;
+  border-radius: $radius-round;
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  background: linear-gradient(90deg, $color-primary-light, $color-primary);
+  border-radius: $radius-round;
+  transition: width $transition-base;
+}
+
+.progressText {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+  white-space: nowrap;
+}

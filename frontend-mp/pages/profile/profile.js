@@ -59,7 +59,10 @@ Page({
     // 百科贡献者
     contributorTier: null,
     correctionStats: null,
-    experienceClasses: ''
+    experienceClasses: '',
+    totalCO2e: 0,
+    carbonPoints: 0,
+    unlockedMilestoneCount: 0
   },
 
   /**
@@ -71,6 +74,7 @@ Page({
     this.loadChildModeAndGroupData()
     this.loadAchievements()
     this.loadContributorData()
+    this.loadCarbonData()
     this.setData({ experienceClasses: app.getExperienceClasses() })
   },
 
@@ -83,6 +87,7 @@ Page({
     this.loadChildModeAndGroupData()
     this.loadAchievements()
     this.loadContributorData()
+    this.loadCarbonData()
     this.setData({ experienceClasses: app.getExperienceClasses() })
   },
 
@@ -185,8 +190,22 @@ Page({
     }
   },
 
+  loadCarbonData() {
+    if (app.getTotalCarbon) {
+      const totalCO2e = app.getTotalCarbon()
+      const carbonPoints = app.getCarbonPoints ? app.getCarbonPoints() : 0
+      const milestones = app.getCarbonMilestones ? app.getCarbonMilestones() : []
+      const unlockedMilestoneCount = milestones.filter(m => m.unlocked).length
+      this.setData({ totalCO2e, carbonPoints, unlockedMilestoneCount })
+    }
+  },
+
   goToCorrectionLeaderboard() {
     navigateTo('/pages/correction-leaderboard/correction-leaderboard')
+  },
+
+  goToCarbonLedger() {
+    navigateTo('/pages/carbon-ledger/carbon-ledger')
   },
 
   /**

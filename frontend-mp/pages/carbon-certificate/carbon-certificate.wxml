@@ -1,0 +1,155 @@
+<view class="cert-page {{experienceClasses}}">
+  <view class="period-tabs">
+    <block wx:for="{{periodOptions}}" wx:key="id">
+      <view 
+        class="period-item {{period === item.id ? 'active' : ''}}"
+        data-id="{{item.id}}"
+        bindtap="changePeriod"
+      >
+        {{item.name}}
+      </view>
+    </block>
+  </view>
+
+  <view class="cert-card" id="certCard">
+    <view class="cert-header">
+      <text class="cert-badge">🌿</text>
+      <text class="cert-title">碳减排证明</text>
+      <text class="cert-subtitle">Carbon Reduction Certificate</text>
+    </view>
+
+    <view class="cert-divider"></view>
+
+    <view class="cert-info-row">
+      <text class="cert-label">证书编号</text>
+      <text class="cert-value">{{certNumber}}</text>
+    </view>
+    <view class="cert-info-row">
+      <text class="cert-label">开具日期</text>
+      <text class="cert-value">{{certDate}}</text>
+    </view>
+    <view class="cert-info-row">
+      <text class="cert-label">持证人</text>
+      <text class="cert-value">{{userName}}</text>
+    </view>
+
+    <view class="cert-section">
+      <view class="section-line"></view>
+      <text class="section-text">减 排 成 果</text>
+      <view class="section-line"></view>
+    </view>
+
+    <view class="stats-grid">
+      <view class="stat-block">
+        <text class="stat-num">{{totalCO2e}}</text>
+        <text class="stat-unit">kg CO₂e</text>
+        <text class="stat-name">累计减排量</text>
+      </view>
+      <view class="stat-block">
+        <text class="stat-num">{{recordCount}}</text>
+        <text class="stat-unit">次</text>
+        <text class="stat-name">减排记录</text>
+      </view>
+      <view class="stat-block">
+        <text class="stat-num">{{carbonPoints}}</text>
+        <text class="stat-unit">分</text>
+        <text class="stat-name">碳积分</text>
+      </view>
+    </view>
+
+    <view class="cert-section">
+      <view class="section-line"></view>
+      <text class="section-text">直 观 对 比</text>
+      <view class="section-line"></view>
+    </view>
+
+    <view class="analogy-list">
+      <view class="analogy-item">
+        <text class="analogy-icon">🚗</text>
+        <view class="analogy-content">
+          <text class="analogy-value">少开车 {{analogies.carKm}} 公里</text>
+          <text class="analogy-desc">按私家车百公里 8L 油耗测算</text>
+        </view>
+      </view>
+      <view class="analogy-item">
+        <text class="analogy-icon">🌳</text>
+        <view class="analogy-content">
+          <text class="analogy-value">相当于种 {{analogies.trees}} 棵树</text>
+          <text class="analogy-desc">按一棵树年吸收 18kg CO₂ 测算</text>
+        </view>
+      </view>
+      <view class="analogy-item">
+        <text class="analogy-icon">💡</text>
+        <view class="analogy-content">
+          <text class="analogy-value">节省 {{analogies.electricityKwh}} 度电</text>
+          <text class="analogy-desc">按火电排放系数 0.785kg/kWh 测算</text>
+        </view>
+      </view>
+      <view class="analogy-item" wx:if="{{analogies.plasticBottles > 0}}">
+        <text class="analogy-icon">🧴</text>
+        <view class="analogy-content">
+          <text class="analogy-value">少用 {{analogies.plasticBottles}} 个塑料瓶</text>
+          <text class="analogy-desc">按 500ml PET 瓶 0.05kg/个 测算</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="cert-section" wx:if="{{categorySummary.length > 0}}">
+      <view class="section-line"></view>
+      <text class="section-text">分 类 统 计</text>
+      <view class="section-line"></view>
+    </view>
+
+    <view class="category-list">
+      <block wx:for="{{categorySummary}}" wx:key="category">
+        <view class="category-item">
+          <view class="category-left">
+            <text class="category-icon">{{item.icon}}</text>
+            <view class="category-info">
+              <text class="category-name">{{item.name}}</text>
+              <text class="category-count">{{item.count}} 次</text>
+            </view>
+          </view>
+          <text class="category-co2e">{{item.co2e}} kg</text>
+        </view>
+      </block>
+    </view>
+
+    <view class="cert-section" wx:if="{{unlockedMilestones.length > 0}}">
+      <view class="section-line"></view>
+      <text class="section-text">已 达 成 里 程 碑</text>
+      <view class="section-line"></view>
+    </view>
+
+    <view class="milestone-tags">
+      <block wx:for="{{unlockedMilestones}}" wx:key="id">
+        <view class="milestone-tag" style="border-color: {{item.color}}; color: {{item.color}};">
+          <text>{{item.emoji}} {{item.name}}</text>
+        </view>
+      </block>
+    </view>
+
+    <view class="cert-footer">
+      <text class="footer-note">
+        本证明由「垃圾分类助手」根据用户减排记录自动生成，计算依据参考国家发改委《碳排放权交易管理办法》及相关国标系数。数据仅供个人环保记录参考。
+      </text>
+      <view class="footer-seal">
+        <text class="seal-text">♻ 垃圾分类助手 认证</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="action-buttons">
+    <button class="action-btn secondary" bindtap="exportCertificate">
+      <text>📋 复制证明文本</text>
+    </button>
+    <button class="action-btn primary" bindtap="exportJSON">
+      <text>📄 导出 JSON 数据</text>
+    </button>
+    <button class="action-btn share" open-type="share">
+      <text>📤 分享证明</text>
+    </button>
+  </view>
+
+  <view class="safe-area-bottom"></view>
+</view>

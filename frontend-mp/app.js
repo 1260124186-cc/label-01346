@@ -30,6 +30,11 @@ const {
   correctionManager,
   CONTRIBUTOR_TIERS
 } = require('./utils/correction')
+const {
+  calculateCO2e,
+  CARBON_MILESTONES,
+  getUnlockedMilestones
+} = require('./utils/carbon')
 
 App({
   globalData: {
@@ -48,7 +53,9 @@ App({
     recycleDispatchTimers: {},
     darkMode: false,
     darkModeSource: 'system',
-    largeFont: false
+    largeFont: false,
+    carbonRecords: null,
+    unlockedCarbonMilestones: null
   },
 
   /**
@@ -102,6 +109,8 @@ App({
     this.checkPushStrategies()
     this.initThemeMode()
     this.initLargeFontMode()
+    this.initCarbonRecords()
+    this.initCarbonMilestones()
 
     this.startExpireCheckInterval()
   },
@@ -8236,5 +8245,293 @@ App({
 
   getPendingCorrectionCount() {
     return correctionManager.getPendingCorrections().length
+  },
+
+  initCarbonRecords() {
+    const stored = wx.getStorageSync('carbonRecords')
+    if (stored && stored.length > 0) {
+      this.globalData.carbonRecords = stored
+    } else {
+      const now = new Date()
+      const today = formatDate(now, 'YYYY-MM-DD')
+      const yesterday = formatDate(new Date(now.getTime() - 86400000), 'YYYY-MM-DD')
+      const twoDaysAgo = formatDate(new Date(now.getTime() - 86400000 * 2), 'YYYY-MM-DD')
+      const threeDaysAgo = formatDate(new Date(now.getTime() - 86400000 * 3), 'YYYY-MM-DD')
+      const weekAgo = formatDate(new Date(now.getTime() - 86400000 * 6), 'YYYY-MM-DD')
+
+      this.globalData.carbonRecords = [
+        {
+          id: generateId(),
+          activityId: 'classifyCorrect',
+          activityName: '正确分类',
+          quantity: 3,
+          co2e: calculateCO2e('classifyCorrect', 3),
+          unit: '次',
+          emoji: '✅',
+          source: 'auto',
+          time: today + ' 14:30'
+        },
+        {
+          id: generateId(),
+          activityId: 'recyclablePaper',
+          activityName: '回收纸张',
+          quantity: 1.5,
+          co2e: calculateCO2e('recyclablePaper', 1.5),
+          unit: 'kg',
+          emoji: '📰',
+          source: 'manual',
+          time: today + ' 10:15'
+        },
+        {
+          id: generateId(),
+          activityId: 'useOwnBag',
+          activityName: '自带购物袋',
+          quantity: 2,
+          co2e: calculateCO2e('useOwnBag', 2),
+          unit: '次',
+          emoji: '🛍️',
+          source: 'manual',
+          time: yesterday + ' 18:45'
+        },
+        {
+          id: generateId(),
+          activityId: 'recyclablePlastic',
+          activityName: '回收塑料',
+          quantity: 0.8,
+          co2e: calculateCO2e('recyclablePlastic', 0.8),
+          unit: 'kg',
+          emoji: '🧴',
+          source: 'manual',
+          time: yesterday + ' 15:20'
+        },
+        {
+          id: generateId(),
+          activityId: 'reduceSingleUseBottle',
+          activityName: '减少塑料瓶',
+          quantity: 5,
+          co2e: calculateCO2e('reduceSingleUseBottle', 5),
+          unit: '个',
+          emoji: '🧴',
+          source: 'manual',
+          time: twoDaysAgo + ' 09:00'
+        },
+        {
+          id: generateId(),
+          activityId: 'useOwnBottle',
+          activityName: '自带水杯',
+          quantity: 4,
+          co2e: calculateCO2e('useOwnBottle', 4),
+          unit: '次',
+          emoji: '🍶',
+          source: 'manual',
+          time: threeDaysAgo + ' 12:30'
+        },
+        {
+          id: generateId(),
+          activityId: 'recyclableMetal',
+          activityName: '回收金属',
+          quantity: 0.5,
+          co2e: calculateCO2e('recyclableMetal', 0.5),
+          unit: 'kg',
+          emoji: '🥫',
+          source: 'order',
+          orderId: 'recycle_demo_001',
+          time: weekAgo + ' 16:00'
+        }
+      ]
+      wx.setStorageSync('carbonRecords', this.globalData.carbonRecords)
+    }
+    console.log('[App] 碳减排记录已加载', this.globalData.carbonRecords.length, '条')
+  },
+
+  saveCarbonRecords() {
+    wx.setStorageSync('carbonRecords', this.globalData.carbonRecords || [])
+  },
+
+  addCarbonRecord(record) {
+    const now = new Date()
+    const timeStr = formatDate(now, 'YYYY-MM-DD HH:mm')
+    const { CARBON_FACTORS } = require('./utils/carbon')
+    const factor = CARBON_FACTORS[record.activityId] || {}
+
+    const newRecord = {
+      id: generateId(),
+      activityId: record.activityId,
+      activityName: factor.name || record.activityName || '环保行动',
+      quantity: Number(record.quantity) || 0,
+      co2e: record.co2e || calculateCO2e(record.activityId, Number(record.quantity) || 0),
+      unit: factor.unit || record.unit || '次',
+      emoji: factor.emoji || record.emoji || '🌱',
+      source: record.source || 'manual',
+      orderId: record.orderId || '',
+      note: record.note || '',
+      memberId: record.memberId || this.getUserId(),
+      time: timeStr
+    }
+
+    if (!this.globalData.carbonRecords) {
+      this.globalData.carbonRecords = []
+    }
+    this.globalData.carbonRecords.unshift(newRecord)
+    this.saveCarbonRecords()
+
+    this.checkCarbonMilestones()
+    this.syncCarbonToClassify(record)
+
+    console.log('[App] 新增碳减排记录', newRecord.activityName, newRecord.co2e + 'kg CO₂e')
+    return newRecord
+  },
+
+  syncCarbonToClassify(record) {
+    if (record.activityId === 'classifyCorrect' && record.source === 'manual') {
+      const count = Math.floor(record.quantity) || 1
+      for (let i = 0; i < count; i++) {
+        this.addClassifyRecord({
+          trashName: '手动记录',
+          typeId: 1,
+          typeName: '可回收垃圾',
+          emoji: '🌱',
+          bgColor: 'rgba(74, 144, 217, 0.1)',
+          points: 5,
+          time: record.time
+        })
+        this.updateUserPoints(5, {
+          category: 'classify',
+          title: '垃圾分类',
+          desc: '碳账本手动记录',
+          emoji: '♻️'
+        })
+      }
+    }
+  },
+
+  getCarbonRecords(memberId) {
+    const all = this.globalData.carbonRecords || []
+    if (!memberId) return all
+    const targetMemberId = memberId
+    const isCurrentUser = targetMemberId === this.getUserId()
+    if (isCurrentUser) {
+      return all.filter(r => r.memberId === targetMemberId || r.memberId === undefined)
+    }
+    return all.filter(r => r.memberId === targetMemberId)
+  },
+
+  deleteCarbonRecord(recordId) {
+    if (!this.globalData.carbonRecords) return false
+    const index = this.globalData.carbonRecords.findIndex(r => r.id === recordId)
+    if (index === -1) return false
+    this.globalData.carbonRecords.splice(index, 1)
+    this.saveCarbonRecords()
+    console.log('[App] 删除碳减排记录', recordId)
+    return true
+  },
+
+  getTotalCarbon(memberId) {
+    const records = this.getCarbonRecords(memberId)
+    const total = records.reduce((sum, r) => sum + (r.co2e || 0), 0)
+    return Number(total.toFixed(2))
+  },
+
+  getCarbonPoints(memberId) {
+    const totalCO2e = this.getTotalCarbon(memberId)
+    const { CARBON_POINTS_RULE } = require('./utils/carbon')
+    return Math.floor(totalCO2e / CARBON_POINTS_RULE.co2ePerPoint)
+  },
+
+  initCarbonMilestones() {
+    const unlocked = wx.getStorageSync('unlockedCarbonMilestones')
+    this.globalData.unlockedCarbonMilestones = unlocked || []
+    console.log('[App] 碳里程碑已加载，已解锁:', this.globalData.unlockedCarbonMilestones.length)
+  },
+
+  checkCarbonMilestones() {
+    const totalCO2e = this.getTotalCarbon()
+    const unlockedIds = this.globalData.unlockedCarbonMilestones || []
+    const newlyUnlocked = []
+
+    CARBON_MILESTONES.forEach(milestone => {
+      if (!unlockedIds.includes(milestone.id) && totalCO2e >= milestone.targetCO2e) {
+        this.globalData.unlockedCarbonMilestones.push(milestone.id)
+        newlyUnlocked.push(milestone)
+        console.log('[App] 解锁碳里程碑:', milestone.name)
+      }
+    })
+
+    if (newlyUnlocked.length > 0) {
+      wx.setStorageSync('unlockedCarbonMilestones', this.globalData.unlockedCarbonMilestones)
+
+      const unlockRecords = wx.getStorageSync('carbonMilestoneUnlockRecords') || {}
+      const now = formatDate(new Date(), 'YYYY-MM-DD HH:mm')
+      newlyUnlocked.forEach(m => {
+        unlockRecords[m.id] = now
+      })
+      wx.setStorageSync('carbonMilestoneUnlockRecords', unlockRecords)
+
+      newlyUnlocked.forEach(milestone => {
+        if (messageManager && MESSAGE_TYPES.ACHIEVEMENT) {
+          messageManager.addMessage({
+            type: MESSAGE_TYPES.ACHIEVEMENT,
+            title: '碳里程碑解锁',
+            content: `恭喜！你已解锁「${milestone.name}」碳减排荣誉：${milestone.desc}`,
+            emoji: milestone.emoji,
+            data: {
+              milestoneId: milestone.id,
+              link: '/pages/carbon-milestone/carbon-milestone?unlock=' + milestone.id
+            }
+          })
+        }
+      })
+    }
+
+    return newlyUnlocked
+  },
+
+  getCarbonMilestones() {
+    const totalCO2e = this.getTotalCarbon()
+    const unlockedIds = this.globalData.unlockedCarbonMilestones || []
+    const unlockRecords = wx.getStorageSync('carbonMilestoneUnlockRecords') || {}
+
+    return CARBON_MILESTONES.map(m => ({
+      ...m,
+      unlocked: unlockedIds.includes(m.id),
+      unlockTime: unlockRecords[m.id] || '',
+      current: Math.min(totalCO2e, m.targetCO2e),
+      target: m.targetCO2e,
+      progress: Math.min(100, Number(((totalCO2e / m.targetCO2e) * 100).toFixed(1)))
+    }))
+  },
+
+  getCarbonMilestoneUnlockTime(milestoneId) {
+    const records = wx.getStorageSync('carbonMilestoneUnlockRecords') || {}
+    return records[milestoneId] || ''
+  },
+
+  syncRecycleOrdersToCarbon() {
+    const orders = this.getRecycleOrders ? this.getRecycleOrders() : []
+    const syncedIds = wx.getStorageSync('carbonSyncedOrders') || []
+    let syncedCount = 0
+
+    orders.forEach(order => {
+      if (order.status === 'completed' && !syncedIds.includes(order.id)) {
+        const weight = order.totalWeight || 0
+        if (weight > 0) {
+          this.addCarbonRecord({
+            activityId: 'recycleOrderWeight',
+            quantity: weight,
+            source: 'order',
+            orderId: order.id
+          })
+          syncedIds.push(order.id)
+          syncedCount++
+        }
+      }
+    })
+
+    if (syncedCount > 0) {
+      wx.setStorageSync('carbonSyncedOrders', syncedIds)
+      console.log('[App] 已同步', syncedCount, '条回收订单到碳账本')
+    }
+
+    return syncedCount
   }
 })

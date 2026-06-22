@@ -1,0 +1,111 @@
+<view class="milestone-page {{experienceClasses}}">
+  <view class="header-card">
+    <view class="header-bg"></view>
+    <view class="header-content">
+      <view class="honor-badge">
+        <text class="badge-icon">🏅</text>
+      </view>
+      <view class="current-title">当前荣誉：{{currentTitle}}</view>
+      <view class="stats-row">
+        <view class="stat-item">
+          <text class="stat-value">{{totalCO2e}}</text>
+          <text class="stat-label">累计减排(kg)</text>
+        </view>
+        <view class="stat-divider"></view>
+        <view class="stat-item">
+          <text class="stat-value">{{unlockedCount}}</text>
+          <text class="stat-label">已解锁里程碑</text>
+        </view>
+        <view class="stat-divider"></view>
+        <view class="stat-item">
+          <text class="stat-value">{{carbonPoints}}</text>
+          <text class="stat-label">碳积分</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view class="next-card" wx:if="{{nextMilestone}}">
+    <view class="next-label">距离下一里程碑</view>
+    <view class="next-info">
+      <text class="next-emoji">{{nextMilestone.emoji}}</text>
+      <view class="next-detail">
+        <text class="next-name">{{nextMilestone.name}}</text>
+        <view class="next-progress-bar">
+          <view class="next-progress-fill" style="width: {{nextMilestone.progress}}%; background: {{nextMilestone.color}};"></view>
+        </view>
+        <text class="next-desc">还需减排 {{nextMilestone.remaining}}kg CO₂e</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="milestones-section">
+    <view class="section-title">全部里程碑</view>
+    <view class="milestones-timeline">
+      <block wx:for="{{milestones}}" wx:key="id">
+        <view 
+          class="milestone-item {{item.unlocked ? 'unlocked' : 'locked'}}"
+          bindtap="onMilestoneTap"
+          data-item="{{item}}"
+        >
+          <view class="timeline-left">
+            <view class="timeline-dot" style="background: {{item.unlocked ? item.color : '#E0E0E0'}};"></view>
+            <view class="timeline-line" wx:if="{{index < milestones.length - 1}}"></view>
+          </view>
+          <view class="milestone-content">
+            <view class="milestone-icon-wrapper" style="background: {{item.unlocked ? item.bgColor : 'rgba(142, 142, 147, 0.1)'}};">
+              <text class="milestone-icon">{{item.unlocked ? item.emoji : '🔒'}}</text>
+            </view>
+            <view class="milestone-info">
+              <view class="milestone-header">
+                <text class="milestone-name" style="{{item.unlocked ? 'color: ' + item.color : ''}};">{{item.name}}</text>
+                <text class="milestone-target">{{item.targetCO2e}}kg</text>
+              </view>
+              <text class="milestone-desc">{{item.desc}}</text>
+              <view class="milestone-reward" wx:if="{{item.reward}}">
+                <text class="reward-label">🎖 荣誉称号：</text>
+                <text class="reward-value">{{item.reward.value}}</text>
+              </view>
+              <view class="milestone-progress" wx:if="{{!item.unlocked}}">
+                <view class="progress-wrapper">
+                  <view class="progress-fill" style="width: {{item.progress}}%; background: {{item.color}};"></view>
+                </view>
+                <text class="progress-text">{{item.progress}}%</text>
+              </view>
+              <text class="milestone-unlock-time" wx:if="{{item.unlocked && item.unlockTime}}">
+                ✨ 解锁于 {{item.unlockTime}}
+              </text>
+            </view>
+          </view>
+        </view>
+      </block>
+    </view>
+  </view>
+
+  <view class="modal-mask" wx:if="{{showUnlockModal}}" bindtap="closeUnlockModal">
+    <view class="unlock-modal" catchtap="">
+      <view class="modal-glow"></view>
+      <view class="modal-content">
+        <view class="modal-icon" style="background: {{unlockedMilestone.bgColor}};">
+          <text class="modal-emoji">{{unlockedMilestone.emoji}}</text>
+        </view>
+        <view class="modal-title">🎉 恭喜解锁</view>
+        <view class="modal-name" style="color: {{unlockedMilestone.color}};">{{unlockedMilestone.name}}</view>
+        <view class="modal-desc">{{unlockedMilestone.desc}}</view>
+        <view class="modal-reward" wx:if="{{unlockedMilestone.reward}}">
+          <text class="reward-text">🏅 获得荣誉：{{unlockedMilestone.reward.value}}</text>
+        </view>
+        <view class="modal-actions">
+          <view class="modal-btn share" bindtap="shareMilestone">
+            <text>分享荣誉</text>
+          </view>
+          <view class="modal-btn confirm" bindtap="closeUnlockModal">
+            <text>好的</text>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view class="safe-area-bottom"></view>
+</view>

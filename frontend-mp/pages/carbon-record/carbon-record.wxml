@@ -1,0 +1,152 @@
+<view class="record-page {{experienceClasses}}">
+  <view class="tabs-bar">
+    <view class="tab-item {{currentTab === 'record' ? 'active' : ''}}" data-tab="record" bindtap="switchTab">
+      <text class="tab-text">手动记录</text>
+    </view>
+    <view class="tab-item {{currentTab === 'records' ? 'active' : ''}}" data-tab="records" bindtap="switchTab">
+      <text class="tab-text">记录列表</text>
+    </view>
+  </view>
+
+  <block wx:if="{{currentTab === 'record'}}">
+    <view class="form-card">
+      <view class="section-title">选择类别</view>
+      <view class="category-tabs">
+        <block wx:for="{{categories}}" wx:key="id">
+          <view 
+            class="category-tab {{selectedCategoryId === item.id ? 'active' : ''}}"
+            style="{{selectedCategoryId === item.id ? 'background: ' + item.color + '; color: #FFFFFF;' : ''}}"
+            data-id="{{item.id}}"
+            bindtap="selectCategory"
+          >
+            <text class="cat-icon">{{item.icon}}</text>
+            <text class="cat-name">{{item.name}}</text>
+          </view>
+        </block>
+      </view>
+
+      <view class="section-title">选择活动</view>
+      <view class="activity-grid">
+        <block wx:for="{{activities}}" wx:key="id">
+          <view 
+            class="activity-item {{selectedActivityId === item.id ? 'active' : ''}}"
+            data-id="{{item.id}}"
+            bindtap="selectActivity"
+          >
+            <text class="activity-emoji">{{item.emoji}}</text>
+            <text class="activity-name">{{item.name}}</text>
+            <text class="activity-factor">{{item.factor}}kg/{{item.unit}}</text>
+          </view>
+        </block>
+      </view>
+
+      <view class="section-title">
+        数量（{{selectedActivity.unit}}）
+      </view>
+      <view class="quantity-input-row">
+        <view class="qty-btn minus" data-delta="-1" bindtap="adjustQuantity">
+          <text>−</text>
+        </view>
+        <input 
+          class="qty-input" 
+          type="digit" 
+          placeholder="请输入数量"
+          value="{{quantity}}"
+          bindinput="onQuantityInput"
+        />
+        <view class="qty-btn plus" data-delta="1" bindtap="adjustQuantity">
+          <text>+</text>
+        </view>
+      </view>
+
+      <view class="quick-row" wx:if="{{selectedActivityId === 'classifyCorrect'}}">
+        <view class="quick-btn" data-value="1" bindtap="quickSetQuantity">1次</view>
+        <view class="quick-btn" data-value="3" bindtap="quickSetQuantity">3次</view>
+        <view class="quick-btn" data-value="5" bindtap="quickSetQuantity">5次</view>
+        <view class="quick-btn" data-value="10" bindtap="quickSetQuantity">10次</view>
+      </view>
+      <view class="quick-row" wx:elif="{{selectedActivity.unit === 'kg'}}">
+        <view class="quick-btn" data-value="0.5" bindtap="quickSetQuantity">0.5kg</view>
+        <view class="quick-btn" data-value="1" bindtap="quickSetQuantity">1kg</view>
+        <view class="quick-btn" data-value="2" bindtap="quickSetQuantity">2kg</view>
+        <view class="quick-btn" data-value="5" bindtap="quickSetQuantity">5kg</view>
+      </view>
+      <view class="quick-row" wx:elif="{{selectedActivity.unit === '个' || selectedActivity.unit === '根' || selectedActivity.unit === '套' || selectedActivity.unit === '次'}}">
+        <view class="quick-btn" data-value="1" bindtap="quickSetQuantity">1{{selectedActivity.unit}}</view>
+        <view class="quick-btn" data-value="3" bindtap="quickSetQuantity">3{{selectedActivity.unit}}</view>
+        <view class="quick-btn" data-value="5" bindtap="quickSetQuantity">5{{selectedActivity.unit}}</view>
+        <view class="quick-btn" data-value="10" bindtap="quickSetQuantity">10{{selectedActivity.unit}}</view>
+      </view>
+
+      <view class="section-title">备注（可选）</view>
+      <input 
+        class="note-input" 
+        placeholder="添加备注说明..."
+        value="{{note}}"
+        bindinput="onNoteInput"
+      />
+
+      <view class="preview-card">
+        <view class="preview-label">本次减排估算</view>
+        <view class="preview-value">
+          <text class="preview-number">{{previewCO2e}}</text>
+          <text class="preview-unit">kg CO₂e</text>
+        </view>
+        <view class="preview-desc">{{selectedActivity.desc}}</view>
+      </view>
+
+      <button class="submit-btn" bindtap="submitRecord">保存记录</button>
+    </view>
+  </block>
+
+  <block wx:else>
+    <view class="filter-bar">
+      <view class="filter-item {{filterCategoryId === 'all' ? 'active' : ''}}" data-id="all" bindtap="filterRecords">全部</view>
+      <block wx:for="{{categories}}" wx:key="id">
+        <view 
+          class="filter-item {{filterCategoryId === item.id ? 'active' : ''}}"
+          style="{{filterCategoryId === item.id ? 'background: ' + item.color + '; color: #FFFFFF;' : ''}}"
+          data-id="{{item.id}}"
+          bindtap="filterRecords"
+        >
+          {{item.icon}} {{item.name}}
+        </view>
+      </block>
+    </view>
+
+    <view class="records-list">
+      <block wx:for="{{displayRecords}}" wx:key="id">
+        <view class="record-item" bindlongpress="onRecordLongPress" data-id="{{item.id}}">
+          <view class="record-icon">
+            <text>{{item.emoji}}</text>
+          </view>
+          <view class="record-content">
+            <view class="record-top">
+              <text class="record-name">{{item.activityName}}</text>
+              <text class="record-co2e">+{{item.co2e}}kg</text>
+            </view>
+            <view class="record-bottom">
+              <text class="record-qty">{{item.quantity}}{{item.unit}}</text>
+              <text class="record-time">{{item.time}}</text>
+              <text class="record-source" wx:if="{{item.source === 'order'}}">回收订单</text>
+              <text class="record-source" wx:elif="{{item.source === 'auto'}}">自动记录</text>
+              <text class="record-source" wx:else>手动记录</text>
+            </view>
+            <view class="record-note" wx:if="{{item.note}}">
+              <text>📝 {{item.note}}</text>
+            </view>
+          </view>
+          <view class="record-delete" catchtap="deleteRecord" data-id="{{item.id}}">
+            <text>×</text>
+          </view>
+        </view>
+      </block>
+      <view class="empty-tip" wx:if="{{displayRecords.length === 0}}">
+        <text class="empty-icon">🌱</text>
+        <text class="empty-text">暂无记录</text>
+      </view>
+    </view>
+  </block>
+
+  <view class="safe-area-bottom"></view>
+</view>

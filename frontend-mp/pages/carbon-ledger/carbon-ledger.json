@@ -1,0 +1,7 @@
+{
+  "navigationBarTitleText": "碳账本",
+  "navigationBarBackgroundColor": "#16A085",
+  "navigationBarTextStyle": "white",
+  "backgroundColor": "#F7FAF8",
+  "enablePullDownRefresh": true
+}

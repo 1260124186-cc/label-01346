@@ -1,0 +1,172 @@
+<view class="carbon-page {{experienceClasses}}">
+  <view class="header-card">
+    <view class="header-bg"></view>
+    <view class="header-content">
+      <view class="total-label">累计碳减排</view>
+      <view class="total-value">
+        <text class="total-number">{{totalCO2e}}</text>
+        <text class="total-unit">kg CO₂e</text>
+      </view>
+      <view class="carbon-points">
+        <text class="points-icon">🌱</text>
+        <text class="points-text">碳积分 {{carbonPoints}}</text>
+      </view>
+    </view>
+
+    <view class="analogy-grid">
+      <view class="analogy-item">
+        <text class="analogy-icon">{{analogies.carKm ? analogies.carKm.emoji : '🚗'}}</text>
+        <view class="analogy-info">
+          <text class="analogy-value">{{analogies.carKm ? analogies.carKm.displayValue : '0'}}</text>
+          <text class="analogy-label">少开车(公里)</text>
+        </view>
+      </view>
+      <view class="analogy-item">
+        <text class="analogy-icon">{{analogies.tree ? analogies.tree.emoji : '🌳'}}</text>
+        <view class="analogy-info">
+          <text class="analogy-value">{{analogies.tree ? analogies.tree.displayValue : '0'}}</text>
+          <text class="analogy-label">相当种树(棵)</text>
+        </view>
+      </view>
+      <view class="analogy-item">
+        <text class="analogy-icon">{{analogies.electricity ? analogies.electricity.emoji : '⚡'}}</text>
+        <view class="analogy-info">
+          <text class="analogy-value">{{analogies.electricity ? analogies.electricity.displayValue : '0'}}</text>
+          <text class="analogy-label">节省用电(度)</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view class="action-row">
+    <view class="action-btn record-btn" bindtap="goToRecord">
+      <text class="action-icon">📝</text>
+      <text class="action-text">记录减排</text>
+    </view>
+    <view class="action-btn milestone-btn" bindtap="goToMilestone">
+      <text class="action-icon">🏆</text>
+      <text class="action-text">碳里程碑</text>
+    </view>
+    <view class="action-btn cert-btn" bindtap="goToCertificate">
+      <text class="action-icon">📜</text>
+      <text class="action-text">减排证明</text>
+    </view>
+  </view>
+
+  <view class="milestone-card" wx:if="{{nextMilestone}}" bindtap="goToMilestone">
+    <view class="milestone-left">
+      <view class="milestone-icon-wrapper" style="background: {{nextMilestone.bgColor}};">
+        <text class="milestone-icon">{{nextMilestone.emoji}}</text>
+      </view>
+      <view class="milestone-info">
+        <text class="milestone-title">下一里程碑：{{nextMilestone.name}}</text>
+        <text class="milestone-desc">还需减排 {{nextMilestone.remaining}}kg CO₂e</text>
+        <view class="milestone-progress-bar">
+          <view class="milestone-progress-fill" style="width: {{nextMilestone.progress}}%; background: {{nextMilestone.color}};"></view>
+        </view>
+      </view>
+    </view>
+    <text class="milestone-arrow">›</text>
+  </view>
+
+  <view class="chart-card">
+    <view class="chart-header">
+      <text class="chart-title">碳减排趋势</text>
+      <view class="chart-tabs">
+        <view class="chart-tab {{chartType === 'week' ? 'active' : ''}}" data-type="week" bindtap="switchChartType">周</view>
+        <view class="chart-tab {{chartType === 'month' ? 'active' : ''}}" data-type="month" bindtap="switchChartType">月</view>
+      </view>
+    </view>
+
+    <view class="chart-body">
+      <view class="chart-bars">
+        <block wx:for="{{chartData}}" wx:key="date">
+          <view class="chart-bar-item">
+            <view class="chart-bar-wrapper">
+              <view 
+                class="chart-bar" 
+                style="height: {{item.co2e > 0 ? (item.co2e / maxChartValue * 100) : 2}}%;"
+              ></view>
+              <text class="chart-bar-value" wx:if="{{item.co2e > 0}}">{{item.co2e}}</text>
+            </view>
+            <text class="chart-bar-label">{{item.label}}</text>
+          </view>
+        </block>
+      </view>
+    </view>
+
+    <view class="compare-row">
+      <view class="compare-item">
+        <text class="compare-label">我本周</text>
+        <text class="compare-value my">{{userWeekly}}kg</text>
+      </view>
+      <view class="compare-divider"></view>
+      <view class="compare-item">
+        <text class="compare-label">{{cityName}}均值</text>
+        <text class="compare-value">{{cityAvg.weekly}}kg</text>
+      </view>
+      <view class="compare-divider"></view>
+      <view class="compare-item">
+        <text class="compare-label">组内均值</text>
+        <text class="compare-value">{{groupAvg.weekly}}kg</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="category-card">
+    <view class="card-header">
+      <text class="card-title">分类减排统计</text>
+    </view>
+    <view class="category-list">
+      <block wx:for="{{categoryList}}" wx:key="id">
+        <view class="category-item">
+          <view class="category-left">
+            <view class="category-icon" style="background: {{item.bgColor || 'rgba(91, 189, 114, 0.1)'}}; color: {{item.color}};">
+              <text>{{item.icon}}</text>
+            </view>
+            <view class="category-info">
+              <text class="category-name">{{item.name}}</text>
+              <text class="category-count">{{item.count}}{{item.id === 'recycle' ? 'kg' : item.id === 'classify' ? '次' : '项'}}</text>
+            </view>
+          </view>
+          <view class="category-right">
+            <text class="category-co2e">{{item.co2e}}kg</text>
+            <view class="category-bar">
+              <view class="category-bar-fill" style="width: {{item.percentage}}%; background: {{item.color}};"></view>
+            </view>
+          </view>
+        </view>
+      </block>
+    </view>
+  </view>
+
+  <view class="recent-card">
+    <view class="card-header">
+      <text class="card-title">最近记录</text>
+      <text class="card-more" bindtap="goToRecordList">查看全部 ›</text>
+    </view>
+    <view class="recent-list">
+      <block wx:for="{{recentRecords}}" wx:key="id">
+        <view class="recent-item" bindtap="onRecordTap" data-item="{{item}}">
+          <view class="recent-icon" style="background: rgba(91, 189, 114, 0.1);">
+            <text>{{item.emoji}}</text>
+          </view>
+          <view class="recent-info">
+            <text class="recent-name">{{item.activityName}}</text>
+            <text class="recent-time">{{item.time}}</text>
+          </view>
+          <view class="recent-right">
+            <text class="recent-quantity">{{item.quantity}}{{item.unit}}</text>
+            <text class="recent-co2e">+{{item.co2e}}kg</text>
+          </view>
+        </view>
+      </block>
+      <view class="empty-tip" wx:if="{{recentRecords.length === 0}}">
+        <text class="empty-icon">🌱</text>
+        <text class="empty-text">暂无减排记录，快去记录第一条吧</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="safe-area-bottom"></view>
+</view>

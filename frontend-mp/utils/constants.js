@@ -238,6 +238,7 @@ const PROFILE_MENUS = [
     groupId: 'record',
     groupName: '我的记录',
     items: [
+      { id: 'carbonLedger', icon: 'carbon', emoji: '🌱', title: '碳账本', desc: '记录减排，守护地球家园', link: '/pages/carbon-ledger/carbon-ledger' },
       { id: 'records', icon: 'history', emoji: '📊', title: '分类记录', desc: '查看历史分类记录', link: '/pages/records/records' },
       { id: 'quizRecords', icon: 'quiz', emoji: '📝', title: '答题历史', desc: '查看每次答题详情', link: '/pages/quiz-records/quiz-records' },
       { id: 'points', icon: 'coin', emoji: '💰', title: '积分明细', desc: '查看积分获取与消费', link: '/pages/points/points' },

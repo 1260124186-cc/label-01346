@@ -72,7 +72,11 @@
     "pages/parent-dashboard/parent-dashboard",
     "pages/barcode-scan/barcode-scan",
     "pages/barcode-result/barcode-result",
-    "pages/barcode-submit/barcode-submit"
+    "pages/barcode-submit/barcode-submit",
+    "pages/carbon-ledger/carbon-ledger",
+    "pages/carbon-record/carbon-record",
+    "pages/carbon-milestone/carbon-milestone",
+    "pages/carbon-certificate/carbon-certificate"
   ],
   "window": {
     "backgroundTextStyle": "dark",
