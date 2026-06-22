@@ -169,10 +169,10 @@
       <view class="prizes-reveal" wx:if="{{!isOpening}}">
         <view class="reveal-title">🎉 恭喜获得</view>
         <view class="reveal-grid">
-          <view class="reveal-item {{lotterySystem.isRarityOrHigher(p.rarity, 'rare') ? 'rare' : ''}} {{lotterySystem.isRarityOrHigher(p.rarity, 'epic') ? 'epic' : ''}}" wx:for="{{revealedPrizes}}" wx:for-item="p" wx:key="id" style="background: {{p.bgColor}};">
+          <view class="reveal-item {{p.isRare ? 'rare' : ''}} {{p.isEpic ? 'epic' : ''}}" wx:for="{{revealedPrizes}}" wx:for-item="p" wx:key="id" style="background: {{p.bgColor}};">
             <text class="r-emoji">{{p.emoji}}</text>
             <text class="r-name">{{p.name}}</text>
-            <view class="r-tag" wx:if="{{lotterySystem.isRarityOrHigher(p.rarity, 'rare')}}">稀有</view>
+            <view class="r-tag" wx:if="{{p.isRare}}">稀有</view>
           </view>
         </view>
         <view class="reveal-summary">

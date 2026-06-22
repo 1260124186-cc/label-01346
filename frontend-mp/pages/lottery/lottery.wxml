@@ -147,10 +147,10 @@
       <view class="modal-title" wx:else>🎉 恭喜中奖</view>
 
       <view class="prize-grid" wx:if="{{isMultiDraw}}">
-        <view class="prize-grid-item {{lotterySystem.isRarityOrHigher(item.rarity, 'rare') ? 'rare' : ''}} {{lotterySystem.isRarityOrHigher(item.rarity, 'epic') ? 'epic' : ''}}" wx:for="{{wonPrizes}}" wx:for-item="item" wx:key="id" style="background: {{item.bgColor}};">
+        <view class="prize-grid-item {{item.isRare ? 'rare' : ''}} {{item.isEpic ? 'epic' : ''}}" wx:for="{{wonPrizes}}" wx:for-item="item" wx:key="id" style="background: {{item.bgColor}};">
           <text class="grid-emoji">{{item.emoji}}</text>
           <text class="grid-name">{{item.name}}</text>
-          <view class="grid-rarity-tag" wx:if="{{lotterySystem.isRarityOrHigher(item.rarity, 'rare')}}">稀有+</view>
+          <view class="grid-rarity-tag" wx:if="{{item.isRare}}">稀有+</view>
         </view>
       </view>
       <view class="prize-single" wx:else style="background: {{wonPrizes[0].bgColor}};">

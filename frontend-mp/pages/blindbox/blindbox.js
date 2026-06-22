@@ -195,11 +195,19 @@ Page({
       }
 
       setTimeout(() => {
+        const isRarityOrHigher = this.data.lotterySystem && this.data.lotterySystem.isRarityOrHigher
+          ? (r, t) => this.data.lotterySystem.isRarityOrHigher(r, t)
+          : (rarity, threshold) => {
+              const order = { common: 0, rare: 1, epic: 2, legendary: 3 }
+              return (order[rarity] || 0) >= (order[threshold] || 0)
+            }
         const revealedPrizes = (result.prizes || []).map(p => ({
           ...p,
-          bgColor: this.getPrizeBgColor(p.rarity)
+          bgColor: this.getPrizeBgColor(p.rarity),
+          isRare: isRarityOrHigher(p.rarity, 'rare'),
+          isEpic: isRarityOrHigher(p.rarity, 'epic')
         }))
-        const revealRareCount = revealedPrizes.filter(p => this.data.lotterySystem.isRarityOrHigher(p.rarity, 'rare')).length
+        const revealRareCount = revealedPrizes.filter(p => p.isRare).length
         const userInfo = app.globalData.userInfo
         const leftPoints = userInfo ? userInfo.points || 0 : 0
         this.setData({
