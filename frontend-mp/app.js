@@ -4594,17 +4594,25 @@ App({
     const now = Date.now()
 
     pendingOrders.forEach(order => {
+      if (order.dispatchMode === 'real') {
+        if (order.dispatchStatus !== 'accepted') return
+      }
+
       const orderTime = new Date(order.createTime).getTime()
       const timeDiff = now - orderTime
       const minutesDiff = timeDiff / (1000 * 60)
       if (minutesDiff >= 1) {
         this.updateRecycleOrderStatus(order.id, 'appointed', {
-          desc: '系统自动确认订单，已为您分配回收员'
+          desc: order.dispatchMode === 'real' && order.collector
+            ? `回收员${order.collector.name}已接单，订单确认`
+            : '系统自动确认订单，已为您分配回收员'
         })
       }
     })
 
     appointedOrders.forEach(order => {
+      if (order.dispatchMode === 'real') return
+
       const appointTime = order.appointTime ? new Date(order.appointTime).getTime() : 0
       if (appointTime > 0) {
         const timeDiff = now - appointTime
@@ -4618,6 +4626,8 @@ App({
     })
 
     visitingOrders.forEach(order => {
+      if (order.dispatchMode === 'real') return
+
       const visitTime = order.visitTime ? new Date(order.visitTime).getTime() : 0
       if (visitTime > 0) {
         const timeDiff = now - visitTime
