@@ -578,6 +578,15 @@
   margin-bottom: 0;
 }
 
+.quick-actions-grid.ten-grid .quick-action-cell {
+  width: 20%;
+  margin-bottom: 28rpx;
+}
+
+.quick-actions-grid.ten-grid .quick-action-cell:nth-last-child(-n+5) {
+  margin-bottom: 0;
+}
+
 .quick-action-cell {
   display: flex;
   justify-content: center;

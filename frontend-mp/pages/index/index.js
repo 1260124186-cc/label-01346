@@ -18,8 +18,10 @@ const DEFAULT_QUICK_ACTIONS = [
   { key: 'wrongQuestions', name: '易错题', emoji: '📝', action: 'goToSortPracticeWrong', bgGradient: 'linear-gradient(135deg, rgba(231, 76, 60, 0.18) 0%, rgba(231, 76, 60, 0.06) 100%)', ringColor: 'rgba(231, 76, 60, 0.25)' },
   { key: 'dropPoint', name: '投放点地图', emoji: '🗺️', action: 'goToDropPoint', bgGradient: 'linear-gradient(135deg, rgba(26, 188, 156, 0.18) 0%, rgba(26, 188, 156, 0.06) 100%)', ringColor: 'rgba(26, 188, 156, 0.25)' },
   { key: 'exchange', name: '积分兑换', emoji: '🎁', action: 'goToExchange', bgGradient: 'linear-gradient(135deg, rgba(243, 156, 18, 0.18) 0%, rgba(243, 156, 18, 0.06) 100%)', ringColor: 'rgba(243, 156, 18, 0.25)' },
-  { key: 'community', name: '环保社区', emoji: '💚', action: 'goToCommunity', bgGradient: 'linear-gradient(135deg, rgba(155, 89, 182, 0.18) 0%, rgba(155, 89, 182, 0.06) 100%)', ringColor: 'rgba(155, 89, 182, 0.25)' },
-  { key: 'profile', name: '个人中心', emoji: '👤', action: 'goToProfile', bgGradient: 'linear-gradient(135deg, rgba(52, 152, 219, 0.18) 0%, rgba(52, 152, 219, 0.06) 100%)', ringColor: 'rgba(52, 152, 219, 0.25)' }
+  { key: 'lottery', name: '积分抽奖', emoji: '🎰', action: 'goToLottery', bgGradient: 'linear-gradient(135deg, rgba(232, 93, 93, 0.18) 0%, rgba(232, 93, 93, 0.06) 100%)', ringColor: 'rgba(232, 93, 93, 0.25)' },
+  { key: 'blindbox', name: '惊喜盲盒', emoji: '📦', action: 'goToBlindbox', bgGradient: 'linear-gradient(135deg, rgba(155, 89, 182, 0.18) 0%, rgba(155, 89, 182, 0.06) 100%)', ringColor: 'rgba(155, 89, 182, 0.25)' },
+  { key: 'community', name: '环保社区', emoji: '💚', action: 'goToCommunity', bgGradient: 'linear-gradient(135deg, rgba(52, 152, 219, 0.18) 0%, rgba(52, 152, 219, 0.06) 100%)', ringColor: 'rgba(52, 152, 219, 0.25)' },
+  { key: 'profile', name: '个人中心', emoji: '👤', action: 'goToProfile', bgGradient: 'linear-gradient(135deg, rgba(243, 156, 18, 0.18) 0%, rgba(243, 156, 18, 0.06) 100%)', ringColor: 'rgba(243, 156, 18, 0.25)' }
 ]
 
 Page({
@@ -270,6 +272,18 @@ Page({
     console.log('[Index] 点击积分兑换')
     switchTab('/pages/exchange/exchange')
     recordPageVisit('exchange')
+  },
+
+  goToLottery() {
+    console.log('[Index] 点击积分抽奖')
+    navigateTo('/pages/lottery/lottery')
+    recordPageVisit('lottery')
+  },
+
+  goToBlindbox() {
+    console.log('[Index] 点击惊喜盲盒')
+    navigateTo('/pages/blindbox/blindbox')
+    recordPageVisit('blindbox')
   },
 
   goToProfile() {

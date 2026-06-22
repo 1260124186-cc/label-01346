@@ -219,7 +219,7 @@
       </view>
       <text class="quick-actions-desc">常用功能一键直达</text>
     </view>
-    <view class="quick-actions-grid eight-grid">
+    <view class="quick-actions-grid ten-grid">
       <view
         wx:for="{{quickActions}}"
         wx:key="key"

@@ -1,0 +1,184 @@
+<view class="lottery-page {{experienceClasses}}">
+  <view class="header-section">
+    <view class="user-info-card">
+      <view class="points-display">
+        <view class="points-label">当前积分</view>
+        <view class="points-value">{{currentPoints}}</view>
+      </view>
+      <view class="stats-row">
+        <view class="stat-item">
+          <view class="stat-value">{{stats.remainingToday}}</view>
+          <view class="stat-label">今日剩余</view>
+        </view>
+        <view class="stat-divider"></view>
+        <view class="stat-item">
+          <view class="stat-value">{{stats.totalDrawCount}}</view>
+          <view class="stat-label">累计抽奖</view>
+        </view>
+        <view class="stat-divider"></view>
+        <view class="stat-item">
+          <view class="stat-value highlight">{{stats.wonBadgeCount}}</view>
+          <view class="stat-label">获得勋章</view>
+        </view>
+      </view>
+    </view>
+
+    <view class="guarantee-bar" wx:if="{{stats.missSinceLastRare >= 3}}">
+      <view class="guarantee-text">
+        <text class="guarantee-icon">🎯</text>
+        <text>稀有保底进度：{{stats.missSinceLastRare}}/{{stats.guaranteeCount}}</text>
+        <text wx:if="{{stats.missSinceLastRare >= 7}}" class="guarantee-soon">即将触发！</text>
+      </view>
+      <view class="guarantee-progress">
+        <view class="guarantee-progress-bar" style="width: {{stats.missSinceLastRare / stats.guaranteeCount * 100}}%"></view>
+      </view>
+    </view>
+  </view>
+
+  <view class="wheel-section">
+    <view class="wheel-title">
+      <text class="title-main">🎰 幸运转盘</text>
+      <text class="title-sub">每次消耗{{stats.costPerDraw}}积分，十连抽{{stats.costPerTenDraw}}积分</text>
+    </view>
+
+    <view class="wheel-container">
+      <view class="wheel-wrapper {{isSpinning ? 'spinning' : ''}}" style="transform: rotate({{wheelRotation}}deg);">
+        <view class="wheel-sectors">
+          <view class="sector sector-1"><text class="sector-emoji">💰</text><text class="sector-text">10分</text></view>
+          <view class="sector sector-2"><text class="sector-emoji">🎫</text><text class="sector-text">优惠券</text></view>
+          <view class="sector sector-3"><text class="sector-emoji">💰</text><text class="sector-text">50分</text></view>
+          <view class="sector sector-4"><text class="sector-emoji">🏅</text><text class="sector-text">勋章</text></view>
+          <view class="sector sector-5"><text class="sector-emoji">💎</text><text class="sector-text">100分</text></view>
+          <view class="sector sector-6"><text class="sector-emoji">👜</text><text class="sector-text">实物</text></view>
+          <view class="sector sector-7"><text class="sector-emoji">🙏</text><text class="sector-text">谢谢</text></view>
+          <view class="sector sector-8"><text class="sector-emoji">🌍</text><text class="sector-text">勋章</text></view>
+        </view>
+      </view>
+      <view class="wheel-center" bindtap="onDrawSingle" wx:if="{{!isSpinning}}">
+        <view class="center-text">抽奖</view>
+        <view class="center-cost">50分/次</view>
+      </view>
+      <view class="wheel-center spinning" wx:else>
+        <view class="spinner"></view>
+      </view>
+      <view class="wheel-pointer"></view>
+    </view>
+
+    <view class="draw-buttons">
+      <view class="draw-btn single-btn {{stats.remainingToday < 1 ? 'disabled' : ''}}" bindtap="onDrawSingle">
+        <text class="btn-text">单次抽奖</text>
+        <text class="btn-cost">{{stats.costPerDraw}}分</text>
+      </view>
+      <view class="draw-btn ten-btn {{stats.remainingToday < 10 ? 'disabled' : ''}}" bindtap="onDrawTen">
+        <text class="btn-text">十连必出</text>
+        <text class="btn-cost">{{stats.costPerTenDraw}}分</text>
+        <view class="btn-badge">省50分</view>
+      </view>
+    </view>
+
+    <view class="quick-links">
+      <view class="link-card blindbox-link" bindtap="goToBlindbox">
+        <text class="link-emoji">📦</text>
+        <view class="link-info">
+          <text class="link-title">盲盒专区</text>
+          <text class="link-desc">节日限定 · 多件奖品</text>
+        </view>
+        <text class="link-arrow">›</text>
+        <view class="festival-tag" wx:if="{{festivalBox}}">{{festivalBox.emoji}} 限定中</view>
+      </view>
+      <view class="link-card records-link" bindtap="goToRecords">
+        <text class="link-emoji">📜</text>
+        <view class="link-info">
+          <text class="link-title">抽奖记录</text>
+          <text class="link-desc">查看历史中奖记录</text>
+        </view>
+        <text class="link-arrow">›</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="probability-section">
+    <view class="section-header" bindtap="toggleProbability">
+      <text class="section-title">📊 概率公示</text>
+      <text class="toggle-icon {{showProbability ? 'open' : ''}}">▼</text>
+    </view>
+    <view class="probability-content" wx:if="{{showProbability}}">
+      <view class="rarity-group" wx:for="{{probabilityGroups}}" wx:for-item="group" wx:key="rarity">
+        <view class="rarity-header" style="border-left-color: {{group.color}};">
+          <text class="rarity-name">{{group.name}}</text>
+          <text class="rarity-prob">总概率 {{(group.totalProb * 100).toFixed(1)}}%</text>
+        </view>
+        <view class="prize-list">
+          <view class="prize-row" wx:for="{{group.prizes}}" wx:for-item="prize" wx:key="id">
+            <text class="prize-emoji">{{prize.emoji}}</text>
+            <text class="prize-name">{{prize.name}}</text>
+            <text class="prize-prob">{{(prize.probability * 100).toFixed(1)}}%</text>
+          </view>
+        </view>
+      </view>
+      <view class="guarantee-note">
+        <text class="note-title">🎯 保底机制说明</text>
+        <text class="note-text">· 连续10次未中稀有及以上，第10次必得稀有或更高</text>
+        <text class="note-text">· 连续30次未中史诗及以上，第30次必得史诗或更高</text>
+        <text class="note-text">· 连续5次未中后概率逐步提升，更易获得稀有奖品</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="rules-section">
+    <view class="section-header">
+      <text class="section-title">📋 抽奖规则</text>
+    </view>
+    <view class="rules-content">
+      <view class="rule-item">1. 每次抽奖消耗{{stats.costPerDraw}}积分，十连抽消耗{{stats.costPerTenDraw}}积分</view>
+      <view class="rule-item">2. 每日最多{{stats.dailyLimit}}次抽奖机会，次日零点重置</view>
+      <view class="rule-item">3. 积分奖品直接到账，勋章进入勋章墙，优惠券进入卡包</view>
+      <view class="rule-item">4. 实物奖品需填写收货地址，走订单发货流程</view>
+      <view class="rule-item">5. 未成年人抽奖需家长PIN验证，儿童模式禁止参与</view>
+      <view class="rule-item">6. 最终解释权归垃圾分类助手所有</view>
+    </view>
+  </view>
+
+  <view class="prize-modal" wx:if="{{showPrizeModal}}" catchtap="hidePrizeModal">
+    <view class="prize-modal-mask" catchtap="preventClose"></view>
+    <view class="prize-modal-content" catchtap="preventClose">
+      <view class="modal-close" bindtap="hidePrizeModal">✕</view>
+      <view class="modal-title" wx:if="{{isMultiDraw}}">🎉 十连抽奖结果</view>
+      <view class="modal-title" wx:else>🎉 恭喜中奖</view>
+
+      <view class="prize-grid" wx:if="{{isMultiDraw}}">
+        <view class="prize-grid-item {{lotterySystem.isRarityOrHigher(item.rarity, 'rare') ? 'rare' : ''}} {{lotterySystem.isRarityOrHigher(item.rarity, 'epic') ? 'epic' : ''}}" wx:for="{{wonPrizes}}" wx:for-item="item" wx:key="id" style="background: {{item.bgColor}};">
+          <text class="grid-emoji">{{item.emoji}}</text>
+          <text class="grid-name">{{item.name}}</text>
+          <view class="grid-rarity-tag" wx:if="{{lotterySystem.isRarityOrHigher(item.rarity, 'rare')}}">稀有+</view>
+        </view>
+      </view>
+      <view class="prize-single" wx:else style="background: {{wonPrizes[0].bgColor}};">
+        <text class="single-emoji">{{wonPrizes[0].emoji}}</text>
+        <text class="single-name">{{wonPrizes[0].name}}</text>
+        <text class="single-desc">{{wonPrizes[0].description}}</text>
+      </view>
+
+      <view class="summary-row" wx:if="{{isMultiDraw}}">
+        <text>共获得稀有+：{{rareCount}}件</text>
+      </view>
+
+      <view class="modal-buttons">
+        <view class="modal-btn secondary" bindtap="hidePrizeModal">收下奖品</view>
+        <view class="modal-btn primary" wx:if="{{stats.remainingToday > 0}}" bindtap="drawAgain">再抽一次</view>
+      </view>
+    </view>
+  </view>
+
+  <view class="pin-modal" wx:if="{{showPINModal}}" catchtap="hidePINModal">
+    <view class="pin-modal-mask" catchtap="preventClose"></view>
+    <view class="pin-modal-content" catchtap="preventClose">
+      <view class="pin-title">🔒 家长验证</view>
+      <view class="pin-desc">未成年人抽奖需家长验证，请输入家长PIN或前往设置</view>
+      <view class="pin-buttons">
+        <view class="pin-btn secondary" bindtap="hidePINModal">取消</view>
+        <view class="pin-btn primary" bindtap="goToPINVerify">去验证</view>
+      </view>
+    </view>
+  </view>
+</view>

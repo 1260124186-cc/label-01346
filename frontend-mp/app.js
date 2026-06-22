@@ -40,6 +40,16 @@ const {
   CARBON_MILESTONES,
   getUnlockedMilestones
 } = require('./utils/carbon')
+const {
+  LOTTERY_CONFIG,
+  LOTTERY_PRIZES,
+  LOTTERY_PRIZE_TYPES,
+  LOTTERY_PRIZE_RARITY,
+  BLINDBOX_CONFIG,
+  FESTIVAL_TYPES,
+  FESTIVAL_BLINDBOXES
+} = require('./utils/constants')
+const lotterySystem = require('./utils/lottery')
 
 App({
   globalData: {
@@ -60,7 +70,9 @@ App({
     darkModeSource: 'system',
     largeFont: false,
     carbonRecords: null,
-    unlockedCarbonMilestones: null
+    unlockedCarbonMilestones: null,
+    lotterySystem: null,
+    festivalBoxActive: null
   },
 
   /**
@@ -117,6 +129,7 @@ App({
     this.initCarbonRecords()
     this.initCarbonMilestones()
     this.initMissionCenter()
+    this.initLotterySystem()
 
     this.startExpireCheckInterval()
   },
@@ -9044,5 +9057,252 @@ App({
     weekly.forEach(m => { if (m.canClaim) count++ })
     if (this.isDailyTreasureAvailable()) count++
     return count > 0 ? count : null
+  },
+
+  initLotterySystem() {
+    this.globalData.lotterySystem = lotterySystem
+    const festivalBox = lotterySystem.getCurrentFestivalBox()
+    this.globalData.festivalBoxActive = festivalBox
+    this.checkCouponExpiry()
+    this.checkPhysicalPrizePending()
+    if (festivalBox && messageManager.getSubscriptionSetting('festivalBoxReminder')) {
+      messageManager.addMessage({
+        type: MESSAGE_TYPES.FESTIVAL_BOX,
+        title: `${festivalBox.name}上架啦！`,
+        content: `${festivalBox.description}，快去盲盒中心看看吧！`,
+        emoji: festivalBox.emoji,
+        data: { link: '/pages/blindbox/blindbox', festivalBoxId: festivalBox.id }
+      })
+    }
+    console.log('[App] 抽奖系统已初始化', festivalBox ? '当前节日盲盒: ' + festivalBox.name : '无节日盲盒')
+  },
+
+  getLotteryStats() {
+    return lotterySystem.getLotteryStats()
+  },
+
+  getProbabilityDisclosure(festivalBoxId = null) {
+    return lotterySystem.getProbabilityDisclosure(festivalBoxId)
+  },
+
+  getAvailableFestivalBoxes() {
+    return lotterySystem.getAvailableFestivalBoxes()
+  },
+
+  getCurrentFestivalBox() {
+    return lotterySystem.getCurrentFestivalBox()
+  },
+
+  doLotteryDraw(drawCount = 1) {
+    const cost = drawCount === 10 ? LOTTERY_CONFIG.costPerTenDraw : LOTTERY_CONFIG.costPerDraw * drawCount
+    const validate = lotterySystem.validateDrawForUser(this, cost, drawCount, false)
+    if (!validate.success) {
+      return { success: false, ...validate }
+    }
+
+    this.updateUserPoints(-cost, {
+      category: 'lottery',
+      title: drawCount === 1 ? '幸运转盘抽奖' : `幸运转盘x${drawCount}`,
+      desc: `消耗${cost}积分`,
+      emoji: '🎰'
+    })
+
+    let result
+    if (drawCount === 1) {
+      const draw = lotterySystem.performSingleDraw()
+      result = { prizes: [draw.prize], stats: draw.stats, summary: {} }
+    } else {
+      result = lotterySystem.performMultiDraw(drawCount)
+    }
+
+    const deliveryResults = []
+    result.prizes.forEach(prize => {
+      const delivery = lotterySystem.processPrizeDelivery(this, prize, 'lottery')
+      deliveryResults.push(delivery)
+    })
+
+    const rarePrizes = result.prizes.filter(p =>
+      lotterySystem.isRarityOrHigher(p.rarity, LOTTERY_PRIZE_RARITY.RARE)
+    )
+    if (rarePrizes.length > 0 && messageManager.getSubscriptionSetting('lotteryWinNotice')) {
+      const names = rarePrizes.map(p => `${p.emoji}${p.name}`).join('、')
+      messageManager.addMessage({
+        type: MESSAGE_TYPES.LOTTERY_WIN,
+        title: `恭喜抽中${rarePrizes.length}件稀有奖品！`,
+        content: `您抽中了：${names}`,
+        emoji: '🎉',
+        data: { link: '/pages/lottery-records/lottery-records' }
+      })
+    }
+
+    if (result.stats && result.stats.triggeredGuarantee) {
+      messageManager.addMessage({
+        type: MESSAGE_TYPES.LOTTERY_GUARANTEE,
+        title: '保底机制已触发！',
+        content: '恭喜您通过保底机制获得了稀有以上品质的奖品！',
+        emoji: '🎯',
+        data: { link: '/pages/lottery-records/lottery-records' }
+      })
+    }
+
+    const physicalPrizes = result.prizes.filter(p => p.type === LOTTERY_PRIZE_TYPES.PHYSICAL)
+    if (physicalPrizes.length > 0 && messageManager.getSubscriptionSetting('physicalPrizeReminder')) {
+      messageManager.addMessage({
+        type: MESSAGE_TYPES.PHYSICAL_PRIZE_PENDING,
+        title: '实物奖品待领取',
+        content: `恭喜抽中${physicalPrizes.length}件实物奖品，请及时填写收货地址领取~`,
+        emoji: '📮',
+        data: { link: '/pages/address-list/address-list' }
+      })
+    }
+
+    console.log('[App] 抽奖完成', drawCount, '次，奖品数:', result.prizes.length)
+    return { success: true, ...result, deliveryResults }
+  },
+
+  doBlindboxDraw(boxId = 'box_normal') {
+    const festivalBoxes = lotterySystem.getAvailableFestivalBoxes()
+    const festivalBox = festivalBoxes.find(b => b.id === boxId)
+    const normalBox = BLINDBOX_CONFIG.normalBox
+    const box = festivalBox || normalBox
+
+    const validate = lotterySystem.validateDrawForUser(this, box.cost, 1, true)
+    if (!validate.success) {
+      return { success: false, ...validate }
+    }
+
+    this.updateUserPoints(-box.cost, {
+      category: 'blindbox',
+      title: box.name,
+      desc: `消耗${box.cost}积分开启盲盒`,
+      emoji: box.emoji
+    })
+
+    const result = lotterySystem.performBlindboxDraw(boxId)
+
+    result.prizes.forEach(prize => {
+      lotterySystem.processPrizeDelivery(this, prize, 'blindbox')
+    })
+
+    const rarePrizes = result.prizes.filter(p =>
+      lotterySystem.isRarityOrHigher(p.rarity, LOTTERY_PRIZE_RARITY.RARE)
+    )
+    if (rarePrizes.length > 0) {
+      const names = rarePrizes.map(p => `${p.emoji}${p.name}`).join('、')
+      messageManager.addMessage({
+        type: result.isFestival ? MESSAGE_TYPES.FESTIVAL_BOX : MESSAGE_TYPES.BLINDBOX_OPEN,
+        title: `${box.name}开启！获得${rarePrizes.length}件稀有奖品`,
+        content: `获得稀有奖品：${names}`,
+        emoji: box.emoji,
+        data: { link: '/pages/lottery-records/lottery-records' }
+      })
+    }
+
+    console.log('[App] 盲盒开启完成', box.name, '奖品数:', result.prizes.length)
+    return { success: true, ...result }
+  },
+
+  getLotteryRecords() {
+    return lotterySystem.getLotteryRecords()
+  },
+
+  getLotteryCoupons() {
+    return lotterySystem.getLotteryCoupons()
+  },
+
+  getValidCoupons(pointsRequired = 0) {
+    return lotterySystem.getValidCoupons(pointsRequired)
+  },
+
+  useCoupon(couponId, orderPoints) {
+    return lotterySystem.useCoupon(couponId, orderPoints)
+  },
+
+  getPhysicalPrizeRecords() {
+    return lotterySystem.getPhysicalPrizeRecords()
+  },
+
+  claimPhysicalPrize(prizeId, addressId) {
+    const physicals = lotterySystem.getPhysicalPrizeRecords()
+    const prize = physicals.find(p => p.id === prizeId)
+    if (!prize) return { success: false, message: '奖品不存在' }
+    if (prize.status !== 'pending_address') return { success: false, message: '当前状态无法领取' }
+
+    const address = this.getAddressById(addressId)
+    if (!address) return { success: false, message: '地址不存在' }
+
+    const order = this.addOrder({
+      id: generateId(),
+      goodsId: prize.linkedGoodsId || 0,
+      goodsName: prize.name,
+      goodsImage: '',
+      points: 0,
+      quantity: 1,
+      addressId: addressId,
+      address: address,
+      createTime: formatDate(new Date(), 'YYYY-MM-DD HH:mm'),
+      remark: '抽奖实物奖品',
+      source: 'lottery',
+      lotteryPrizeId: prizeId
+    })
+
+    lotterySystem.updatePhysicalPrizeStatus(prizeId, 'ordered', {
+      addressId: addressId,
+      orderId: order.id,
+      claimedAt: formatDate(new Date(), 'YYYY-MM-DD HH:mm')
+    })
+
+    console.log('[App] 实物奖品领取成功，订单号:', order.id)
+    return { success: true, order, prize }
+  },
+
+  checkCouponExpiry() {
+    const coupons = lotterySystem.getLotteryCoupons()
+    const today = lotterySystem.getTodayStr()
+    const threeDaysLater = new Date(Date.now() + 3 * 86400000)
+    const threeDaysLaterStr = formatDate(threeDaysLater, 'YYYY-MM-DD')
+
+    const expiringSoon = coupons.filter(c =>
+      !c.used &&
+      c.expireAt >= today &&
+      c.expireAt <= threeDaysLaterStr
+    )
+
+    expiringSoon.forEach(coupon => {
+      const alreadyNotified = wx.getStorageSync('couponExpiryNotified_' + coupon.id)
+      if (!alreadyNotified) {
+        messageManager.addMessage({
+          type: MESSAGE_TYPES.COUPON_EXPIRE,
+          title: '优惠券即将过期',
+          content: `您的「${coupon.name}」将在${coupon.expireAt}过期，快去兑换商城使用吧！`,
+          emoji: coupon.emoji || '🎫',
+          data: { link: '/pages/exchange/exchange', couponId: coupon.id }
+        })
+        wx.setStorageSync('couponExpiryNotified_' + coupon.id, true)
+      }
+    })
+
+    if (expiringSoon.length > 0) {
+      console.log('[App] 优惠券过期提醒已触发', expiringSoon.length, '张')
+    }
+  },
+
+  checkPhysicalPrizePending() {
+    const physicals = lotterySystem.getPhysicalPrizeRecords()
+    const pending = physicals.filter(p => p.status === 'pending_address')
+
+    pending.forEach(prize => {
+      const alreadyNotified = wx.getStorageSync('physicalPendingNotified_' + prize.id)
+      if (!alreadyNotified) {
+        messageManager.addMessage({
+          type: MESSAGE_TYPES.PHYSICAL_PRIZE_PENDING,
+          title: '实物奖品待领取',
+          content: `您抽中的「${prize.name}」还未填写收货地址，点击去填写~`,
+          emoji: prize.emoji || '📮',
+          data: { link: '/pages/address-list/address-list', prizeId: prize.id }
+        })
+        wx.setStorageSync('physicalPendingNotified_' + prize.id, true)
+      }
+    })
   }
 })

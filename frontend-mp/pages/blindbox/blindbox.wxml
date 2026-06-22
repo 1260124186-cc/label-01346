@@ -1,0 +1,200 @@
+<view class="blindbox-page {{experienceClasses}}">
+  <view class="page-header">
+    <view class="header-banner">
+      <view class="banner-content">
+        <text class="banner-emoji">📦</text>
+        <view class="banner-text">
+          <text class="banner-title">惊喜盲盒</text>
+          <text class="banner-desc">开盒必出多件奖品，节日限定专属好礼</text>
+        </view>
+      </view>
+      <view class="points-chip">
+        <text class="chip-emoji">💰</text>
+        <text class="chip-value">{{currentPoints}}</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="festival-section" wx:if="{{festivalBox}}">
+    <view class="section-label">
+      <text class="label-dot festival"></text>
+      <text class="label-text">节日限定 · 火热进行中</text>
+      <text class="countdown" wx:if="{{festivalDaysLeft > 0}}">剩余 {{festivalDaysLeft}} 天</text>
+    </view>
+
+    <view class="festival-card" style="background: linear-gradient(135deg, {{festivalBox.gradientStart}} 0%, {{festivalBox.gradientEnd}} 100%);">
+      <view class="festival-emoji">{{festivalBox.emoji}}</view>
+      <view class="festival-info">
+        <text class="festival-name">{{festivalBox.name}}</text>
+        <text class="festival-desc">{{festivalBox.description}}</text>
+        <view class="festival-meta">
+          <view class="meta-item">
+            <text class="meta-label">奖品数量</text>
+            <text class="meta-value">{{festivalBox.minPrizes}}~{{festivalBox.maxPrizes}}件</text>
+          </view>
+          <view class="meta-item">
+            <text class="meta-label">保底</text>
+            <text class="meta-value">稀有+</text>
+          </view>
+        </view>
+        <view class="festival-highlights">
+          <view class="highlight-item" wx:for="{{festivalBox.highlightPrizes}}" wx:key="id">
+            <text class="hl-emoji">{{item.emoji}}</text>
+            <text class="hl-name">{{item.name}}</text>
+          </view>
+        </view>
+      </view>
+      <view class="festival-bottom">
+        <view class="cost-info">
+          <text class="cost-label">单盒</text>
+          <text class="cost-value">{{festivalBox.cost}}积分</text>
+        </view>
+        <view class="open-btn festival" bindtap="openFestivalBox">
+          <text>立即开盒</text>
+          <text class="btn-icon">🎁</text>
+        </view>
+      </view>
+      <view class="activity-link" bindtap="goToActivity" wx:if="{{festivalBox.activityId}}">
+        <text class="activity-text">查看关联活动</text>
+        <text class="activity-arrow">›</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="regular-section">
+    <view class="section-label">
+      <text class="label-dot"></text>
+      <text class="label-text">常规盲盒</text>
+    </view>
+
+    <view class="regular-card">
+      <view class="regular-top">
+        <view class="regular-emoji">🎁</view>
+        <view class="regular-info">
+          <text class="regular-name">经典环保盲盒</text>
+          <text class="regular-desc">积分红包 + 优惠券 + 神秘勋章，每盒3~5件奖品</text>
+        </view>
+      </view>
+
+      <view class="guarantee-row">
+        <view class="guarantee-item">
+          <text class="gt-icon">🎯</text>
+          <view class="gt-text">
+            <text class="gt-title">5抽保底</text>
+            <text class="gt-desc">连续5盒必出稀有及以上</text>
+          </view>
+        </view>
+        <view class="guarantee-progress">
+          <view class="progress-text">{{stats.blindboxMissSinceRare}}/5</view>
+          <view class="progress-bar"><view class="progress-fill" style="width: {{stats.blindboxMissSinceRare / 5 * 100}}%"></view></view>
+        </view>
+      </view>
+
+      <view class="prize-preview">
+        <text class="preview-title">可能开出</text>
+        <view class="preview-list">
+          <view class="preview-item" wx:for="{{regularPreviewPrizes}}" wx:key="id">
+            <text class="p-emoji">{{item.emoji}}</text>
+            <text class="p-name">{{item.name}}</text>
+          </view>
+        </view>
+      </view>
+
+      <view class="regular-bottom">
+        <view class="regular-costs">
+          <view class="cost-option">
+            <text class="option-cost">{{regularConfig.cost}}分</text>
+            <text class="option-label">单盒</text>
+          </view>
+        </view>
+        <view class="open-btn regular" bindtap="openRegularBox">
+          <text>开启盲盒</text>
+          <text class="btn-icon">✨</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view class="history-section">
+    <view class="section-header">
+      <text class="section-title">📦 最近开盒</text>
+      <view class="see-all" bindtap="goToRecords">
+        <text>查看全部</text>
+        <text class="arrow">›</text>
+      </view>
+    </view>
+
+    <view class="history-list" wx:if="{{recentRecords.length > 0}}">
+      <view class="history-item" wx:for="{{recentRecords}}" wx:key="id">
+        <view class="history-box" style="background: {{item.boxColor}};">
+          <text class="hb-emoji">{{item.emoji}}</text>
+        </view>
+        <view class="history-content">
+          <view class="hc-top">
+            <text class="hc-name">{{item.boxName}}</text>
+            <text class="hc-time">{{item.timeAgo}}</text>
+          </view>
+          <view class="hc-prizes">
+            <text class="hp-item" wx:for="{{item.prizes}}" wx:for-item="p" wx:key="id">{{p.emoji}}{{p.name}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+    <view class="empty-history" wx:else>
+      <text class="empty-emoji">🎁</text>
+      <text class="empty-text">还没有开盒记录，去开启第一个盲盒吧！</text>
+    </view>
+  </view>
+
+  <view class="open-modal" wx:if="{{showOpenModal}}" catchtap="hideOpenModal">
+    <view class="open-modal-mask" catchtap="preventClose"></view>
+    <view class="open-modal-content" catchtap="preventClose">
+      <view class="box-3d {{isOpening ? 'opening' : 'opened'}}">
+        <view class="box-body" style="background: {{currentBoxColor}};">
+          <view class="box-lid">
+            <text class="box-emoji">{{currentBoxEmoji}}</text>
+          </view>
+          <view class="box-front">
+            <text class="box-label">{{currentBoxName}}</text>
+          </view>
+        </view>
+        <view class="sparkles" wx:if="{{isOpening}}">
+          <text class="sparkle s1">✨</text>
+          <text class="sparkle s2">⭐</text>
+          <text class="sparkle s3">💫</text>
+          <text class="sparkle s4">🌟</text>
+        </view>
+      </view>
+
+      <view class="prizes-reveal" wx:if="{{!isOpening}}">
+        <view class="reveal-title">🎉 恭喜获得</view>
+        <view class="reveal-grid">
+          <view class="reveal-item {{lotterySystem.isRarityOrHigher(p.rarity, 'rare') ? 'rare' : ''}} {{lotterySystem.isRarityOrHigher(p.rarity, 'epic') ? 'epic' : ''}}" wx:for="{{revealedPrizes}}" wx:for-item="p" wx:key="id" style="background: {{p.bgColor}};">
+            <text class="r-emoji">{{p.emoji}}</text>
+            <text class="r-name">{{p.name}}</text>
+            <view class="r-tag" wx:if="{{lotterySystem.isRarityOrHigher(p.rarity, 'rare')}}">稀有</view>
+          </view>
+        </view>
+        <view class="reveal-summary">
+          共{{revealedPrizes.length}}件奖品 · 稀有+ {{revealRareCount}}件
+        </view>
+        <view class="reveal-buttons">
+          <view class="rev-btn secondary" bindtap="hideOpenModal">收下</view>
+          <view class="rev-btn primary" wx:if="{{canOpenAgain}}" bindtap="openAgain">再开一盒</view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view class="pin-modal" wx:if="{{showPINModal}}" catchtap="hidePINModal">
+    <view class="pin-modal-mask" catchtap="preventClose"></view>
+    <view class="pin-modal-content" catchtap="preventClose">
+      <view class="pin-title">🔒 家长验证</view>
+      <view class="pin-desc">未成年人开盲盒需家长验证，请输入家长PIN或前往设置</view>
+      <view class="pin-buttons">
+        <view class="pin-btn secondary" bindtap="hidePINModal">取消</view>
+        <view class="pin-btn primary" bindtap="goToPINVerify">去验证</view>
+      </view>
+    </view>
+  </view>
+</view>

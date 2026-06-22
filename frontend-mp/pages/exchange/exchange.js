@@ -3,7 +3,7 @@
  * @description 展示积分商城，用户可以使用积分兑换各种礼品
  */
 const app = getApp()
-const { EXCHANGE_BANNERS } = require('../../utils/constants')
+const { EXCHANGE_BANNERS, LOTTERY_CONFIG, BLINDBOX_CONFIG } = require('../../utils/constants')
 const { showToast, showModal, navigateTo, formatNumber } = require('../../utils/util')
 
 Page({
@@ -47,7 +47,11 @@ Page({
     virtualBadges: [],
     currentBadgeTab: 'goods',
     showBadgeModal: false,
-    selectedBadge: null
+    selectedBadge: null,
+    lotteryCost: LOTTERY_CONFIG.costPerDraw,
+    blindboxCost: BLINDBOX_CONFIG.normalBox.cost,
+    festivalBoxActive: null,
+    festivalBoxEmoji: ''
   },
 
   onLoad() {
@@ -63,9 +67,12 @@ Page({
   onShow() {
     console.log('[Exchange] 页面显示')
     const childModeEnabled = app.isChildModeEnabled()
+    const festivalBoxActive = app.globalData.festivalBoxActive
     this.setData({
       childModeEnabled,
-      currentBadgeTab: childModeEnabled ? 'badges' : 'goods'
+      currentBadgeTab: childModeEnabled ? 'badges' : 'goods',
+      festivalBoxActive: festivalBoxActive || null,
+      festivalBoxEmoji: festivalBoxActive ? festivalBoxActive.emoji : ''
     })
     this.refreshUserPoints()
     this.loadGoodsList()
@@ -224,6 +231,16 @@ Page({
       showBadgeModal: false,
       selectedBadge: null
     })
+  },
+
+  goToLottery() {
+    console.log('[Exchange] 进入积分抽奖')
+    navigateTo('/pages/lottery/lottery')
+  },
+
+  goToBlindbox() {
+    console.log('[Exchange] 进入盲盒专区')
+    navigateTo('/pages/blindbox/blindbox')
   },
 
   onShareAppMessage() {

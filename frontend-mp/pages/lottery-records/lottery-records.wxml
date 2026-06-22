@@ -1,0 +1,140 @@
+<view class="records-page {{experienceClasses}}">
+  <view class="stats-banner">
+    <view class="stat-card">
+      <text class="sc-icon">🎰</text>
+      <view class="sc-info">
+        <text class="sc-value">{{stats.totalDrawCount}}</text>
+        <text class="sc-label">总抽奖次数</text>
+      </view>
+    </view>
+    <view class="stat-card highlight">
+      <text class="sc-icon">🏆</text>
+      <view class="sc-info">
+        <text class="sc-value">{{stats.wonRareCount}}</text>
+        <text class="sc-label">稀有+获得</text>
+      </view>
+    </view>
+    <view class="stat-card">
+      <text class="sc-icon">💰</text>
+      <view class="sc-info">
+        <text class="sc-value">{{stats.wonPointsTotal}}</text>
+        <text class="sc-label">积分累计</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="pending-section" wx:if="{{pendingPhysical.length > 0}}">
+    <view class="pending-header">
+      <text class="pending-icon">📦</text>
+      <text class="pending-title">待领取实物</text>
+      <view class="pending-badge">{{pendingPhysical.length}}</view>
+    </view>
+    <view class="pending-list">
+      <view class="pending-item" wx:for="{{pendingPhysical}}" wx:key="id">
+        <view class="pi-emoji">{{item.emoji}}</view>
+        <view class="pi-info">
+          <text class="pi-name">{{item.name}}</text>
+          <text class="pi-time">{{item.timeAgo}} · {{item.rarityLabel}}</text>
+        </view>
+        <view class="pi-btn" bindtap="claimPrize" data-prize-id="{{item.id}}">
+          <text>去领取</text>
+          <text class="pi-arrow">›</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view class="filter-tabs">
+    <view class="tab-item {{currentTab === 'all' ? 'active' : ''}}" bindtap="switchTab" data-tab="all">
+      <text>全部</text>
+    </view>
+    <view class="tab-item {{currentTab === 'lottery' ? 'active' : ''}}" bindtap="switchTab" data-tab="lottery">
+      <text>🎰 转盘</text>
+    </view>
+    <view class="tab-item {{currentTab === 'blindbox' ? 'active' : ''}}" bindtap="switchTab" data-tab="blindbox">
+      <text>📦 盲盒</text>
+    </view>
+    <view class="tab-item {{currentTab === 'win' ? 'active' : ''}}" bindtap="switchTab" data-tab="win">
+      <text>🏆 中奖</text>
+    </view>
+  </view>
+
+  <view class="records-list">
+    <view class="day-group" wx:for="{{groupedRecords}}" wx:for-item="group" wx:key="date">
+      <view class="day-header">
+        <text class="day-date">{{group.dateLabel}}</text>
+        <text class="day-count">{{group.items.length}}次</text>
+      </view>
+      <view class="record-item" wx:for="{{group.items}}" wx:for-item="record" wx:key="id">
+        <view class="record-left" style="background: {{record.bgColor}};">
+          <text class="rl-emoji">{{record.typeEmoji}}</text>
+          <view class="rl-count" wx:if="{{record.isBlindbox && record.count > 1}}">×{{record.count}}</view>
+        </view>
+        <view class="record-content">
+          <view class="rc-top">
+            <text class="rc-title">{{record.title}}</text>
+            <text class="rc-time">{{record.time}}</text>
+          </view>
+          <view class="rc-prizes" wx:if="{{record.isBlindbox}}">
+            <view class="rc-prize" wx:for="{{record.prizes}}" wx:for-item="p" wx:key="id">
+              <text>{{p.emoji}}{{p.name}}</text>
+              <view class="rc-tag" wx:if="{{p.isRare}}">稀有</view>
+            </view>
+          </view>
+          <view class="rc-prize" wx:else>
+            <text>{{record.prizeEmoji}}{{record.prizeName}}</text>
+            <view class="rc-tag" wx:if="{{record.isRare}}">{{record.rarityLabel}}</view>
+          </view>
+          <view class="rc-desc" wx:if="{{record.description}}">{{record.description}}</view>
+        </view>
+        <view class="record-actions" wx:if="{{record.canClaim}}">
+          <view class="action-btn claim" bindtap="claimPrize" data-prize-id="{{record.id}}">领取</view>
+        </view>
+      </view>
+    </view>
+
+    <view class="empty-state" wx:if="{{groupedRecords.length === 0}}">
+      <text class="empty-emoji">🎰</text>
+      <text class="empty-title">暂无{{currentTabLabel}}记录</text>
+      <text class="empty-desc">快去参与抽奖吧，惊喜好礼等着你！</text>
+      <view class="empty-btn" bindtap="goToLottery">
+        <text>去抽奖</text>
+        <text class="eb-arrow">›</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="address-modal" wx:if="{{showAddressModal}}" catchtap="hideAddressModal">
+    <view class="am-mask" catchtap="preventClose"></view>
+    <view class="am-content" catchtap="preventClose">
+      <view class="am-close" bindtap="hideAddressModal">✕</view>
+      <view class="am-title">选择收货地址</view>
+      <view class="am-desc">{{selectedPrizeName}}</view>
+
+      <view class="address-list">
+        <view class="addr-item {{item.id === selectedAddressId ? 'selected' : ''}}" wx:for="{{addressList}}" wx:key="id" bindtap="selectAddress" data-id="{{item.id}}">
+          <view class="addr-radio">
+            <view class="radio-inner" wx:if="{{item.id === selectedAddressId}}"></view>
+          </view>
+          <view class="addr-info">
+            <view class="addr-top">
+              <text class="addr-name">{{item.name}}</text>
+              <text class="addr-phone">{{item.phone}}</text>
+              <view class="addr-default" wx:if="{{item.isDefault}}">默认</view>
+            </view>
+            <text class="addr-detail">{{item.province}}{{item.city}}{{item.district}}{{item.detail}}</text>
+          </view>
+        </view>
+        <view class="addr-empty" wx:if="{{addressList.length === 0}}">
+          <text class="ae-icon">📍</text>
+          <text class="ae-text">还没有收货地址</text>
+        </view>
+      </view>
+
+      <view class="am-buttons">
+        <view class="am-btn secondary" bindtap="addNewAddress">新增地址</view>
+        <view class="am-btn primary" bindtap="confirmClaim" wx:if="{{selectedAddressId}}">确认领取</view>
+      </view>
+    </view>
+  </view>
+</view>

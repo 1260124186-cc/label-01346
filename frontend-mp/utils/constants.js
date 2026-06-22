@@ -5003,6 +5003,376 @@ const MISSION_CONFIG = {
   }
 }
 
+const LOTTERY_CONFIG = {
+  costPerDraw: 50,
+  costPerTenDraw: 450,
+  dailyDrawLimit: 10,
+  guaranteeCount: 10,
+  guaranteeRareCount: 30,
+  storageKey: 'lotteryData',
+  recordsKey: 'lotteryRecords',
+  childModeBlocked: true,
+  parentPinRequiredForMinor: true,
+  minorAgeLimit: 14
+}
+
+const LOTTERY_PRIZE_TYPES = {
+  POINTS: 'points',
+  BADGE: 'badge',
+  COUPON: 'coupon',
+  PHYSICAL: 'physical',
+  THANK_YOU: 'thankyou'
+}
+
+const LOTTERY_PRIZE_RARITY = {
+  COMMON: 'common',
+  RARE: 'rare',
+  EPIC: 'epic',
+  LEGENDARY: 'legendary'
+}
+
+const LOTTERY_PRIZES = [
+  {
+    id: 'prize_points_10',
+    name: '10积分',
+    type: LOTTERY_PRIZE_TYPES.POINTS,
+    rarity: LOTTERY_PRIZE_RARITY.COMMON,
+    value: 10,
+    probability: 0.25,
+    boostedProbability: 0.20,
+    emoji: '💰',
+    color: '#F39C12',
+    bgColor: 'rgba(243, 156, 18, 0.1)',
+    description: '返还10积分'
+  },
+  {
+    id: 'prize_points_50',
+    name: '50积分',
+    type: LOTTERY_PRIZE_TYPES.POINTS,
+    rarity: LOTTERY_PRIZE_RARITY.COMMON,
+    value: 50,
+    probability: 0.18,
+    boostedProbability: 0.15,
+    emoji: '💰',
+    color: '#F39C12',
+    bgColor: 'rgba(243, 156, 18, 0.15)',
+    description: '返还50积分（回本）'
+  },
+  {
+    id: 'prize_points_100',
+    name: '100积分',
+    type: LOTTERY_PRIZE_TYPES.POINTS,
+    rarity: LOTTERY_PRIZE_RARITY.RARE,
+    value: 100,
+    probability: 0.10,
+    boostedProbability: 0.18,
+    emoji: '💎',
+    color: '#3498DB',
+    bgColor: 'rgba(52, 152, 219, 0.1)',
+    description: '返还100积分（净赚50）'
+  },
+  {
+    id: 'prize_badge_recycle',
+    name: '环保先锋勋章',
+    type: LOTTERY_PRIZE_TYPES.BADGE,
+    rarity: LOTTERY_PRIZE_RARITY.RARE,
+    value: 'badge_recycle',
+    probability: 0.12,
+    boostedProbability: 0.15,
+    emoji: '🏅',
+    color: '#27AE60',
+    bgColor: 'rgba(39, 174, 96, 0.1)',
+    description: '虚拟勋章-环保先锋'
+  },
+  {
+    id: 'prize_badge_earth',
+    name: '地球卫士勋章',
+    type: LOTTERY_PRIZE_TYPES.BADGE,
+    rarity: LOTTERY_PRIZE_RARITY.EPIC,
+    value: 'badge_earth',
+    probability: 0.05,
+    boostedProbability: 0.10,
+    emoji: '🌍',
+    color: '#5BBD72',
+    bgColor: 'rgba(91, 189, 114, 0.15)',
+    description: '虚拟勋章-地球卫士'
+  },
+  {
+    id: 'prize_coupon_10off',
+    name: '10元优惠券',
+    type: LOTTERY_PRIZE_TYPES.COUPON,
+    rarity: LOTTERY_PRIZE_RARITY.RARE,
+    value: { discount: 10, minPoints: 200, validDays: 30 },
+    probability: 0.10,
+    boostedProbability: 0.10,
+    emoji: '🎫',
+    color: '#E74C3C',
+    bgColor: 'rgba(231, 76, 60, 0.1)',
+    description: '满200积分可用，抵扣10元等值积分'
+  },
+  {
+    id: 'prize_coupon_20off',
+    name: '20元优惠券',
+    type: LOTTERY_PRIZE_TYPES.COUPON,
+    rarity: LOTTERY_PRIZE_RARITY.EPIC,
+    value: { discount: 20, minPoints: 500, validDays: 30 },
+    probability: 0.05,
+    boostedProbability: 0.08,
+    emoji: '🎟️',
+    color: '#9B59B6',
+    bgColor: 'rgba(155, 89, 182, 0.1)',
+    description: '满500积分可用，抵扣20元等值积分'
+  },
+  {
+    id: 'prize_physical_tote',
+    name: '限量环保帆布袋',
+    type: LOTTERY_PRIZE_TYPES.PHYSICAL,
+    rarity: LOTTERY_PRIZE_RARITY.EPIC,
+    value: 'goods_limited_tote',
+    linkedGoodsId: 7,
+    probability: 0.03,
+    boostedProbability: 0.03,
+    emoji: '👜',
+    color: '#4A90D9',
+    bgColor: 'rgba(74, 144, 217, 0.1)',
+    description: '限量版环保帆布袋，需填写地址兑换',
+    stock: 500
+  },
+  {
+    id: 'prize_physical_plant',
+    name: '多肉植物盆栽套装',
+    type: LOTTERY_PRIZE_TYPES.PHYSICAL,
+    rarity: LOTTERY_PRIZE_RARITY.LEGENDARY,
+    value: 'goods_limited_plant',
+    linkedGoodsId: 6,
+    probability: 0.01,
+    boostedProbability: 0.01,
+    emoji: '🪴',
+    color: '#E67E22',
+    bgColor: 'rgba(230, 126, 34, 0.1)',
+    description: '精美多肉植物+陶瓷花盆套装',
+    stock: 100
+  },
+  {
+    id: 'prize_thankyou',
+    name: '谢谢参与',
+    type: LOTTERY_PRIZE_TYPES.THANK_YOU,
+    rarity: LOTTERY_PRIZE_RARITY.COMMON,
+    value: 0,
+    probability: 0.11,
+    boostedProbability: 0.00,
+    emoji: '🙏',
+    color: '#95A5A6',
+    bgColor: 'rgba(149, 165, 166, 0.1)',
+    description: '感谢您的参与，下次一定！'
+  }
+]
+
+const BLINDBOX_CONFIG = {
+  normalBox: {
+    id: 'box_normal',
+    name: '常规环保盲盒',
+    cost: 100,
+    emoji: '📦',
+    color: '#5BBD72',
+    gradientStart: '#6ECC84',
+    gradientEnd: '#5BBD72',
+    guaranteeCount: 5,
+    description: '包含3-5件随机奖品，至少1件稀有以上',
+    itemCount: [3, 5]
+  }
+}
+
+const FESTIVAL_TYPES = {
+  SPRING_FESTIVAL: 'spring_festival',
+  EARTH_DAY: 'earth_day',
+  WORLD_ENVIRONMENT_DAY: 'world_environment_day',
+  NATIONAL_DAY: 'national_day'
+}
+
+const FESTIVAL_BLINDBOXES = {
+  [FESTIVAL_TYPES.SPRING_FESTIVAL]: {
+    id: 'box_spring_festival',
+    festivalType: FESTIVAL_TYPES.SPRING_FESTIVAL,
+    name: '春节限定红包盲盒',
+    cost: 200,
+    emoji: '🧧',
+    color: '#E85D5D',
+    gradientStart: '#FF6B6B',
+    gradientEnd: '#E85D5D',
+    startDate: '01-20',
+    endDate: '02-15',
+    guaranteeCount: 3,
+    description: '春节限定！含春节专属勋章+高额积分红包',
+    itemCount: [4, 6],
+    activityLinkId: 'spring_festival_2025',
+    exclusivePrizes: [
+      {
+        id: 'prize_badge_spring',
+        name: '新春环保大使勋章',
+        type: LOTTERY_PRIZE_TYPES.BADGE,
+        rarity: LOTTERY_PRIZE_RARITY.LEGENDARY,
+        value: 'badge_spring_festival',
+        probability: 0.10,
+        emoji: '🧧',
+        color: '#E85D5D',
+        bgColor: 'rgba(232, 93, 93, 0.15)',
+        description: '春节限定勋章-新春环保大使',
+        isFestivalExclusive: true
+      },
+      {
+        id: 'prize_points_redpacket_888',
+        name: '888积分红包',
+        type: LOTTERY_PRIZE_TYPES.POINTS,
+        rarity: LOTTERY_PRIZE_RARITY.LEGENDARY,
+        value: 888,
+        probability: 0.05,
+        emoji: '🧧',
+        color: '#F1C40F',
+        bgColor: 'rgba(241, 196, 15, 0.2)',
+        description: '新春大吉！888积分大红包',
+        isFestivalExclusive: true
+      },
+      {
+        id: 'prize_points_redpacket_188',
+        name: '188积分红包',
+        type: LOTTERY_PRIZE_TYPES.POINTS,
+        rarity: LOTTERY_PRIZE_RARITY.EPIC,
+        value: 188,
+        probability: 0.20,
+        emoji: '🧧',
+        color: '#F39C12',
+        bgColor: 'rgba(243, 156, 18, 0.15)',
+        description: '恭喜发财！188积分红包',
+        isFestivalExclusive: true
+      }
+    ]
+  },
+  [FESTIVAL_TYPES.EARTH_DAY]: {
+    id: 'box_earth_day',
+    festivalType: FESTIVAL_TYPES.EARTH_DAY,
+    name: '地球日守护盲盒',
+    cost: 150,
+    emoji: '🌍',
+    color: '#4A90D9',
+    gradientStart: '#5DA3E8',
+    gradientEnd: '#4A90D9',
+    startDate: '04-15',
+    endDate: '04-30',
+    guaranteeCount: 4,
+    description: '4.22地球日限定！守护地球专属勋章',
+    itemCount: [3, 5],
+    activityLinkId: 'earth_day_2025',
+    exclusivePrizes: [
+      {
+        id: 'prize_badge_guardian',
+        name: '地球守护者勋章',
+        type: LOTTERY_PRIZE_TYPES.BADGE,
+        rarity: LOTTERY_PRIZE_RARITY.LEGENDARY,
+        value: 'badge_earth_guardian',
+        probability: 0.12,
+        emoji: '🛡️',
+        color: '#4A90D9',
+        bgColor: 'rgba(74, 144, 217, 0.15)',
+        description: '地球日限定勋章-地球守护者',
+        isFestivalExclusive: true
+      },
+      {
+        id: 'prize_coupon_earth',
+        name: '地球日专属5折券',
+        type: LOTTERY_PRIZE_TYPES.COUPON,
+        rarity: LOTTERY_PRIZE_RARITY.EPIC,
+        value: { discount: 50, minPoints: 100, validDays: 15, isPercent: true },
+        probability: 0.08,
+        emoji: '🌱',
+        color: '#27AE60',
+        bgColor: 'rgba(39, 174, 96, 0.15)',
+        description: '兑换商城商品5折优惠券（最高抵扣500积分）',
+        isFestivalExclusive: true
+      },
+      {
+        id: 'prize_physical_seed',
+        name: '环保种子套装',
+        type: LOTTERY_PRIZE_TYPES.PHYSICAL,
+        rarity: LOTTERY_PRIZE_RARITY.EPIC,
+        value: 'goods_earth_seed',
+        linkedGoodsId: 8,
+        probability: 0.05,
+        emoji: '🌱',
+        color: '#5BBD72',
+        bgColor: 'rgba(91, 189, 114, 0.15)',
+        description: '含多肉、向日葵、波斯菊种子套装',
+        stock: 300,
+        isFestivalExclusive: true
+      }
+    ]
+  },
+  [FESTIVAL_TYPES.WORLD_ENVIRONMENT_DAY]: {
+    id: 'box_env_day',
+    festivalType: FESTIVAL_TYPES.WORLD_ENVIRONMENT_DAY,
+    name: '环境日行动盲盒',
+    cost: 180,
+    emoji: '🌿',
+    color: '#27AE60',
+    gradientStart: '#2ECC71',
+    gradientEnd: '#27AE60',
+    startDate: '05-25',
+    endDate: '06-10',
+    guaranteeCount: 4,
+    description: '6.5世界环境日限定！行动派专属奖励',
+    itemCount: [4, 6],
+    activityLinkId: 'env_day_2025',
+    exclusivePrizes: [
+      {
+        id: 'prize_badge_action',
+        name: '环保行动派勋章',
+        type: LOTTERY_PRIZE_TYPES.BADGE,
+        rarity: LOTTERY_PRIZE_RARITY.LEGENDARY,
+        value: 'badge_env_action',
+        probability: 0.10,
+        emoji: '⚡',
+        color: '#27AE60',
+        bgColor: 'rgba(39, 174, 96, 0.15)',
+        description: '环境日限定勋章-环保行动派',
+        isFestivalExclusive: true
+      }
+    ]
+  },
+  [FESTIVAL_TYPES.NATIONAL_DAY]: {
+    id: 'box_national_day',
+    festivalType: FESTIVAL_TYPES.NATIONAL_DAY,
+    name: '国庆盛典盲盒',
+    cost: 180,
+    emoji: '🇨🇳',
+    color: '#E85D5D',
+    gradientStart: '#FF6B6B',
+    gradientEnd: '#C0392B',
+    startDate: '09-28',
+    endDate: '10-10',
+    guaranteeCount: 4,
+    description: '国庆限定！与祖国共庆，好礼拿不停',
+    itemCount: [4, 6],
+    activityLinkId: 'national_day_2025',
+    exclusivePrizes: [
+      {
+        id: 'prize_badge_patriot',
+        name: '红色环保先锋勋章',
+        type: LOTTERY_PRIZE_TYPES.BADGE,
+        rarity: LOTTERY_PRIZE_RARITY.LEGENDARY,
+        value: 'badge_patriot',
+        probability: 0.10,
+        emoji: '🇨🇳',
+        color: '#C0392B',
+        bgColor: 'rgba(192, 57, 43, 0.15)',
+        description: '国庆限定勋章-红色环保先锋',
+        isFestivalExclusive: true
+      }
+    ]
+  }
+}
+
+const LOTTERY_COUPONS_STORAGE_KEY = 'lotteryCoupons'
+
 module.exports = {
   TRASH_TYPES,
   QUIZ_SCENES,
@@ -5127,5 +5497,13 @@ module.exports = {
   WEEKLY_MISSIONS,
   DAILY_TREASURE_BOX,
   MISSION_ACHIEVEMENTS,
-  MISSION_CONFIG
+  MISSION_CONFIG,
+  LOTTERY_CONFIG,
+  LOTTERY_PRIZE_TYPES,
+  LOTTERY_PRIZE_RARITY,
+  LOTTERY_PRIZES,
+  BLINDBOX_CONFIG,
+  FESTIVAL_TYPES,
+  FESTIVAL_BLINDBOXES,
+  LOTTERY_COUPONS_STORAGE_KEY
 }

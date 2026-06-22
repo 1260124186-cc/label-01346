@@ -17,7 +17,13 @@ const MESSAGE_TYPES = {
   HOMEWORK: 'homework',
   HOMEWORK_REMINDER: 'homework_reminder',
   HOMEWORK_COMPLETED: 'homework_completed',
-  DROP_POINT: 'drop_point'
+  DROP_POINT: 'drop_point',
+  LOTTERY_WIN: 'lottery_win',
+  LOTTERY_GUARANTEE: 'lottery_guarantee',
+  BLINDBOX_OPEN: 'blindbox_open',
+  FESTIVAL_BOX: 'festival_box',
+  COUPON_EXPIRE: 'coupon_expire',
+  PHYSICAL_PRIZE_PENDING: 'physical_prize_pending'
 }
 
 const MESSAGE_TYPE_CONFIG = {
@@ -118,6 +124,48 @@ const MESSAGE_TYPE_CONFIG = {
     emoji: '🗑️',
     color: '#5BBD72',
     bgColor: 'rgba(91, 189, 114, 0.1)'
+  },
+  [MESSAGE_TYPES.LOTTERY_WIN]: {
+    id: MESSAGE_TYPES.LOTTERY_WIN,
+    name: '抽奖中奖',
+    emoji: '🎉',
+    color: '#F39C12',
+    bgColor: 'rgba(243, 156, 18, 0.1)'
+  },
+  [MESSAGE_TYPES.LOTTERY_GUARANTEE]: {
+    id: MESSAGE_TYPES.LOTTERY_GUARANTEE,
+    name: '保底触发',
+    emoji: '🎯',
+    color: '#9B59B6',
+    bgColor: 'rgba(155, 89, 182, 0.1)'
+  },
+  [MESSAGE_TYPES.BLINDBOX_OPEN]: {
+    id: MESSAGE_TYPES.BLINDBOX_OPEN,
+    name: '盲盒开启',
+    emoji: '📦',
+    color: '#5BBD72',
+    bgColor: 'rgba(91, 189, 114, 0.1)'
+  },
+  [MESSAGE_TYPES.FESTIVAL_BOX]: {
+    id: MESSAGE_TYPES.FESTIVAL_BOX,
+    name: '节日盲盒',
+    emoji: '🎊',
+    color: '#E85D5D',
+    bgColor: 'rgba(232, 93, 93, 0.1)'
+  },
+  [MESSAGE_TYPES.COUPON_EXPIRE]: {
+    id: MESSAGE_TYPES.COUPON_EXPIRE,
+    name: '优惠券过期',
+    emoji: '🎫',
+    color: '#E67E22',
+    bgColor: 'rgba(230, 126, 34, 0.1)'
+  },
+  [MESSAGE_TYPES.PHYSICAL_PRIZE_PENDING]: {
+    id: MESSAGE_TYPES.PHYSICAL_PRIZE_PENDING,
+    name: '实物待领取',
+    emoji: '📮',
+    color: '#4A90D9',
+    bgColor: 'rgba(74, 144, 217, 0.1)'
   }
 }
 
@@ -161,6 +209,26 @@ const SUBSCRIPTION_TEMPLATES = {
     name: '活动报告通知',
     tmplIds: [],
     description: '活动结束后生成参与报告时通知'
+  },
+  LOTTERY_WIN_NOTICE: {
+    name: '抽奖中奖通知',
+    tmplIds: [],
+    description: '抽奖获得稀有及以上奖品时通知'
+  },
+  FESTIVAL_BOX_REMINDER: {
+    name: '节日盲盒提醒',
+    tmplIds: [],
+    description: '节日限定盲盒上架时提醒'
+  },
+  COUPON_EXPIRE_REMINDER: {
+    name: '优惠券过期提醒',
+    tmplIds: [],
+    description: '优惠券到期前提醒使用'
+  },
+  PHYSICAL_PRIZE_REMINDER: {
+    name: '实物奖品领取提醒',
+    tmplIds: [],
+    description: '抽中实物奖品后提醒填写收货地址'
   }
 }
 

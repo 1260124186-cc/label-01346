@@ -77,7 +77,10 @@
     "pages/carbon-record/carbon-record",
     "pages/carbon-milestone/carbon-milestone",
     "pages/carbon-certificate/carbon-certificate",
-    "pages/mission-center/mission-center"
+    "pages/mission-center/mission-center",
+    "pages/lottery/lottery",
+    "pages/blindbox/blindbox",
+    "pages/lottery-records/lottery-records"
   ],
   "window": {
     "backgroundTextStyle": "dark",

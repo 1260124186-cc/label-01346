@@ -68,6 +68,38 @@
     </view>
   </view>
 
+  <!-- 抽奖 & 盲盒快捷入口 -->
+  <view class="lottery-entry-section" wx:if="{{!childModeEnabled}}">
+    <view class="entry-card lottery" bindtap="goToLottery">
+      <view class="entry-bg-icon">🎰</view>
+      <view class="entry-content">
+        <view class="entry-title-row">
+          <text class="entry-title">积分抽奖</text>
+          <view class="entry-hot-tag">HOT</view>
+        </view>
+        <text class="entry-desc">转盘赢勋章 / 优惠券 / 实物</text>
+        <view class="entry-footer">
+          <text class="entry-cost">{{lotteryCost}}分/次</text>
+          <text class="entry-arrow">去抽奖 ›</text>
+        </view>
+      </view>
+    </view>
+    <view class="entry-card blindbox" bindtap="goToBlindbox">
+      <view class="entry-bg-icon">📦</view>
+      <view class="festival-tag" wx:if="{{festivalBoxActive}}">{{festivalBoxEmoji}}限定</view>
+      <view class="entry-content">
+        <view class="entry-title-row">
+          <text class="entry-title">惊喜盲盒</text>
+        </view>
+        <text class="entry-desc">多件奖品 · 5抽必出稀有</text>
+        <view class="entry-footer">
+          <text class="entry-cost">{{blindboxCost}}分/盒</text>
+          <text class="entry-arrow">去开盒 ›</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
   <!-- 儿童模式：强制勋章Tab，隐藏切换条 -->
   <view class="child-mode-notice" wx:if="{{childModeEnabled}}">
     <view class="notice-icon">🧸</view>
