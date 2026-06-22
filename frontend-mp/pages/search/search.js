@@ -21,6 +21,7 @@ const {
   searchCompositePackaging,
   getCompositePackagingById
 } = require('../../data/packaging')
+const { searchBarcodeDb, getBarcodeProductDetail } = require('../../data/barcode')
 const { correctionManager } = require('../../utils/correction')
 
 Page({
@@ -114,19 +115,37 @@ Page({
     }
 
     const currentCity = this.data.currentCity
-    const results = fuzzySearchTrashForCity(trimmedKeyword, currentCity)
+    const trashResults = fuzzySearchTrashForCity(trimmedKeyword, currentCity)
+    const barcodeResults = searchBarcodeDb(trimmedKeyword)
+    
+    const mergedBarcodeResults = barcodeResults.map(b => ({
+      id: 'barcode-' + b.barcode,
+      name: b.productName,
+      emoji: b.emoji || '📦',
+      typeId: 0,
+      typeName: '扫码商品',
+      typeColor: '#5BBD72',
+      typeBgColor: 'rgba(91, 189, 114, 0.1)',
+      description: b.description || b.materials ? '包装材质：' + b.materials.join('、') : '',
+      disposalTips: b.description ? [b.description] : [],
+      isBarcode: true,
+      barcode: b.barcode,
+      packagingId: b.packagingId
+    }))
+
+    const allResults = [...mergedBarcodeResults, ...trashResults]
     
     this.setData({
-      searchResults: results,
+      searchResults: allResults,
       hasSearched: true
     })
 
-    if (results.length > 0) {
+    if (allResults.length > 0) {
       addSearchHistory(trimmedKeyword)
       this.loadSearchHistory()
     }
 
-    console.log('[Search] 搜索结果:', results.length, '条，城市:', currentCity)
+    console.log('[Search] 搜索结果:', allResults.length, '条（条码商品', mergedBarcodeResults.length, '+ 垃圾百科', trashResults.length, '），城市:', currentCity)
   },
 
   onClearInput() {
@@ -141,6 +160,14 @@ Page({
   onResultTap(e) {
     const { item } = e.currentTarget.dataset
     console.log('[Search] 点击搜索结果:', item.name)
+    
+    if (item.isBarcode && item.barcode) {
+      console.log('[Search] 条码商品，跳转到条码结果页')
+      navigateTo('/pages/barcode-result/barcode-result', {
+        barcode: item.barcode
+      })
+      return
+    }
     
     const currentCity = this.data.currentCity
     const encyclopedia = getTrashEncyclopediaForCity(currentCity)
@@ -329,5 +356,10 @@ Page({
       title: '垃圾百科 - 垃圾分类查询助手',
       path: '/pages/search/search'
     }
+  },
+
+  goToBarcodeScan() {
+    console.log('[Search] 跳转到扫码识物')
+    navigateTo('/pages/barcode-scan/barcode-scan')
   }
 })

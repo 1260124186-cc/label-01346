@@ -1,0 +1,187 @@
+<!--
+  未知条码录入页面
+  功能：引导用户拍照和手动录入未知条码的商品信息
+-->
+<view class="barcode-submit-page {{experienceClasses}}">
+  <!-- 顶部提示 -->
+  <view class="submit-header">
+    <view class="header-icon-wrapper">
+      <text class="header-icon">📸</text>
+    </view>
+    <view class="header-text">
+      <text class="header-title">发现新商品</text>
+      <text class="header-subtitle">帮助完善条码百科，让更多人受益</text>
+    </view>
+  </view>
+
+  <!-- 条码信息 -->
+  <view class="form-card">
+    <view class="form-section-title">
+      <text class="section-icon">🏷️</text>
+      <text class="section-title">条码信息</text>
+    </view>
+    <view class="info-row">
+      <text class="info-label">条码编号</text>
+      <text class="info-value barcode-value">{{barcode || '未获取'}}</text>
+    </view>
+    <view class="info-row">
+      <text class="info-label">条码类型</text>
+      <text class="info-value">{{barcodeType || '未知'}}</text>
+    </view>
+  </view>
+
+  <!-- 拍照上传 -->
+  <view class="form-card">
+    <view class="form-section-title">
+      <text class="section-icon">📷</text>
+      <text class="section-title">商品照片</text>
+      <text class="section-optional">（选填）</text>
+    </view>
+    <view class="photo-upload-area">
+      <view
+        class="photo-placeholder"
+        wx:if="{{!productImage}}"
+        bindtap="onChooseImage"
+      >
+        <text class="upload-icon">+</text>
+        <text class="upload-text">上传商品照片</text>
+        <text class="upload-hint">帮助他人识别该商品</text>
+      </view>
+      <view class="photo-preview" wx:if="{{productImage}}">
+        <image class="preview-image" src="{{productImage}}" mode="aspectFill" />
+        <view class="remove-photo-btn" bindtap="onRemoveImage">
+          <text class="remove-icon">✕</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 商品信息表单 -->
+  <view class="form-card">
+    <view class="form-section-title">
+      <text class="section-icon">📝</text>
+      <text class="section-title">商品信息</text>
+    </view>
+
+    <view class="form-item">
+      <text class="form-label">商品名称</text>
+      <input
+        class="form-input"
+        placeholder="如：蒙牛纯牛奶 250ml"
+        placeholder-class="input-placeholder"
+        value="{{formData.productName}}"
+        bindinput="onInputProductName"
+        maxlength="50"
+      />
+    </view>
+
+    <view class="form-item">
+      <text class="form-label">品牌</text>
+      <input
+        class="form-input"
+        placeholder="如：蒙牛（选填）"
+        placeholder-class="input-placeholder"
+        value="{{formData.brand}}"
+        bindinput="onInputBrand"
+        maxlength="30"
+      />
+    </view>
+
+    <view class="form-item">
+      <text class="form-label">商品类别</text>
+      <view class="category-chips">
+        <view
+          wx:for="{{categories}}"
+          wx:key="id"
+          class="category-chip {{formData.category === item.id ? 'active' : ''}}"
+          bindtap="onSelectCategory"
+          data-category="{{item}}"
+        >
+          <text class="chip-emoji">{{item.emoji}}</text>
+          <text class="chip-name">{{item.name}}</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="form-item">
+      <text class="form-label">包装材质</text>
+      <view class="material-input-wrapper">
+        <view class="material-chips">
+          <view
+            wx:for="{{formData.materials}}"
+            wx:key="*this"
+            class="material-chip-selected"
+          >
+            <text class="chip-text">{{item}}</text>
+            <text class="chip-remove" bindtap="onRemoveMaterial" data-material="{{item}}">✕</text>
+          </view>
+        </view>
+        <input
+          class="material-input"
+          placeholder="输入材质后点击添加（如：塑料瓶）"
+          placeholder-class="input-placeholder"
+          value="{{materialInput}}"
+          bindinput="onMaterialInput"
+          bindconfirm="onAddMaterial"
+          maxlength="30"
+        />
+        <view class="add-material-btn" bindtap="onAddMaterial">
+          <text class="add-text">添加</text>
+        </view>
+      </view>
+      <view class="material-suggestions">
+        <text class="suggestion-label">常用材质：</text>
+        <view
+          wx:for="{{commonMaterials}}"
+          wx:key="*this"
+          class="suggestion-chip"
+          bindtap="onQuickAddMaterial"
+          data-material="{{item}}"
+        >
+          <text>{{item}}</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="form-item">
+      <text class="form-label">关联组合包装</text>
+      <view class="packaging-select" bindtap="onSelectPackaging">
+        <text class="select-text {{selectedPackaging ? '' : 'placeholder'}}">
+          {{selectedPackaging ? selectedPackaging.name : '选择对应的组合包装（选填）'}}
+        </text>
+        <text class="select-arrow">›</text>
+      </view>
+    </view>
+
+    <view class="form-item">
+      <text class="form-label">说明备注</text>
+      <textarea
+        class="form-textarea"
+        placeholder="描述一下该商品的包装特点、分类注意事项等（选填）"
+        placeholder-class="input-placeholder"
+        value="{{formData.description}}"
+        bindinput="onInputDescription"
+        maxlength="200"
+        auto-height
+      />
+    </view>
+  </view>
+
+  <!-- 合规说明 -->
+  <view class="compliance-section">
+    <view class="compliance-icon">ℹ️</view>
+    <view class="compliance-content">
+      <text class="compliance-title">用户共建协议</text>
+      <text class="compliance-text">
+        您提交的信息将用于完善公共垃圾分类百科数据库。请确保信息真实准确，不涉及任何敏感或违法内容。提交即表示您同意将该信息贡献给公共领域。
+      </text>
+    </view>
+  </view>
+
+  <!-- 底部操作 -->
+  <view class="submit-footer">
+    <view class="submit-btn {{canSubmit ? '' : 'disabled'}}" bindtap="onSubmit">
+      <text class="submit-text">提交信息</text>
+    </view>
+  </view>
+</view>

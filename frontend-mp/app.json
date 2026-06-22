@@ -69,7 +69,10 @@
     "pages/correction-leaderboard/correction-leaderboard",
     "pages/report-export/report-export",
     "pages/child-pin-verify/child-pin-verify",
-    "pages/parent-dashboard/parent-dashboard"
+    "pages/parent-dashboard/parent-dashboard",
+    "pages/barcode-scan/barcode-scan",
+    "pages/barcode-result/barcode-result",
+    "pages/barcode-submit/barcode-submit"
   ],
   "window": {
     "backgroundTextStyle": "dark",

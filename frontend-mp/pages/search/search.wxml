@@ -22,6 +22,9 @@
         <text class="clear-icon">✕</text>
       </view>
     </view>
+    <view class="scan-btn" bindtap="goToBarcodeScan" aria-label="扫码识物">
+      <text class="scan-icon">📷</text>
+    </view>
     <view class="cancel-btn" bindtap="goBack" aria-label="取消搜索">
       <text class="cancel-text">取消</text>
     </view>

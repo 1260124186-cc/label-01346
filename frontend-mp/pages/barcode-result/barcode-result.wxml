@@ -1,0 +1,158 @@
+<!--
+  扫码结果页面
+  功能：展示商品的包装材质、各部件分类、拆解建议
+-->
+<view class="barcode-result-page {{experienceClasses}}">
+  <!-- 商品基本信息 -->
+  <view class="product-hero" wx:if="{{product}}">
+    <view class="hero-bg"></view>
+    <view class="hero-content">
+      <view class="product-emoji-wrapper">
+        <text class="product-emoji">{{product.emoji || '📦'}}</text>
+      </view>
+      <view class="product-info">
+        <text class="product-name">{{product.productName || '未知商品'}}</text>
+        <view class="product-brand-row" wx:if="{{product.brand}}">
+          <text class="product-brand">{{product.brand}}</text>
+          <view
+            class="favorite-btn {{isFavorite ? 'active' : ''}}"
+            bindtap="onToggleFavorite"
+            catchtap="onToggleFavorite"
+            aria-label="收藏"
+          >
+            <text class="favorite-icon">{{isFavorite ? '⭐' : '☆'}}</text>
+          </view>
+        </view>
+        <view class="product-meta-row">
+          <view class="barcode-tag">
+            <text class="barcode-icon">▮</text>
+            <text class="barcode-text">{{product.barcode}}</text>
+          </view>
+          <view class="barcode-type-tag" wx:if="{{product.barcodeType}}">
+            <text class="type-text">{{product.barcodeType}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 包装材质 -->
+  <view class="section-card" wx:if="{{product && product.materials && product.materials.length > 0}}">
+    <view class="section-header">
+      <view class="section-title-row">
+        <text class="section-icon">🧪</text>
+        <text class="section-title">包装材质</text>
+      </view>
+    </view>
+    <view class="section-body">
+      <view class="materials-grid">
+        <view
+          wx:for="{{product.materials}}"
+          wx:key="*this"
+          class="material-item"
+        >
+          <view class="material-dot"></view>
+          <text class="material-name">{{item}}</text>
+        </view>
+      </view>
+      <view class="product-description" wx:if="{{product.description}}">
+        <text class="desc-text">{{product.description}}</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 组合包装拆解向导入口 -->
+  <view class="section-card" wx:if="{{product && packaging}}">
+    <view class="section-header">
+      <view class="section-title-row">
+        <text class="section-icon">🔧</text>
+        <text class="section-title">组合包装拆解</text>
+      </view>
+      <view class="section-subtitle">{{packaging.components.length}} 个部件需分类投放</view>
+    </view>
+    <view class="section-body">
+      <view class="components-preview">
+        <view
+          wx:for="{{packaging.components}}"
+          wx:key="id"
+          class="comp-preview-item"
+        >
+          <view class="comp-icon-wrapper" style="background: {{item.typeBgColor}};">
+            <text class="comp-type-emoji">{{item.typeEmoji}}</text>
+          </view>
+          <view class="comp-preview-info">
+            <text class="comp-name">{{item.name}}</text>
+            <view class="comp-type-tag" style="background: {{item.typeBgColor}}; color: {{item.typeColor}};">
+              <text>{{item.typeName}}</text>
+            </view>
+          </view>
+          <view class="comp-required-tag" wx:if="{{item.isRequired}}">必拆</view>
+        </view>
+      </view>
+      <view class="wizard-entry-btn" bindtap="goToPackagingWizard">
+        <view class="wizard-entry-left">
+          <text class="wizard-icon">📖</text>
+          <view class="wizard-entry-text">
+            <text class="wizard-entry-title">查看完整拆解步骤</text>
+            <text class="wizard-entry-subtitle">分步图示 · 完成小测 +积分</text>
+          </view>
+        </view>
+        <text class="wizard-entry-arrow">›</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 搜索百科关联 -->
+  <view class="section-card" wx:if="{{product && !packaging}}">
+    <view class="section-header">
+      <view class="section-title-row">
+        <text class="section-icon">🔍</text>
+        <text class="section-title">搜索相关垃圾分类</text>
+      </view>
+    </view>
+    <view class="section-body">
+      <view class="search-hint">
+        <text class="hint-text">该商品暂无详细拆解信息，可通过搜索百科查看同类商品分类指南。</text>
+      </view>
+      <view class="search-entry-btn" bindtap="goToSearch">
+        <text class="search-entry-text">搜索「{{product.productName}}」相关分类</text>
+        <text class="search-entry-arrow">›</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 数据来源与操作 -->
+  <view class="footer-actions">
+    <view class="compliance-tag">
+      <text class="compliance-text">
+        数据来源：{{product && product.source === 'user_contributed' ? '用户共建' : '公开商品库'}}
+        {{product && !product.verified ? ' · 待审核' : ''}}
+      </text>
+    </view>
+    <view class="action-row">
+      <view class="action-btn secondary" bindtap="goToCorrection">
+        <text class="action-icon">✏️</text>
+        <text class="action-text">信息纠错</text>
+      </view>
+      <view class="action-btn primary" bindtap="rescan">
+        <text class="action-icon">🔍</text>
+        <text class="action-text">继续扫码</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 空状态（未找到商品） -->
+  <view class="empty-state" wx:if="{{!product}}">
+    <text class="empty-emoji">📭</text>
+    <text class="empty-title">未找到该商品信息</text>
+    <text class="empty-desc">条码号：{{barcode}}</text>
+    <view class="empty-action-row">
+      <view class="empty-btn secondary" bindtap="rescan">
+        <text>重新扫码</text>
+      </view>
+      <view class="empty-btn primary" bindtap="goToSubmit">
+        <text>帮助录入</text>
+      </view>
+    </view>
+  </view>
+</view>

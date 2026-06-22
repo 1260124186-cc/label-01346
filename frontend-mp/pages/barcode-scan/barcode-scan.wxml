@@ -1,0 +1,209 @@
+<!--
+  扫码识物页面
+  功能：扫描商品条形码/二维码、展示扫描历史、收藏常购商品
+-->
+<view class="barcode-scan-page {{experienceClasses}}">
+  <!-- 扫码主界面 -->
+  <view class="scan-main-section" wx:if="{{currentTab === 'scan'}}">
+    <view class="scan-hero">
+      <view class="scan-hero-bg"></view>
+      <view class="scan-hero-content">
+        <view class="scan-title-row">
+          <text class="scan-hero-emoji">📷</text>
+          <text class="scan-hero-title">扫码识物百科</text>
+        </view>
+        <text class="scan-hero-subtitle">扫描商品条形码或包装上的QR码，获取垃圾分类指南</text>
+      </view>
+    </view>
+
+    <!-- 扫码按钮区 -->
+    <view class="scan-actions">
+      <view class="big-scan-btn" bindtap="onStartScan" aria-label="开始扫码">
+        <view class="scan-btn-ring"></view>
+        <view class="scan-btn-inner">
+          <text class="scan-btn-icon">🔍</text>
+          <text class="scan-btn-text">开始扫码</text>
+        </view>
+      </view>
+      <text class="scan-hint">支持条形码(EAN-13)、二维码(QR Code)</text>
+    </view>
+
+    <!-- 快捷功能入口 -->
+    <view class="quick-entries">
+      <view class="quick-entry-item" bindtap="onGoToSearch">
+        <view class="entry-icon-wrapper" style="background: linear-gradient(135deg, rgba(91, 189, 114, 0.18) 0%, rgba(91, 189, 114, 0.06) 100%);">
+          <text class="entry-icon">🔍</text>
+        </view>
+        <view class="entry-info">
+          <text class="entry-name">搜索百科</text>
+          <text class="entry-desc">关键词搜索垃圾分类</text>
+        </view>
+        <text class="entry-arrow">›</text>
+      </view>
+
+      <view class="quick-entry-item" bindtap="onGoToPhotoRecognize">
+        <view class="entry-icon-wrapper" style="background: linear-gradient(135deg, rgba(74, 144, 217, 0.18) 0%, rgba(74, 144, 217, 0.06) 100%);">
+          <text class="entry-icon">📸</text>
+        </view>
+        <view class="entry-info">
+          <text class="entry-name">拍照识别</text>
+          <text class="entry-desc">拍照识别垃圾类别</text>
+        </view>
+        <text class="entry-arrow">›</text>
+      </view>
+
+      <view class="quick-entry-item" bindtap="onGoToPackagingList">
+        <view class="entry-icon-wrapper" style="background: linear-gradient(135deg, rgba(243, 156, 18, 0.18) 0%, rgba(243, 156, 18, 0.06) 100%);">
+          <text class="entry-icon">🔧</text>
+        </view>
+        <view class="entry-info">
+          <text class="entry-name">拆解向导</text>
+          <text class="entry-desc">组合包装分步拆解</text>
+        </view>
+        <text class="entry-arrow">›</text>
+      </view>
+    </view>
+
+    <!-- 合规说明 -->
+    <view class="compliance-notice">
+      <text class="compliance-icon">ℹ️</text>
+      <view class="compliance-text">
+        <text class="compliance-title">数据来源说明</text>
+        <text class="compliance-desc">条码数据来源于公开商品库或用户共建，仅供参考。如信息不准确，欢迎反馈纠错。</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 扫描历史页 -->
+  <view class="history-section" wx:if="{{currentTab === 'history'}}">
+    <view class="history-header">
+      <text class="history-title">📋 扫描历史</text>
+      <view class="clear-history-btn" bindtap="onClearHistory" wx:if="{{scanHistory.length > 0}}">
+        <text class="clear-text">清空</text>
+      </view>
+    </view>
+
+    <view class="history-empty" wx:if="{{scanHistory.length === 0}}">
+      <text class="empty-emoji">📭</text>
+      <text class="empty-title">暂无扫描记录</text>
+      <text class="empty-desc">快去扫描一个商品条码试试吧</text>
+      <view class="empty-action-btn" bindtap="switchToScanTab">
+        <text class="empty-btn-text">去扫码</text>
+      </view>
+    </view>
+
+    <view class="history-list" wx:if="{{scanHistory.length > 0}}">
+      <view
+        wx:for="{{scanHistory}}"
+        wx:key="barcode"
+        class="history-item"
+        bindtap="onHistoryItemTap"
+        data-item="{{item}}"
+      >
+        <view class="history-emoji-wrapper">
+          <text class="history-emoji">{{item.emoji || '📦'}}</text>
+        </view>
+        <view class="history-info">
+          <text class="history-name">{{item.productName || '未知商品'}}</text>
+          <text class="history-barcode">{{item.barcode}}</text>
+          <text class="history-time">{{item.scanTimeLabel}}</text>
+        </view>
+        <view
+          class="history-favorite {{item.isFavorite ? 'active' : ''}}"
+          catchtap="onToggleFavorite"
+          data-item="{{item}}"
+          aria-label="收藏"
+        >
+          <text class="favorite-icon">{{item.isFavorite ? '⭐' : '☆'}}</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 收藏商品页 -->
+  <view class="favorites-section" wx:if="{{currentTab === 'favorites'}}">
+    <view class="favorites-header">
+      <text class="favorites-title">⭐ 常购商品</text>
+    </view>
+
+    <view class="favorites-empty" wx:if="{{favoriteItems.length === 0}}">
+      <text class="empty-emoji">🏷️</text>
+      <text class="empty-title">暂无收藏商品</text>
+      <text class="empty-desc">收藏常购商品，下次无需扫码快速查看</text>
+      <view class="empty-action-btn" bindtap="switchToScanTab">
+        <text class="empty-btn-text">去扫码</text>
+      </view>
+    </view>
+
+    <view class="favorites-list" wx:if="{{favoriteItems.length > 0}}">
+      <view
+        wx:for="{{favoriteItems}}"
+        wx:key="barcode"
+        class="favorite-card"
+        bindtap="onFavoriteItemTap"
+        data-item="{{item}}"
+      >
+        <view class="favorite-card-header">
+          <view class="favorite-emoji-wrapper">
+            <text class="favorite-emoji">{{item.emoji || '📦'}}</text>
+          </view>
+          <view class="favorite-info">
+            <text class="favorite-name">{{item.productName || '未知商品'}}</text>
+            <text class="favorite-brand" wx:if="{{item.brand}}">{{item.brand}}</text>
+          </view>
+        </view>
+
+        <view class="favorite-materials" wx:if="{{item.materials && item.materials.length > 0}}">
+          <view
+            wx:for="{{item.materials}}"
+            wx:for-item="material"
+            wx:key="*this"
+            class="material-chip"
+          >
+            <text class="material-text">{{material}}</text>
+          </view>
+        </view>
+
+        <view class="favorite-card-footer">
+          <view class="footer-action" bindtap="onGoToResult" data-item="{{item}}">
+            <text class="action-text">查看详情</text>
+            <text class="action-arrow">›</text>
+          </view>
+          <view
+            class="footer-favorite active"
+            catchtap="onToggleFavorite"
+            data-item="{{item}}"
+            aria-label="取消收藏"
+          >
+            <text class="favorite-icon">⭐</text>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 底部Tab栏 -->
+  <view class="bottom-tab-bar">
+    <view
+      class="tab-item {{currentTab === 'scan' ? 'active' : ''}}"
+      bindtap="switchToScanTab"
+    >
+      <text class="tab-icon">📷</text>
+      <text class="tab-label">扫码</text>
+    </view>
+    <view
+      class="tab-item {{currentTab === 'history' ? 'active' : ''}}"
+      bindtap="switchToHistoryTab"
+    >
+      <text class="tab-icon">📋</text>
+      <text class="tab-label">历史</text>
+    </view>
+    <view
+      class="tab-item {{currentTab === 'favorites' ? 'active' : ''}}"
+      bindtap="switchToFavoritesTab"
+    >
+      <text class="tab-icon">⭐</text>
+      <text class="tab-label">收藏</text>
+    </view>
+  </view>
+</view>

@@ -324,6 +324,12 @@ Page({
     recordPageVisit('search')
   },
 
+  goToBarcodeScan() {
+    console.log('[Index] 点击扫码识物')
+    app.safeNavigateTo('/pages/barcode-scan/barcode-scan')
+    recordPageVisit('barcodeScan')
+  },
+
   goToPhotoRecognize() {
     console.log('[Index] 点击拍一拍识垃圾')
     app.safeNavigateTo('/pages/photo-recognize/photo-recognize')

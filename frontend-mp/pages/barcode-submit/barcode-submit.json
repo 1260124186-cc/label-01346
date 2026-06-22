@@ -1,0 +1,7 @@
+{
+  "navigationBarTitleText": "录入商品信息",
+  "navigationBarBackgroundColor": "#5BBD72",
+  "navigationBarTextStyle": "white",
+  "enablePullDownRefresh": false,
+  "usingComponents": {}
+}
