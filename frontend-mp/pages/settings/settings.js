@@ -6,6 +6,7 @@ const app = getApp()
 const { showToast, showSuccess, showModal, showLoading, hideLoading, navigateTo } = require('../../utils/util')
 const { CITY_STANDARDS, getCityInfo, hasUpcomingStandard,
   CHILD_TIME_LIMIT_OPTIONS, CHILD_AGE_GROUPS } = require('../../utils/constants')
+const voice = require('../../utils/voice')
 
 Page({
   data: {
@@ -51,7 +52,12 @@ Page({
     darkMode: false,
     darkModeSource: 'system',
     largeFont: false,
-    experienceClasses: ''
+    experienceClasses: '',
+    voiceModeEnabled: false,
+    currentDialect: 'zh-CN',
+    dialectOptions: [],
+    currentDialectName: '普通话',
+    showDialectPicker: false
   },
 
   onLoad() {
@@ -60,6 +66,7 @@ Page({
     this.calculateCacheSize()
     this.loadChildModeState()
     this.loadExperienceState()
+    this.loadVoiceSettings()
 
     const userRole = wx.getStorageSync('userRole') || 'member'
     const currentCity = app.getCurrentCity()
@@ -77,6 +84,7 @@ Page({
     this.setData({ currentCity, currentCityInfo, hasUpcomingStandard: hasUpcoming })
     this.loadChildModeState()
     this.loadExperienceState()
+    this.loadVoiceSettings()
   },
 
   loadExperienceState() {
@@ -498,5 +506,92 @@ Page({
       experienceClasses: app.getExperienceClasses()
     })
     showSuccess(enabled ? '已开启大字号模式' : '已关闭大字号模式')
+  },
+
+  loadVoiceSettings() {
+    const voiceEnabled = voice.isVoiceEnabled()
+    const dialect = voice.getCurrentDialect()
+    const dialectOptions = voice.getDialectOptions()
+    const dialectInfo = dialectOptions.find(d => d.id === dialect)
+    
+    this.setData({
+      voiceModeEnabled: voiceEnabled,
+      currentDialect: dialect,
+      dialectOptions,
+      currentDialectName: dialectInfo ? dialectInfo.name : '普通话'
+    })
+  },
+
+  onVoiceModeChange(e) {
+    const enabled = e.detail.value
+    console.log('[Settings] 语音模式开关:', enabled)
+    
+    if (enabled) {
+      wx.authorize({
+        scope: 'scope.record',
+        success: () => {
+          voice.setVoiceEnabled(true)
+          this.setData({ voiceModeEnabled: true })
+          showSuccess('已开启语音模式')
+          this.playVoiceDemo()
+        },
+        fail: () => {
+          this.setData({ voiceModeEnabled: false })
+          showModal({
+            title: '需要麦克风权限',
+            content: '语音模式需要使用麦克风进行语音识别，请在设置中开启麦克风权限。',
+            confirmText: '去设置',
+            confirmColor: '#5BBD72'
+          }).then(confirmed => {
+            if (confirmed) {
+              wx.openSetting()
+            }
+          })
+        }
+      })
+    } else {
+      voice.setVoiceEnabled(false)
+      this.setData({ voiceModeEnabled: false })
+      showToast('已关闭语音模式')
+    }
+  },
+
+  playVoiceDemo() {
+    voice.speak('语音模式已开启，您可以使用语音搜索和语音答题功能。', {
+      useTTS: false,
+      onEnd: () => {
+        console.log('[Settings] 语音演示播放完成')
+      }
+    })
+  },
+
+  onDialectSelect() {
+    if (!this.data.voiceModeEnabled) {
+      showToast('请先开启语音模式')
+      return
+    }
+    this.setData({ showDialectPicker: true })
+  },
+
+  onConfirmDialect(e) {
+    const dialectId = e.currentTarget.dataset.dialectId
+    const dialectOptions = this.data.dialectOptions
+    const dialectInfo = dialectOptions.find(d => d.id === dialectId)
+    
+    if (dialectInfo) {
+      voice.setDialect(dialectId)
+      this.setData({
+        currentDialect: dialectId,
+        currentDialectName: dialectInfo.name,
+        showDialectPicker: false
+      })
+      showSuccess(`已切换为${dialectInfo.name}识别`)
+      
+      voice.speak(`已切换为${dialectInfo.name}识别模式`, { useTTS: false })
+    }
+  },
+
+  onCloseDialectPicker() {
+    this.setData({ showDialectPicker: false })
   }
 })

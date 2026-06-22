@@ -29,11 +29,13 @@ const {
   navigateBack,
   showToast,
   showSuccess,
+  showModal,
   getStorage,
   setStorage,
   formatDate,
   generateId
 } = require('../../utils/util')
+const voice = require('../../utils/voice')
 
 Page({
   data: {
@@ -88,13 +90,37 @@ Page({
     isChildMode: false,
     encyclopediaEntry: null,
     similarPracticeQuestions: [],
-    showSimilarPracticeBtn: false
+    showSimilarPracticeBtn: false,
+    voiceModeEnabled: false,
+    isSpeaking: false,
+    voiceQuizMode: false,
+    showVoicePanel: false,
+    isRecognizing: false,
+    isProcessing: false,
+    recognizedText: '',
+    currentDialectName: '普通话'
   },
 
   onLoad(options) {
     console.log('[QuizPlay] 页面加载', options)
     this.initTrashTypeMap()
     this.initQuiz(options)
+    this.loadVoiceState()
+    this.initVoiceRecorder()
+  },
+
+  onShow() {
+    this.loadVoiceState()
+  },
+
+  onUnload() {
+    this.stopTimer()
+    this.stopVoiceSpeak()
+    voice.destroyVoice()
+  },
+
+  onHide() {
+    this.stopVoiceSpeak()
   },
 
   initTrashTypeMap(cityId) {
@@ -513,6 +539,12 @@ Page({
     }
 
     this.updateProgress()
+
+    if (this.data.voiceQuizMode || this.data.isChildMode) {
+      setTimeout(() => {
+        this.speakAnswerResult()
+      }, 500)
+    }
   },
 
   calculatePoints() {
@@ -874,7 +906,298 @@ Page({
     }
   },
 
-  onUnload() {
-    this.stopTimer()
+  loadVoiceState() {
+    const voiceEnabled = voice.isVoiceEnabled()
+    const dialect = voice.getCurrentDialect()
+    const dialectOptions = voice.getDialectOptions()
+    const dialectInfo = dialectOptions.find(d => d.id === dialect)
+    const isChildMode = app.isChildModeEnabled()
+    const voiceQuizMode = isChildMode || (voiceEnabled && wx.getStorageSync('voiceQuizMode') === true)
+
+    this.setData({
+      voiceModeEnabled: voiceEnabled,
+      currentDialectName: dialectInfo ? dialectInfo.name : '普通话',
+      voiceQuizMode
+    })
+  },
+
+  initVoiceRecorder() {
+    voice.initRecorder({
+      onStart: () => {
+        console.log('[QuizPlay] 录音开始')
+        this.setData({ isRecognizing: true, isProcessing: false })
+      },
+      onStop: (res) => {
+        console.log('[QuizPlay] 录音结束')
+        this.setData({ isRecognizing: false, isProcessing: true })
+        this.processVoiceCommand(res.tempFilePath)
+      },
+      onError: (err) => {
+        console.error('[QuizPlay] 录音错误', err)
+        this.setData({ isRecognizing: false, isProcessing: false })
+        showToast('录音失败，请检查权限')
+      }
+    })
+  },
+
+  toggleVoiceQuizMode() {
+    if (!voice.isVoiceEnabled()) {
+      showToast('请先在设置中开启语音模式')
+      return
+    }
+
+    const newMode = !this.data.voiceQuizMode
+    wx.setStorageSync('voiceQuizMode', newMode)
+    this.setData({ voiceQuizMode: newMode })
+
+    if (newMode) {
+      showSuccess('语音答题模式已开启')
+      this.speakCurrentQuestion()
+    } else {
+      this.stopVoiceSpeak()
+      showToast('语音答题模式已关闭')
+    }
+  },
+
+  toggleVoicePanel() {
+    if (!voice.isVoiceEnabled()) {
+      showToast('请先在设置中开启语音模式')
+      return
+    }
+
+    if (this.data.showVoicePanel) {
+      this.closeVoicePanel()
+    } else {
+      this.openVoicePanel()
+    }
+  },
+
+  openVoicePanel() {
+    wx.authorize({
+      scope: 'scope.record',
+      success: () => {
+        this.setData({
+          showVoicePanel: true,
+          recognizedText: '',
+          isProcessing: false
+        })
+
+        if (this.data.isChildMode) {
+          voice.speak('请说出您的答案', { useTTS: false })
+        }
+      },
+      fail: () => {
+        showModal({
+          title: '需要麦克风权限',
+          content: '语音答题需要使用您的麦克风，请在设置中开启麦克风权限。',
+          confirmText: '去设置',
+          confirmColor: '#5BBD72'
+        }).then(confirmed => {
+          if (confirmed) {
+            wx.openSetting()
+          }
+        })
+      }
+    })
+  },
+
+  closeVoicePanel() {
+    voice.stopRecord()
+    this.setData({
+      showVoicePanel: false,
+      isRecognizing: false,
+      isProcessing: false,
+      recognizedText: ''
+    })
+  },
+
+  onVoiceRecordToggle() {
+    if (this.data.isRecognizing) {
+      voice.stopRecord()
+    } else {
+      if (!this.data.isProcessing) {
+        voice.startRecord({ duration: 10000, format: 'mp3' })
+        wx.vibrateShort({ type: 'light' })
+      }
+    }
+  },
+
+  async processVoiceCommand(audioFilePath) {
+    try {
+      this.setData({ isProcessing: true })
+
+      const result = await voice.recognizeVoice(audioFilePath)
+
+      if (result.success && result.text) {
+        console.log('[QuizPlay] 语音识别结果:', result.text)
+
+        this.setData({ recognizedText: result.text })
+
+        const command = voice.parseVoiceCommand(result.text, 'quiz')
+
+        this.handleVoiceCommand(command)
+      } else {
+        showToast('语音识别失败，请重试')
+      }
+    } catch (error) {
+      console.error('[QuizPlay] 语音识别错误:', error)
+      showToast('语音识别出错')
+    } finally {
+      this.setData({ isProcessing: false })
+
+      setTimeout(() => {
+        if (this.data.showVoicePanel) {
+          this.closeVoicePanel()
+        }
+      }, 1000)
+    }
+  },
+
+  handleVoiceCommand(command) {
+    console.log('[QuizPlay] 解析语音命令:', command)
+
+    const { action, params } = command
+
+    switch (action) {
+      case 'select':
+        this.handleVoiceSelect(params.optionIndex)
+        break
+      case 'next':
+        if (this.data.isAnswered) {
+          this.onNextQuestion()
+        } else {
+          showToast('请先选择答案')
+        }
+        break
+      case 'repeat':
+        this.speakCurrentQuestion()
+        break
+      case 'submit':
+        if (this.data.currentQuestion && this.data.currentQuestion.normalizedType === 'multiple') {
+          this.onSubmitMultiple()
+        }
+        break
+      case 'cancel':
+        this.closeVoicePanel()
+        break
+      case 'back':
+        navigateBack()
+        break
+      default:
+        showToast('未识别到有效命令')
+        break
+    }
+  },
+
+  handleVoiceSelect(optionIndex) {
+    const question = this.data.currentQuestion
+    if (!question) return
+
+    if (this.data.isAnswered) {
+      showToast('已作答，请进入下一题')
+      return
+    }
+
+    const maxIndex = question.optionsWithLabel ? question.optionsWithLabel.length - 1 : 3
+    if (optionIndex < 0 || optionIndex > maxIndex) {
+      showToast('选项不存在')
+      return
+    }
+
+    if (question.normalizedType === 'multiple') {
+      let selected = [...this.data.selectedIndexes]
+      const idx = selected.indexOf(optionIndex)
+      if (idx > -1) {
+        selected.splice(idx, 1)
+      } else {
+        selected.push(optionIndex)
+      }
+      this.setData({ selectedIndexes: selected })
+      voice.speak(`已选择${question.optionsWithLabel[optionIndex].label}选项`, { useTTS: false })
+    } else {
+      this.setData({ selectedIndex: optionIndex })
+
+      setTimeout(() => {
+        this.onSelectOption({ currentTarget: { dataset: { index: optionIndex } } })
+      }, 300)
+    }
+  },
+
+  speakCurrentQuestion() {
+    const { currentQuestion, currentIndex, isAnswered, isCorrect } = this.data
+
+    if (!currentQuestion) return
+
+    this.stopVoiceSpeak()
+
+    let text = ''
+
+    if (isAnswered) {
+      text += isCorrect ? '回答正确。' : '回答错误。'
+      if (currentQuestion.explanation) {
+        text += `${currentQuestion.explanation}。`
+      }
+      text += '请说下一题继续。'
+    } else {
+      text = `第${currentIndex + 1}题：${currentQuestion.question}。`
+
+      if (currentQuestion.optionsWithLabel) {
+        currentQuestion.optionsWithLabel.forEach((opt, i) => {
+          text += `${opt.label}，${opt.text}。`
+        })
+      }
+
+      if (currentQuestion.normalizedType === 'multiple') {
+        text += '这是多选题，请说出您要选择的选项。'
+      } else {
+        text += '请说出您的答案选项。'
+      }
+    }
+
+    voice.speak(text, {
+      useTTS: false,
+      onStart: () => {
+        this.setData({ isSpeaking: true })
+      },
+      onEnd: () => {
+        this.setData({ isSpeaking: false })
+      },
+      onError: () => {
+        this.setData({ isSpeaking: false })
+      }
+    })
+  },
+
+  speakAnswerResult() {
+    const { isCorrect, currentQuestion } = this.data
+
+    let text = isCorrect ? '回答正确！' : '回答错误。'
+
+    if (currentQuestion && currentQuestion.explanation) {
+      text += `${currentQuestion.explanation}`
+    }
+
+    voice.speak(text, {
+      useTTS: false,
+      onStart: () => {
+        this.setData({ isSpeaking: true })
+      },
+      onEnd: () => {
+        this.setData({ isSpeaking: false })
+      }
+    })
+  },
+
+  stopVoiceSpeak() {
+    voice.stopSpeak()
+    this.setData({ isSpeaking: false })
+  },
+
+  onSpeakQuestion() {
+    if (this.data.isSpeaking) {
+      this.stopVoiceSpeak()
+    } else {
+      this.speakCurrentQuestion()
+    }
   }
 })

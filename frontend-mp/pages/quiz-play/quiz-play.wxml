@@ -13,6 +13,21 @@
     </view>
   </view>
 
+  <view class="voice-quick-bar" wx:if="{{voiceModeEnabled}}">
+    <view class="voice-btn-quick {{isSpeaking ? 'speaking' : ''}}" bindtap="onSpeakQuestion" aria-label="{{isSpeaking ? '停止播报' : '语音播报题目'}}" role="button">
+      <text class="voice-icon">{{isSpeaking ? '🔊' : '🔈'}}</text>
+      <text class="voice-btn-text">{{isSpeaking ? '停止播报' : '听题目'}}</text>
+    </view>
+    <view class="voice-btn-quick" bindtap="toggleVoicePanel" aria-label="语音答题" role="button">
+      <text class="voice-icon">🎤</text>
+      <text class="voice-btn-text">语音答题</text>
+    </view>
+    <view class="voice-btn-quick {{voiceQuizMode ? 'active' : ''}}" bindtap="toggleVoiceQuizMode" aria-label="{{voiceQuizMode ? '关闭语音模式' : '开启语音模式'}}" role="button">
+      <text class="voice-icon">{{voiceQuizMode ? '✅' : '⚙️'}}</text>
+      <text class="voice-btn-text">{{voiceQuizMode ? '语音模式' : '语音开关'}}</text>
+    </view>
+  </view>
+
   <view class="timer-section" wx:if="{{isTimedMode}}">
     <view class="timer-circle {{timeLeft <= 5 ? 'warning' : ''}}">
       <text class="timer-text">{{timeLeft}}</text>
@@ -67,6 +82,9 @@
         wx:key="index"
         data-index="{{index}}"
         bindtap="onSelectOption"
+        aria-label="选项{{item.label}}：{{item.text}}{{index === currentQuestion.correctIndex && isAnswered ? '，正确答案' : ''}}{{selectedIndex === index && !isCorrect && isAnswered ? '，回答错误' : ''}}"
+        role="button"
+        tabindex="0"
       >
         <view class="image-emoji-wrap">
           <text class="image-emoji">{{item.emoji}}</text>
@@ -88,6 +106,9 @@
         wx:key="index"
         data-index="{{index}}"
         bindtap="onSelectOption"
+        aria-label="选项{{item.label}}：{{item.text}}{{(currentQuestion.normalizedType !== 'multiple' && index === currentQuestion.correctIndex && isAnswered) || (currentQuestion.normalizedType === 'multiple' && currentQuestion.correctIndexes.indexOf(index) > -1 && isAnswered) ? '，正确答案' : ''}}{{(currentQuestion.normalizedType !== 'multiple' && selectedIndex === index && !isCorrect && isAnswered) || (currentQuestion.normalizedType === 'multiple' && selectedIndexes.indexOf(index) > -1 && currentQuestion.correctIndexes.indexOf(index) === -1 && isAnswered) ? '，回答错误' : ''}}"
+        role="button"
+        tabindex="0"
       >
         <view wx:if="{{currentQuestion.normalizedType === 'multiple'}}" class="option-checkbox {{selectedIndexes.indexOf(index) > -1 ? 'checked' : ''}} {{isAnswered && currentQuestion.correctIndexes.indexOf(index) > -1 ? 'correct' : ''}} {{isAnswered && selectedIndexes.indexOf(index) > -1 && currentQuestion.correctIndexes.indexOf(index) === -1 ? 'wrong' : ''}}">
           <text wx:if="{{selectedIndexes.indexOf(index) > -1}}" class="checkbox-mark">✓</text>
@@ -105,8 +126,8 @@
     </view>
 
     <view class="multiple-submit-section" wx:if="{{currentQuestion.normalizedType === 'multiple' && !isAnswered}}">
-      <view class="selected-info">已选择 {{selectedIndexes.length}} 项</view>
-      <view class="submit-btn" bindtap="onSubmitMultiple">提交答案</view>
+      <view class="selected-info" aria-label="已选择{{selectedIndexes.length}}项">已选择 {{selectedIndexes.length}} 项</view>
+      <view class="submit-btn" bindtap="onSubmitMultiple" aria-label="提交答案" role="button" tabindex="0">提交答案</view>
     </view>
   </view>
 
@@ -187,7 +208,7 @@
   </view>
 
   <view class="footer-section" wx:if="{{isAnswered}}">
-    <view class="next-btn" bindtap="onNextQuestion">
+    <view class="next-btn" bindtap="onNextQuestion" aria-label="{{currentIndex + 1 >= questions.length ? '查看结果' : '下一题'}}" role="button" tabindex="0">
       {{currentIndex + 1 >= questions.length ? '查看结果' : '下一题'}}
     </view>
   </view>
@@ -270,16 +291,74 @@
   </view>
 
   <view class="result-actions">
-    <view class="action-btn secondary" bindtap="onBackToHome">
+    <view class="action-btn secondary" bindtap="onBackToHome" aria-label="返回上一页" role="button" tabindex="0">
       返回
     </view>
-    <view class="action-btn primary" bindtap="onRestart">
+    <view class="action-btn primary" bindtap="onRestart" aria-label="再练一次" role="button" tabindex="0">
       再练一次
     </view>
   </view>
 
-  <view class="wrong-review-btn" wx:if="{{resultData.wrong > 0}}" bindtap="onGoToWrong">
+  <view class="wrong-review-btn" wx:if="{{resultData.wrong > 0}}" bindtap="onGoToWrong" aria-label="去错题本复习，共{{resultData.wrong}}题" role="button" tabindex="0">
     <text class="review-icon">📝</text>
     <text>去错题本复习 ({{resultData.wrong}}题)</text>
   </view>
+</view>
+
+<view class="voice-overlay" wx:if="{{showVoicePanel}}" catchtouchmove="true">
+  <view class="voice-overlay-mask" bindtap="closeVoicePanel"></view>
+  <view class="voice-overlay-content" role="dialog" aria-label="语音答题面板">
+    <view class="voice-overlay-header">
+      <text class="voice-overlay-title">语音答题</text>
+      <view class="voice-close-btn" bindtap="closeVoicePanel" aria-label="关闭语音面板" role="button">
+        <text>✕</text>
+      </view>
+    </view>
+    
+    <view class="voice-wave-section">
+      <view class="voice-wave-container {{isRecognizing ? 'active' : ''}}">
+        <view class="wave-bar" wx:for="{{[1,2,3,4,5]}}" wx:key="*this"></view>
+      </view>
+      <view class="voice-status-text">
+        <text wx:if="{{isRecognizing}}">正在聆听...</text>
+        <text wx:elif="{{isProcessing}}">正在识别...</text>
+        <text wx:elif="{{recognizedText}}">{{recognizedText}}</text>
+        <text wx:else>按住按钮说出答案</text>
+      </view>
+    </view>
+    
+    <view class="voice-record-btn-wrap">
+      <view 
+        class="voice-record-btn {{isRecognizing ? 'recording' : ''}} {{isChildMode ? 'child' : ''}}"
+        bindtouchstart="onVoiceRecordToggle"
+        bindtouchend="onVoiceRecordToggle"
+        aria-label="{{isRecognizing ? '松开结束录音' : '按住开始录音'}}"
+        role="button"
+      >
+        <text class="record-icon">{{isRecognizing ? '🔴' : '🎤'}}</text>
+        <text class="record-text" wx:if="{{!isRecognizing}}">{{isChildMode ? '按住说话' : '按住 说话'}}</text>
+        <text class="record-text" wx:else>松开 结束</text>
+      </view>
+    </view>
+    
+    <view class="voice-tips-section">
+      <view class="voice-tip-title">语音指令：</view>
+      <view class="voice-tip-list">
+        <text class="voice-tip">A/B/C/D 选择答案</text>
+        <text class="voice-tip">第一/第二个 选择答案</text>
+        <text class="voice-tip">重复 重新听题</text>
+        <text class="voice-tip">下一题 继续答题</text>
+      </view>
+    </view>
+    
+    <view class="voice-dialect-info">
+      <text>识别方言：{{currentDialectName}}</text>
+    </view>
+  </view>
+</view>
+
+<view class="voice-speak-bar" wx:if="{{isSpeaking && !showVoicePanel}}" bindtap="onSpeakQuestion" aria-label="点击停止播报" role="button">
+  <view class="speak-bar-icon">🔊</view>
+  <view class="speak-bar-text">正在语音播报...</view>
+  <view class="speak-bar-action">点击停止</view>
 </view>

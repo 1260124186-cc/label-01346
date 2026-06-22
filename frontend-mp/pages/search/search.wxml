@@ -12,6 +12,7 @@
         focus="{{inputFocus}}"
         confirm-type="search"
         cursor-spacing="20"
+        aria-label="搜索输入框"
       />
       <view
         class="clear-btn"
@@ -21,12 +22,73 @@
       >
         <text class="clear-icon">✕</text>
       </view>
+      <view
+        class="voice-input-btn {{isChildMode ? 'child' : ''}}"
+        wx:if="{{voiceModeEnabled || isChildMode}}"
+        bindtap="toggleVoiceInput"
+        aria-label="{{isRecognizing ? '停止语音输入' : '语音搜索'}}"
+        role="button"
+      >
+        <text class="voice-icon">{{isRecognizing ? '🔴' : '🎤'}}</text>
+      </view>
     </view>
     <view class="scan-btn" bindtap="goToBarcodeScan" aria-label="扫码识物">
       <text class="scan-icon">📷</text>
     </view>
     <view class="cancel-btn" bindtap="goBack" aria-label="取消搜索">
       <text class="cancel-text">取消</text>
+    </view>
+  </view>
+
+  <!-- 语音识别浮层 -->
+  <view class="voice-overlay {{isChildMode ? 'child' : ''}}" wx:if="{{showVoiceOverlay}}" catchtap="onCloseVoiceOverlay">
+    <view class="voice-panel {{isChildMode ? 'child' : ''}}" catchtap="">
+      <view class="voice-wave-container {{isChildMode ? 'child' : ''}}">
+        <view class="voice-wave {{isRecognizing ? 'active' : ''}} {{isChildMode ? 'child' : ''}}">
+          <view class="wave-bar bar1"></view>
+          <view class="wave-bar bar2"></view>
+          <view class="wave-bar bar3"></view>
+          <view class="wave-bar bar4"></view>
+          <view class="wave-bar bar5"></view>
+        </view>
+      </view>
+      <view class="voice-status-text {{isChildMode ? 'child' : ''}}">
+        <text wx:if="{{isRecognizing}}">正在聆听...</text>
+        <text wx:elif="{{isProcessing}}">正在识别...</text>
+        <text wx:else>{{voiceTipText}}</text>
+      </view>
+      <view class="voice-recognized-text {{isChildMode ? 'child' : ''}}" wx:if="{{recognizedText}}">
+        <text class="recognized-label">识别结果：</text>
+        <text class="recognized-content">{{recognizedText}}</text>
+      </view>
+      <view class="voice-actions {{isChildMode ? 'child' : ''}}">
+        <view class="voice-action-btn primary {{isRecognizing ? 'recording' : ''}} {{isChildMode ? 'child' : ''}}"
+              bindtap="onVoiceRecordToggle"
+              aria-label="{{isRecognizing ? '停止录音' : '开始录音'}}"
+              role="button">
+          <text class="action-icon">{{isRecognizing ? '⏹' : '🎙️'}}</text>
+          <text class="action-text">{{isRecognizing ? '松开结束' : (isChildMode ? '按住说话' : '按住 说话')}}</text>
+        </view>
+        <view class="voice-action-btn secondary {{isChildMode ? 'child' : ''}}" bindtap="onCloseVoiceOverlay" aria-label="关闭语音搜索" role="button">
+          <text class="action-icon">✕</text>
+          <text class="action-text">取消</text>
+        </view>
+      </view>
+      <view class="voice-dialect-info" wx:if="{{currentDialectName}}">
+        <text class="dialect-icon">🌐</text>
+        <text class="dialect-text">{{currentDialectName}}识别</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 语音播报控制条 -->
+  <view class="voice-speak-bar" wx:if="{{isSpeaking && showDetail}}">
+    <view class="speak-bar-content">
+      <text class="speak-icon">🔊</text>
+      <text class="speak-text">正在播报百科摘要...</text>
+    </view>
+    <view class="speak-bar-close" bindtap="onStopSpeak" aria-label="停止播报">
+      <text class="close-icon">✕</text>
     </view>
   </view>
 
@@ -194,6 +256,15 @@
           >
             <text class="action-icon">📖</text>
             <text class="action-text">查看分类详情</text>
+          </view>
+          <view
+            class="action-btn voice"
+            wx:if="{{voiceModeEnabled}}"
+            bindtap="onSpeakDetail"
+            aria-label="{{isSpeaking ? '停止播报' : '语音播报百科摘要'}}"
+          >
+            <text class="action-icon">{{isSpeaking ? '🔊' : '🔈'}}</text>
+            <text class="action-text">{{isSpeaking ? '停止播报' : '听百科'}}</text>
           </view>
           <view
             class="action-btn correction"

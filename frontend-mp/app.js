@@ -1817,6 +1817,7 @@ App({
     const classes = []
     if (this.globalData.darkMode) classes.push('dark-mode')
     if (this.globalData.largeFont) classes.push('large-font')
+    if (this.globalData.childModeEnabled) classes.push('child-mode')
     return classes.join(' ')
   },
 

@@ -23,6 +23,7 @@ const {
 } = require('../../data/packaging')
 const { searchBarcodeDb, getBarcodeProductDetail } = require('../../data/barcode')
 const { correctionManager } = require('../../utils/correction')
+const voice = require('../../utils/voice')
 
 Page({
   data: {
@@ -37,7 +38,16 @@ Page({
     currentPackaging: null,
     currentCity: 'shanghai',
     currentCityInfo: null,
-    experienceClasses: ''
+    experienceClasses: '',
+    voiceModeEnabled: false,
+    showVoiceOverlay: false,
+    isRecognizing: false,
+    isProcessing: false,
+    isSpeaking: false,
+    recognizedText: '',
+    voiceTipText: '按住说话，搜索垃圾',
+    currentDialectName: '普通话',
+    isChildMode: false
   },
 
   onLoad(options) {
@@ -48,6 +58,8 @@ Page({
     this.loadSearchHistory()
     this.loadMergedHotWords()
     this.setData({ experienceClasses: app.getExperienceClasses() })
+    this.loadVoiceState()
+    this.initVoiceRecorder()
 
     if (options.keyword) {
       const keyword = decodeURIComponent(options.keyword)
@@ -63,6 +75,7 @@ Page({
     this.setData({ currentCity, currentCityInfo })
     this.loadSearchHistory()
     this.setData({ experienceClasses: app.getExperienceClasses() })
+    this.loadVoiceState()
 
     if (app.globalData.hotWordsNeedsRefresh) {
       app.globalData.hotWordsNeedsRefresh = false
@@ -76,6 +89,49 @@ Page({
         this.performSearch(searchKeyword)
       }
     }
+  },
+
+  onUnload() {
+    console.log('[Search] 页面卸载，清理语音资源')
+    this.stopVoiceSpeak()
+    voice.destroyVoice()
+  },
+
+  onHide() {
+    this.stopVoiceSpeak()
+  },
+
+  loadVoiceState() {
+    const voiceEnabled = voice.isVoiceEnabled()
+    const dialect = voice.getCurrentDialect()
+    const dialectOptions = voice.getDialectOptions()
+    const dialectInfo = dialectOptions.find(d => d.id === dialect)
+    const isChildMode = app.isChildModeEnabled()
+    
+    this.setData({
+      voiceModeEnabled: voiceEnabled,
+      currentDialectName: dialectInfo ? dialectInfo.name : '普通话',
+      isChildMode
+    })
+  },
+
+  initVoiceRecorder() {
+    voice.initRecorder({
+      onStart: () => {
+        console.log('[Search] 录音开始')
+        this.setData({ isRecognizing: true, isProcessing: false })
+      },
+      onStop: (res) => {
+        console.log('[Search] 录音结束', res)
+        this.setData({ isRecognizing: false, isProcessing: true })
+        this.processVoiceRecognition(res.tempFilePath)
+      },
+      onError: (err) => {
+        console.error('[Search] 录音错误', err)
+        this.setData({ isRecognizing: false, isProcessing: false })
+        showToast('录音失败，请检查权限')
+      }
+    })
   },
 
   loadSearchHistory() {
@@ -361,5 +417,209 @@ Page({
   goToBarcodeScan() {
     console.log('[Search] 跳转到扫码识物')
     navigateTo('/pages/barcode-scan/barcode-scan')
+  },
+
+  toggleVoiceInput() {
+    if (this.data.showVoiceOverlay) {
+      this.onCloseVoiceOverlay()
+    } else {
+      this.openVoiceOverlay()
+    }
+  },
+
+  openVoiceOverlay() {
+    if (!voice.isVoiceEnabled()) {
+      showToast('请先在设置中开启语音模式')
+      return
+    }
+
+    wx.authorize({
+      scope: 'scope.record',
+      success: () => {
+        console.log('[Search] 录音权限已授权')
+        this.setData({
+          showVoiceOverlay: true,
+          recognizedText: '',
+          isProcessing: false,
+          voiceTipText: this.data.isChildMode ? '按住大按钮说话' : '按住说话，搜索垃圾'
+        })
+        
+        if (this.data.isChildMode) {
+          voice.speak('请问要搜索什么垃圾？', { useTTS: false })
+        }
+      },
+      fail: () => {
+        console.warn('[Search] 录音权限被拒绝')
+        showModal({
+          title: '需要麦克风权限',
+          content: '语音搜索需要使用您的麦克风，请在设置中开启麦克风权限。',
+          confirmText: '去设置',
+          confirmColor: '#5BBD72'
+        }).then(confirmed => {
+          if (confirmed) {
+            wx.openSetting()
+          }
+        })
+      }
+    })
+  },
+
+  onCloseVoiceOverlay() {
+    this.stopVoiceRecord()
+    this.setData({
+      showVoiceOverlay: false,
+      isRecognizing: false,
+      isProcessing: false,
+      recognizedText: ''
+    })
+  },
+
+  onVoiceRecordToggle() {
+    if (this.data.isRecognizing) {
+      this.stopVoiceRecord()
+    } else {
+      this.startVoiceRecord()
+    }
+  },
+
+  startVoiceRecord() {
+    if (this.data.isProcessing) return
+    
+    console.log('[Search] 开始语音录音')
+    voice.startRecord({
+      duration: 30000,
+      format: 'mp3'
+    })
+    
+    wx.vibrateShort({ type: 'light' })
+  },
+
+  stopVoiceRecord() {
+    if (!this.data.isRecognizing) return
+    
+    console.log('[Search] 停止语音录音')
+    voice.stopRecord()
+    
+    wx.vibrateShort({ type: 'medium' })
+  },
+
+  async processVoiceRecognition(audioFilePath) {
+    try {
+      this.setData({ isProcessing: true, voiceTipText: '正在识别...' })
+      
+      const result = await voice.recognizeVoice(audioFilePath)
+      
+      if (result.success && result.text) {
+        console.log('[Search] 语音识别结果:', result.text)
+        
+        this.setData({ 
+          recognizedText: result.text,
+          voiceTipText: '识别完成'
+        })
+
+        const command = voice.parseVoiceCommand(result.text, 'search')
+        
+        if (command.action === 'search' && command.params.keyword) {
+          this.performVoiceSearch(command.params.keyword)
+        } else if (command.action === 'cancel') {
+          this.onCloseVoiceOverlay()
+        } else {
+          this.performVoiceSearch(result.text)
+        }
+      } else {
+        this.setData({ voiceTipText: '识别失败，请重试' })
+        showToast('语音识别失败，请重试')
+      }
+    } catch (error) {
+      console.error('[Search] 语音识别错误:', error)
+      this.setData({ 
+        isProcessing: false,
+        voiceTipText: '识别出错，请重试'
+      })
+      showToast('语音识别出错')
+    } finally {
+      this.setData({ isProcessing: false })
+    }
+  },
+
+  performVoiceSearch(keyword) {
+    console.log('[Search] 执行语音搜索:', keyword)
+    
+    this.setData({
+      searchKeyword: keyword,
+      showVoiceOverlay: false
+    })
+    
+    this.performSearch(keyword)
+    
+    if (this.data.voiceModeEnabled) {
+      voice.speak(`已为您搜索${keyword}`, { useTTS: false })
+    }
+  },
+
+  onSpeakDetail() {
+    const { currentDetail, isSpeaking } = this.data
+    
+    if (isSpeaking) {
+      this.stopVoiceSpeak()
+      return
+    }
+    
+    if (!currentDetail) return
+    
+    console.log('[Search] 语音播报百科详情:', currentDetail.name)
+    
+    const summary = this.buildDetailSummary(currentDetail)
+    
+    voice.speak(summary, {
+      useTTS: false,
+      onStart: () => {
+        this.setData({ isSpeaking: true })
+      },
+      onEnd: () => {
+        this.setData({ isSpeaking: false })
+      },
+      onError: () => {
+        this.setData({ isSpeaking: false })
+      }
+    })
+  },
+
+  buildDetailSummary(item) {
+    let summary = `${item.name}，属于${item.typeName}。`
+    
+    if (item.description) {
+      summary += `${item.description}。`
+    }
+    
+    if (item.disposalTips && item.disposalTips.length > 0) {
+      summary += `投放说明：${item.disposalTips.join('。')}。`
+    }
+    
+    return summary
+  },
+
+  onStopSpeak() {
+    this.stopVoiceSpeak()
+  },
+
+  stopVoiceSpeak() {
+    voice.stopSpeak()
+    this.setData({ isSpeaking: false })
+  },
+
+  onTouchStartRecord(e) {
+    e && e.preventDefault && e.preventDefault()
+    this.startVoiceRecord()
+  },
+
+  onTouchEndRecord(e) {
+    e && e.preventDefault && e.preventDefault()
+    this.stopVoiceRecord()
+  },
+
+  onTouchCancelRecord(e) {
+    e && e.preventDefault && e.preventDefault()
+    this.stopVoiceRecord()
   }
 })

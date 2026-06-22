@@ -281,6 +281,48 @@
     </view>
   </view>
 
+  <!-- 语音设置 -->
+  <view class="section">
+    <view class="section-title">语音设置</view>
+    <view class="settings-card">
+      <view class="setting-item">
+        <view class="setting-left">
+          <view class="setting-icon" style="background: rgba(91, 189, 114, 0.1);">
+            <text class="setting-emoji">🎤</text>
+          </view>
+          <view class="setting-info">
+            <text class="setting-title">语音模式</text>
+            <text class="setting-desc">语音搜索 · 语音答题 · 语音播报</text>
+          </view>
+        </view>
+        <view class="setting-right">
+          <switch
+            checked="{{voiceModeEnabled}}"
+            bindchange="onVoiceModeChange"
+            color="#5BBD72"
+            aria-label="语音模式开关"
+          />
+        </view>
+      </view>
+
+      <view class="setting-item" bindtap="onDialectSelect">
+        <view class="setting-left">
+          <view class="setting-icon" style="background: rgba(155, 89, 182, 0.1);">
+            <text class="setting-emoji">🗣️</text>
+          </view>
+          <view class="setting-info">
+            <text class="setting-title">识别方言</text>
+            <text class="setting-desc">选择语音识别的方言类型</text>
+          </view>
+        </view>
+        <view class="setting-right">
+          <text class="setting-value {{voiceModeEnabled ? '' : 'disabled'}}">{{currentDialectName}}</text>
+          <text class="setting-arrow">›</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
   <!-- 关于与协议 -->
   <view class="section">
     <view class="section-title">关于与协议</view>
@@ -384,6 +426,27 @@
           <text class="option-desc">{{item.desc}}</text>
         </view>
         <view class="option-check" wx:if="{{childAgeGroup === item.id}}">✓</view>
+      </view>
+    </view>
+  </view>
+</view>
+
+<!-- 方言选择弹窗 -->
+<view class="picker-mask" wx:if="{{showDialectPicker}}" bindtap="onCloseDialectPicker">
+  <view class="picker-panel" catchtap="preventMaskClose">
+    <view class="picker-header">
+      <text class="picker-title">选择识别方言</text>
+      <view class="picker-close" bindtap="onCloseDialectPicker">✕</view>
+    </view>
+    <view class="picker-options">
+      <view wx:for="{{dialectOptions}}" wx:key="id"
+            class="picker-option {{currentDialect === item.id ? 'selected' : ''}}"
+            bindtap="onConfirmDialect" data-dialect-id="{{item.id}}">
+        <view class="option-main">
+          <text class="option-name">{{item.name}}</text>
+          <text class="option-desc">{{item.desc}}</text>
+        </view>
+        <view class="option-check" wx:if="{{currentDialect === item.id}}">✓</view>
       </view>
     </view>
   </view>
