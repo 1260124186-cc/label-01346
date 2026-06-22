@@ -27,7 +27,8 @@ Page({
     selectedCityId: 'shanghai',
     selectedCity: CITY_STANDARDS[0],
     relatedQuizQuestions: [],
-    currentCity: 'shanghai'
+    currentCity: 'shanghai',
+    experienceClasses: ''
   },
 
   /**
@@ -64,6 +65,8 @@ Page({
         title: decodeURIComponent(name)
       })
     }
+
+    this.setData({ experienceClasses: app.getExperienceClasses() })
   },
 
   onShow() {
@@ -80,6 +83,8 @@ Page({
       })
       this.initClassifyData(this.data.classifyId)
     }
+
+    this.setData({ experienceClasses: app.getExperienceClasses() })
   },
 
   /**
@@ -275,6 +280,14 @@ Page({
       chapterId: classifyId,
       chapterName: classifyData.name
     })
+  },
+
+  onThemeChange(isDark) {
+    this.setData({ experienceClasses: app.getExperienceClasses() })
+  },
+
+  onFontChange(isLarge) {
+    this.setData({ experienceClasses: app.getExperienceClasses() })
   },
 
   goBack() {

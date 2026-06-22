@@ -38,11 +38,13 @@ Page({
     expiringBadge: null,
     quickActions: DEFAULT_QUICK_ACTIONS,
     showGuideMask: false,
-    isRefreshing: false
+    isRefreshing: false,
+    experienceClasses: ''
   },
 
   onLoad() {
     console.log('[Index] 页面加载')
+    this.setData({ experienceClasses: app.getExperienceClasses() })
     this.initPageData()
     this.checkAndShowGuide()
     this.loadOperationConfig()
@@ -50,9 +52,18 @@ Page({
 
   onShow() {
     console.log('[Index] 页面显示')
+    this.setData({ experienceClasses: app.getExperienceClasses() })
     this.refreshSignInStatus()
     this.sortQuickActions()
     recordPageVisit('index')
+  },
+
+  onThemeChange(isDark) {
+    this.setData({ experienceClasses: app.getExperienceClasses() })
+  },
+
+  onFontChange(isLarge) {
+    this.setData({ experienceClasses: app.getExperienceClasses() })
   },
 
   onHide() {

@@ -58,7 +58,8 @@ Page({
     unlockedAchievementCount: 0,
     // 百科贡献者
     contributorTier: null,
-    correctionStats: null
+    correctionStats: null,
+    experienceClasses: ''
   },
 
   /**
@@ -70,6 +71,7 @@ Page({
     this.loadChildModeAndGroupData()
     this.loadAchievements()
     this.loadContributorData()
+    this.setData({ experienceClasses: app.getExperienceClasses() })
   },
 
   /**
@@ -81,6 +83,7 @@ Page({
     this.loadChildModeAndGroupData()
     this.loadAchievements()
     this.loadContributorData()
+    this.setData({ experienceClasses: app.getExperienceClasses() })
   },
 
   /**
@@ -472,5 +475,13 @@ Page({
       query: `inviterId=${app.getUserId()}`,
       imageUrl: SHARE_CONFIG.shareImageUrl
     }
+  },
+
+  onThemeChange(isDark) {
+    this.setData({ experienceClasses: app.getExperienceClasses() })
+  },
+
+  onFontChange(isLarge) {
+    this.setData({ experienceClasses: app.getExperienceClasses() })
   }
 })

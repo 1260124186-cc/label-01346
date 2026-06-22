@@ -35,7 +35,8 @@ Page({
     currentDetail: null,
     currentPackaging: null,
     currentCity: 'shanghai',
-    currentCityInfo: null
+    currentCityInfo: null,
+    experienceClasses: ''
   },
 
   onLoad(options) {
@@ -45,6 +46,7 @@ Page({
     this.setData({ currentCity, currentCityInfo })
     this.loadSearchHistory()
     this.loadMergedHotWords()
+    this.setData({ experienceClasses: app.getExperienceClasses() })
 
     if (options.keyword) {
       const keyword = decodeURIComponent(options.keyword)
@@ -59,6 +61,7 @@ Page({
     const currentCityInfo = app.getCurrentCityInfo()
     this.setData({ currentCity, currentCityInfo })
     this.loadSearchHistory()
+    this.setData({ experienceClasses: app.getExperienceClasses() })
 
     if (app.globalData.hotWordsNeedsRefresh) {
       app.globalData.hotWordsNeedsRefresh = false
@@ -311,6 +314,14 @@ Page({
   goBack() {
     console.log('[Search] 返回上一页')
     navigateBack()
+  },
+
+  onThemeChange(isDark) {
+    this.setData({ experienceClasses: app.getExperienceClasses() })
+  },
+
+  onFontChange(isLarge) {
+    this.setData({ experienceClasses: app.getExperienceClasses() })
   },
 
   onShareAppMessage() {

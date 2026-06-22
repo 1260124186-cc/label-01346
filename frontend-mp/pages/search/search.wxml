@@ -1,4 +1,4 @@
-<view class="search-page">
+<view class="search-page {{experienceClasses}}">
   <!-- 搜索框区域 -->
   <view class="search-header">
     <view class="search-bar">
@@ -17,11 +17,12 @@
         class="clear-btn"
         wx:if="{{searchKeyword}}"
         bindtap="onClearInput"
+        aria-label="清除搜索内容"
       >
         <text class="clear-icon">✕</text>
       </view>
     </view>
-    <view class="cancel-btn" bindtap="goBack">
+    <view class="cancel-btn" bindtap="goBack" aria-label="取消搜索">
       <text class="cancel-text">取消</text>
     </view>
   </view>
@@ -59,6 +60,7 @@
           class="result-correction-btn"
           catchtap="onListCorrectionTap"
           data-item="{{item}}"
+          aria-label="纠错"
         >
           <text class="result-correction-icon">✏️</text>
           <text class="result-correction-text">纠错</text>
@@ -72,7 +74,7 @@
     <view class="no-results-icon">📭</view>
     <text class="no-results-title">未找到 "{{searchKeyword}}" 相关结果</text>
     <text class="no-results-tip">试试其他关键词，或帮助我们完善数据库</text>
-    <view class="feedback-btn" bindtap="onFeedback">
+    <view class="feedback-btn" bindtap="onFeedback" aria-label="反馈该垃圾">
       <text class="feedback-text">反馈该垃圾</text>
     </view>
   </view>
@@ -90,7 +92,7 @@
             {{currentDetail.typeName}}
           </view>
         </view>
-        <view class="detail-close" bindtap="onCloseDetail">
+        <view class="detail-close" bindtap="onCloseDetail" aria-label="关闭详情">
           <text class="close-icon">✕</text>
         </view>
       </view>
@@ -185,6 +187,7 @@
             class="action-btn primary"
             style="--btn-bg: {{currentDetail.typeColor}};"
             bindtap="goToClassify"
+            aria-label="查看分类详情"
           >
             <text class="action-icon">📖</text>
             <text class="action-text">查看分类详情</text>
@@ -192,6 +195,7 @@
           <view
             class="action-btn correction"
             bindtap="onCorrectionTap"
+            aria-label="纠错反馈"
           >
             <text class="action-icon">✏️</text>
             <text class="action-text">这条不对</text>
@@ -206,7 +210,7 @@
     <view class="history-section" wx:if="{{searchHistory.length > 0}}">
       <view class="section-header">
         <text class="section-title">⏰ 搜索历史</text>
-        <view class="clear-history" bindtap="onClearHistory">
+        <view class="clear-history" bindtap="onClearHistory" aria-label="清空搜索历史">
           <text class="clear-text">清空</text>
         </view>
       </view>

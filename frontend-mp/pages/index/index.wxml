@@ -3,10 +3,10 @@
   功能：展示轮播图、快捷功能、四种垃圾分类卡片
   考核点：swiper组件、wx:for、bindtap事件、view/image标签
 -->
-<view class="page-container">
+<view class="page-container {{experienceClasses}}">
   <!-- 搜索框入口 -->
   <view class="search-section">
-    <view class="search-entry" bindtap="goToSearch">
+    <view class="search-entry" bindtap="goToSearch" aria-label="搜索垃圾">
       <text class="search-entry-icon">🔍</text>
       <text class="search-entry-placeholder">搜索垃圾名称，如：塑料瓶、废电池</text>
     </view>
@@ -57,7 +57,7 @@
   </view>
 
   <!-- 每日签到入口 -->
-  <view class="signin-entry-section" bindtap="goToSignIn">
+  <view class="signin-entry-section" bindtap="goToSignIn" aria-label="每日签到">
     <view class="signin-entry-card">
       <view class="signin-entry-left">
         <view class="signin-entry-emoji">{{isSignedToday ? '✅' : '📅'}}</view>
@@ -343,7 +343,7 @@
         </view>
 
         <!-- 练一练按钮 -->
-        <view class="practice-btn" catchtap="startSortPractice" data-item="{{item}}" style="--btn-color: {{item.color}};">
+        <view class="practice-btn" catchtap="startSortPractice" data-item="{{item}}" style="--btn-color: {{item.color}};" aria-label="练一练">
           <text class="practice-btn-icon">✏️</text>
           <text class="practice-btn-text">练一练</text>
         </view>
@@ -362,7 +362,7 @@
   </view>
 
   <!-- 拍一拍识垃圾悬浮入口 -->
-  <view class="photo-recognize-float" bindtap="goToPhotoRecognize">
+  <view class="photo-recognize-float" bindtap="goToPhotoRecognize" aria-label="拍照识别垃圾">
     <view class="photo-float-ring"></view>
     <view class="photo-float-btn">
       <text class="photo-float-icon">📷</text>

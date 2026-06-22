@@ -3,11 +3,11 @@
   功能：展示各类垃圾的详细分类知识
   考核点：正确接收页面传递参数、view/image标签使用、基本样式
 -->
-<view class="page-container" wx:if="{{!isLoading && classifyData}}">
+<view class="page-container {{experienceClasses}}" wx:if="{{!isLoading && classifyData}}">
   <!-- 顶部分类切换 -->
   <view class="type-switcher">
-    <view 
-      wx:for="{{allTypes}}" 
+    <view
+      wx:for="{{allTypes}}"
       wx:key="id"
       class="type-tab {{classifyId === item.id ? 'active' : ''}}"
       style="--tab-color: {{item.color}}; --tab-bg: {{item.bgColor}};"
@@ -21,13 +21,13 @@
   <!-- 分类头部信息 -->
   <view class="classify-header" style="--header-color: {{classifyData.color}}; --header-bg: {{classifyData.bgColor}};">
     <view class="header-bg-decoration"></view>
-    
+
     <view class="header-content">
       <!-- 分类图标 -->
       <view class="classify-icon-wrapper">
         <text class="classify-icon-emoji">{{classifyData.emoji}}</text>
       </view>
-      
+
       <!-- 分类名称 -->
       <view class="classify-title-section">
         <text class="classify-name">{{classifyData.name}}</text>
@@ -117,7 +117,7 @@
         <text class="icon-text" style="color: {{classifyData.color}};">❓</text>
       </view>
       <text class="card-title">相关题目</text>
-      <view class="quiz-more-btn" bindtap="goToQuizPlay" style="--btn-color: {{classifyData.color}};">
+      <view class="quiz-more-btn" bindtap="goToQuizPlay" aria-label="去答题" style="--btn-color: {{classifyData.color}};">
         <text class="quiz-more-text">去答题</text>
       </view>
     </view>
@@ -147,15 +147,15 @@
         <text class="icon-text" style="color: {{classifyData.color}};">📦</text>
       </view>
       <text class="card-title">常见垃圾</text>
-      <view class="practice-entry-btn" bindtap="startPractice" style="--btn-color: {{classifyData.color}};">
+      <view class="practice-entry-btn" bindtap="startPractice" aria-label="练一练" style="--btn-color: {{classifyData.color}};">
         <text class="practice-icon">✏️</text>
         <text class="practice-text">练一练</text>
       </view>
     </view>
     <view class="card-content">
       <view class="examples-grid">
-        <view 
-          wx:for="{{classifyData.examples}}" 
+        <view
+          wx:for="{{classifyData.examples}}"
           wx:key="name"
           class="example-item"
           style="--item-color: {{classifyData.color}}; --item-bg: {{classifyData.bgColor}};"
@@ -188,8 +188,8 @@
     </view>
     <view class="card-content">
       <view class="tips-list">
-        <view 
-          wx:for="{{classifyData.tips}}" 
+        <view
+          wx:for="{{classifyData.tips}}"
           wx:key="index"
           class="tip-item"
           style="--tip-color: {{classifyData.color}};"

@@ -2,7 +2,7 @@
   设置页面
   功能：消息通知开关、儿童模式管控、清除缓存、隐私政策、用户协议、意见反馈
 -->
-<view class="page-container">
+<view class="page-container {{experienceClasses}}">
 
   <!-- 儿童模式管控区 -->
   <view class="section child-section">
@@ -39,6 +39,7 @@
             checked="{{childModeEnabled}}"
             bindchange="onChildModeChange"
             color="#5BBD72"
+            aria-label="儿童模式开关"
           />
         </view>
       </view>
@@ -147,6 +148,7 @@
             checked="{{notifyEnabled}}"
             bindchange="onNotifyChange"
             color="#5BBD72"
+            aria-label="消息通知开关"
           />
         </view>
       </view>
@@ -212,6 +214,68 @@
         <view class="setting-right">
           <text class="setting-value">{{cacheSize}}</text>
           <text class="setting-arrow">›</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 体验设置 -->
+  <view class="section">
+    <view class="section-title">体验设置</view>
+    <view class="settings-card">
+      <view class="setting-item">
+        <view class="setting-left">
+          <view class="setting-icon" style="background: rgba(74, 144, 217, 0.1);">
+            <text class="setting-emoji">🌙</text>
+          </view>
+          <view class="setting-info">
+            <text class="setting-title">深色模式</text>
+            <text class="setting-desc">护眼舒适 · 减少屏幕刺眼</text>
+          </view>
+        </view>
+        <view class="setting-right">
+          <switch
+            checked="{{darkMode}}"
+            bindchange="onDarkModeChange"
+            color="#5BBD72"
+            aria-label="深色模式开关"
+          />
+        </view>
+      </view>
+
+      <view class="setting-item" bindtap="onDarkModeSourceSelect">
+        <view class="setting-left">
+          <view class="setting-icon" style="background: rgba(155, 89, 182, 0.1);">
+            <text class="setting-emoji">🔄</text>
+          </view>
+          <view class="setting-info">
+            <text class="setting-title">深色模式来源</text>
+            <text class="setting-desc">跟随系统或手动切换</text>
+          </view>
+        </view>
+        <view class="setting-right">
+          <text class="setting-value">{{darkModeSource === 'system' ? '跟随系统' : darkModeSource === 'dark' ? '始终深色' : '始终浅色'}}</text>
+          <text class="setting-arrow">›</text>
+        </view>
+      </view>
+
+      <view class="setting-item">
+        <view class="setting-left">
+          <view class="setting-icon" style="background: rgba(243, 156, 18, 0.1);">
+            <text class="setting-emoji">🔤</text>
+          </view>
+          <view class="setting-info">
+            <text class="setting-title">大字号模式</text>
+            <text class="setting-desc">放大文字 · 阅读更轻松</text>
+          </view>
+        </view>
+        <view class="setting-right">
+          <switch
+            checked="{{largeFont}}"
+            bindchange="onLargeFontChange"
+            color="#5BBD72"
+            aria-label="大字号模式开关"
+          />
         </view>
       </view>
     </view>

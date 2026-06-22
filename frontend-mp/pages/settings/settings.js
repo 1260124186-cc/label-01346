@@ -47,7 +47,11 @@ Page({
     usagePercent: 0,
     isChildLocked: false,
     showTimePicker: false,
-    showAgePicker: false
+    showAgePicker: false,
+    darkMode: false,
+    darkModeSource: 'system',
+    largeFont: false,
+    experienceClasses: ''
   },
 
   onLoad() {
@@ -55,6 +59,7 @@ Page({
     this.loadSettings()
     this.calculateCacheSize()
     this.loadChildModeState()
+    this.loadExperienceState()
 
     const userRole = wx.getStorageSync('userRole') || 'member'
     const currentCity = app.getCurrentCity()
@@ -71,6 +76,29 @@ Page({
     const hasUpcoming = app.hasCityUpcomingStandard()
     this.setData({ currentCity, currentCityInfo, hasUpcomingStandard: hasUpcoming })
     this.loadChildModeState()
+    this.loadExperienceState()
+  },
+
+  loadExperienceState() {
+    const darkMode = app.isDarkMode()
+    const darkModeSource = app.getThemeSetting()
+    const largeFont = app.isLargeFont()
+    const experienceClasses = app.getExperienceClasses()
+    this.setData({ darkMode, darkModeSource, largeFont, experienceClasses })
+  },
+
+  onThemeChange(isDark) {
+    this.setData({
+      darkMode: isDark,
+      experienceClasses: app.getExperienceClasses()
+    })
+  },
+
+  onFontChange(isLarge) {
+    this.setData({
+      largeFont: isLarge,
+      experienceClasses: app.getExperienceClasses()
+    })
   },
 
   loadChildModeState() {
@@ -418,5 +446,57 @@ Page({
   onUpcomingStandard() {
     console.log('[Settings] 点击查看新标准预告')
     navigateTo('/pages/region-notice/region-notice')
+  },
+
+  onDarkModeChange(e) {
+    const enabled = e.detail.value
+    console.log('[Settings] 深色模式开关:', enabled)
+    app.setThemeSetting(enabled ? 'dark' : 'light')
+    this.setData({
+      darkMode: enabled,
+      darkModeSource: enabled ? 'dark' : 'light',
+      experienceClasses: app.getExperienceClasses()
+    })
+    showSuccess(enabled ? '已开启深色模式' : '已关闭深色模式')
+  },
+
+  onDarkModeSourceSelect() {
+    console.log('[Settings] 点击选择深色模式来源')
+    const options = [
+      { id: 'system', name: '跟随系统' },
+      { id: 'dark', name: '始终深色' },
+      { id: 'light', name: '始终浅色' }
+    ]
+    const itemList = options.map(o => {
+      const mark = o.id === this.data.darkModeSource ? ' ✓' : ''
+      return o.name + mark
+    })
+
+    wx.showActionSheet({
+      itemList: itemList,
+      success: (res) => {
+        const selected = options[res.tapIndex]
+        if (selected.id === this.data.darkModeSource) return
+        app.setThemeSetting(selected.id)
+        this.setData({
+          darkMode: app.isDarkMode(),
+          darkModeSource: selected.id,
+          experienceClasses: app.getExperienceClasses()
+        })
+        const nameMap = { system: '跟随系统', dark: '始终深色', light: '始终浅色' }
+        showSuccess(`已切换为「${nameMap[selected.id]}」`)
+      }
+    })
+  },
+
+  onLargeFontChange(e) {
+    const enabled = e.detail.value
+    console.log('[Settings] 大字号模式开关:', enabled)
+    app.setLargeFont(enabled)
+    this.setData({
+      largeFont: enabled,
+      experienceClasses: app.getExperienceClasses()
+    })
+    showSuccess(enabled ? '已开启大字号模式' : '已关闭大字号模式')
   }
 })

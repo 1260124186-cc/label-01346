@@ -508,3 +508,161 @@ page {
   border-radius: var(--radius-round);
   animation: spin 0.8s linear infinite;
 }
+
+/* ==================== 深色模式 ==================== */
+@media (prefers-color-scheme: dark) {
+  page {
+    --bg-page: #1A1A2E;
+    --bg-card: rgba(30, 30, 50, 0.85);
+    --bg-card-solid: #1E1E32;
+    --bg-gradient-start: #16213E;
+    --bg-gradient-end: #1A1A2E;
+    --text-primary: #E8E8F0;
+    --text-secondary: #A0A0B8;
+    --text-tertiary: #6B6B80;
+    --border-light: rgba(255, 255, 255, 0.08);
+    --border-color: #2E2E48;
+    --shadow-light: 0 4rpx 20rpx rgba(0, 0, 0, 0.25);
+    --shadow-medium: 0 8rpx 30rpx rgba(0, 0, 0, 0.35);
+    --shadow-heavy: 0 12rpx 40rpx rgba(0, 0, 0, 0.45);
+    background: linear-gradient(180deg, var(--bg-gradient-start) 0%, var(--bg-page) 30%);
+  }
+}
+
+.dark-mode {
+  --bg-page: #1A1A2E;
+  --bg-card: rgba(30, 30, 50, 0.85);
+  --bg-card-solid: #1E1E32;
+  --bg-gradient-start: #16213E;
+  --bg-gradient-end: #1A1A2E;
+  --text-primary: #E8E8F0;
+  --text-secondary: #A0A0B8;
+  --text-tertiary: #6B6B80;
+  --border-light: rgba(255, 255, 255, 0.08);
+  --border-color: #2E2E48;
+  --shadow-light: 0 4rpx 20rpx rgba(0, 0, 0, 0.25);
+  --shadow-medium: 0 8rpx 30rpx rgba(0, 0, 0, 0.35);
+  --shadow-heavy: 0 12rpx 40rpx rgba(0, 0, 0, 0.45);
+  background: linear-gradient(180deg, var(--bg-gradient-start) 0%, var(--bg-page) 30%);
+  color: var(--text-primary);
+}
+
+.dark-mode .card {
+  background: var(--bg-card);
+  border-color: var(--border-light);
+}
+
+.dark-mode .card-solid {
+  background: var(--bg-card-solid);
+}
+
+.dark-mode .btn-disabled {
+  background: #2E2E48;
+  color: var(--text-tertiary);
+}
+
+.dark-mode .settings-card {
+  background: var(--bg-card);
+  border-color: var(--border-light);
+}
+
+.dark-mode .setting-title {
+  color: var(--text-primary);
+}
+
+.dark-mode .setting-desc {
+  color: var(--text-tertiary);
+}
+
+.dark-mode .setting-value {
+  color: var(--text-secondary);
+}
+
+.dark-mode .setting-arrow {
+  color: var(--text-tertiary);
+}
+
+.dark-mode .child-main-card {
+  background: var(--bg-card-solid);
+  border-color: rgba(243, 156, 18, 0.2);
+}
+
+.dark-mode .sub-settings-list {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.dark-mode .sub-title {
+  color: var(--text-primary);
+}
+
+.dark-mode .sub-desc {
+  color: var(--text-tertiary);
+}
+
+.dark-mode .sub-value {
+  color: var(--text-secondary);
+}
+
+.dark-mode .picker-panel {
+  background: var(--bg-card-solid);
+}
+
+.dark-mode .picker-option {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.dark-mode .option-name {
+  color: var(--text-primary);
+}
+
+.dark-mode .option-desc {
+  color: var(--text-tertiary);
+}
+
+.dark-mode .version-text,
+.dark-mode .copyright-text {
+  color: var(--text-tertiary);
+}
+
+.dark-mode .section-title {
+  color: var(--text-primary);
+}
+
+/* ==================== 大字号模式 ==================== */
+.large-font {
+  --font-xs: 26rpx;
+  --font-sm: 28rpx;
+  --font-md: 32rpx;
+  --font-lg: 36rpx;
+  --font-xl: 42rpx;
+  --font-xxl: 52rpx;
+}
+
+.large-font .setting-title {
+  font-size: 34rpx;
+}
+
+.large-font .setting-desc {
+  font-size: 28rpx;
+}
+
+.large-font .sub-title {
+  font-size: 32rpx;
+}
+
+.large-font .sub-desc {
+  font-size: 26rpx;
+}
+
+.large-font .btn {
+  padding: var(--spacing-lg) var(--spacing-xxl);
+}
+
+.large-font .btn-sm {
+  padding: var(--spacing-sm) var(--spacing-lg);
+  font-size: var(--font-md);
+}
+
+.large-font switch {
+  transform: scale(1.15);
+}

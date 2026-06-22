@@ -45,7 +45,10 @@ App({
     flashSaleManager: null,
     activePointsDoubles: [],
     recycleDispatchMode: 'simulate',
-    recycleDispatchTimers: {}
+    recycleDispatchTimers: {},
+    darkMode: false,
+    darkModeSource: 'system',
+    largeFont: false
   },
 
   /**
@@ -97,6 +100,8 @@ App({
     this.initActivitySystem()
     this.initCorrectionSystem()
     this.checkPushStrategies()
+    this.initThemeMode()
+    this.initLargeFontMode()
 
     this.startExpireCheckInterval()
   },
@@ -1681,6 +1686,99 @@ App({
     } catch (e) {
       console.error('[App] 获取系统信息失败', e)
     }
+  },
+
+  initThemeMode() {
+    const themeSetting = wx.getStorageSync('themeSetting') || 'system'
+    this.globalData.darkModeSource = themeSetting
+
+    if (themeSetting === 'system') {
+      try {
+        const systemInfo = wx.getSystemInfoSync()
+        this.globalData.darkMode = systemInfo.theme === 'dark'
+      } catch (e) {
+        this.globalData.darkMode = false
+      }
+      if (wx.onThemeChange) {
+        wx.onThemeChange((result) => {
+          if (this.globalData.darkModeSource === 'system') {
+            this.globalData.darkMode = result.theme === 'dark'
+            this.notifyPagesThemeChange()
+          }
+        })
+      }
+    } else {
+      this.globalData.darkMode = themeSetting === 'dark'
+    }
+    console.log('[App] 主题模式已初始化', this.globalData.darkMode ? '深色' : '浅色', '来源:', this.globalData.darkModeSource)
+  },
+
+  isDarkMode() {
+    return this.globalData.darkMode || false
+  },
+
+  getThemeSetting() {
+    return this.globalData.darkModeSource || 'system'
+  },
+
+  setThemeSetting(setting) {
+    this.globalData.darkModeSource = setting
+    wx.setStorageSync('themeSetting', setting)
+
+    if (setting === 'system') {
+      try {
+        const systemInfo = wx.getSystemInfoSync()
+        this.globalData.darkMode = systemInfo.theme === 'dark'
+      } catch (e) {
+        this.globalData.darkMode = false
+      }
+    } else {
+      this.globalData.darkMode = setting === 'dark'
+    }
+    this.notifyPagesThemeChange()
+    console.log('[App] 主题设置已更新', setting, '当前:', this.globalData.darkMode ? '深色' : '浅色')
+  },
+
+  notifyPagesThemeChange() {
+    const pages = getCurrentPages()
+    pages.forEach(page => {
+      if (page && page.onThemeChange) {
+        page.onThemeChange(this.globalData.darkMode)
+      }
+    })
+  },
+
+  initLargeFontMode() {
+    const largeFont = wx.getStorageSync('largeFontEnabled') || false
+    this.globalData.largeFont = largeFont
+    console.log('[App] 大字号模式已初始化', largeFont ? '开启' : '关闭')
+  },
+
+  isLargeFont() {
+    return this.globalData.largeFont || false
+  },
+
+  setLargeFont(enabled) {
+    this.globalData.largeFont = enabled
+    wx.setStorageSync('largeFontEnabled', enabled)
+    this.notifyPagesFontChange()
+    console.log('[App] 大字号模式已更新', enabled ? '开启' : '关闭')
+  },
+
+  notifyPagesFontChange() {
+    const pages = getCurrentPages()
+    pages.forEach(page => {
+      if (page && page.onFontChange) {
+        page.onFontChange(this.globalData.largeFont)
+      }
+    })
+  },
+
+  getExperienceClasses() {
+    const classes = []
+    if (this.globalData.darkMode) classes.push('dark-mode')
+    if (this.globalData.largeFont) classes.push('large-font')
+    return classes.join(' ')
   },
 
   /**

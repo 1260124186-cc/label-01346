@@ -3,7 +3,7 @@
   功能：展示用户信息、头像上传、功能菜单
   考核点：view/image标签、weUI框架使用、本地图片上传
 -->
-<view class="page-container">
+<view class="page-container {{experienceClasses}}">
   <!-- 用户信息卡片 -->
   <view class="user-section">
     <view class="user-card {{childModeEnabled ? 'child-mode-card' : ''}}">
@@ -12,7 +12,7 @@
       <view class="card-bg-circle"></view>
 
       <!-- 用户头像 -->
-      <view class="avatar-wrapper {{childModeEnabled ? 'child-avatar-wrapper' : ''}}" bindtap="{{childModeEnabled ? '' : 'onAvatarTap'}}">
+      <view class="avatar-wrapper {{childModeEnabled ? 'child-avatar-wrapper' : ''}}" bindtap="{{childModeEnabled ? '' : 'onAvatarTap'}}" aria-label="更换头像">
         <image
           wx:if="{{userInfo.avatarUrl && !childModeEnabled}}"
           class="avatar-image"
@@ -33,7 +33,7 @@
 
       <!-- 用户信息 -->
       <view class="user-info {{childModeEnabled ? 'child-user-info' : ''}}">
-        <view class="nickname-wrapper" bindtap="{{childModeEnabled ? '' : 'onNickNameTap'}}">
+        <view class="nickname-wrapper" bindtap="{{childModeEnabled ? '' : 'onNickNameTap'}}" aria-label="修改昵称">
           <text class="nickname {{childModeEnabled ? 'child-nickname' : ''}}">{{userInfo.nickName}}</text>
           <text class="edit-hint" wx:if="{{!childModeEnabled}}">✎</text>
         </view>
@@ -99,7 +99,7 @@
   </view>
 
   <!-- 签到入口 -->
-  <view class="signin-entry-section" bindtap="goToSignIn">
+  <view class="signin-entry-section" bindtap="goToSignIn" aria-label="每日签到">
     <view class="signin-entry-card {{isSignedToday ? 'done' : ''}}">
       <view class="signin-entry-left">
         <text class="signin-entry-emoji">{{isSignedToday ? '✅' : '📅'}}</text>
@@ -115,7 +115,7 @@
   <!-- 组信息入口卡片 -->
   <view class="group-entry-section">
     <block wx:if="{{currentGroup}}">
-      <view class="group-entry-card has-group" bindtap="goToFamilyGroup">
+      <view class="group-entry-card has-group" bindtap="goToFamilyGroup" aria-label="查看家庭组">
         <view class="group-entry-left">
           <view class="group-type-icon" style="background: {{currentGroup.type === 'family' ? 'linear-gradient(135deg, #FF9A8B 0%, #FF6A88 100%)' : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'}};">
             <text class="group-icon">{{currentGroup.type === 'family' ? '👨‍👩‍👧‍👦' : '🏫'}}</text>
@@ -130,10 +130,10 @@
         </view>
         <view class="group-entry-right">
           <view class="group-action-buttons">
-            <view class="group-action-btn leaderboard" catchtap="goToGroupLeaderboard">
+            <view class="group-action-btn leaderboard" catchtap="goToGroupLeaderboard" aria-label="组排行榜">
               <text class="action-btn-icon">🏆</text>
             </view>
-            <view class="group-action-btn report" wx:if="{{hasReportPermission}}" catchtap="goToLearningReport">
+            <view class="group-action-btn report" wx:if="{{hasReportPermission}}" catchtap="goToLearningReport" aria-label="学习报告">
               <text class="action-btn-icon">📊</text>
             </view>
           </view>
@@ -142,7 +142,7 @@
       </view>
     </block>
     <block wx:else>
-      <view class="group-entry-card no-group" bindtap="goToFamilyGroup">
+      <view class="group-entry-card no-group" bindtap="goToFamilyGroup" aria-label="创建或加入家庭组">
         <view class="no-group-icon-wrapper">
           <text class="no-group-icon">👨‍👩‍👧‍👦</text>
         </view>
