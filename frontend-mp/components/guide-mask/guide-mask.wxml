@@ -1,0 +1,32 @@
+<view class="guide-mask" wx:if="{{visible}}" catchtap="onMaskTap">
+  <view class="guide-mask-bg"></view>
+
+  <view class="guide-content">
+    <view class="guide-emoji">{{steps[currentStep].emoji}}</view>
+    <view class="guide-title">{{steps[currentStep].title}}</view>
+    <view class="guide-description">{{steps[currentStep].description}}</view>
+
+    <view class="guide-dots">
+      <view
+        wx:for="{{steps}}"
+        wx:key="id"
+        class="guide-dot {{currentStep === index ? 'active' : ''}}"
+        catchtap="onStepTap"
+        data-step="{{index}}"
+      />
+    </view>
+
+    <view class="guide-actions">
+      <view class="guide-btn guide-btn-skip" catchtap="skipGuide">
+        跳过
+      </view>
+      <view class="guide-btn guide-btn-next" catchtap="nextStep">
+        {{currentStep === totalSteps - 1 ? '完成' : '下一步'}}
+      </view>
+    </view>
+  </view>
+
+  <view class="guide-step-indicator">
+    {{currentStep + 1}} / {{totalSteps}}
+  </view>
+</view>

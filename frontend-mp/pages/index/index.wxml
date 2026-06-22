@@ -217,76 +217,28 @@
       <text class="quick-actions-desc">常用功能一键直达</text>
     </view>
     <view class="quick-actions-grid eight-grid">
-      <view class="quick-action-cell">
-        <view class="quick-action-item" bindtap="goToQuiz">
-          <view class="quick-action-icon-wrapper" style="background: linear-gradient(135deg, rgba(91, 189, 114, 0.18) 0%, rgba(91, 189, 114, 0.06) 100%);">
-            <view class="quick-action-icon-ring" style="border-color: rgba(91, 189, 114, 0.25);"></view>
-            <text class="quick-action-emoji">❓</text>
+      <view
+        wx:for="{{quickActions}}"
+        wx:key="key"
+        class="quick-action-cell"
+      >
+        <view
+          class="quick-action-item"
+          bindtap="onQuickActionTap"
+          data-action="{{item.action}}"
+        >
+          <view
+            class="quick-action-icon-wrapper"
+            style="background: {{item.bgGradient}};"
+          >
+            <view
+              class="quick-action-icon-ring"
+              style="border-color: {{item.ringColor}};"
+            ></view>
+            <text class="quick-action-emoji">{{item.emoji}}</text>
           </view>
-          <text class="quick-action-name">知识问答</text>
-        </view>
-      </view>
-      <view class="quick-action-cell">
-        <view class="quick-action-item" bindtap="goToDailyQuiz">
-          <view class="quick-action-icon-wrapper" style="background: linear-gradient(135deg, rgba(74, 144, 217, 0.18) 0%, rgba(74, 144, 217, 0.06) 100%);">
-            <view class="quick-action-icon-ring" style="border-color: rgba(74, 144, 217, 0.25);"></view>
-            <text class="quick-action-emoji">📅</text>
-          </view>
-          <text class="quick-action-name">每日一练</text>
-        </view>
-      </view>
-      <view class="quick-action-cell">
-        <view class="quick-action-item" bindtap="goToSortPracticeRandom">
-          <view class="quick-action-icon-wrapper" style="background: linear-gradient(135deg, rgba(46, 204, 113, 0.18) 0%, rgba(46, 204, 113, 0.06) 100%);">
-            <view class="quick-action-icon-ring" style="border-color: rgba(46, 204, 113, 0.25);"></view>
-            <text class="quick-action-emoji">♻️</text>
-          </view>
-          <text class="quick-action-name">分类练习</text>
-        </view>
-      </view>
-      <view class="quick-action-cell">
-        <view class="quick-action-item" bindtap="goToSortPracticeWrong">
-          <view class="quick-action-icon-wrapper" style="background: linear-gradient(135deg, rgba(231, 76, 60, 0.18) 0%, rgba(231, 76, 60, 0.06) 100%);">
-            <view class="quick-action-icon-ring" style="border-color: rgba(231, 76, 60, 0.25);"></view>
-            <text class="quick-action-emoji">📝</text>
-          </view>
-          <text class="quick-action-name">易错题</text>
-        </view>
-      </view>
-      <view class="quick-action-cell">
-        <view class="quick-action-item" bindtap="goToDropPoint">
-          <view class="quick-action-icon-wrapper" style="background: linear-gradient(135deg, rgba(26, 188, 156, 0.18) 0%, rgba(26, 188, 156, 0.06) 100%);">
-            <view class="quick-action-icon-ring" style="border-color: rgba(26, 188, 156, 0.25);"></view>
-            <text class="quick-action-emoji">🗺️</text>
-          </view>
-          <text class="quick-action-name">投放点地图</text>
-        </view>
-      </view>
-      <view class="quick-action-cell">
-        <view class="quick-action-item" bindtap="goToExchange">
-          <view class="quick-action-icon-wrapper" style="background: linear-gradient(135deg, rgba(243, 156, 18, 0.18) 0%, rgba(243, 156, 18, 0.06) 100%);">
-            <view class="quick-action-icon-ring" style="border-color: rgba(243, 156, 18, 0.25);"></view>
-            <text class="quick-action-emoji">🎁</text>
-          </view>
-          <text class="quick-action-name">积分兑换</text>
-        </view>
-      </view>
-      <view class="quick-action-cell">
-        <view class="quick-action-item" bindtap="goToCommunity">
-          <view class="quick-action-icon-wrapper" style="background: linear-gradient(135deg, rgba(155, 89, 182, 0.18) 0%, rgba(155, 89, 182, 0.06) 100%);">
-            <view class="quick-action-icon-ring" style="border-color: rgba(155, 89, 182, 0.25);"></view>
-            <text class="quick-action-emoji">💚</text>
-          </view>
-          <text class="quick-action-name">环保社区</text>
-        </view>
-      </view>
-      <view class="quick-action-cell">
-        <view class="quick-action-item" bindtap="goToProfile">
-          <view class="quick-action-icon-wrapper" style="background: linear-gradient(135deg, rgba(52, 152, 219, 0.18) 0%, rgba(52, 152, 219, 0.06) 100%);">
-            <view class="quick-action-icon-ring" style="border-color: rgba(52, 152, 219, 0.25);"></view>
-            <text class="quick-action-emoji">👤</text>
-          </view>
-          <text class="quick-action-name">个人中心</text>
+          <text class="quick-action-name">{{item.name}}</text>
+          <view wx:if="{{item.tag}}" class="quick-action-tag">{{item.tag}}</view>
         </view>
       </view>
     </view>
@@ -417,4 +369,11 @@
     </view>
     <text class="photo-float-text">拍一拍识垃圾</text>
   </view>
+
+  <!-- 新用户引导蒙层 -->
+  <guide-mask
+    wx:if="{{showGuideMask}}"
+    visible="{{showGuideMask}}"
+    bind:close="onGuideClose"
+  />
 </view>
