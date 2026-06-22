@@ -4087,20 +4087,28 @@ App({
   },
 
   saveRecycleOrders() {
+    if (!this.globalData.recycleOrders) {
+      this.globalData.recycleOrders = []
+    }
     wx.setStorageSync('recycleOrders', this.globalData.recycleOrders)
   },
 
   getRecycleOrders() {
-    return this.globalData.recycleOrders || []
+    if (!this.globalData.recycleOrders) {
+      this.globalData.recycleOrders = []
+    }
+    return this.globalData.recycleOrders
   },
 
   getRecycleOrdersByStatus(status) {
-    if (status === 'all') return this.getRecycleOrders()
-    return this.globalData.recycleOrders.filter(o => o.status === status)
+    const orders = this.getRecycleOrders()
+    if (status === 'all') return orders
+    return orders.filter(o => o.status === status)
   },
 
   getRecycleOrderById(orderId) {
-    return this.globalData.recycleOrders.find(o => o.id === orderId)
+    const orders = this.getRecycleOrders()
+    return orders.find(o => o.id === orderId)
   },
 
   calculateRecyclePoints(categoryId, quantity, options = {}) {
@@ -4174,69 +4182,82 @@ App({
   },
 
   addRecycleOrder(orderData) {
-    const { RECYCLE_ORDER_STATUS, RECYCLE_DISPATCH_CONFIG, RECYCLE_DISPATCH_STATUS } = require('./utils/constants')
-    const points = this.calculateRecyclePoints(orderData.categoryId, orderData.quantity || 1, {
-      hasPhoto: orderData.photos && orderData.photos.length > 0
-    })
-    const pointsBreakdown = this.getPointsBreakdown(orderData.categoryId, orderData.quantity || 1, {
-      hasPhoto: orderData.photos && orderData.photos.length > 0
-    })
+    try {
+      const { RECYCLE_ORDER_STATUS, RECYCLE_DISPATCH_CONFIG, RECYCLE_DISPATCH_STATUS } = require('./utils/constants')
 
-    const dispatchMode = orderData.dispatchMode || this.globalData.recycleDispatchMode || RECYCLE_DISPATCH_CONFIG.defaultMode
-    const dispatchStatus = dispatchMode === 'simulate' ? 'accepted' : 'pending'
+      if (!this.globalData.recycleOrders) {
+        this.globalData.recycleOrders = []
+      }
+      if (!this.globalData.recycleDispatchTimers) {
+        this.globalData.recycleDispatchTimers = {}
+      }
 
-    const newOrder = {
-      id: 'recycle_' + generateId(),
-      orderNo: 'HS' + Date.now().toString().slice(-10) + Math.floor(Math.random() * 1000),
-      categoryId: orderData.categoryId,
-      categoryName: orderData.categoryName,
-      categoryEmoji: orderData.categoryEmoji,
-      quantity: orderData.quantity || 1,
-      appointmentDate: orderData.appointmentDate,
-      appointmentPeriodId: orderData.appointmentPeriodId,
-      appointmentPeriodName: orderData.appointmentPeriodName,
-      appointmentTimeSlot: orderData.appointmentTimeSlot,
-      appointmentTimeName: orderData.appointmentTimeName,
-      address: orderData.address,
-      contactName: orderData.contactName,
-      contactPhone: orderData.contactPhone,
-      remark: orderData.remark || '',
-      photos: orderData.photos || [],
-      estimatedPoints: points,
-      estimatedPointsBreakdown: pointsBreakdown,
-      actualPoints: 0,
-      actualPointsBreakdown: [],
-      status: 'pending',
-      statusText: RECYCLE_ORDER_STATUS.pending.text,
-      collector: null,
-      cancelReason: '',
-      cancelPenalty: 0,
-      dispatchMode: dispatchMode,
-      dispatchStatus: dispatchStatus,
-      dispatchStatusText: RECYCLE_DISPATCH_STATUS[dispatchStatus.toUpperCase()] ? RECYCLE_DISPATCH_STATUS[dispatchStatus.toUpperCase()].text : '待派单',
-      dispatchAttempts: 0,
-      dispatchHistory: [],
-      createTime: formatDate(new Date(), 'YYYY-MM-DD HH:mm'),
-      statusHistory: [
-        { status: 'pending', time: formatDate(new Date(), 'YYYY-MM-DD HH:mm'), desc: '订单已提交，等待工作人员确认' }
-      ]
-    }
-
-    if (dispatchMode === 'simulate') {
-      newOrder.collector = this.assignCollector(orderData.categoryId)
-      newOrder.dispatchHistory.push({
-        status: 'accepted',
-        time: formatDate(new Date(), 'YYYY-MM-DD HH:mm'),
-        collectorId: newOrder.collector.id,
-        collectorName: newOrder.collector.name,
-        desc: '模拟派单：系统自动分配回收员'
+      const points = this.calculateRecyclePoints(orderData.categoryId, orderData.quantity || 1, {
+        hasPhoto: orderData.photos && orderData.photos.length > 0
       })
-    }
+      const pointsBreakdown = this.getPointsBreakdown(orderData.categoryId, orderData.quantity || 1, {
+        hasPhoto: orderData.photos && orderData.photos.length > 0
+      })
 
-    this.globalData.recycleOrders.unshift(newOrder)
-    this.saveRecycleOrders()
-    console.log('[App] 新增回收订单', newOrder.orderNo, '派单模式:', dispatchMode, '预估积分:', points)
-    return newOrder
+      const dispatchMode = orderData.dispatchMode || this.globalData.recycleDispatchMode || RECYCLE_DISPATCH_CONFIG.defaultMode
+      const dispatchStatus = dispatchMode === 'simulate' ? 'accepted' : 'pending'
+
+      const newOrder = {
+        id: 'recycle_' + generateId(),
+        orderNo: 'HS' + Date.now().toString().slice(-10) + Math.floor(Math.random() * 1000),
+        categoryId: orderData.categoryId,
+        categoryName: orderData.categoryName,
+        categoryEmoji: orderData.categoryEmoji,
+        quantity: orderData.quantity || 1,
+        appointmentDate: orderData.appointmentDate,
+        appointmentPeriodId: orderData.appointmentPeriodId,
+        appointmentPeriodName: orderData.appointmentPeriodName,
+        appointmentTimeSlot: orderData.appointmentTimeSlot,
+        appointmentTimeName: orderData.appointmentTimeName,
+        address: orderData.address,
+        contactName: orderData.contactName,
+        contactPhone: orderData.contactPhone,
+        remark: orderData.remark || '',
+        photos: orderData.photos || [],
+        estimatedPoints: points,
+        estimatedPointsBreakdown: pointsBreakdown,
+        actualPoints: 0,
+        actualPointsBreakdown: [],
+        status: 'pending',
+        statusText: RECYCLE_ORDER_STATUS.pending.text,
+        collector: null,
+        cancelReason: '',
+        cancelPenalty: 0,
+        dispatchMode: dispatchMode,
+        dispatchStatus: dispatchStatus,
+        dispatchStatusText: RECYCLE_DISPATCH_STATUS[dispatchStatus.toUpperCase()] ? RECYCLE_DISPATCH_STATUS[dispatchStatus.toUpperCase()].text : '待派单',
+        dispatchAttempts: 0,
+        dispatchHistory: [],
+        createTime: formatDate(new Date(), 'YYYY-MM-DD HH:mm'),
+        statusHistory: [
+          { status: 'pending', time: formatDate(new Date(), 'YYYY-MM-DD HH:mm'), desc: '订单已提交，等待工作人员确认' }
+        ]
+      }
+
+      if (dispatchMode === 'simulate') {
+        newOrder.collector = this.assignCollector(orderData.categoryId)
+        newOrder.dispatchHistory.push({
+          status: 'accepted',
+          time: formatDate(new Date(), 'YYYY-MM-DD HH:mm'),
+          collectorId: newOrder.collector.id,
+          collectorName: newOrder.collector.name,
+          desc: '模拟派单：系统自动分配回收员'
+        })
+      }
+
+      this.globalData.recycleOrders.unshift(newOrder)
+      this.saveRecycleOrders()
+      console.log('[App] 新增回收订单', newOrder.orderNo, '派单模式:', dispatchMode, '预估积分:', points)
+      return newOrder
+    } catch (e) {
+      console.error('[App] 新增回收订单异常', e)
+      return null
+    }
   },
 
   canTransitionStatus(currentStatus, targetStatus) {
@@ -5414,6 +5435,7 @@ App({
    */
   globalData: {
     userInfo: null,
+    userRole: 'member',
     goodsList: [],
     addresses: [],
     orders: [],
@@ -5459,7 +5481,6 @@ App({
     childPINLockUntil: 0,
     childDailyStats: null,
     unlockedBadges: [],
-    userRole: 'member',
     userGroups: [],
     currentGroupId: null,
     groupInviteCodes: {},
@@ -5467,7 +5488,16 @@ App({
     groupTasksProgress: {},
     encyclopediaNeedsRefresh: false,
     hotWordsNeedsRefresh: false,
-    leaderboardNeedsRefresh: false
+    leaderboardNeedsRefresh: false,
+    expireCheckTimer: null,
+    currentCity: 'shanghai',
+    currentCityInfo: null,
+    hasUpcomingStandard: false,
+    activityManager: null,
+    flashSaleManager: null,
+    activePointsDoubles: [],
+    recycleDispatchMode: 'simulate',
+    recycleDispatchTimers: {}
   },
 
   initChildMode() {

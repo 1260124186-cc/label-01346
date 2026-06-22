@@ -350,17 +350,24 @@ Page({
     }
 
     setTimeout(() => {
-      const newOrder = app.addRecycleOrder(orderData)
-      hideLoading()
+      try {
+        const newOrder = app.addRecycleOrder(orderData)
+        hideLoading()
 
-      if (newOrder) {
-        showSuccess('预约提交成功')
+        if (newOrder) {
+          showSuccess('预约提交成功')
 
-        setTimeout(() => {
-          navigateTo('/pages/recycle-order-detail/recycle-order-detail', { id: newOrder.id })
-        }, 1500)
-      } else {
-        showToast('预约提交失败，请重试')
+          setTimeout(() => {
+            navigateTo('/pages/recycle-order-detail/recycle-order-detail', { id: newOrder.id })
+          }, 1500)
+        } else {
+          showToast('预约提交失败，请重试')
+          this.setData({ submitting: false })
+        }
+      } catch (e) {
+        console.error('[RecycleBook] 提交订单异常', e)
+        hideLoading()
+        showToast('提交异常：' + (e.message || '请重试'))
         this.setData({ submitting: false })
       }
     }, 500)
